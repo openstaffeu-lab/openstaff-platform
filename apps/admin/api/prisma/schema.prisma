@@ -3,37 +3,2349 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model User {
+model Country {
+  id       String   @id @default(uuid())
+  name     String
+  code     String   @unique
+  currency String
+  vatRate  Float
+
+  regions                    Region[]
+  projects                   Project[]
+  profiles                   Profile[]
+  taxRules                   TaxRule[]
+  contractFinancialSnapshots ContractFinancialSnapshot[]
+}
+
+model Region {
   id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  role      Role
-  createdAt DateTime @default(now())
+  name      String
+  countryId String
+
+  country   Country  @relation(fields: [countryId], references: [id])
+  cities    City[]
+  projects  Project[]
+  profiles  Profile[]
+
+  @@index([countryId])
+}
+
+model City {
+  id       String   @id @default(uuid())
+  name     String
+  regionId String
+
+  region   Region    @relation(fields: [regionId], references: [id])
+  projects Project[]
+  profiles Profile[]
+
+  @@index([regionId])
+}
+
+model Language {
+  id          String              @id @default(uuid())
+  code        String              @unique
+  name        String
+
+  projects    Project[]
+  jobRequests ProjectJobRequest[]
+  profiles    ProfileLanguage[]
+}
+
+model Uniclass {
+  id          String @id @default(uuid())
+  code        String @unique
+  title       String
+  description String?
+
+  projects    ProjectUniclassClassification[]
+  jobRequests ProjectJobRequestUniclassClassification[]
+  profiles    ProfileUniclassClassification[]
+}
+
+model EscoSkill {
+  id          String @id @default(uuid())
+  code        String @unique
+  title       String
+  description String?
+
+  projects    ProjectEscoClassification[]
+  jobRequests ProjectJobRequestEscoClassification[]
+  profiles    ProfileEscoClassification[]
+  certifications ActorCertification[]
+  workerSkills WorkerSkill[]
+}
+
+model Nace {
+  id          String @id @default(uuid())
+  code        String @unique
+  title       String
+  description String?
+
+  projects    ProjectNaceClassification[]
+  jobRequests ProjectJobRequestNaceClassification[]
+  profiles    ProfileNaceClassification[]
+}
+
+model User {
+  id                        String                    @id @default(uuid())
+  email                     String                    @unique
+  password                  String
+  role                      Role
+  createdAt                 DateTime                  @default(now())
+
+  profile                   Profile?
+  projects                  Project[]                 @relation("ProjectCreatedBy")
+  uploadedProjectDocuments  ProjectDocument[]         @relation("ProjectDocumentUploadedBy")
+  reviewedAiInterpretations ProjectAIInterpretation[] @relation("ProjectAIReviewedBy")
+  uploadedProfileDocuments  ProfileDocument[]         @relation("ProfileDocumentUploadedBy")
+  createdShortlists         ProjectShortlist[]        @relation("ProjectShortlistCreatedBy")
+  createdInvitations        ProjectInvitation[]       @relation("ProjectInvitationCreatedBy")
+  submittedProposals        ProjectProposal[]         @relation("ProjectProposalSubmittedBy")
+  createdContracts          ProjectContract[]         @relation("ProjectContractCreatedBy")
+  issuedProjectInvoices     ProjectInvoice[]          @relation("ProjectInvoiceIssuedBy")
+  openedProjectDisputes     ProjectDispute[]          @relation("ProjectDisputeOpenedBy")
+  projectDisputeEvents      ProjectDisputeEvent[]     @relation("ProjectDisputeEventActor")
+  actorDocuments            ActorDocument[]           @relation("ActorDocumentOwner")
+  verifiedActorDocuments    ActorDocument[]           @relation("ActorDocumentVerifiedBy")
+  actorCertifications       ActorCertification[]      @relation("ActorCertificationOwner")
+  verifiedActorCertifications ActorCertification[]    @relation("ActorCertificationVerifiedBy")
+  medicalFitnessCertificates MedicalFitnessCertificate[] @relation("MedicalFitnessOwner")
+  verifiedMedicalFitnessCertificates MedicalFitnessCertificate[] @relation("MedicalFitnessVerifiedBy")
+  complianceAlerts          ComplianceAlert[]
+  assignedTasks             UserTask[]                @relation("UserTaskAssignedTo")
+  auditLogs                 AuditLog[]                @relation("AuditLogActorUser")
+  notifications             Notification[]
+  profileWorkers            ProfileWorker[]           @relation("ProfileWorkerLinkedUser")
+  assignedWorkerAssignments ProjectWorkerAssignment[] @relation("ProjectWorkerAssignmentAssignedBy")
+  approvedWorkerAssignments ProjectWorkerAssignment[] @relation("ProjectWorkerAssignmentApprovedBy")
+  approvedWorkerTimesheets  WorkerTimesheet[]         @relation("WorkerTimesheetApprovedBy")
+  conversationParticipants  ConversationParticipant[]
+  sentMessages              Message[]                 @relation("MessageSender")
+  messageReads              MessageRead[]
+}
+
+model RolePermission {
+  id         String      @id @default(uuid())
+  role       Role
+  permission Permission
+  enabled    Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@unique([role, permission])
+  @@index([role, enabled])
+}
+
+model UiConfig {
+  id         String   @id @default(uuid())
+  key        String   @unique
+  header     Json
+  homepage   Json
+  footer     Json
+  branding   Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model TaxonomySourceDocumentRecord {
+  id         String   @id @default(uuid())
+  key        String   @unique
+  name       String
+  source     String
+  locale     String
+  format     String
+  note       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([source, locale])
+}
+
+model TaxonomyIndustryRecord {
+  id         String   @id @default(uuid())
+  key        String   @unique
+  slug       String   @unique
+  name       String
+  source     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([slug])
+  @@index([source])
+}
+
+model TaxonomyCategoryRecord {
+  id           String   @id @default(uuid())
+  key          String   @unique
+  slug         String   @unique
+  name         String
+  industrySlug String
+  source       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([industrySlug, slug])
+  @@index([source])
+}
+
+model TaxonomyProfessionRecord {
+  id               String   @id @default(uuid())
+  key              String   @unique
+  slug             String   @unique
+  name             String
+  industrySlug     String
+  categorySlug     String
+  source           String
+  labelsJson       Json
+  descriptionsJson Json
+  tagsJson         Json
+  skillsJson       Json
+  mappingsJson     Json
+  referencesJson   Json
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([industrySlug, categorySlug])
+  @@index([source])
+}
+
+model PublicPost {
+  id                 String                @id @default(uuid())
+  type               PublicPostType
+  title              String
+  description        String
+  domain             String
+  location           String
+  status             String
+  value              String
+  ownerName          String
+  ownerType          String
+  classificationJson Json
+  certifications     String
+  visibility         PublicPostVisibility  @default(PUBLIC)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  media              PublicPostMedia[]
+  externalLinks      ExternalLinkSubmission[]
+  privateConversations PrivateConversation[]
+  comments           PublicComment[]
+  reviews            PublicReview[]
+
+  @@index([type, visibility, createdAt])
+  @@index([status, createdAt])
+}
+
+model PublicPostMedia {
+  id         String                @id @default(uuid())
+  postId     String
+  url        String
+  type       PublicPostMediaType
+  alt        String?
+  status     PublicModerationStatus @default(PENDING)
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  post       PublicPost            @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, status, createdAt])
+}
+
+model ExternalLinkSubmission {
+  id             String                   @id @default(uuid())
+  url            String
+  normalizedUrl  String
+  sourcePostId   String
+  submittedBy    String
+  securityStatus ExternalLinkSecurityStatus @default(PENDING)
+  reasonsJson    Json
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  sourcePost     PublicPost               @relation(fields: [sourcePostId], references: [id], onDelete: Cascade)
+
+  @@index([sourcePostId, createdAt])
+  @@index([securityStatus, createdAt])
+}
+
+model PrivateConversation {
+  id             String                    @id @default(uuid())
+  postId         String
+  requesterName  String
+  ownerName      String
+  status         PrivateConversationStatus @default(OPEN)
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  post           PublicPost                @relation(fields: [postId], references: [id], onDelete: Cascade)
+  messages       PrivateMessage[]
+
+  @@index([postId, createdAt])
+  @@index([status, createdAt])
+}
+
+model PrivateMessage {
+  id             String                @id @default(uuid())
+  conversationId String
+  senderName     String
+  message        String
+  status         PrivateMessageStatus  @default(SENT)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  conversation   PrivateConversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([status, createdAt])
+}
+
+model PublicComment {
+  id         String                @id @default(uuid())
+  postId     String
+  authorName String
+  comment    String
+  status     PublicCommentStatus   @default(PENDING_REVIEW)
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  post       PublicPost            @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+  @@index([status, createdAt])
+}
+
+model PublicReview {
+  id         String                @id @default(uuid())
+  postId     String
+  authorName String
+  rating     Int?
+  review     String
+  status     PublicReviewStatus    @default(PENDING_REVIEW)
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  post       PublicPost            @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+  @@index([status, createdAt])
 }
 
 model Project {
+  id                      String                  @id @default(uuid())
+  slug                    String                  @unique
+  name                    String
+  summary                 String?
+  description             String?
+  scopeOfWork             String?
+  engagementModel         ProjectEngagementModel
+  status                  ProjectStatus           @default(DRAFT)
+  visibility              ProjectVisibility       @default(PRIVATE)
+  location                String?
+  addressLine1            String?
+  addressLine2            String?
+  postalCode              String?
+  latitude                Float?
+  longitude               Float?
+  countryId               String?
+  regionId                String?
+  cityId                  String?
+  primaryLanguageId       String?
+  budgetMinCents          Int?
+  budgetMaxCents          Int?
+  currencyCode            String?
+  startDate               DateTime?
+  endDate                 DateTime?
+  responseDeadline        DateTime?
+  publishedAt             DateTime?
+  archivedAt              DateTime?
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+  createdById             String
+
+  createdBy               User                    @relation("ProjectCreatedBy", fields: [createdById], references: [id])
+  country                 Country?                @relation(fields: [countryId], references: [id])
+  region                  Region?                 @relation(fields: [regionId], references: [id])
+  city                    City?                   @relation(fields: [cityId], references: [id])
+  primaryLanguage         Language?               @relation(fields: [primaryLanguageId], references: [id])
+  jobRequests             ProjectJobRequest[]
+  conditions              ProjectCondition[]
+  documents               ProjectDocument[]
+  aiInterpretation        ProjectAIInterpretation?
+  escoClassifications     ProjectEscoClassification[]
+  naceClassifications     ProjectNaceClassification[]
+  uniclassClassifications ProjectUniclassClassification[]
+  shortlists              ProjectShortlist[]
+  invitations             ProjectInvitation[]
+  proposals               ProjectProposal[]
+  contracts               ProjectContract[]
+  escrowAccounts          ProjectEscrowAccount[]
+  milestones              ProjectMilestone[]
+  invoices                ProjectInvoice[]
+  payments                ProjectPayment[]
+  disputes                ProjectDispute[]
+  contractFinancialSnapshots ContractFinancialSnapshot[]
+  complianceAlerts        ComplianceAlert[]
+  userTasks               UserTask[]
+  auditLogs               AuditLog[]
+  workerAssignments       ProjectWorkerAssignment[]
+  workerAttendances       WorkerAttendance[]
+  workerWorkLogs          WorkerWorkLog[]
+  workerTimesheets        WorkerTimesheet[]
+  workerPayrollCalculations WorkerPayrollCalculation[]
+  conversations          Conversation[]
+
+  @@index([createdById, createdAt])
+  @@index([status, engagementModel])
+  @@index([countryId, regionId, cityId])
+}
+
+model ProjectJobRequest {
+  id                      String                               @id @default(uuid())
+  projectId               String
+  title                   String
+  description             String?
+  scopeOfWork             String?
+  status                  ProjectJobRequestStatus              @default(DRAFT)
+  workerCount             Int?
+  unit                    String?
+  budgetMinCents          Int?
+  budgetMaxCents          Int?
+  currencyCode            String?
+  requiredExperienceYears Int?
+  requiresCertification   Boolean                              @default(false)
+  startDate               DateTime?
+  endDate                 DateTime?
+  responseDeadline        DateTime?
+  languageId              String?
+  notes                   String?
+  createdAt               DateTime                             @default(now())
+  updatedAt               DateTime                             @updatedAt
+
+  project                 Project                              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  language                Language?                            @relation(fields: [languageId], references: [id])
+  conditions              ProjectCondition[]
+  documents               ProjectDocument[]
+  escoClassifications     ProjectJobRequestEscoClassification[]
+  naceClassifications     ProjectJobRequestNaceClassification[]
+  uniclassClassifications ProjectJobRequestUniclassClassification[]
+  workerAssignments       ProjectWorkerAssignment[]
+  workerAttendances       WorkerAttendance[]
+  workerWorkLogs          WorkerWorkLog[]
+
+  @@index([projectId, status])
+  @@index([languageId])
+}
+
+model ProjectCondition {
+  id           String                @id @default(uuid())
+  projectId    String
+  jobRequestId String?
+  type         ProjectConditionType
+  scope        ProjectConditionScope @default(PROJECT)
+  title        String
+  clauseKey    String?
+  content      String
+  isMandatory  Boolean               @default(true)
+  sortOrder    Int                   @default(0)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  project      Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  jobRequest   ProjectJobRequest?    @relation(fields: [jobRequestId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, scope, sortOrder])
+  @@index([jobRequestId])
+}
+
+model ProjectAIInterpretation {
+  id              String                        @id @default(uuid())
+  projectId       String                        @unique
+  status          ProjectAIInterpretationStatus @default(PENDING)
+  sourceText      String?
+  extractedJson   String?
+  documentIds     String?
+  confidenceScore Float?
+  modelName       String?
+  modelVersion    String?
+  promptVersion   String?
+  reviewedById    String?
+  reviewNotes     String?
+  createdAt       DateTime                      @default(now())
+  updatedAt       DateTime                      @updatedAt
+
+  project         Project                       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reviewedBy      User?                         @relation("ProjectAIReviewedBy", fields: [reviewedById], references: [id])
+
+  @@index([status])
+  @@index([reviewedById])
+}
+
+model ProjectDocument {
+  id               String             @id @default(uuid())
+  projectId        String
+  jobRequestId     String?
+  uploadedById     String?
+  type             ProjectDocumentType
+  title            String
+  description      String?
+  fileName         String
+  mimeType         String
+  sizeBytes        Int
+  storageProvider  String
+  storageBucket    String?
+  storageKey       String
+  checksumSha256   String?
+  extractedText    String?
+  extractionStatus String             @default("NOT_REQUESTED")
+  extractionError  String?
+  extractedAt      DateTime?
+  isPublic         Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  project          Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  jobRequest       ProjectJobRequest? @relation(fields: [jobRequestId], references: [id], onDelete: Cascade)
+  uploadedBy       User?              @relation("ProjectDocumentUploadedBy", fields: [uploadedById], references: [id])
+
+  @@index([projectId, type])
+  @@index([jobRequestId])
+  @@index([uploadedById])
+}
+
+model Profile {
+  id                         String                            @id @default(uuid())
+  userId                     String                            @unique
+  profileType                ProfileType
+  displayName                String
+  companyName                String?
+  description                String?
+  summary                    String?
+  countryId                  String?
+  regionId                   String?
+  cityId                     String?
+  supportedEngagementModels  String?
+  certificationsText         String?
+  availabilityStatus         ProfileAvailabilityStatus         @default(AVAILABLE)
+  rating                     Float?
+  createdAt                  DateTime                          @default(now())
+  updatedAt                  DateTime                          @updatedAt
+
+  user                       User                              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  country                    Country?                          @relation(fields: [countryId], references: [id])
+  region                     Region?                           @relation(fields: [regionId], references: [id])
+  city                       City?                             @relation(fields: [cityId], references: [id])
+  contractorProfile          ContractorProfile?
+  professionalProfile        ProfessionalProfile?
+  languages                  ProfileLanguage[]
+  documents                  ProfileDocument[]
+  escoClassifications        ProfileEscoClassification[]
+  naceClassifications        ProfileNaceClassification[]
+  uniclassClassifications    ProfileUniclassClassification[]
+  shortlists                 ProjectShortlist[]
+  invitations                ProjectInvitation[]
+  proposals                  ProjectProposal[]
+  contracts                  ProjectContract[]
+  invoices                   ProjectInvoice[]
+  payments                   ProjectPayment[]
+  disputesAgainst            ProjectDispute[]         @relation("ProjectDisputeAgainstProfile")
+  contractFinancialSnapshots ContractFinancialSnapshot[]
+  actorDocuments             ActorDocument[]
+  actorCertifications        ActorCertification[]
+  medicalFitnessCertificates MedicalFitnessCertificate[] @relation("MedicalFitnessProfile")
+  issuedMedicalFitnessCertificates MedicalFitnessCertificate[] @relation("MedicalFitnessIssuedByProfile")
+  complianceAlerts           ComplianceAlert[]
+  userTasks                  UserTask[]
+  notifications              Notification[]
+  workers                    ProfileWorker[]
+  workerAssignments          ProjectWorkerAssignment[]
+  workerTimesheets           WorkerTimesheet[]
+  workerPayrollCalculations  WorkerPayrollCalculation[]
+
+  @@index([profileType])
+  @@index([countryId, regionId, cityId])
+  @@index([availabilityStatus])
+}
+
+model ContractorProfile {
+  id          String   @id @default(uuid())
+  profileId   String   @unique
+  tradeFocus  String?
+  teamSize    Int?
+  serviceArea String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model ProfessionalProfile {
+  id             String   @id @default(uuid())
+  profileId      String   @unique
+  headline       String?
+  yearsExperience Int?
+  portfolioFocus String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  profile        Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model ProfileLanguage {
+  profileId   String
+  languageId  String
+  createdAt   DateTime @default(now())
+
+  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  language    Language  @relation(fields: [languageId], references: [id])
+
+  @@id([profileId, languageId])
+  @@index([languageId])
+}
+
+model ProfileDocument {
+  id               String                @id @default(uuid())
+  profileId        String
+  uploadedById     String?
+  type             ProfileDocumentType
+  title            String
+  description      String?
+  fileName         String
+  mimeType         String
+  sizeBytes        Int
+  storageProvider  String
+  storageBucket    String?
+  storageKey       String
+  checksumSha256   String?
+  extractedText    String?
+  extractionStatus String                @default("NOT_REQUESTED")
+  extractionError  String?
+  extractedAt      DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  profile          Profile               @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  uploadedBy       User?                 @relation("ProfileDocumentUploadedBy", fields: [uploadedById], references: [id])
+  actorDocuments   ActorDocument[]
+
+  @@index([profileId, type])
+  @@index([uploadedById])
+}
+
+model ProjectShortlist {
+  id          String   @id @default(uuid())
+  projectId   String
+  profileId   String
+  createdById String
+  matchScore  Int?
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation("ProjectShortlistCreatedBy", fields: [createdById], references: [id])
+
+  @@unique([projectId, profileId])
+  @@index([projectId, createdAt])
+  @@index([profileId, createdAt])
+  @@index([createdById])
+}
+
+model ProjectInvitation {
+  id          String                  @id @default(uuid())
+  projectId   String
+  profileId   String
+  createdById String
+  status      ProjectInvitationStatus @default(DRAFT)
+  message     String?
+  sentAt      DateTime?
+  respondedAt DateTime?
+  createdAt   DateTime                @default(now())
+
+  project     Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  profile     Profile                 @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdBy   User                    @relation("ProjectInvitationCreatedBy", fields: [createdById], references: [id])
+  proposals   ProjectProposal[]
+
+  @@unique([projectId, profileId])
+  @@index([projectId, status, createdAt])
+  @@index([profileId, status, createdAt])
+  @@index([createdById])
+}
+
+model ProjectProposal {
+  id                 String                @id @default(uuid())
+  projectId          String
+  profileId          String
+  invitationId       String?
+  submittedById      String
+  status             ProjectProposalStatus @default(DRAFT)
+  title              String
+  message            String?
+  priceCents         Int?
+  currencyCode       String?
+  estimatedStartDate DateTime?
+  estimatedEndDate   DateTime?
+  terms              String?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  project            Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  profile            Profile               @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  invitation         ProjectInvitation?    @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+  submittedBy        User                  @relation("ProjectProposalSubmittedBy", fields: [submittedById], references: [id])
+  contracts          ProjectContract[]
+
+  @@unique([projectId, profileId])
+  @@index([projectId, status, updatedAt])
+  @@index([profileId, status, updatedAt])
+  @@index([submittedById])
+  @@index([invitationId])
+}
+
+model ProjectContract {
+  id              String               @id @default(uuid())
+  projectId       String
+  proposalId      String
+  profileId       String
+  createdById     String
+  status          ProjectContractStatus @default(DRAFT)
+  contractType    ProjectEngagementModel
+  title           String
+  scopeSummary    String?
+  commercialTerms String?
+  paymentTerms    String?
+  safetyTerms     String?
+  insuranceTerms  String?
+  startDate       DateTime?
+  endDate         DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  project         Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  proposal        ProjectProposal      @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  profile         Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdBy       User                 @relation("ProjectContractCreatedBy", fields: [createdById], references: [id])
+  escrowAccount   ProjectEscrowAccount?
+  milestones      ProjectMilestone[]
+  invoices        ProjectInvoice[]
+  payments        ProjectPayment[]
+  disputes        ProjectDispute[]
+  financialSnapshots ContractFinancialSnapshot[]
+  complianceAlerts ComplianceAlert[]
+  userTasks       UserTask[]
+  workerAssignments ProjectWorkerAssignment[]
+  workerAttendances WorkerAttendance[]
+  workerTimesheets  WorkerTimesheet[]
+  workerPayrollCalculations WorkerPayrollCalculation[]
+  conversations   Conversation[]
+
+  @@unique([proposalId])
+  @@index([projectId, status, createdAt])
+  @@index([profileId, status, createdAt])
+  @@index([createdById])
+}
+
+model ProjectEscrowAccount {
+  id                String                @id @default(uuid())
+  projectId         String
+  contractId        String                @unique
+  status            ProjectEscrowStatus   @default(NOT_FUNDED)
+  currencyCode      String?
+  totalAmountCents  Int                   @default(0)
+  fundedAmountCents Int                   @default(0)
+  releasedAmountCents Int                 @default(0)
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  project           Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contract          ProjectContract       @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  payments          ProjectPayment[]
+
+  @@index([projectId, status, createdAt])
+}
+
+model ProjectMilestone {
+  id           String                 @id @default(uuid())
+  projectId    String
+  contractId   String
+  title        String
+  description  String?
+  amountCents  Int                    @default(0)
+  status       ProjectMilestoneStatus @default(DRAFT)
+  dueDate      DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  project      Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contract     ProjectContract        @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  invoices     ProjectInvoice[]
+  disputes     ProjectDispute[]
+
+  @@index([projectId, contractId, status])
+  @@index([contractId, createdAt])
+}
+
+model ProjectInvoice {
+  id            String               @id @default(uuid())
+  projectId     String
+  contractId    String
+  milestoneId   String?
+  profileId     String
+  issuedById    String
+  invoiceNumber String               @unique
+  status        ProjectInvoiceStatus @default(DRAFT)
+  currencyCode  String
+  amountCents   Int
+  vatCents      Int                  @default(0)
+  totalCents    Int
+  description   String?
+  issuedAt      DateTime?
+  dueDate       DateTime?
+  paidAt        DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  project       Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contract      ProjectContract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  milestone     ProjectMilestone?    @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  profile       Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  issuedBy      User                 @relation("ProjectInvoiceIssuedBy", fields: [issuedById], references: [id], onDelete: Cascade)
+  payments      ProjectPayment[]
+  disputes      ProjectDispute[]
+
+  @@index([projectId, createdAt])
+  @@index([contractId, status, createdAt])
+  @@index([milestoneId])
+  @@index([profileId, status, createdAt])
+  @@index([issuedById, createdAt])
+}
+
+model ProjectPayment {
+  id              String               @id @default(uuid())
+  projectId       String
+  contractId      String
+  invoiceId       String
+  escrowAccountId String
+  profileId       String
+  amountCents     Int
+  currencyCode    String
+  status          ProjectPaymentStatus @default(REQUESTED)
+  requestedAt     DateTime             @default(now())
+  approvedAt      DateTime?
+  releasedAt      DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  project         Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contract        ProjectContract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  invoice         ProjectInvoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  escrowAccount   ProjectEscrowAccount @relation(fields: [escrowAccountId], references: [id], onDelete: Cascade)
+  profile         Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  disputes        ProjectDispute[]
+
+  @@index([projectId, createdAt])
+  @@index([contractId, status, createdAt])
+  @@index([invoiceId, status, createdAt])
+  @@index([escrowAccountId, status, createdAt])
+  @@index([profileId, status, createdAt])
+}
+
+model ProjectDispute {
+  id               String                 @id @default(uuid())
+  projectId        String
+  contractId       String
+  milestoneId      String?
+  invoiceId        String?
+  paymentId        String?
+  openedById       String
+  againstProfileId String?
+  type             ProjectDisputeType
+  status           ProjectDisputeStatus   @default(OPEN)
+  severity         ProjectDisputeSeverity @default(MEDIUM)
+  title            String
+  description      String
+  resolutionNotes  String?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  resolvedAt       DateTime?
+
+  project          Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contract         ProjectContract        @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  milestone        ProjectMilestone?      @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  invoice          ProjectInvoice?        @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  payment          ProjectPayment?        @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  openedBy         User                   @relation("ProjectDisputeOpenedBy", fields: [openedById], references: [id], onDelete: Cascade)
+  againstProfile   Profile?               @relation("ProjectDisputeAgainstProfile", fields: [againstProfileId], references: [id], onDelete: SetNull)
+  events           ProjectDisputeEvent[]
+  conversations    Conversation[]
+
+  @@index([projectId, status, createdAt])
+  @@index([contractId, status, createdAt])
+  @@index([milestoneId, status])
+  @@index([invoiceId, status])
+  @@index([paymentId, status])
+  @@index([openedById, createdAt])
+  @@index([againstProfileId, status])
+}
+
+model ProjectDisputeEvent {
+  id           String                  @id @default(uuid())
+  disputeId    String
+  actorUserId  String
+  type         ProjectDisputeEventType
+  message      String
+  metadataJson String?
+  createdAt    DateTime                @default(now())
+
+  dispute      ProjectDispute          @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  actorUser    User                    @relation("ProjectDisputeEventActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@index([disputeId, createdAt])
+  @@index([actorUserId, createdAt])
+}
+
+model TaxRule {
+  id                       String                 @id @default(uuid())
+  countryId                String
+  name                     String
+  code                     String
+  appliesTo                ProjectEngagementModel
+  vatRate                  Float
+  withholdingRate          Float                 @default(0)
+  socialContributionRate   Float                 @default(0)
+  employerContributionRate Float                 @default(0)
+  currencyCode             String
+  notes                    String?
+  isActive                 Boolean               @default(true)
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
+
+  country                  Country               @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId, appliesTo, isActive])
+  @@unique([countryId, code])
+}
+
+model ContractFinancialSnapshot {
+  id                         String                 @id @default(uuid())
+  contractId                 String
+  projectId                  String
+  profileId                  String
+  countryId                  String?
+  contractType               ProjectEngagementModel
+  currencyCode               String
+  grossAmountCents           Int
+  vatAmountCents             Int
+  netAmountCents             Int
+  platformFeeCents           Int
+  escrowRequiredAmountCents  Int
+  workerGrossPayCents        Int?
+  workerNetPayCents          Int?
+  employerCostCents          Int?
+  calculationJson            String?
+  createdAt                  DateTime               @default(now())
+
+  contract                   ProjectContract        @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  project                    Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  profile                    Profile                @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  country                    Country?               @relation(fields: [countryId], references: [id], onDelete: SetNull)
+
+  @@index([contractId, createdAt])
+  @@index([projectId, createdAt])
+  @@index([profileId, createdAt])
+  @@index([countryId, createdAt])
+}
+
+model ActorDocument {
+  id               String               @id @default(uuid())
+  profileId        String
+  userId           String
+  profileDocumentId String?
+  type             ActorDocumentType
+  title            String
+  issuer           String?
+  issuedAt         DateTime?
+  expiresAt        DateTime?
+  status           ComplianceDocumentStatus @default(PENDING)
+  verifiedById     String?
+  verifiedAt       DateTime?
+  notes            String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  profile          Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  owner            User                 @relation("ActorDocumentOwner", fields: [userId], references: [id], onDelete: Cascade)
+  profileDocument  ProfileDocument?     @relation(fields: [profileDocumentId], references: [id], onDelete: SetNull)
+  verifiedBy       User?                @relation("ActorDocumentVerifiedBy", fields: [verifiedById], references: [id])
+  certifications   ActorCertification[]
+  medicalFitnessCertificates MedicalFitnessCertificate[]
+  complianceAlerts ComplianceAlert[]
+  userTasks        UserTask[]
+
+  @@index([profileId, type, status])
+  @@index([userId, status])
+  @@index([expiresAt])
+  @@index([verifiedById])
+}
+
+model ActorCertification {
+  id               String               @id @default(uuid())
+  profileId        String
+  userId           String
+  actorDocumentId  String?
+  type             ActorCertificationType
+  title            String
+  issuer           String?
+  issuedAt         DateTime?
+  expiresAt        DateTime?
+  status           ComplianceDocumentStatus @default(PENDING)
+  escoSkillId      String?
+  verifiedById     String?
+  verifiedAt       DateTime?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  profile          Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  owner            User                 @relation("ActorCertificationOwner", fields: [userId], references: [id], onDelete: Cascade)
+  actorDocument    ActorDocument?       @relation(fields: [actorDocumentId], references: [id], onDelete: SetNull)
+  escoSkill        EscoSkill?           @relation(fields: [escoSkillId], references: [id])
+  verifiedBy       User?                @relation("ActorCertificationVerifiedBy", fields: [verifiedById], references: [id])
+  complianceAlerts ComplianceAlert[]
+  userTasks        UserTask[]
+
+  @@index([profileId, type, status])
+  @@index([userId, status])
+  @@index([escoSkillId])
+  @@index([expiresAt])
+  @@index([verifiedById])
+}
+
+model MedicalFitnessCertificate {
+  id               String               @id @default(uuid())
+  profileId        String
+  userId           String
+  actorDocumentId  String?
+  category         MedicalFitnessCategory
+  title            String
+  issuerName       String
+  issuedByProfileId String?
+  issuedAt         DateTime?
+  expiresAt        DateTime?
+  status           ComplianceDocumentStatus @default(PENDING)
+  fitnessDecision  MedicalFitnessDecision @default(REQUIRES_REVIEW)
+  jobSpecificClearance String?
+  verifiedById     String?
+  verifiedAt       DateTime?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  profile          Profile              @relation("MedicalFitnessProfile", fields: [profileId], references: [id], onDelete: Cascade)
+  owner            User                 @relation("MedicalFitnessOwner", fields: [userId], references: [id], onDelete: Cascade)
+  actorDocument    ActorDocument?       @relation(fields: [actorDocumentId], references: [id], onDelete: SetNull)
+  issuedByProfile  Profile?             @relation("MedicalFitnessIssuedByProfile", fields: [issuedByProfileId], references: [id], onDelete: SetNull)
+  verifiedBy       User?                @relation("MedicalFitnessVerifiedBy", fields: [verifiedById], references: [id])
+  complianceAlerts ComplianceAlert[]
+  userTasks        UserTask[]
+
+  @@index([profileId, category, status])
+  @@index([userId, status])
+  @@index([issuedByProfileId])
+  @@index([expiresAt])
+  @@index([verifiedById])
+}
+
+model ComplianceAlert {
+  id                         String               @id @default(uuid())
+  key                        String               @unique
+  userId                     String
+  profileId                  String?
+  projectId                  String?
+  contractId                 String?
+  actorDocumentId            String?
+  actorCertificationId       String?
+  medicalFitnessCertificateId String?
+  type                       ComplianceAlertType
+  severity                   ComplianceAlertSeverity
+  message                    String
+  dueDate                    DateTime?
+  status                     ComplianceAlertStatus @default(PENDING)
+  createdAt                  DateTime             @default(now())
+  sentAt                     DateTime?
+  readAt                     DateTime?
+  resolvedAt                 DateTime?
+
+  user                       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile                    Profile?             @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  project                    Project?             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contract                   ProjectContract?     @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  actorDocument              ActorDocument?       @relation(fields: [actorDocumentId], references: [id], onDelete: Cascade)
+  actorCertification         ActorCertification?  @relation(fields: [actorCertificationId], references: [id], onDelete: Cascade)
+  medicalFitnessCertificate  MedicalFitnessCertificate? @relation(fields: [medicalFitnessCertificateId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, createdAt])
+  @@index([profileId, status])
+  @@index([projectId, status])
+  @@index([contractId, status])
+  @@index([dueDate, status])
+}
+
+model UserTask {
+  id                         String               @id @default(uuid())
+  key                        String               @unique
+  assignedToUserId           String
+  projectId                  String?
+  contractId                 String?
+  profileId                  String?
+  actorDocumentId            String?
+  actorCertificationId       String?
+  medicalFitnessCertificateId String?
+  type                       UserTaskType
+  title                      String
+  description                String?
+  status                     UserTaskStatus       @default(OPEN)
+  priority                   UserTaskPriority     @default(MEDIUM)
+  dueDate                    DateTime?
+  createdAt                  DateTime             @default(now())
+  updatedAt                  DateTime             @updatedAt
+  completedAt                DateTime?
+
+  assignedTo                 User                 @relation("UserTaskAssignedTo", fields: [assignedToUserId], references: [id], onDelete: Cascade)
+  project                    Project?             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contract                   ProjectContract?     @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  profile                    Profile?             @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  actorDocument              ActorDocument?       @relation(fields: [actorDocumentId], references: [id], onDelete: Cascade)
+  actorCertification         ActorCertification?  @relation(fields: [actorCertificationId], references: [id], onDelete: Cascade)
+  medicalFitnessCertificate  MedicalFitnessCertificate? @relation(fields: [medicalFitnessCertificateId], references: [id], onDelete: Cascade)
+
+  @@index([assignedToUserId, status, dueDate])
+  @@index([projectId, status])
+  @@index([contractId, status])
+  @@index([profileId, status])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorUserId  String
+  projectId    String?
+  entityType   String
+  entityId     String
+  action       String
+  beforeJson   String?
+  afterJson    String?
+  metadataJson String?
+  createdAt    DateTime @default(now())
+
+  actorUser    User     @relation("AuditLogActorUser", fields: [actorUserId], references: [id], onDelete: Cascade)
+  project      Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([actorUserId, createdAt])
+  @@index([projectId, createdAt])
+  @@index([entityType, entityId, createdAt])
+}
+
+model Notification {
+  id                String             @id @default(uuid())
+  key               String             @unique
+  userId            String?
+  profileId         String?
+  actorId           String?
+  type              String
+  channel           NotificationChannel @default(IN_APP)
+  severity          NotificationSeverity @default(INFO)
+  title             String
+  message           String
+  status            NotificationStatus  @default(PENDING)
+  relatedEntityType String?
+  relatedEntityId   String?
+  scheduledFor      DateTime?
+  sentAt            DateTime?
+  readAt            DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  user              User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile           Profile?          @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  actor             Actor?            @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, createdAt])
+  @@index([profileId, status, createdAt])
+  @@index([actorId, status, createdAt])
+  @@index([scheduledFor, status])
+}
+
+model Conversation {
+  id           String                      @id @default(uuid())
+  projectId    String?
+  contractId   String?
+  disputeId    String?
+  type         ConversationType
+  createdAt    DateTime                    @default(now())
+
+  project      Project?                    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contract     ProjectContract?            @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  dispute      ProjectDispute?             @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([projectId, type, createdAt])
+  @@index([contractId, type, createdAt])
+  @@index([disputeId, type, createdAt])
+}
+
+model ConversationParticipant {
+  id             String                      @id @default(uuid())
+  conversationId String
+  userId         String
+  role           ConversationParticipantRole
+  joinedAt       DateTime                    @default(now())
+
+  conversation   Conversation                @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId, joinedAt])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  senderId       String
+  type           MessageType
+  content        String
+  metadataJson   String?
+  createdAt      DateTime     @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  reads          MessageRead[]
+
+  @@index([conversationId, createdAt])
+  @@index([senderId, createdAt])
+}
+
+model MessageRead {
   id        String   @id @default(uuid())
-  name      String
-  location  String
-  status    String
-  createdAt DateTime @default(now())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([userId, readAt])
+}
+
+model Actor {
+  id                    String         @id @default(uuid())
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  firebaseUid           String         @unique
+  email                 String         @unique
+  phone                 String?
+  avatarUrl             String?
+  actorType             ActorType
+  countryCode           String         @default("RO")
+  regionCode            String?
+  languageCode          String         @default("ro")
+  vatNumber             String?
+  vatRegistered         Boolean        @default(false)
+  currency              String         @default("RON")
+  naceCode              String?
+  naceDescription       String?
+  escoOccupations       String[]
+  uniclassCode          String?
+  displayName           String
+  bio                   String?
+  experienceYears       Int?
+  rating                Float          @default(0)
+  reviewCount           Int            @default(0)
+  isVerified            Boolean        @default(false)
+  verifiedAt            DateTime?
+  onboardingStep        Int            @default(0)
+  onboardingDone        Boolean        @default(false)
+  role                  PlatformRole   @default(USER)
+
+  companyProfile        CompanyProfile?
+  jobs                  Job[]
+  applications          Application[]
+  contractsAsEmployer   Contract[]     @relation("EmployerContracts")
+  contractsAsContractor Contract[]     @relation("ContractorContracts")
+  reviewsReceived       Review[]       @relation("ReviewsReceived")
+  reviewsGiven          Review[]       @relation("ReviewsGiven")
+  documents             Document[]
+  notifications         Notification[]
+
+  @@index([actorType, createdAt])
+  @@index([countryCode, regionCode])
+  @@index([isVerified, createdAt])
+  @@index([role, createdAt])
+}
+
+model CompanyProfile {
+  id                    String      @id @default(uuid())
+  actorId               String      @unique
+  actor                 Actor       @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  name                  String
+  legalType             LegalType
+  cui                   String      @unique
+  cnp                   String?
+  seriesCi              String?
+  ciFileUrl             String?
+  administrator         String?
+  capitalSocial         Decimal?    @db.Decimal(15, 2)
+  currency              String      @default("RON")
+  nrAngajati            Int?
+  experientaSimilara    String?     @db.Text
+  statusFirma           FirmaStatus @default(ACTIVA)
+  contBancar            String?
+  adresa                String?
+  obiectActivitate      String[]
+  experientaMunca       Int?
+  cazierUrl             String?
+  adeverintaMedicalaUrl String?
+  certificariUrls       String[]
+  serviciiIds           String[]
+}
+
+model Job {
+  id              String      @id @default(uuid())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  actorId         String
+  actor           Actor       @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  title           String
+  description     String      @db.Text
+  category        JobCategory
+  naceCode        String?
+  escoRequired    String[]
+  uniclassCode    String?
+  status          JobStatus   @default(DRAFT)
+  location        String?
+  regionCode      String?
+  countryCode     String      @default("RO")
+  currency        String      @default("RON")
+  budget          Decimal?    @db.Decimal(15, 2)
+  startDate       DateTime?
+  endDate         DateTime?
+  mediaUrls       String[]
+  reluProcessed   Boolean     @default(false)
+  reluSummary     String?     @db.Text
+  reluTestForm    Json?
+
+  applications    Application[]
+  contracts       Contract[]
+  reviews         Review[]
+
+  @@index([actorId, status, createdAt])
+  @@index([category, status, createdAt])
+  @@index([regionCode, status, createdAt])
+}
+
+model Application {
+  id          String    @id @default(uuid())
+  createdAt   DateTime  @default(now())
+  jobId       String
+  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  actorId     String
+  actor       Actor     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  status      AppStatus @default(PENDING)
+  reluScore   Float?
+  message     String?   @db.Text
+
+  @@unique([jobId, actorId])
+  @@index([actorId, status, createdAt])
+  @@index([jobId, status, createdAt])
 }
 
 model Contract {
-  id        String   @id @default(uuid())
-  code      String   @unique
-  value     Float
-  status    String
+  id              String         @id @default(uuid())
+  createdAt       DateTime       @default(now())
+  jobId           String
+  job             Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  employerId      String
+  employer        Actor          @relation("EmployerContracts", fields: [employerId], references: [id], onDelete: Cascade)
+  contractorId    String
+  contractor      Actor          @relation("ContractorContracts", fields: [contractorId], references: [id], onDelete: Cascade)
+  status          ContractStatus @default(DRAFT)
+  value           Decimal        @db.Decimal(15, 2)
+  currency        String         @default("RON")
+  transactionFee  Decimal?       @db.Decimal(15, 2)
+  otpCode         String?
+  otpExpiresAt    DateTime?
+  signedAt        DateTime?
+  startDate       DateTime?
+  endDate         DateTime?
+
+  disputes        Dispute[]
+
+  @@index([jobId, status, createdAt])
+  @@index([employerId, status, createdAt])
+  @@index([contractorId, status, createdAt])
+}
+
+model Dispute {
+  id          String        @id @default(uuid())
+  createdAt   DateTime      @default(now())
+  contractId  String
+  contract    Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  status      DisputeStatus @default(OPEN)
+  description String        @db.Text
+  resolution  String?       @db.Text
+  fee         Decimal?      @db.Decimal(15, 2)
+  resolvedAt  DateTime?
+
+  @@index([contractId, status, createdAt])
+}
+
+model Review {
+  id          String    @id @default(uuid())
+  createdAt   DateTime  @default(now())
+  fromActorId String
+  from        Actor     @relation("ReviewsGiven", fields: [fromActorId], references: [id], onDelete: Cascade)
+  toActorId   String
+  to          Actor     @relation("ReviewsReceived", fields: [toActorId], references: [id], onDelete: Cascade)
+  jobId       String?
+  job         Job?      @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  rating      Float
+  comment     String?   @db.Text
+  isVerified  Boolean   @default(false)
+
+  @@index([fromActorId, createdAt])
+  @@index([toActorId, createdAt])
+  @@index([jobId, createdAt])
+}
+
+model Document {
+  id          String       @id @default(uuid())
+  createdAt   DateTime     @default(now())
+  actorId     String
+  actor       Actor        @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  type        DocumentType
+  fileUrl     String
+  verified    Boolean      @default(false)
+  verifiedAt  DateTime?
+
+  @@index([actorId, type, createdAt])
+  @@index([verified, createdAt])
+}
+
+model Taxonomy {
+  id          String       @id @default(uuid())
+  code        String
+  type        TaxonomyType
+  label       String
+  labelEn     String?
+  parentId    String?
+  parent      Taxonomy?    @relation("TaxonomyTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Taxonomy[]   @relation("TaxonomyTree")
+
+  @@unique([code, type])
+  @@index([type, label])
+  @@index([parentId])
+}
+
+model GeminiAgent {
+  id            String    @id @default(uuid())
+  name          String
+  type          AgentType
+  model         String    @default("gemini-1.5-pro-latest")
+  systemPrompt  String    @db.Text
+  temperature   Float     @default(0.7)
+  enabled       Boolean   @default(true)
+  webhookUrl    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([name, type])
+  @@index([type, enabled])
+}
+
+model Currency {
+  id     String @id @default(uuid())
+  code   String @unique
+  symbol String
+  name   String
+}
+
+model ProfileWorker {
+  id             String               @id @default(uuid())
+  profileId      String
+  userId         String?
+  firstName      String
+  lastName       String
+  email          String?
+  phone          String?
+  roleTitle      String
+  employmentType WorkerEmploymentType
+  status         WorkerStatus         @default(ACTIVE)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  profile        Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  user           User?                @relation("ProfileWorkerLinkedUser", fields: [userId], references: [id], onDelete: SetNull)
+  documents      WorkerDocument[]
+  skills         WorkerSkill[]
+  assignments    ProjectWorkerAssignment[]
+  attendances    WorkerAttendance[]
+  workLogs       WorkerWorkLog[]
+  timesheets     WorkerTimesheet[]
+  payrollCalculations WorkerPayrollCalculation[]
+
+  @@index([profileId, status, createdAt])
+  @@index([userId])
+}
+
+model WorkerDocument {
+  id               String                   @id @default(uuid())
+  workerId         String
+  type             WorkerDocumentType
+  title            String
+  issuer           String?
+  issuedAt         DateTime?
+  expiresAt        DateTime?
+  status           ComplianceDocumentStatus @default(PENDING)
+  fileName         String?
+  mimeType         String?
+  sizeBytes        Int?
+  storageProvider  String?
+  storageKey       String?
+  medicalCategory  MedicalFitnessCategory?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  worker           ProfileWorker            @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId, type, status])
+  @@index([expiresAt])
+}
+
+model WorkerSkill {
+  id          String       @id @default(uuid())
+  workerId    String
+  escoSkillId String?
+  title       String
+  level       String?
+  createdAt   DateTime     @default(now())
+
+  worker      ProfileWorker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  escoSkill   EscoSkill?    @relation(fields: [escoSkillId], references: [id], onDelete: SetNull)
+
+  @@index([workerId, createdAt])
+  @@index([escoSkillId])
+}
+
+model ProjectWorkerAssignment {
+  id           String                        @id @default(uuid())
+  projectId    String
+  contractId   String?
+  jobRequestId String?
+  profileId    String
+  workerId     String
+  status       ProjectWorkerAssignmentStatus @default(PROPOSED)
+  assignedById String
+  approvedById String?
+  assignedAt   DateTime                      @default(now())
+  approvedAt   DateTime?
+  removedAt    DateTime?
+
+  project      Project                       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contract     ProjectContract?              @relation(fields: [contractId], references: [id], onDelete: SetNull)
+  jobRequest   ProjectJobRequest?            @relation(fields: [jobRequestId], references: [id], onDelete: SetNull)
+  profile      Profile                       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  worker       ProfileWorker                 @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  assignedBy   User                          @relation("ProjectWorkerAssignmentAssignedBy", fields: [assignedById], references: [id], onDelete: Cascade)
+  approvedBy   User?                         @relation("ProjectWorkerAssignmentApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  attendances  WorkerAttendance[]
+  workLogs     WorkerWorkLog[]
+
+  @@index([projectId, status, assignedAt])
+  @@index([contractId, status])
+  @@index([jobRequestId, status])
+  @@index([profileId, status])
+  @@index([workerId, status])
+  @@index([assignedById, assignedAt])
+  @@index([approvedById, approvedAt])
+}
+
+model WorkerAttendance {
+  id            String                 @id @default(uuid())
+  projectId     String
+  contractId    String?
+  jobRequestId  String?
+  workerId      String
+  assignmentId  String?
+  checkInAt     DateTime
+  checkOutAt    DateTime?
+  status        WorkerAttendanceStatus
+  locationLat   Float?
+  locationLng   Float?
+  createdAt     DateTime               @default(now())
+
+  project       Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contract      ProjectContract?       @relation(fields: [contractId], references: [id], onDelete: SetNull)
+  jobRequest    ProjectJobRequest?     @relation(fields: [jobRequestId], references: [id], onDelete: SetNull)
+  worker        ProfileWorker          @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  assignment    ProjectWorkerAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, createdAt])
+  @@index([workerId, checkInAt])
+  @@index([assignmentId, checkInAt])
+  @@index([status, checkInAt])
+}
+
+model WorkerWorkLog {
+  id            String              @id @default(uuid())
+  projectId     String
+  jobRequestId  String?
+  workerId      String
+  assignmentId  String?
+  date          DateTime
+  hoursWorked   Float
+  description   String
+  status        WorkerWorkLogStatus @default(DRAFT)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  project       Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  jobRequest    ProjectJobRequest?  @relation(fields: [jobRequestId], references: [id], onDelete: SetNull)
+  worker        ProfileWorker       @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  assignment    ProjectWorkerAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, date, createdAt])
+  @@index([workerId, date])
+  @@index([assignmentId, date])
+  @@index([status, date])
+}
+
+model WorkerTimesheet {
+  id               String                @id @default(uuid())
+  projectId        String
+  contractId       String?
+  profileId        String
+  workerId         String
+  periodStart      DateTime
+  periodEnd        DateTime
+  status           WorkerTimesheetStatus @default(DRAFT)
+  totalHours       Float
+  regularHours     Float
+  overtimeHours    Float
+  approvedById     String?
+  submittedAt      DateTime?
+  approvedAt       DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  project          Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contract         ProjectContract?      @relation(fields: [contractId], references: [id], onDelete: SetNull)
+  profile          Profile               @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  worker           ProfileWorker         @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  approvedBy       User?                 @relation("WorkerTimesheetApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  payrollCalculation WorkerPayrollCalculation?
+
+  @@unique([projectId, workerId, periodStart, periodEnd])
+  @@index([projectId, status, periodStart, periodEnd])
+  @@index([contractId, status])
+  @@index([profileId, status, periodStart])
+  @@index([workerId, status, periodStart])
+  @@index([approvedById, approvedAt])
+}
+
+model WorkerPayrollCalculation {
+  id                              String          @id @default(uuid())
+  timesheetId                     String          @unique
+  projectId                       String
+  contractId                      String?
+  profileId                       String
+  workerId                        String
+  currencyCode                    String
+  hourlyRateCents                 Int
+  regularPayCents                 Int
+  overtimePayCents                Int
+  grossPayCents                   Int
+  estimatedTaxCents               Int
+  estimatedSocialContributionCents Int
+  netPayCents                     Int
+  employerCostCents               Int
+  calculationJson                 String?
+  createdAt                       DateTime        @default(now())
+
+  timesheet                       WorkerTimesheet @relation(fields: [timesheetId], references: [id], onDelete: Cascade)
+  project                         Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contract                        ProjectContract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
+  profile                         Profile         @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  worker                          ProfileWorker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+  @@index([contractId, createdAt])
+  @@index([profileId, createdAt])
+  @@index([workerId, createdAt])
+}
+
+model ProfileEscoClassification {
+  profileId   String
+  escoSkillId String
+  createdAt   DateTime @default(now())
+
+  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  escoSkill   EscoSkill @relation(fields: [escoSkillId], references: [id])
+
+  @@id([profileId, escoSkillId])
+  @@index([escoSkillId])
+}
+
+model ProfileNaceClassification {
+  profileId String
+  naceId    String
   createdAt DateTime @default(now())
+
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  nace      Nace    @relation(fields: [naceId], references: [id])
+
+  @@id([profileId, naceId])
+  @@index([naceId])
+}
+
+model ProfileUniclassClassification {
+  profileId  String
+  uniclassId String
+  createdAt  DateTime @default(now())
+
+  profile    Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  uniclass   Uniclass @relation(fields: [uniclassId], references: [id])
+
+  @@id([profileId, uniclassId])
+  @@index([uniclassId])
+}
+
+model ProjectEscoClassification {
+  projectId   String
+  escoSkillId String
+  createdAt   DateTime @default(now())
+
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  escoSkill   EscoSkill @relation(fields: [escoSkillId], references: [id])
+
+  @@id([projectId, escoSkillId])
+  @@index([escoSkillId])
+}
+
+model ProjectNaceClassification {
+  projectId String
+  naceId    String
+  createdAt DateTime @default(now())
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  nace      Nace    @relation(fields: [naceId], references: [id])
+
+  @@id([projectId, naceId])
+  @@index([naceId])
+}
+
+model ProjectUniclassClassification {
+  projectId  String
+  uniclassId String
+  createdAt  DateTime @default(now())
+
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uniclass   Uniclass @relation(fields: [uniclassId], references: [id])
+
+  @@id([projectId, uniclassId])
+  @@index([uniclassId])
+}
+
+model ProjectJobRequestEscoClassification {
+  jobRequestId String
+  escoSkillId  String
+  createdAt    DateTime @default(now())
+
+  jobRequest   ProjectJobRequest @relation(fields: [jobRequestId], references: [id], onDelete: Cascade)
+  escoSkill    EscoSkill         @relation(fields: [escoSkillId], references: [id])
+
+  @@id([jobRequestId, escoSkillId])
+  @@index([escoSkillId])
+}
+
+model ProjectJobRequestNaceClassification {
+  jobRequestId String
+  naceId       String
+  createdAt    DateTime @default(now())
+
+  jobRequest   ProjectJobRequest @relation(fields: [jobRequestId], references: [id], onDelete: Cascade)
+  nace         Nace              @relation(fields: [naceId], references: [id])
+
+  @@id([jobRequestId, naceId])
+  @@index([naceId])
+}
+
+model ProjectJobRequestUniclassClassification {
+  jobRequestId String
+  uniclassId   String
+  createdAt    DateTime @default(now())
+
+  jobRequest   ProjectJobRequest @relation(fields: [jobRequestId], references: [id], onDelete: Cascade)
+  uniclass     Uniclass          @relation(fields: [uniclassId], references: [id])
+
+  @@id([jobRequestId, uniclassId])
+  @@index([uniclassId])
 }
 
 enum Role {
+  SUPERADMIN
   ADMIN
+  WORKER
   EMPLOYER
+  CONTRACTOR
+  GENERAL_CONTRACTOR
+  PROFESSIONAL
+}
+
+enum ActorType {
+  INDIVIDUAL
+  COMPANY
+  PUBLIC_INSTITUTION
+}
+
+enum PlatformRole {
+  USER
+  VERIFIED_CONTRACTOR
+  COMPLIANCE_OFFICER
+  ADMIN
+  SUPERADMIN
+}
+
+enum LegalType {
+  PF
+  PFA
+  II
+  IF
+  SRL
+  SA
+}
+
+enum FirmaStatus {
+  ACTIVA
+  INCHISA
+}
+
+enum JobCategory {
+  DATA_CENTER
+  PHOTOVOLTAIC
+  HORECA
+  ENVIRONMENT
+  CONSTRUCTION
+  LOGISTICS
+  HEALTHCARE
+  PCB_DESIGN
+  OTHER
+}
+
+enum JobStatus {
+  DRAFT
+  PENDING_VERIFICATION
+  LIVE
+  PAUSED
+  CLOSED
+  DISPUTED
+  COMPLETED
+}
+
+enum AppStatus {
+  PENDING
+  REVIEWED
+  ACCEPTED
+  REJECTED
+}
+
+enum ContractStatus {
+  DRAFT
+  PENDING_SIGN
+  ACTIVE
+  IN_PROGRESS
+  COMPLETED
+  DISPUTED
+  CANCELLED
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  ESCALATED
+}
+
+enum DocumentType {
+  CI
+  CAZIER
+  ADEVERINTA_MEDICALA
+  CERTIFICARE
+  CONTRACT
+  OTHER
+}
+
+enum TaxonomyType {
+  NACE
+  ESCO
+  UNICLASS
+}
+
+enum AgentType {
+  CHATBOT_PUBLIC
+  DOCUMENT_OCR
+  CONTRACT_GENERATOR
+  COMPLIANCE_MONITOR
+  PCB_DESIGN_ASSISTANT
+  MATCHING_ENGINE
+  TEST_FORM_GENERATOR
+}
+
+enum Permission {
+  READ
+  WRITE
+  DELETE
+  MANAGE_USERS
+}
+
+enum ProjectEngagementModel {
+  B2B
+  B2C
+  MIXED
+}
+
+enum ProjectStatus {
+  DRAFT
+  IN_REVIEW
+  PUBLISHED
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+  ARCHIVED
+}
+
+enum ProjectVisibility {
+  PRIVATE
+  INVITED
+  PUBLIC
+}
+
+enum ProjectJobRequestStatus {
+  DRAFT
+  OPEN
+  IN_REVIEW
+  FILLED
+  CLOSED
+  CANCELLED
+}
+
+enum ProjectConditionType {
+  COMMERCIAL
+  LEGAL
+  TECHNICAL
+  SAFETY
+  INSURANCE
+  PAYMENT
+  WARRANTY
+  COMPLIANCE
+  SCHEDULE
+  ACCESS
+  CUSTOM
+}
+
+enum ProjectConditionScope {
+  PROJECT
+  JOB_REQUEST
+}
+
+enum ProjectAIInterpretationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  OVERRIDDEN
+}
+
+enum ProjectDocumentType {
+  SCOPE
+  SPECIFICATION
+  BOQ
+  DRAWING
+  CONTRACT
+  PERMIT
+  IMAGE
+  OTHER
+}
+
+enum ProjectInvitationStatus {
+  DRAFT
+  SENT
+  VIEWED
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum ProjectProposalStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum ProjectContractStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ProjectEscrowStatus {
+  NOT_FUNDED
+  PARTIALLY_FUNDED
+  FUNDED
+  RELEASED
+  DISPUTED
+  CANCELLED
+}
+
+enum ProjectMilestoneStatus {
+  DRAFT
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  RELEASED
+  DISPUTED
+}
+
+enum ProjectInvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  CANCELLED
+}
+
+enum ProjectPaymentStatus {
+  REQUESTED
+  APPROVED
+  RELEASED
+  FAILED
+}
+
+enum ProjectDisputeType {
+  MILESTONE
+  INVOICE
+  PAYMENT
+  CONTRACT
+  SAFETY
+  QUALITY
+  OTHER
+}
+
+enum ProjectDisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  REJECTED
+  CANCELLED
+}
+
+enum ProjectDisputeSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ProjectDisputeEventType {
+  COMMENT
+  STATUS_CHANGE
+  EVIDENCE_ADDED
+  RESOLUTION
+}
+
+enum ProfileType {
+  GENERAL_CONTRACTOR
+  CONTRACTOR
+  SUBCONTRACTOR
   PROFESSIONAL
   SUPERVISOR
+  SPECIALIST
+  CLINIC_DOCTOR
+  TRAINER_EVALUATOR
+}
+
+enum ProfileAvailabilityStatus {
+  AVAILABLE
+  LIMITED
+  UNAVAILABLE
+}
+
+enum ProfileDocumentType {
+  CV
+  CERTIFICATION
+  PORTFOLIO
+  IMAGE
+  VIDEO
+  LICENSE
+  OTHER
+}
+
+enum ActorDocumentType {
+  COMPANY_DOCUMENT
+  TAX_DOCUMENT
+  INSURANCE_DOCUMENT
+  PROJECT_AUTHORITY_DOCUMENT
+  IDENTITY_DOCUMENT
+  NACE_ACTIVITY_DOCUMENT
+  AUTHORIZATION_DOCUMENT
+  CERTIFICATE_DOCUMENT
+  LICENSE_DOCUMENT
+  TRAINING_DOCUMENT
+  MEDICAL_DOCUMENT
+  OTHER
+}
+
+enum ActorCertificationType {
+  CERTIFICATE
+  PERMIT
+  LICENSE
+  TRAINING_RECORD
+  INSURANCE
+  OTHER
+}
+
+enum ComplianceDocumentStatus {
+  PENDING
+  VALID
+  EXPIRED
+  REJECTED
+  REQUIRES_REVIEW
+}
+
+enum MedicalFitnessCategory {
+  VISION
+  CARDIOVASCULAR
+  WORK_AT_HEIGHT
+  PSYCHOLOGICAL_FITNESS
+  TRANSMISSIBLE_DISEASES
+  GENERAL_PHYSICAL_FITNESS
+  JOB_SPECIFIC_CLEARANCE
+}
+
+enum MedicalFitnessDecision {
+  FIT
+  LIMITED
+  UNFIT
+  REQUIRES_REVIEW
+}
+
+enum ComplianceAlertType {
+  ONBOARDING_REQUIREMENT
+  DOCUMENT_EXPIRING
+  DOCUMENT_EXPIRED
+  CERTIFICATION_EXPIRING
+  CERTIFICATION_EXPIRED
+  MEDICAL_EXPIRING
+  MEDICAL_EXPIRED
+  CONTRACT_ELIGIBILITY_RISK
+}
+
+enum ComplianceAlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum ComplianceAlertStatus {
+  PENDING
+  SENT
+  READ
+  RESOLVED
+}
+
+enum UserTaskType {
+  UPLOAD_CERTIFICATE
+  RENEW_MEDICAL_FITNESS
+  ACCEPT_CONTRACT
+  UPLOAD_INSURANCE
+  COMPLETE_PROFILE
+  REVIEW_PROPOSAL
+  APPROVE_MILESTONE
+  SUBMIT_INVOICE
+  CONFIRM_SITE_ATTENDANCE
+  UPLOAD_PROJECT_REPORT
+  REVIEW_COMPLIANCE
+}
+
+enum UserTaskStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+  EXPIRED
+}
+
+enum UserTaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  PUSH
+}
+
+enum NotificationSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
+enum ConversationType {
+  PROJECT
+  CONTRACT
+  DISPUTE
+  DIRECT
+}
+
+enum ConversationParticipantRole {
+  OWNER
+  CONTRACTOR
+  WORKER
+  ADMIN
+  SUPERVISOR
+}
+
+enum MessageType {
+  TEXT
+  SYSTEM
+  FILE
+}
+
+enum WorkerEmploymentType {
+  EMPLOYEE
+  FREELANCER
+  SUBCONTRACTED
+  TEMPORARY
+}
+
+enum WorkerStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum WorkerDocumentType {
+  IDENTITY
+  CERTIFICATE
+  MEDICAL
+  PERMIT
+  TRAINING
+  INSURANCE
+  OTHER
+}
+
+enum ProjectWorkerAssignmentStatus {
+  PROPOSED
+  APPROVED
+  ACTIVE
+  REMOVED
+  BLOCKED
+}
+
+enum WorkerAttendanceStatus {
+  CHECKED_IN
+  CHECKED_OUT
+  MISSED
+  INVALID
+}
+
+enum WorkerWorkLogStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum WorkerTimesheetStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  LOCKED
+}
+
+enum PublicPostType {
+  PROJECT
+  PROFESSIONAL
+  SUBCONTRACTOR_POOL
+}
+
+enum PublicPostVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum PublicPostMediaType {
+  IMAGE
+  VIDEO
+}
+
+enum PublicModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+enum ExternalLinkSecurityStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PrivateConversationStatus {
+  OPEN
+  CLOSED
+  FLAGGED
+}
+
+enum PrivateMessageStatus {
+  SENT
+  PENDING_REVIEW
+  FLAGGED
+}
+
+enum PublicCommentStatus {
+  PUBLISHED
+  PENDING_REVIEW
+  REJECTED
+  FLAGGED
+}
+
+enum PublicReviewStatus {
+  PUBLISHED
+  PENDING_REVIEW
+  REJECTED
+  FLAGGED
 }

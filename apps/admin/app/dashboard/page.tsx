@@ -1,68 +1,105 @@
-import SectionHeader from "../../components/SectionHeader";
-import StatCard from "../../components/StatCard";
+"use client";
+
+import { useEffect, useState } from "react";
+import { adminApi } from "@/lib/api";
 
 export default function DashboardPage() {
-  const stats = [
-    { title: "Active Projects", value: "18", subtitle: "6 in Finland, 4 in Germany" },
-    { title: "Open Contracts", value: "124", subtitle: "12 pending signatures" },
-    { title: "Live Professionals", value: "1,240", subtitle: "94 currently active" },
-    { title: "Platform Revenue", value: "€82,400", subtitle: "Current invoiced cycle" },
-  ];
+  const [stats, setStats] = useState<any>({});
+  const [reluQueue, setReluQueue] = useState<any>({});
 
-  const alerts = [
-    "2 contracts waiting for OTP signature completion",
-    "5 VAT validations require review",
-    "3 projects flagged for progress delay",
-    "1 guarantee deposit pending confirmation",
-  ];
+  useEffect(() => {
+    Promise.all([
+      adminApi.getJobStats().catch(() => ({})),
+      adminApi.getActorStats().catch(() => ({})),
+      adminApi.getReluQueue().catch(() => ({})),
+    ]).then(([jobStats, actorStats, relu]) => {
+      setStats({ ...(jobStats as Record<string, unknown>), ...(actorStats as Record<string, unknown>) });
+      setReluQueue(relu);
+    });
+  }, []);
+
+  const KPI = ({ label, value, color }: any) => (
+    <div
+      style={{
+        background: "white",
+        borderRadius: 12,
+        padding: 24,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+        borderLeft: `4px solid ${color}`,
+      }}
+    >
+      <div style={{ color: "#8892B0", fontSize: 13, marginBottom: 8 }}>{label}</div>
+      <div style={{ color: "#1B2A6B", fontSize: 32, fontWeight: 800 }}>{value ?? "—"}</div>
+    </div>
+  );
 
   return (
-    <div className="p-6 md:p-8">
-      <SectionHeader
-        eyebrow="Dashboard"
-        title="Platform Executive Overview"
-        description="Centralized visibility over projects, contracts, professionals, financial operations, guarantees, compliance and platform-wide alerts."
-      />
+    <div style={{ padding: 32 }}>
+      <h1 style={{ color: "#1B2A6B", fontSize: 28, fontWeight: 800, marginBottom: 32 }}>
+        Dashboard OpenStaff
+      </h1>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {stats.map((card) => (
-          <StatCard
-            key={card.title}
-            title={card.title}
-            value={card.value}
-            subtitle={card.subtitle}
-          />
-        ))}
-      </section>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: 20,
+          marginBottom: 32,
+        }}
+      >
+        <KPI label="Total actori" value={stats.totalActors} color="#1B2A6B" />
+        <KPI label="Pending verificare" value={stats.pendingActors} color="#F59E0B" />
+        <KPI label="Joburi active (LIVE)" value={stats.liveJobs} color="#00E87A" />
+        <KPI label="Joburi pending" value={stats.pendingJobs} color="#F59E0B" />
+        <KPI label="Relu AI azi" value={reluQueue.processedToday} color="#3B82F6" />
+        <KPI label="Queue Relu" value={reluQueue.pendingJobs} color="#EF4444" />
+      </div>
 
-      <section className="mt-8 grid gap-6 xl:grid-cols-[2fr_1fr]">
-        <div className="rounded-3xl bg-slate-900 p-6">
-          <div className="text-sm uppercase tracking-[0.2em] text-slate-400">Live overview</div>
-          <h3 className="mt-2 text-2xl font-semibold">Operational Snapshot</h3>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <StatCard title="Projects under supervision" value="18" />
-            <StatCard title="Supervisors assigned" value="47" />
-            <StatCard title="Invoices generated this cycle" value="216" />
-            <StatCard title="Pending payments" value="31" />
-          </div>
-        </div>
-
-        <div className="rounded-3xl bg-slate-900 p-6">
-          <div className="text-sm uppercase tracking-[0.2em] text-slate-400">Alerts</div>
-          <h3 className="mt-2 text-2xl font-semibold">Control Queue</h3>
-          <div className="mt-5 space-y-3">
-            {alerts.map((alert) => (
-              <div
-                key={alert}
-                className="rounded-2xl border border-slate-800 bg-slate-800/60 p-4 text-sm text-slate-200"
-              >
-                {alert}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <a
+          href="/actors?verified=false"
+          style={{
+            background: "#1B2A6B",
+            color: "white",
+            padding: "12px 24px",
+            borderRadius: 8,
+            textDecoration: "none",
+            fontWeight: 700,
+            fontSize: 14,
+          }}
+        >
+          Actori de verificat ({stats.pendingActors || 0})
+        </a>
+        <a
+          href="/jobs?status=PENDING_VERIFICATION"
+          style={{
+            background: "#00E87A",
+            color: "#1B2A6B",
+            padding: "12px 24px",
+            borderRadius: 8,
+            textDecoration: "none",
+            fontWeight: 700,
+            fontSize: 14,
+          }}
+        >
+          Joburi pending ({reluQueue.pendingJobs || 0})
+        </a>
+        <a
+          href="/ai-config"
+          style={{
+            background: "white",
+            color: "#1B2A6B",
+            padding: "12px 24px",
+            borderRadius: 8,
+            textDecoration: "none",
+            fontWeight: 700,
+            fontSize: 14,
+            border: "2px solid #1B2A6B",
+          }}
+        >
+          Configurare AI
+        </a>
+      </div>
     </div>
   );
 }

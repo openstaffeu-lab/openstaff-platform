@@ -1,0 +1,47 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api:$BUILD_ID'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api:latest'
+      - '-f'
+      - 'apps/admin/api/Dockerfile'
+      - 'apps/admin/api'
+    id: 'build-api'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api'
+    id: 'push-api'
+    waitFor: ['build-api']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'openstaff-api'
+      - '--image=europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api:$BUILD_ID'
+      - '--region=europe-west1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--port=8080'
+      - '--memory=512Mi'
+      - '--cpu=1'
+      - '--min-instances=0'
+      - '--max-instances=10'
+      - '--set-env-vars=NODE_ENV=production,GCP_PROJECT_ID=openstaff-platform,SKIP_FIREBASE_AUTH=false'
+    id: 'deploy-api'
+    waitFor: ['push-api']
+
+images:
+  - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api:$BUILD_ID'
+  - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_MEDIUM

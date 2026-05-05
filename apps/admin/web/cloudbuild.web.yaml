@@ -1,0 +1,49 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-web:$BUILD_ID'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-web:latest'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_API_URL=https://api.openstaff.eu'
+      - '-f'
+      - 'apps/admin/web/Dockerfile'
+      - 'apps/admin/web'
+    id: 'build-web'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-web'
+    id: 'push-web'
+    waitFor: ['build-web']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'openstaff-web'
+      - '--image=europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-web:$BUILD_ID'
+      - '--region=europe-west1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--port=3000'
+      - '--memory=512Mi'
+      - '--cpu=1'
+      - '--min-instances=0'
+      - '--max-instances=10'
+      - '--set-env-vars=NODE_ENV=production,NEXT_PUBLIC_API_URL=https://api.openstaff.eu'
+    id: 'deploy-web'
+    waitFor: ['push-web']
+
+images:
+  - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-web:$BUILD_ID'
+  - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-web:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_MEDIUM

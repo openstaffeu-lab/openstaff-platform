@@ -1,0 +1,102 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const { signIn, isAuthenticated, loading } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      router.replace("/projects");
+    }
+  }, [isAuthenticated, loading, router]);
+
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await signIn(email, password);
+      router.push("/projects");
+    } catch (submissionError) {
+      setError(submissionError instanceof Error ? submissionError.message : "Login failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <main className="px-6 py-10 md:py-14">
+      <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.94fr_1.06fr]">
+        <section className="openstaff-surface rounded-[2.2rem] p-8 md:p-10">
+          <div className="text-xs font-semibold uppercase tracking-[0.4em] text-brand-navy/70">
+            OpenStaff
+          </div>
+          <h1 className="mt-4 text-4xl font-bold text-brand-charcoal">Login</h1>
+          <p className="mt-4 text-slate-600">
+            Continue into the OpenStaff workspace to manage structured projects, compliance,
+            contracts, execution, payroll, and messaging across the OpenStaff platform.
+          </p>
+          <div className="mt-8 rounded-[1.7rem] border border-indigo-100 bg-indigo-50 p-5 text-sm leading-7 text-slate-600">
+            The Structure for Global Work.
+          </div>
+          <div className="mt-8 text-sm text-slate-500">
+            Need an account?{" "}
+            <Link href="/register" className="font-semibold text-brand-navy">
+              Register here
+            </Link>
+          </div>
+        </section>
+
+        <section className="openstaff-card rounded-[2.2rem] p-8 md:p-10">
+          <form className="space-y-5" onSubmit={handleLogin}>
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-600">Email</span>
+              <input
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none"
+                placeholder="contractor@openstaff.eu"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-600">Password</span>
+              <input
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none"
+                placeholder="Minimum 6 characters"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </label>
+
+            {error ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {error}
+              </div>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={isSubmitting || loading}
+              className="w-full rounded-2xl bg-brand-navy px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isSubmitting ? "Signing in..." : "Login"}
+            </button>
+          </form>
+        </section>
+      </div>
+    </main>
+  );
+}

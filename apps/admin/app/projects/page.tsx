@@ -1,68 +1,113 @@
-type Project = {
-  id: string;
-  name: string;
-  location: string;
-  status: string;
-  createdAt: string;
-};
+"use client";
 
-async function getProjects(): Promise<Project[]> {
-  const res = await fetch("http://localhost:3002/projects", {
-    cache: "no-store",
-  });
+import { useEffect, useState } from "react";
+import { fetchApiJson } from "@/lib/api";
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch projects");
+type Project = Record<string, unknown>;
+type LoadState = "loading" | "success" | "unauthorized" | "error";
+
+export default function ProjectsPage() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [state, setState] = useState<LoadState>("loading");
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProjects() {
+      setState("loading");
+      setMessage(null);
+
+      const result = await fetchApiJson<Project[]>("/projects");
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (!result.ok) {
+        setProjects([]);
+        setState(result.kind);
+        setMessage(result.message);
+        return;
+      }
+
+      setProjects(Array.isArray(result.data) ? result.data : []);
+      setState("success");
+    }
+
+    loadProjects();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  if (state === "loading") {
+    return (
+      <div className="p-6 text-white md:p-8">
+        <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+          <h1 className="text-2xl font-semibold">Projects</h1>
+          <p className="mt-3 text-slate-400">Loading projects...</p>
+        </div>
+      </div>
+    );
   }
 
-  return res.json();
-}
+  if (state === "unauthorized") {
+    return (
+      <div className="p-6 text-white md:p-8">
+        <div className="rounded-3xl border border-amber-500/30 bg-amber-500/10 p-6">
+          <h1 className="text-2xl font-semibold text-amber-200">
+            Autentificare necesar\u0103
+          </h1>
+          <p className="mt-3 text-amber-100">
+            {message ??
+              "API-ul func\u021Bioneaz\u0103, dar lipse\u0219te tokenul JWT."}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-export default async function ProjectsPage() {
-  const projects = await getProjects();
+  if (state === "error") {
+    return (
+      <div className="p-6 text-white md:p-8">
+        <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6">
+          <h1 className="text-2xl font-semibold text-rose-200">Eroare API</h1>
+          <p className="mt-3 text-rose-100">
+            {message ?? "API-ul nu r\u0103spunde."}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 md:p-8">
-      <section className="mb-8">
-        <div className="text-sm uppercase tracking-[0.2em] text-cyan-400">Projects</div>
-        <h2 className="mt-2 text-3xl font-semibold">Project Portfolio</h2>
-        <p className="mt-2 text-sm text-slate-400">
-          Live data from backend API
-        </p>
-      </section>
+    <div className="p-6 text-white md:p-8">
+      <div className="rounded-3xl bg-slate-900 p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">Projects</h1>
+            <p className="mt-2 text-slate-400">
+              API conectat. Rezultatele brute sunt afi\u0219ate pentru testare
+              local\u0103.
+            </p>
+          </div>
+          <div className="rounded-full bg-emerald-500/15 px-4 py-2 text-sm text-emerald-300">
+            {projects.length} rezultate
+          </div>
+        </div>
 
-      <div className="bg-slate-900 p-6 rounded-3xl">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-800 text-slate-400">
-            <tr>
-              <th className="p-4">Name</th>
-              <th className="p-4">Location</th>
-              <th className="p-4">Status</th>
-              <th className="p-4">Created</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {projects.map((p) => (
-              <tr key={p.id} className="border-t border-slate-800">
-                <td className="p-4">{p.name}</td>
-                <td className="p-4">{p.location}</td>
-                <td className="p-4">{p.status}</td>
-                <td className="p-4">
-                  {new Date(p.createdAt).toLocaleString()}
-                </td>
-              </tr>
-            ))}
-
-            {projects.length === 0 && (
-              <tr>
-                <td colSpan={4} className="p-4 text-slate-400">
-                  No projects found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        {projects.length === 0 ? (
+          <p className="mt-6 text-slate-400">
+            API-ul a r\u0103spuns cu succes, dar nu exist\u0103 proiecte de
+            afi\u0219at.
+          </p>
+        ) : (
+          <pre className="mt-6 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-sm text-slate-200">
+            {JSON.stringify(projects, null, 2)}
+          </pre>
+        )}
       </div>
     </div>
   );

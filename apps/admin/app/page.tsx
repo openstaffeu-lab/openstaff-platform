@@ -6,18 +6,19 @@ export default function HomePage() {
     { title: "Open Projects", path: "/projects", desc: "Project portfolio and live progress" },
     { title: "Review Contracts", path: "/contracts", desc: "Contract registry and OTP status" },
     { title: "Open Financial", path: "/financial", desc: "Invoices, guarantees and payments" },
+    { title: "View Status Board", path: "/status", desc: "Implementation status for admin routes" },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6 md:p-8">
+    <div className="min-h-screen bg-slate-950 p-6 text-white md:p-8">
       <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
         <div className="rounded-3xl bg-slate-900 p-6 md:p-8">
           <div className="text-sm uppercase tracking-[0.2em] text-cyan-400">Welcome</div>
-          <h2 className="mt-2 text-3xl font-semibold">ASS JOBS Super Admin Panel</h2>
+          <h2 className="mt-2 text-3xl font-semibold">OpenStaff Super Admin Panel</h2>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
-            This control center manages the full ASS JOBS ecosystem, including employers,
-            professionals, supervisors, contracts, financial flows, services, country rules,
-            VAT logic, AI automation and operational monitoring across Europe.
+            This control center manages the OpenStaff platform across employers,
+            professionals, supervisors, contracts, financial flows, services,
+            country rules, VAT logic, AI automation, and operational monitoring.
           </p>
 
           <div className="mt-8 grid gap-4 md:grid-cols-2">
@@ -59,8 +60,8 @@ export default function HomePage() {
             <div className="text-sm uppercase tracking-[0.2em] text-cyan-300">Next step</div>
             <h2 className="mt-2 text-2xl font-semibold">Build real modules</h2>
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              The next stage is to connect each page to reusable cards, tables, filters, forms
-              and live business logic for ASS JOBS.
+              The next stage is to connect each page to reusable cards, tables, filters, forms,
+              and live business logic for OpenStaff.
             </p>
           </div>
         </div>

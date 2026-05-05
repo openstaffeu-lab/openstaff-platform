@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OpenStaff Backoffice
 
-## Getting Started
+This folder contains the active OpenStaff backoffice / Super Admin Panel.
 
-First, run the development server:
+## Structure
+
+- Active backoffice frontend: `apps/admin`
+- Active backend API consumed by the backoffice: `apps/admin/api`
+- Public OpenStaff frontend candidate: `apps/admin/web`
+- Empty rename artifact: `apps/admin/openstaff`
+- Temporary legacy archive preserved for review: `apps/admin/legacy/backend-like`
+
+The current Next.js package and build entrypoint are rooted in `apps/admin`.
+
+## Environment
+
+Create a local env file from `.env.example` and point it to the backend:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The code falls back to `http://localhost:8080` in local development and
+`https://api.openstaff.eu` in production if the env var is missing.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm.cmd run dev
+npm.cmd run build
+npm.cmd run start
+```
 
-## Learn More
+From the repository root you can also start the public app, admin app and API
+with a single command:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm.cmd run dev:all
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deployment guidance
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `apps/admin` is the current validated local frontend target.
+- `apps/admin/web` remains prototype-only for now and is not the current production deploy target.
+- Any production deployment changes must be made through the Codex-managed workflow only.

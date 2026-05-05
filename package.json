@@ -1,0 +1,18 @@
+{
+  "name": "openstaff-platform",
+  "private": true,
+  "scripts": {
+    "db:start": "docker compose up -d postgres",
+    "db:stop": "docker compose stop postgres",
+    "db:reset": "docker compose down -v && docker compose up -d postgres",
+    "db:studio": "cd apps/admin/api && npx prisma studio",
+    "dev:emulators": "firebase emulators:start --project demo-openstaff",
+    "dev:public": "npm --prefix apps/admin/web run dev -- --hostname 127.0.0.1 --port 3000",
+    "dev:admin": "npm --prefix apps/admin run dev -- --hostname 127.0.0.1 --port 3001",
+    "dev:api": "npm --prefix apps/admin/api run start:dev",
+    "dev:all": "powershell -ExecutionPolicy Bypass -File ./scripts/dev-all.ps1"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.8.0"
+  }
+}

@@ -1,0 +1,12 @@
+apps/admin/api/firebase-service-account.json
+firebase-admin-openstaff-platform.json
+openstaff-platform-firebase-adminsdk-*.json
+
+.logs/
+.tmp-video-frames/
+node_modules/
+
+apps/admin/dev-admin-*.log
+apps/admin/dev-admin-*.err.log
+
+apps/admin/api/prisma/dev.db
