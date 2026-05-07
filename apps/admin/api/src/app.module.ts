@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AccessControlModule } from './access-control/access-control.module';
 import { ActorsModule } from './actors/actors.module';
+import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -27,6 +28,7 @@ import { UniclassModule } from './uniclass/uniclass.module';
     PrismaModule,
     AuthModule,
     AccessControlModule,
+    AuditModule,
     ActorsModule,
     JobsModule,
     DocumentsModule,

@@ -1,73 +1,105 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  AccountApprovalStatus,
+  AccountLifecycleStatus,
+  ProfileLifecycleStatus,
+  ProfileModerationStatus,
+  ProfileType,
+  ProfileVisibility,
+  Role,
+} from '@prisma/client';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 
-const TEMP_ADMIN_USERNAME = 'admin';
-const TEMP_ADMIN_PASSWORD = 'Filipesti2%26!';
-const TEMP_ADMIN_USER = {
-  id: 'openstaff-superadmin',
-  email: 'admin@openstaff.local',
-  role: 'SUPERADMIN' as const,
+type RegisterPayload = {
+  email: string;
+  password: string;
+  profileType: ProfileType;
+  role?: Role;
+  displayName: string;
+  companyName?: string;
+};
+
+type LoginPayload = {
+  email: string;
+  password: string;
 };
 
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(data: {
-    email: string;
-    password: string;
-    role: Role;
-  }) {
-    const existingUser = await this.usersService.findByEmail(data.email);
+  async register(data: RegisterPayload) {
+    const normalizedEmail = data.email.trim().toLowerCase();
+    const existingUser = await this.usersService.findByEmail(normalizedEmail);
 
     if (existingUser) {
-      throw new UnauthorizedException('User already exists');
+      throw new ConflictException('A user with this email already exists');
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
+    const role = data.role ?? this.mapProfileTypeToRole(data.profileType);
+    const displayName = data.displayName.trim();
+    const companyName = data.companyName?.trim() || null;
+    const slugBase = companyName || displayName || normalizedEmail.split('@')[0];
+    const slug = await this.generateUniqueProfileSlug(slugBase);
 
-    return this.usersService.create({
-      email: data.email,
-      password: hashedPassword,
-      role: data.role,
+    const user = await this.prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          email: normalizedEmail,
+          password: hashedPassword,
+          role,
+          approvalStatus: AccountApprovalStatus.PENDING,
+          accountStatus: AccountLifecycleStatus.OFFLINE,
+        },
+      });
+
+      await tx.profile.create({
+        data: {
+          userId: createdUser.id,
+          slug,
+          profileType: data.profileType,
+          displayName,
+          companyName,
+          visibility: ProfileVisibility.PRIVATE,
+          moderationStatus: ProfileModerationStatus.PENDING,
+          status: ProfileLifecycleStatus.OFFLINE,
+        },
+      });
+
+      return createdUser;
     });
+
+    return this.buildAuthResponse(user.id);
   }
 
-  async login(data: { username?: string; email?: string; password: string }) {
-    const identifier = data.username?.trim() || data.email?.trim() || '';
-
-    if (
-      identifier === TEMP_ADMIN_USERNAME &&
-      data.password === TEMP_ADMIN_PASSWORD
-    ) {
-      const payload = {
-        sub: TEMP_ADMIN_USER.id,
-        email: TEMP_ADMIN_USER.email,
-        role: TEMP_ADMIN_USER.role,
-      };
-
-      return {
-        access_token: this.jwtService.sign(payload),
-        user: {
-          role: 'superadmin',
-        },
-      };
-    }
-
-    if (!data.email) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const user = await this.usersService.findByEmail(data.email);
+  async login(data: LoginPayload) {
+    const normalizedEmail = data.email.trim().toLowerCase();
+    const user = await this.usersService.findByEmail(normalizedEmail);
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (user.approvalStatus === AccountApprovalStatus.REJECTED) {
+      throw new ForbiddenException('Your account has been rejected');
+    }
+
+    if (user.accountStatus === AccountLifecycleStatus.SUSPENDED) {
+      throw new ForbiddenException('Your account is suspended');
     }
 
     const isMatch = await bcrypt.compare(data.password, user.password);
@@ -76,17 +108,118 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        accountStatus: AccountLifecycleStatus.LIVE,
+        lastLoginAt: new Date(),
+      },
+    });
+
+    return this.buildAuthResponse(user.id);
+  }
+
+  async getCurrentUser(userId: string) {
+    return this.buildUserSummary(userId);
+  }
+
+  private async buildAuthResponse(userId: string) {
+    const user = await this.buildUserSummary(userId);
     const payload = {
       sub: user.id,
       email: user.email,
       role: user.role,
+      approvalStatus: user.approvalStatus,
+      accountStatus: user.accountStatus,
     };
 
     return {
       access_token: this.jwtService.sign(payload),
-      user: {
-        role: user.role,
-      },
+      user,
     };
+  }
+
+  private async buildUserSummary(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        profile: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      approvalStatus: user.approvalStatus,
+      accountStatus: user.accountStatus,
+      approvedAt: user.approvedAt,
+      suspendedAt: user.suspendedAt,
+      createdAt: user.createdAt,
+      lastLoginAt: user.lastLoginAt,
+      profile: user.profile
+        ? {
+            id: user.profile.id,
+            slug: user.profile.slug,
+            displayName: user.profile.displayName,
+            companyName: user.profile.companyName,
+            profileType: user.profile.profileType,
+            visibility: user.profile.visibility,
+            moderationStatus: user.profile.moderationStatus,
+            status: user.profile.status,
+          }
+        : null,
+    };
+  }
+
+  private async generateUniqueProfileSlug(value: string) {
+    const normalized = this.slugify(value);
+    let slug = normalized;
+    let index = 2;
+
+    while (
+      await this.prisma.profile.findUnique({
+        where: { slug },
+        select: { id: true },
+      })
+    ) {
+      slug = `${normalized}-${index}`;
+      index += 1;
+    }
+
+    return slug;
+  }
+
+  private slugify(value: string) {
+    return (
+      value
+        .normalize('NFKD')
+        .replace(/[^\w\s-]/g, '')
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '') || `profile-${Date.now()}`
+    );
+  }
+
+  private mapProfileTypeToRole(profileType: ProfileType) {
+    if (
+      profileType === ProfileType.CONTRACTOR ||
+      profileType === ProfileType.SUBCONTRACTOR ||
+      profileType === ProfileType.SUPPLIER ||
+      profileType === ProfileType.GENERAL_CONTRACTOR
+    ) {
+      return Role.CONTRACTOR;
+    }
+
+    if (profileType === ProfileType.INVESTOR) {
+      return Role.EMPLOYER;
+    }
+
+    return Role.PROFESSIONAL;
   }
 }

@@ -17,6 +17,7 @@ model Country {
   regions                    Region[]
   projects                   Project[]
   profiles                   Profile[]
+  publicPosts                PublicPost[]
   taxRules                   TaxRule[]
   contractFinancialSnapshots ContractFinancialSnapshot[]
 }
@@ -30,6 +31,7 @@ model Region {
   cities    City[]
   projects  Project[]
   profiles  Profile[]
+  publicPosts PublicPost[]
 
   @@index([countryId])
 }
@@ -42,6 +44,7 @@ model City {
   region   Region    @relation(fields: [regionId], references: [id])
   projects Project[]
   profiles Profile[]
+  publicPosts PublicPost[]
 
   @@index([regionId])
 }
@@ -96,9 +99,16 @@ model User {
   email                     String                    @unique
   password                  String
   role                      Role
+  approvalStatus            AccountApprovalStatus     @default(PENDING)
+  accountStatus             AccountLifecycleStatus    @default(OFFLINE)
+  approvedAt                DateTime?
+  approvedById              String?
+  suspendedAt               DateTime?
+  lastLoginAt               DateTime?
   createdAt                 DateTime                  @default(now())
 
   profile                   Profile?
+  publicPosts               PublicPost[]
   projects                  Project[]                 @relation("ProjectCreatedBy")
   uploadedProjectDocuments  ProjectDocument[]         @relation("ProjectDocumentUploadedBy")
   reviewedAiInterpretations ProjectAIInterpretation[] @relation("ProjectAIReviewedBy")
@@ -124,6 +134,8 @@ model User {
   assignedWorkerAssignments ProjectWorkerAssignment[] @relation("ProjectWorkerAssignmentAssignedBy")
   approvedWorkerAssignments ProjectWorkerAssignment[] @relation("ProjectWorkerAssignmentApprovedBy")
   approvedWorkerTimesheets  WorkerTimesheet[]         @relation("WorkerTimesheetApprovedBy")
+  taxonomyImportBatches     TaxonomyImportBatch[]
+  reluTasks                 ReluTask[]
   conversationParticipants  ConversationParticipant[]
   sentMessages              Message[]                 @relation("MessageSender")
   messageReads              MessageRead[]
@@ -193,6 +205,48 @@ model TaxonomyCategoryRecord {
   @@index([source])
 }
 
+model TaxonomyCertificationRecord {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  slug        String   @unique
+  name        String
+  issuer      String?
+  category    String?
+  description String?
+  source      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, name])
+  @@index([source])
+}
+
+model TaxonomyImportBatch {
+  id                    String                   @id @default(uuid())
+  entityType            TaxonomyImportEntityType
+  status                TaxonomyImportStatus    @default(UPLOADED)
+  fileName              String
+  fileMimeType          String
+  storageKey            String
+  createdById           String?
+  rowCount              Int                      @default(0)
+  previewJson           Json?
+  errorsJson            Json?
+  duplicateSummaryJson  Json?
+  parsedRowsJson        Json?
+  validationSummaryJson Json?
+  commitSummaryJson     Json?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  committedAt           DateTime?
+
+  createdBy             User?                    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([entityType, createdAt])
+  @@index([status, createdAt])
+  @@index([createdById, createdAt])
+}
+
 model TaxonomyProfessionRecord {
   id               String   @id @default(uuid())
   key              String   @unique
@@ -216,29 +270,61 @@ model TaxonomyProfessionRecord {
 
 model PublicPost {
   id                 String                @id @default(uuid())
+  slug               String                @unique
+  authorUserId       String?
+  authorProfileId    String?
   type               PublicPostType
   title              String
   description        String
   domain             String
   location           String
   status             String
+  moderationStatus   PublicModerationStatus @default(PENDING)
+  bannerUrl          String?
+  summary            String?
+  experienceLabel    String?
   value              String
+  currencyCode       String?
+  vatRate            Float?
+  fiscalMetadataJson Json?
+  budgetMin          Float?
+  budgetMax          Float?
+  salaryMin          Float?
+  salaryMax          Float?
+  certificationsOffered String?
   ownerName          String
   ownerType          String
   classificationJson Json
+  escoCodesJson      String?
+  naceCodesJson      String?
+  uniclassCodesJson  String?
+  languageCodesJson  String?
+  documentsJson      String?
+  countryId          String?
+  regionId           String?
+  cityId             String?
   certifications     String
   visibility         PublicPostVisibility  @default(PUBLIC)
   createdAt          DateTime              @default(now())
   updatedAt          DateTime              @updatedAt
 
+  authorUser         User?                 @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
+  authorProfile      Profile?              @relation(fields: [authorProfileId], references: [id], onDelete: SetNull)
+  country            Country?              @relation(fields: [countryId], references: [id])
+  region             Region?               @relation(fields: [regionId], references: [id])
+  city               City?                 @relation(fields: [cityId], references: [id])
   media              PublicPostMedia[]
+  documents          PublicPostDocument[]
   externalLinks      ExternalLinkSubmission[]
   privateConversations PrivateConversation[]
   comments           PublicComment[]
   reviews            PublicReview[]
 
   @@index([type, visibility, createdAt])
-  @@index([status, createdAt])
+  @@index([status, moderationStatus, createdAt])
+  @@index([authorUserId, createdAt])
+  @@index([authorProfileId, createdAt])
+  @@index([countryId, regionId, cityId])
 }
 
 model PublicPostMedia {
@@ -246,6 +332,7 @@ model PublicPostMedia {
   postId     String
   url        String
   type       PublicPostMediaType
+  role       String                @default("GALLERY")
   alt        String?
   status     PublicModerationStatus @default(PENDING)
   createdAt  DateTime              @default(now())
@@ -254,6 +341,25 @@ model PublicPostMedia {
   post       PublicPost            @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([postId, status, createdAt])
+}
+
+model PublicPostDocument {
+  id               String                @id @default(uuid())
+  postId           String
+  title            String
+  description      String?
+  fileName         String
+  mimeType         String
+  sizeBytes        Int
+  storageProvider  String
+  storageBucket    String?
+  storageKey       String
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  post             PublicPost            @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
 }
 
 model ExternalLinkSubmission {
@@ -520,11 +626,31 @@ model ProjectDocument {
 model Profile {
   id                         String                            @id @default(uuid())
   userId                     String                            @unique
+  slug                       String                            @unique
   profileType                ProfileType
   displayName                String
   companyName                String?
+  publicHeadline             String?
   description                String?
   summary                    String?
+  websiteUrl                 String?
+  publicEmail                String?
+  publicPhone                String?
+  privateEmail               String?
+  privatePhone               String?
+  privateNotes               String?
+  companyRegistrationNumber  String?
+  taxNumber                  String?
+  visibility                 ProfileVisibility                 @default(PRIVATE)
+  moderationStatus           ProfileModerationStatus           @default(PENDING)
+  status                     ProfileLifecycleStatus            @default(OFFLINE)
+  logoUrl                    String?
+  photoUrl                   String?
+  bannerUrl                  String?
+  cvUrl                      String?
+  portfolioUrlsJson          String?
+  approvalNotes              String?
+  approvedAt                 DateTime?
   countryId                  String?
   regionId                   String?
   cityId                     String?
@@ -539,6 +665,7 @@ model Profile {
   country                    Country?                          @relation(fields: [countryId], references: [id])
   region                     Region?                           @relation(fields: [regionId], references: [id])
   city                       City?                             @relation(fields: [cityId], references: [id])
+  publicPosts                PublicPost[]
   contractorProfile          ContractorProfile?
   professionalProfile        ProfessionalProfile?
   languages                  ProfileLanguage[]
@@ -569,6 +696,7 @@ model Profile {
   @@index([profileType])
   @@index([countryId, regionId, cityId])
   @@index([availabilityStatus])
+  @@index([visibility, moderationStatus, status])
 }
 
 model ContractorProfile {
@@ -612,6 +740,7 @@ model ProfileDocument {
   profileId        String
   uploadedById     String?
   type             ProfileDocumentType
+  assetKind        ProfileAssetKind?
   title            String
   description      String?
   fileName         String
@@ -1131,7 +1260,7 @@ model UserTask {
 
 model AuditLog {
   id           String   @id @default(uuid())
-  actorUserId  String
+  actorUserId  String?
   projectId    String?
   entityType   String
   entityId     String
@@ -1141,7 +1270,7 @@ model AuditLog {
   metadataJson String?
   createdAt    DateTime @default(now())
 
-  actorUser    User     @relation("AuditLogActorUser", fields: [actorUserId], references: [id], onDelete: Cascade)
+  actorUser    User?    @relation("AuditLogActorUser", fields: [actorUserId], references: [id], onDelete: Cascade)
   project      Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([actorUserId, createdAt])
@@ -1456,15 +1585,44 @@ model GeminiAgent {
   name          String
   type          AgentType
   model         String    @default("gemini-1.5-pro-latest")
+  description   String?
+  accessMode    ReluAccessMode @default(AUTHENTICATED_USER)
   systemPrompt  String    @db.Text
+  policyJson    Json?
   temperature   Float     @default(0.7)
   enabled       Boolean   @default(true)
+  publicEnabled Boolean   @default(false)
+  maxContextItems Int     @default(12)
   webhookUrl    String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   @@unique([name, type])
   @@index([type, enabled])
+  @@index([accessMode, enabled])
+}
+
+model ReluTask {
+  id                String         @id @default(uuid())
+  capability        String
+  accessMode        ReluAccessMode
+  status            ReluTaskStatus @default(PENDING)
+  requestedByUserId String?
+  contextEntityType String?
+  contextEntityId   String?
+  title             String
+  inputSummaryJson  Json?
+  resultSummaryJson Json?
+  errorMessage      String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  completedAt       DateTime?
+
+  requestedBy       User?          @relation(fields: [requestedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([accessMode, createdAt])
+  @@index([requestedByUserId, createdAt])
 }
 
 model Currency {
@@ -1895,14 +2053,59 @@ enum TaxonomyType {
   UNICLASS
 }
 
+enum TaxonomyImportEntityType {
+  ESCO
+  NACE
+  UNICLASS
+  COUNTRIES
+  REGIONS
+  CITIES
+  VAT
+  CURRENCIES
+  PROFESSIONS
+  CERTIFICATIONS
+  INDUSTRIES
+  PROJECT_CATEGORIES
+}
+
+enum TaxonomyImportStatus {
+  UPLOADED
+  PARSED
+  VALIDATED
+  READY_TO_COMMIT
+  COMMITTED
+  FAILED
+}
+
 enum AgentType {
   CHATBOT_PUBLIC
+  ONBOARDING_ASSISTANT
+  PROFILE_COMPLETION_ASSISTANT
   DOCUMENT_OCR
   CONTRACT_GENERATOR
   COMPLIANCE_MONITOR
+  PROJECT_JOB_INTERPRETER
   PCB_DESIGN_ASSISTANT
   MATCHING_ENGINE
+  ELIGIBILITY_ENGINE
+  CERTIFICATION_GAP_DETECTOR
   TEST_FORM_GENERATOR
+  RECOMMENDATION_ENGINE
+  CONTRACT_LIFECYCLE_MONITOR
+  NOTIFICATION_GENERATOR
+}
+
+enum ReluAccessMode {
+  PUBLIC_LIMITED
+  AUTHENTICATED_USER
+  ADMIN_SECURED
+}
+
+enum ReluTaskStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
 }
 
 enum Permission {
@@ -2077,10 +2280,45 @@ enum ProfileType {
   CONTRACTOR
   SUBCONTRACTOR
   PROFESSIONAL
+  INVESTOR
+  TRAINING_COMPANY
   SUPERVISOR
+  HSE_SAFETY
+  SUPPLIER
   SPECIALIST
   CLINIC_DOCTOR
   TRAINER_EVALUATOR
+}
+
+enum AccountApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AccountLifecycleStatus {
+  LIVE
+  OFFLINE
+  SUSPENDED
+}
+
+enum ProfileVisibility {
+  PUBLIC
+  PRIVATE
+  APPROVED_ONLY
+}
+
+enum ProfileModerationStatus {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+  REJECTED
+}
+
+enum ProfileLifecycleStatus {
+  LIVE
+  OFFLINE
+  SUSPENDED
 }
 
 enum ProfileAvailabilityStatus {
@@ -2097,6 +2335,14 @@ enum ProfileDocumentType {
   VIDEO
   LICENSE
   OTHER
+}
+
+enum ProfileAssetKind {
+  LOGO
+  PHOTO
+  BANNER
+  CV
+  PORTFOLIO
 }
 
 enum ActorDocumentType {

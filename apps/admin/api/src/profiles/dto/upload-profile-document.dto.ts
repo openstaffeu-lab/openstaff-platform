@@ -1,7 +1,5 @@
-import { ProfileDocumentType } from '@prisma/client';
-import { Type } from 'class-transformer';
+import { ProfileAssetKind, ProfileDocumentType } from '@prisma/client';
 import {
-  IsBoolean,
   IsEnum,
   IsOptional,
   IsString,
@@ -13,6 +11,10 @@ export class UploadProfileDocumentDto {
   @IsEnum(ProfileDocumentType)
   type?: ProfileDocumentType;
 
+  @IsOptional()
+  @IsEnum(ProfileAssetKind)
+  assetKind?: ProfileAssetKind;
+
   @IsString()
   @MaxLength(160)
   title!: string;
@@ -20,9 +22,4 @@ export class UploadProfileDocumentDto {
   @IsOptional()
   @IsString()
   description?: string;
-
-  @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  useForMatching?: boolean;
 }

@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getActors, getJobs } from "@/lib/api";
 import ActorCard from "@/components/ActorCard";
 import GeminiChatbot from "@/components/GeminiChatbot";
 import JobCard from "@/components/JobCard";
+import { MarketplacePost, getMarketplaceProfessionals, getMarketplaceProjects } from "@/lib/api";
 
 const CATEGORIES = [
   { key: "DATA_CENTER", label: "Data Center", color: "#3B82F6", icon: "🖥" },
@@ -17,15 +17,15 @@ const CATEGORIES = [
 ];
 
 export default function HomePage() {
-  const [jobs, setJobs] = useState<any[]>([]);
-  const [actors, setActors] = useState<any[]>([]);
+  const [projects, setProjects] = useState<MarketplacePost[]>([]);
+  const [professionals, setProfessionals] = useState<MarketplacePost[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getJobs({ status: "LIVE", limit: 6 }), getActors({ verified: true })]).then(
-      ([jobsResponse, actorsResponse]) => {
-        setJobs(jobsResponse.data || []);
-        setActors(actorsResponse.data || []);
+    Promise.all([getMarketplaceProjects(6), getMarketplaceProfessionals(8)]).then(
+      ([projectsResponse, professionalsResponse]) => {
+        setProjects(projectsResponse.data);
+        setProfessionals(professionalsResponse.data);
         setLoading(false);
       },
     );
@@ -45,7 +45,7 @@ export default function HomePage() {
           The Structure for <span style={{ color: "#00E87A" }}>Global Work.</span>
         </h1>
         <p style={{ fontSize: 20, opacity: 0.85, marginBottom: 32 }}>
-          Conectăm profesioniști verificați cu proiecte reale în Europa
+          Conectăm profesioniști verificați, subcontractori și proiecte reale în Europa
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           <Link
@@ -121,7 +121,7 @@ export default function HomePage() {
         </div>
         {loading ? (
           <div style={{ color: "#8892B0", textAlign: "center", padding: 48 }}>Se încarcă proiectele...</div>
-        ) : jobs.length === 0 ? (
+        ) : projects.length === 0 ? (
           <div style={{ color: "#8892B0", textAlign: "center", padding: 48 }}>
             Nu există proiecte active momentan. Fii primul!
           </div>
@@ -133,7 +133,7 @@ export default function HomePage() {
               gap: 20,
             }}
           >
-            {jobs.map((job) => (
+            {projects.map((job) => (
               <JobCard key={job.id} {...job} />
             ))}
           </div>
@@ -143,7 +143,7 @@ export default function HomePage() {
       <section style={{ background: "white", padding: "48px 24px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24, gap: 12 }}>
-            <h2 style={{ color: "#1B2A6B", fontSize: 28, fontWeight: 700 }}>Profesioniști verificați</h2>
+            <h2 style={{ color: "#1B2A6B", fontSize: 28, fontWeight: 700 }}>Profesioniști și pool-uri disponibile</h2>
             <Link
               href="/professionals"
               style={{ color: "#00E87A", fontWeight: 600, textDecoration: "none" }}
@@ -158,7 +158,7 @@ export default function HomePage() {
               gap: 16,
             }}
           >
-            {actors.slice(0, 8).map((actor) => (
+            {professionals.map((actor) => (
               <ActorCard key={actor.id} {...actor} />
             ))}
           </div>

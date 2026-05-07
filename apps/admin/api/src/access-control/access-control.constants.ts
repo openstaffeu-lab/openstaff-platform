@@ -3,8 +3,11 @@ import { Permission, Role } from '@prisma/client';
 export const APP_MANAGED_ROLES: Role[] = [
   Role.SUPERADMIN,
   Role.ADMIN,
+  Role.EMPLOYER,
   Role.CONTRACTOR,
   Role.WORKER,
+  Role.GENERAL_CONTRACTOR,
+  Role.PROFESSIONAL,
 ];
 
 export const DEFAULT_ROLE_PERMISSIONS: Record<Role, Permission[]> = {

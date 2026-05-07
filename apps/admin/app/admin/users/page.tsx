@@ -1,82 +1,148 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchApiJson } from "@/lib/api";
+import { adminApi } from "@/lib/api";
 
 type AdminUser = {
   id: string;
   email: string;
   role: string;
+  approvalStatus: string;
+  accountStatus: string;
   createdAt: string;
-  isTemporary?: boolean;
+  approvedAt: string | null;
+  lastLoginAt: string | null;
+  profile: {
+    id: string;
+    slug: string;
+    displayName: string;
+    companyName: string | null;
+    profileType: string;
+    visibility: string;
+    moderationStatus: string;
+    status: string;
+  } | null;
 };
 
 type LoadState = "loading" | "success" | "unauthorized" | "error";
 
-const ASSIGNABLE_ROLES = ["SUPERADMIN", "ADMIN", "CONTRACTOR", "WORKER"];
+const ASSIGNABLE_ROLES = ["SUPERADMIN", "ADMIN", "EMPLOYER", "CONTRACTOR", "GENERAL_CONTRACTOR", "PROFESSIONAL", "WORKER"];
+const APPROVAL_OPTIONS = ["PENDING", "APPROVED", "REJECTED"];
+const ACCOUNT_STATUS_OPTIONS = ["LIVE", "OFFLINE", "SUSPENDED"];
+const PROFILE_MODERATION_OPTIONS = ["PENDING", "APPROVED", "CHANGES_REQUESTED", "REJECTED"];
+const PROFILE_STATUS_OPTIONS = ["LIVE", "OFFLINE", "SUSPENDED"];
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [state, setState] = useState<LoadState>("loading");
   const [message, setMessage] = useState<string | null>(null);
-  const [savingUserId, setSavingUserId] = useState<string | null>(null);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadUsers() {
-      setState("loading");
-      setMessage(null);
-
-      const result = await fetchApiJson<AdminUser[]>("/admin/users");
-
-      if (!isMounted) {
-        return;
-      }
-
-      if (!result.ok) {
-        setUsers([]);
-        setState(result.kind);
-        setMessage(result.message);
-        return;
-      }
-
-      setUsers(Array.isArray(result.data) ? result.data : []);
-      setState("success");
-    }
-
-    void loadUsers();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  async function updateRole(userId: string, role: string) {
-    setSavingUserId(userId);
+  async function loadUsers() {
+    setState("loading");
     setMessage(null);
 
-    const result = await fetchApiJson<AdminUser>(`/admin/users/${userId}/role`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ role }),
-    });
-
-    setSavingUserId(null);
-
-    if (!result.ok) {
-      setState(result.kind);
-      setMessage(result.message);
-      return;
+    try {
+      const response = await adminApi.getUsers();
+      setUsers(Array.isArray(response) ? response : []);
+      setState("success");
+    } catch (error) {
+      setUsers([]);
+      setState("error");
+      setMessage(error instanceof Error ? error.message : "The users module could not load.");
     }
+  }
 
-    setUsers((current) =>
-      current.map((user) =>
-        user.id === userId ? { ...user, role: result.data.role } : user,
-      ),
-    );
+  useEffect(() => {
+    void loadUsers();
+  }, []);
+
+  async function handleRole(userId: string, role: string) {
+    setSavingKey(`${userId}:role`);
+    setMessage(null);
+
+    try {
+      const updated = (await adminApi.updateUserRole(userId, role)) as Partial<AdminUser>;
+      setUsers((current) =>
+        current.map((user) => (user.id === userId ? { ...user, ...updated } : user)),
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to update role.");
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  async function handleApproval(userId: string, approvalStatus: string) {
+    setSavingKey(`${userId}:approval`);
+    setMessage(null);
+
+    try {
+      const updated = (await adminApi.updateUserApproval(
+        userId,
+        approvalStatus,
+      )) as Partial<AdminUser>;
+      setUsers((current) =>
+        current.map((user) => (user.id === userId ? { ...user, ...updated } : user)),
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to update approval.");
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  async function handleAccountStatus(userId: string, accountStatus: string) {
+    setSavingKey(`${userId}:account`);
+    setMessage(null);
+
+    try {
+      const updated = (await adminApi.updateAccountStatus(
+        userId,
+        accountStatus,
+      )) as Partial<AdminUser>;
+      setUsers((current) =>
+        current.map((user) => (user.id === userId ? { ...user, ...updated } : user)),
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to update account status.");
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  async function handleProfileModeration(
+    userId: string,
+    moderationStatus: string,
+    status: string,
+  ) {
+    setSavingKey(`${userId}:profile`);
+    setMessage(null);
+
+    try {
+      const updated = (await adminApi.updateProfileModeration(
+        userId,
+        moderationStatus,
+        status,
+      )) as { profile: Partial<AdminUser["profile"]> };
+      setUsers((current) =>
+        current.map((user) =>
+          user.id === userId && user.profile
+            ? {
+                ...user,
+                profile: {
+                  ...user.profile,
+                  ...updated.profile,
+                },
+              }
+            : user,
+        ),
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to moderate profile.");
+    } finally {
+      setSavingKey(null);
+    }
   }
 
   if (state === "loading") {
@@ -108,14 +174,18 @@ export default function AdminUsersPage() {
       <div className="rounded-3xl bg-slate-900 p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">Admin Users</h1>
+            <h1 className="text-2xl font-semibold">User Approval & Profile Moderation</h1>
             <p className="mt-2 text-sm text-slate-400">
-              Superadmin can assign platform roles for backoffice access.
+              Approve accounts, suspend access, moderate public profiles, and control live or offline state.
             </p>
           </div>
-          <div className="rounded-full bg-cyan-500/10 px-4 py-2 text-sm text-cyan-300">
-            {users.length} users
-          </div>
+          <button
+            type="button"
+            onClick={() => void loadUsers()}
+            className="rounded-full bg-cyan-500/10 px-4 py-2 text-sm text-cyan-300"
+          >
+            Refresh {users.length} users
+          </button>
         </div>
 
         {message ? (
@@ -124,48 +194,147 @@ export default function AdminUsersPage() {
           </div>
         ) : null}
 
-        <div className="mt-6 overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="text-slate-400">
-              <tr>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Created</th>
-                <th className="px-4 py-3">Source</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.id} className="border-t border-slate-800">
-                  <td className="px-4 py-4">{user.email}</td>
-                  <td className="px-4 py-4">
+        <div className="mt-6 space-y-5">
+          {users.map((user) => (
+            <article key={user.id} className="rounded-3xl border border-slate-800 bg-slate-950/70 p-5">
+              <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+                <div>
+                  <div className="text-lg font-semibold text-white">{user.email}</div>
+                  <div className="mt-2 text-sm text-slate-400">
+                    Created {new Date(user.createdAt).toLocaleString()}
+                    {user.lastLoginAt ? ` · Last login ${new Date(user.lastLoginAt).toLocaleString()}` : ""}
+                  </div>
+                  {user.profile ? (
+                    <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-300">
+                      <div className="font-semibold text-white">{user.profile.displayName}</div>
+                      <div className="mt-1">
+                        {user.profile.profileType.replaceAll("_", " ")} · {user.profile.visibility}
+                      </div>
+                      <div className="mt-1">
+                        Slug: <span className="text-cyan-300">{user.profile.slug}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-2xl border border-dashed border-slate-800 bg-slate-900/30 p-4 text-sm text-slate-500">
+                      No profile created yet.
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <ControlCard label="Role">
                     <select
                       value={user.role}
-                      disabled={user.isTemporary || savingUserId === user.id}
-                      onChange={(event) => void updateRole(user.id, event.target.value)}
-                      className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-50"
+                      disabled={savingKey === `${user.id}:role`}
+                      onChange={(event) => void handleRole(user.id, event.target.value)}
+                      className={selectClassName}
                     >
                       {ASSIGNABLE_ROLES.map((role) => (
                         <option key={role} value={role}>
-                          {role.toLowerCase()}
+                          {role}
                         </option>
                       ))}
                     </select>
-                  </td>
-                  <td className="px-4 py-4 text-slate-400">
-                    {user.isTemporary
-                      ? "Temporary"
-                      : new Date(user.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-4 text-slate-400">
-                    {user.isTemporary ? "temporary superadmin" : "database"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </ControlCard>
+
+                  <ControlCard label="Account Approval">
+                    <select
+                      value={user.approvalStatus}
+                      disabled={savingKey === `${user.id}:approval`}
+                      onChange={(event) => void handleApproval(user.id, event.target.value)}
+                      className={selectClassName}
+                    >
+                      {APPROVAL_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </ControlCard>
+
+                  <ControlCard label="Account Status">
+                    <select
+                      value={user.accountStatus}
+                      disabled={savingKey === `${user.id}:account`}
+                      onChange={(event) => void handleAccountStatus(user.id, event.target.value)}
+                      className={selectClassName}
+                    >
+                      {ACCOUNT_STATUS_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </ControlCard>
+
+                  <ControlCard label="Approved At">
+                    <div className="rounded-2xl border border-slate-800 bg-slate-900 px-3 py-3 text-sm text-slate-300">
+                      {user.approvedAt ? new Date(user.approvedAt).toLocaleString() : "Not approved"}
+                    </div>
+                  </ControlCard>
+
+                  <ControlCard label="Profile Moderation">
+                    <select
+                      value={user.profile?.moderationStatus ?? "PENDING"}
+                      disabled={!user.profile || savingKey === `${user.id}:profile`}
+                      onChange={(event) =>
+                        void handleProfileModeration(
+                          user.id,
+                          event.target.value,
+                          user.profile?.status ?? "OFFLINE",
+                        )
+                      }
+                      className={selectClassName}
+                    >
+                      {PROFILE_MODERATION_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </ControlCard>
+
+                  <ControlCard label="Profile Status">
+                    <select
+                      value={user.profile?.status ?? "OFFLINE"}
+                      disabled={!user.profile || savingKey === `${user.id}:profile`}
+                      onChange={(event) =>
+                        void handleProfileModeration(
+                          user.id,
+                          user.profile?.moderationStatus ?? "PENDING",
+                          event.target.value,
+                        )
+                      }
+                      className={selectClassName}
+                    >
+                      {PROFILE_STATUS_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </ControlCard>
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function ControlCard({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-500">{label}</div>
+      {children}
     </div>
   );
 }
@@ -196,3 +365,5 @@ function Shell({
   );
 }
 
+const selectClassName =
+  "w-full rounded-2xl border border-slate-800 bg-slate-900 px-3 py-3 text-sm text-white";

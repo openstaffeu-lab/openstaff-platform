@@ -1,471 +1,287 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { fetchApiJson } from "@/lib/api";
+import { ReluAgent, adminApi } from "@/lib/api";
 
-type TaxonomySourceDocument = {
-  id: string;
-  name: string;
-  source: string;
-  locale: string;
-  format: string;
-  note: string;
+type LoadState = "loading" | "ready" | "error";
+
+type PromptDraft = {
+  description: string;
+  systemPrompt: string;
+  policyJson: string;
 };
-
-type TaxonomyIndustry = {
-  id: string;
-  name: string;
-  slug: string;
-  source: string;
-};
-
-type TaxonomyCategory = {
-  id: string;
-  name: string;
-  slug: string;
-  industry: string;
-  source: string;
-};
-
-type TaxonomySkill = {
-  name: string;
-  relationType: "essential" | "optional";
-  source: string;
-};
-
-type TaxonomyProfession = {
-  id: string;
-  name: string;
-  slug: string;
-  industry: string;
-  category: string;
-  source: string;
-  labels: {
-    en: string;
-    ro?: string;
-  };
-  descriptions: {
-    en: string;
-    ro?: string;
-  };
-  tags: string[];
-  skills: TaxonomySkill[];
-  mappings: {
-    esco: string[];
-    nace: string[];
-    uniclass: string[];
-  };
-  references: {
-    escoOccupation?: {
-      code: string;
-      label: string;
-      uri?: string;
-    };
-    nace: Array<{
-      code: string;
-      label: string;
-    }>;
-    uniclass: Array<{
-      code: string;
-      label: string;
-    }>;
-    sourceFiles: string[];
-  };
-};
-
-type TaxonomyTag = {
-  id: string;
-  name: string;
-  slug: string;
-};
-
-type TaxonomyPayload = {
-  sources: TaxonomySourceDocument[];
-  industries: TaxonomyIndustry[];
-  categories: TaxonomyCategory[];
-  professions: TaxonomyProfession[];
-  tags: TaxonomyTag[];
-};
-
-type LoadState = "loading" | "success" | "unauthorized" | "error";
 
 export default function AIControlPage() {
-  const [data, setData] = useState<TaxonomyPayload | null>(null);
+  const [agents, setAgents] = useState<ReluAgent[]>([]);
   const [state, setState] = useState<LoadState>("loading");
   const [message, setMessage] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [selectedIndustry, setSelectedIndustry] = useState("all");
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, PromptDraft>>({});
 
   useEffect(() => {
-    let isMounted = true;
+    let active = true;
 
-    async function loadTaxonomy() {
-      setState("loading");
-      setMessage(null);
+    async function load() {
+      try {
+        const data = await adminApi.getReluPromptsPolicies();
 
-      const result = await fetchApiJson<TaxonomyPayload>("/taxonomy");
+        if (!active) {
+          return;
+        }
 
-      if (!isMounted) {
-        return;
+        setAgents(data);
+        setDrafts(
+          Object.fromEntries(
+            data.map((agent) => [
+              agent.id,
+              {
+                description: agent.description ?? "",
+                systemPrompt: agent.systemPrompt ?? "",
+                policyJson: JSON.stringify(agent.policyJson ?? {}, null, 2),
+              },
+            ]),
+          ),
+        );
+        setState("ready");
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+
+        setMessage(error instanceof Error ? error.message : "Failed to load prompts.");
+        setState("error");
       }
-
-      if (!result.ok) {
-        setData(null);
-        setState(result.kind);
-        setMessage(result.message);
-        return;
-      }
-
-      setData(result.data);
-      setState("success");
     }
 
-    void loadTaxonomy();
+    void load();
 
     return () => {
-      isMounted = false;
+      active = false;
     };
   }, []);
 
-  const filteredProfessions = useMemo(() => {
-    if (!data) {
-      return [];
+  const filteredAgents = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+
+    if (!normalized) {
+      return agents;
     }
 
-    const normalizedQuery = query.trim().toLowerCase();
+    return agents.filter((agent) => {
+      const haystack = [
+        agent.name,
+        agent.type,
+        agent.accessMode,
+        agent.description ?? "",
+        agent.systemPrompt ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
 
-    return data.professions.filter((profession) => {
-      const matchesIndustry =
-        selectedIndustry === "all" || profession.industry === selectedIndustry;
-
-      const matchesQuery =
-        !normalizedQuery ||
-        profession.name.toLowerCase().includes(normalizedQuery) ||
-        profession.labels.en.toLowerCase().includes(normalizedQuery) ||
-        profession.labels.ro?.toLowerCase().includes(normalizedQuery) ||
-        profession.industry.toLowerCase().includes(normalizedQuery) ||
-        profession.category.toLowerCase().includes(normalizedQuery) ||
-        profession.descriptions.en.toLowerCase().includes(normalizedQuery) ||
-        profession.descriptions.ro?.toLowerCase().includes(normalizedQuery) ||
-        profession.tags.some((tag) => tag.toLowerCase().includes(normalizedQuery)) ||
-        profession.skills.some((skill) =>
-          skill.name.toLowerCase().includes(normalizedQuery),
-        ) ||
-        profession.mappings.esco.some((tag) =>
-          tag.toLowerCase().includes(normalizedQuery),
-        ) ||
-        profession.mappings.nace.some((tag) =>
-          tag.toLowerCase().includes(normalizedQuery),
-        ) ||
-        profession.mappings.uniclass.some((tag) =>
-          tag.toLowerCase().includes(normalizedQuery),
-        ) ||
-        profession.references.sourceFiles.some((fileName) =>
-          fileName.toLowerCase().includes(normalizedQuery),
-        );
-
-      return matchesIndustry && matchesQuery;
+      return haystack.includes(normalized);
     });
-  }, [data, query, selectedIndustry]);
+  }, [agents, query]);
 
-  if (state === "loading") {
-    return (
-      <main className="p-8 text-white">
-        <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
-          <h1 className="text-2xl font-semibold">AI Control Center</h1>
-          <p className="mt-3 text-slate-400">Loading taxonomy data...</p>
-        </div>
-      </main>
-    );
+  async function save(agentId: string) {
+    const draft = drafts[agentId];
+    if (!draft) {
+      return;
+    }
+
+    setSavingId(agentId);
+    setMessage(null);
+
+    try {
+      const parsedPolicy = JSON.parse(draft.policyJson) as Record<string, unknown>;
+      const updated = await adminApi.updateReluPromptPolicy(agentId, {
+        description: draft.description.trim() || null,
+        systemPrompt: draft.systemPrompt,
+        policyJson: parsedPolicy,
+      });
+
+      setAgents((current) =>
+        current.map((agent) => (agent.id === agentId ? { ...agent, ...updated } : agent)),
+      );
+      setMessage(`Saved prompt and policy for ${updated.name}.`);
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to save prompt or policy JSON.",
+      );
+    } finally {
+      setSavingId(null);
+    }
   }
 
-  if (state === "unauthorized") {
-    return (
-      <main className="p-8 text-white">
-        <div className="rounded-3xl border border-amber-500/30 bg-amber-500/10 p-6">
-          <h1 className="text-2xl font-semibold text-amber-200">
-            Autentificare necesara
-          </h1>
-          <p className="mt-3 text-amber-100">
-            {message ?? "API-ul functioneaza, dar lipseste tokenul JWT."}
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  if (state === "error" || !data) {
-    return (
-      <main className="p-8 text-white">
-        <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6">
-          <h1 className="text-2xl font-semibold text-rose-200">Eroare API</h1>
-          <p className="mt-3 text-rose-100">
-            {message ?? "Taxonomy API nu raspunde corect."}
-          </p>
-        </div>
-      </main>
-    );
+  function updateDraft(agentId: string, patch: Partial<PromptDraft>) {
+    setDrafts((current) => ({
+      ...current,
+      [agentId]: {
+        ...current[agentId],
+        ...patch,
+      },
+    }));
   }
 
   return (
     <main className="space-y-8 p-8 text-white">
-      <section>
-        <p className="text-sm font-semibold uppercase tracking-wide text-cyan-400">
-          OpenStaff Intelligence
-        </p>
-        <h1 className="mt-2 text-3xl font-bold text-white">AI Control Center</h1>
-        <p className="mt-3 max-w-4xl text-slate-400">
-          Taxonomy integrata din ESCO, NACE, Uniclass si resurse romanesti
-          pentru OpenStaff. Datele curente combina ocupatii reale, skill-uri,
-          coduri de activitate si mapping-uri pentru industriile Construction,
-          Tourism, Facilities si Retail.
-        </p>
-      </section>
+      <section className="flex flex-col gap-4 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">
+            Relu AI
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold text-white">Prompts and Policies</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
+            These prompts define how Relu behaves in public, authenticated, and
+            admin-secured modes. Policies should reflect the rule that Relu learns
+            only from OpenStaff secured data loaded server-side for the active task,
+            and public visitors never receive sensitive user or contract information.
+          </p>
+        </div>
 
-      <section className="grid gap-4 md:grid-cols-5">
-        <StatCard label="Sources" value={data.sources.length} />
-        <StatCard label="Industries" value={data.industries.length} />
-        <StatCard label="Categories" value={data.categories.length} />
-        <StatCard label="Professions" value={data.professions.length} />
-        <StatCard label="Tags" value={data.tags.length} />
-      </section>
-
-      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="block">
-            <span className="text-sm font-medium text-slate-300">
-              Search professions, skills, codes, or source files
-            </span>
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="chef, plumber, 4321, Ac_05_90, occupations_ro..."
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-500"
-            />
-          </label>
-
-          <label className="block">
-            <span className="text-sm font-medium text-slate-300">
-              Filter by industry
-            </span>
-            <select
-              value={selectedIndustry}
-              onChange={(event) => setSelectedIndustry(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-500"
-            >
-              <option value="all">All industries</option>
-              {data.industries.map((industry) => (
-                <option key={industry.id} value={industry.slug}>
-                  {industry.name}
-                </option>
-              ))}
-            </select>
-          </label>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/ai-config"
+            className="rounded-2xl border border-slate-700 px-4 py-3 text-sm font-medium text-slate-200 transition hover:border-cyan-500/50 hover:text-white"
+          >
+            Agent config
+          </Link>
+          <Link
+            href="/ai-queue"
+            className="rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
+          >
+            AI queue
+          </Link>
         </div>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-4">
-        <Panel title="Integrated Sources">
-          {data.sources.map((source) => (
-            <Item
-              key={source.id}
-              title={source.name}
-              meta={`${source.source} · ${source.locale} · ${source.format}`}
-              description={source.note}
-            />
-          ))}
-        </Panel>
-
-        <Panel title="Industries">
-          {data.industries.map((industry) => (
-            <Item
-              key={industry.id}
-              title={industry.name}
-              meta={`${industry.slug} · ${industry.source}`}
-            />
-          ))}
-        </Panel>
-
-        <Panel title="Categories">
-          {data.categories.map((category) => (
-            <Item
-              key={category.id}
-              title={category.name}
-              meta={`${category.industry} · ${category.source}`}
-            />
-          ))}
-        </Panel>
-
-        <Panel title="Tags">
-          <div className="flex flex-wrap gap-2">
-            {data.tags.map((tag) => (
-              <span
-                key={tag.id}
-                className="rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-200"
-              >
-                {tag.name}
-              </span>
-            ))}
-          </div>
-        </Panel>
+      <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5">
+        <label className="block">
+          <span className="text-sm font-medium text-slate-300">
+            Search agents, prompts, or policy keywords
+          </span>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="public, eligibility, policy, notifications..."
+            className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-500"
+          />
+        </label>
       </section>
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-white">Professions</h2>
-            <p className="text-sm text-slate-400">
-              {filteredProfessions.length} result(s)
-            </p>
-          </div>
+      {message ? (
+        <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-5 py-4 text-sm text-slate-200">
+          {message}
         </div>
+      ) : null}
 
-        {filteredProfessions.length === 0 ? (
-          <div className="rounded-xl bg-slate-950 p-6 text-sm text-slate-400">
-            Nu exista profesii pentru filtrul selectat.
-          </div>
-        ) : (
-          <div className="grid gap-4 xl:grid-cols-2">
-            {filteredProfessions.map((profession) => (
+      {state === "loading" ? (
+        <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-300">
+          Loading prompt library...
+        </div>
+      ) : null}
+
+      {state === "error" ? (
+        <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6 text-sm text-rose-100">
+          {message ?? "Failed to load Relu prompt library."}
+        </div>
+      ) : null}
+
+      {state === "ready" ? (
+        <section className="space-y-6">
+          {filteredAgents.map((agent) => {
+            const draft = drafts[agent.id];
+
+            return (
               <article
-                key={profession.id}
-                className="rounded-2xl border border-slate-800 bg-slate-950 p-5"
+                key={agent.id}
+                className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/40"
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <h3 className="font-semibold text-white">{profession.name}</h3>
-                    <p className="mt-1 text-sm text-slate-400">
-                      {profession.labels.en}
-                      {profession.labels.ro ? ` / ${profession.labels.ro}` : ""}
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                      {agent.type} • {agent.accessMode}
                     </p>
-                    <p className="mt-2 text-sm text-slate-400">
-                      {profession.industry} · {profession.category}
-                    </p>
+                    <h2 className="mt-2 text-xl font-semibold text-white">{agent.name}</h2>
                   </div>
-                  <span className="rounded-full bg-cyan-500/15 px-3 py-1 text-xs font-semibold text-cyan-300">
-                    {profession.source}
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      agent.publicEnabled
+                        ? "bg-cyan-500/20 text-cyan-200"
+                        : "bg-slate-800 text-slate-400"
+                    }`}
+                  >
+                    {agent.publicEnabled ? "Public entry enabled" : "Secured only"}
                   </span>
                 </div>
 
-                <p className="mt-4 text-sm leading-6 text-slate-300">
-                  {profession.descriptions.en}
-                </p>
+                {draft ? (
+                  <div className="mt-6 grid gap-4">
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-300">Description</span>
+                      <input
+                        value={draft.description}
+                        onChange={(event) =>
+                          updateDraft(agent.id, { description: event.target.value })
+                        }
+                        className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-500"
+                      />
+                    </label>
 
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {profession.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-300">System prompt</span>
+                      <textarea
+                        value={draft.systemPrompt}
+                        onChange={(event) =>
+                          updateDraft(agent.id, { systemPrompt: event.target.value })
+                        }
+                        rows={8}
+                        className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-500"
+                      />
+                    </label>
 
-                <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Source mappings
-                    </p>
-                    <div className="mt-2 space-y-2 text-xs text-slate-300">
-                      <div>ESCO: {profession.mappings.esco.join(", ")}</div>
-                      <div>NACE: {profession.mappings.nace.join(", ")}</div>
-                      <div>Uniclass: {profession.mappings.uniclass.join(", ")}</div>
-                    </div>
-                    {profession.references.escoOccupation ? (
-                      <p className="mt-3 text-xs text-slate-400">
-                        ESCO URI: {profession.references.escoOccupation.uri}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Skills
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {profession.skills.map((skill) => (
-                        <span
-                          key={`${profession.id}-${skill.name}`}
-                          className={`rounded-full px-3 py-1 text-xs ${
-                            skill.relationType === "essential"
-                              ? "bg-cyan-500/15 text-cyan-200"
-                              : "bg-slate-800 text-slate-300"
-                          }`}
-                        >
-                          {skill.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Integrated source files
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {profession.references.sourceFiles.map((fileName) => (
-                      <span
-                        key={`${profession.id}-${fileName}`}
-                        className="rounded-full bg-slate-900 px-3 py-1 text-xs text-slate-400"
-                      >
-                        {fileName}
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-300">
+                        Policy JSON
                       </span>
-                    ))}
+                      <textarea
+                        value={draft.policyJson}
+                        onChange={(event) =>
+                          updateDraft(agent.id, { policyJson: event.target.value })
+                        }
+                        rows={10}
+                        className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 font-mono text-sm text-white outline-none focus:border-cyan-500"
+                      />
+                    </label>
                   </div>
+                ) : null}
+
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-800 pt-5">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                    Updated {new Date(agent.updatedAt).toLocaleString()}
+                  </p>
+                  <button
+                    onClick={() => void save(agent.id)}
+                    disabled={savingId === agent.id}
+                    className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+                  >
+                    {savingId === agent.id ? "Saving..." : "Save prompt and policy"}
+                  </button>
                 </div>
               </article>
-            ))}
-          </div>
-        )}
-      </section>
-    </main>
-  );
-}
+            );
+          })}
 
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-sm">
-      <p className="text-sm text-slate-400">{label}</p>
-      <p className="mt-2 text-3xl font-bold text-white">{value}</p>
-    </div>
-  );
-}
-
-function Panel({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-sm">
-      <h2 className="mb-4 text-lg font-bold text-white">{title}</h2>
-      <div className="space-y-3">{children}</div>
-    </section>
-  );
-}
-
-function Item({
-  title,
-  meta,
-  description,
-}: {
-  title: string;
-  meta: string;
-  description?: string;
-}) {
-  return (
-    <div className="rounded-xl bg-slate-950 p-4">
-      <p className="font-medium text-white">{title}</p>
-      <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
-        {meta}
-      </p>
-      {description ? (
-        <p className="mt-2 text-sm leading-6 text-slate-400">{description}</p>
+          {filteredAgents.length === 0 ? (
+            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-300">
+              No agents match the current filter.
+            </div>
+          ) : null}
+        </section>
       ) : null}
-    </div>
+    </main>
   );
 }

@@ -23,6 +23,164 @@ type StructuredErrorResponse = {
   details?: string;
 };
 
+export type AdminAuthUser = {
+  id: string;
+  email: string;
+  role: string;
+  approvalStatus: string;
+  accountStatus: string;
+  profile: {
+    id: string;
+    slug: string;
+    displayName: string;
+    companyName: string | null;
+    profileType: string;
+    visibility: string;
+    moderationStatus: string;
+    status: string;
+  } | null;
+};
+
+export type AdminAuthResponse = {
+  access_token: string;
+  user: AdminAuthUser;
+};
+
+export type TaxonomyImportType =
+  | "ESCO"
+  | "NACE"
+  | "UNICLASS"
+  | "COUNTRIES"
+  | "REGIONS"
+  | "CITIES"
+  | "VAT"
+  | "CURRENCIES"
+  | "PROFESSIONS"
+  | "CERTIFICATIONS"
+  | "INDUSTRIES"
+  | "PROJECT_CATEGORIES";
+
+export type TaxonomyImportOption = {
+  value: TaxonomyImportType;
+  label: string;
+  description: string;
+};
+
+export type TaxonomyImportBatch = {
+  id: string;
+  entityType: TaxonomyImportType;
+  status: string;
+  fileName: string;
+  fileMimeType: string;
+  storageKey: string;
+  rowCount: number;
+  preview: Array<Record<string, unknown>>;
+  errors: Array<{
+    rowNumber: number;
+    key: string | null;
+    code: string;
+    message: string;
+  }>;
+  duplicateSummary: {
+    duplicateKeysInFile: string[];
+    createCount: number;
+    updateCount: number;
+  } | null;
+  validationSummary: {
+    totalRows: number;
+    validRows: number;
+    invalidRows: number;
+    createCount: number;
+    updateCount: number;
+    duplicateKeysInFile: number;
+  } | null;
+  commitSummary: {
+    created: number;
+    updated: number;
+    totalCommitted: number;
+  } | null;
+  committedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: {
+    id: string;
+    email: string;
+  } | null;
+};
+
+export type ReluAccessMode =
+  | "PUBLIC_LIMITED"
+  | "AUTHENTICATED_USER"
+  | "ADMIN_SECURED";
+
+export type ReluAgent = {
+  id: string;
+  name: string;
+  type: string;
+  description: string | null;
+  model: string;
+  accessMode: ReluAccessMode;
+  systemPrompt?: string;
+  policyJson: unknown;
+  temperature?: number;
+  enabled: boolean;
+  publicEnabled: boolean;
+  maxContextItems?: number;
+  webhookUrl?: string | null;
+  updatedAt: string;
+};
+
+export type ReluTask = {
+  id: string;
+  capability: string;
+  accessMode: ReluAccessMode;
+  status: string;
+  requestedByUserId: string | null;
+  contextEntityType: string | null;
+  contextEntityId: string | null;
+  title: string;
+  inputSummaryJson: unknown;
+  resultSummaryJson: unknown;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+  requestedBy?: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+};
+
+export type ReluQueueSnapshot = {
+  summary: {
+    pending: number;
+    running: number;
+    completedLast24Hours: number;
+    failedLast24Hours: number;
+    engineStatus: string;
+  };
+  tasks: ReluTask[];
+};
+
+export type AiAuditLog = {
+  id: string;
+  actorUserId: string | null;
+  projectId: string | null;
+  entityType: string;
+  entityId: string;
+  action: string;
+  beforeJson: unknown;
+  afterJson: unknown;
+  metadataJson: unknown;
+  createdAt: string;
+  actorUser: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+};
+
 function isStructuredSuccessResponse<T>(
   value: unknown,
 ): value is StructuredSuccessResponse<T> {
@@ -105,18 +263,6 @@ export async function fetchApiJson<T>(
   path: string,
   init?: RequestInit,
 ): Promise<ApiFetchResult<T>> {
-  const apiUrl = getApiUrl();
-
-  if (!apiUrl) {
-    return {
-      ok: false,
-      status: 0,
-      kind: "error",
-      message:
-        "NEXT_PUBLIC_API_URL nu este configurat pentru build-ul de producție al frontendului.",
-    };
-  }
-
   const headers = new Headers(init?.headers);
   const accessToken = getAccessToken();
 
@@ -129,6 +275,7 @@ export async function fetchApiJson<T>(
       credentials: "include",
       ...init,
       headers,
+      cache: "no-store",
     });
 
     if (response.status === 401) {
@@ -139,23 +286,26 @@ export async function fetchApiJson<T>(
         ok: false,
         status: response.status,
         kind: "unauthorized",
-        message: "Autentificare necesară. Te redirecționăm către login.",
+        message: "Authentication required. Redirecting to login.",
       };
     }
+
+    const contentType = response.headers.get("content-type") ?? "";
+    const payload = contentType.includes("application/json")
+      ? await response.json()
+      : null;
 
     if (!response.ok) {
       return {
         ok: false,
         status: response.status,
         kind: "error",
-        message: `API-ul a răspuns cu status ${response.status}.`,
+        message:
+          payload && typeof payload === "object" && "message" in payload
+            ? String(payload.message)
+            : `API responded with status ${response.status}`,
       };
     }
-
-    const payload = (await response.json()) as
-      | T
-      | StructuredSuccessResponse<T>
-      | StructuredErrorResponse;
 
     if (isStructuredErrorResponse(payload)) {
       return {
@@ -178,23 +328,53 @@ export async function fetchApiJson<T>(
       ok: false,
       status: 0,
       kind: "error",
-      message:
-        "API-ul nu răspunde sau requestul este blocat de CORS. Verifică backendul, CORS și NEXT_PUBLIC_API_URL.",
+      message: "The API is unavailable or blocked by CORS/network restrictions.",
     };
   }
 }
 
+export async function loginAdmin(payload: { email: string; password: string }) {
+  const response = await fetch(buildApiUrl("/auth/login"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      data && typeof data === "object" && "message" in data
+        ? String(data.message)
+        : "Login failed.",
+    );
+  }
+
+  return data as AdminAuthResponse;
+}
+
+export async function fetchCurrentAdmin(accessToken?: string | null) {
+  const result = await fetchApiJson<AdminAuthUser>("/auth/me", {
+    headers: accessToken
+      ? {
+          Authorization: `Bearer ${accessToken}`,
+        }
+      : undefined,
+  });
+
+  if (!result.ok) {
+    throw new Error(result.message);
+  }
+
+  return result.data;
+}
+
 function getAuthHeader() {
-  if (process.env.NODE_ENV === "development") {
-    return { Authorization: "Bearer dev-token" } as Record<string, string>;
-  }
-
-  if (typeof window === "undefined") {
-    return {} as Record<string, string>;
-  }
-
-  const token = window.localStorage.getItem("firebase-token") || getAccessToken() || "";
-  return token ? { Authorization: `Bearer ${token}` } : ({} as Record<string, string>);
+  const token = getAccessToken();
+  return token ? ({ Authorization: `Bearer ${token}` } as Record<string, string>) : {};
 }
 
 async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -202,12 +382,16 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: {
       ...getAuthHeader(),
-      ...(init?.headers ? Object.fromEntries(new Headers(init.headers).entries()) : {}),
+      ...(init?.headers
+        ? Object.fromEntries(new Headers(init.headers).entries())
+        : {}),
     },
     cache: "no-store",
   });
 
-  const payload = response.headers.get("content-type")?.includes("application/json")
+  const payload = response.headers
+    .get("content-type")
+    ?.includes("application/json")
     ? await response.json()
     : null;
 
@@ -215,44 +399,152 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(payload?.message || `API request failed with status ${response.status}`);
   }
 
+  if (isStructuredErrorResponse(payload)) {
+    throw new Error(
+      payload.details ? `${payload.message} (${payload.details})` : payload.message,
+    );
+  }
+
+  if (isStructuredSuccessResponse<T>(payload)) {
+    return payload.data;
+  }
+
   return payload as T;
 }
 
+async function adminUpload<T>(path: string, formData: FormData): Promise<T> {
+  return adminFetch<T>(path, {
+    method: "POST",
+    body: formData,
+  });
+}
+
 export const adminApi = {
-  getJobStats: () => adminFetch(`${"/jobs/stats"}`),
-  getActorStats: () => adminFetch(`${"/actors/stats"}`),
-  getReluQueue: () => adminFetch(`${"/relu/queue"}`),
-
-  getActors: (params?: Record<string, string>) => {
-    const q = new URLSearchParams(params || {});
-    return adminFetch(`${q.toString() ? `/actors?${q.toString()}` : "/actors"}`);
-  },
-  getActor: (id: string) => adminFetch(`/actors/${id}`),
-  verifyActor: (id: string) =>
-    adminFetch(`/actors/${id}/verify`, { method: "POST" }),
-  rejectActor: (id: string, reason: string) =>
-    adminFetch(`/actors/${id}/reject`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reason }),
-    }),
-
-  getJobs: (params?: Record<string, string>) => {
-    const q = new URLSearchParams(params || {});
-    return adminFetch(`${q.toString() ? `/jobs?${q.toString()}` : "/jobs"}`);
-  },
-  updateJobStatus: (id: string, status: string) =>
-    adminFetch(`/jobs/${id}/status`, {
+  getUsers: () => adminFetch("/admin/users"),
+  updateUserRole: (userId: string, role: string) =>
+    adminFetch(`/admin/users/${userId}/role`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ role }),
     }),
-
-  getAgents: () => adminFetch(`/gemini/agents`),
-  updateAgent: (id: string, data: any) =>
-    adminFetch(`/gemini/agents/${id}`, {
+  updateUserApproval: (userId: string, approvalStatus: string) =>
+    adminFetch(`/admin/users/${userId}/approval`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ approvalStatus }),
+    }),
+  updateAccountStatus: (userId: string, accountStatus: string) =>
+    adminFetch(`/admin/users/${userId}/account-status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accountStatus }),
+    }),
+  updateProfileModeration: (
+    userId: string,
+    moderationStatus: string,
+    status: string,
+  ) =>
+    adminFetch(`/admin/users/${userId}/profile-moderation`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moderationStatus, status }),
+    }),
+  getJobStats: () => adminFetch<Record<string, unknown>>("/jobs/stats"),
+  getActorStats: () => adminFetch<Record<string, unknown>>("/actors/stats"),
+  getReluConfig: () => adminFetch<ReluAgent[]>("/relu/config"),
+  updateReluConfig: (
+    id: string,
+    data: Partial<{
+      name: string;
+      description: string | null;
+      model: string;
+      accessMode: ReluAccessMode;
+      temperature: number;
+      enabled: boolean;
+      publicEnabled: boolean;
+      maxContextItems: number;
+      webhookUrl: string | null;
+    }>,
+  ) =>
+    adminFetch<ReluAgent>(`/relu/config/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }),
+  getReluPromptsPolicies: () => adminFetch<ReluAgent[]>("/relu/prompts-policies"),
+  updateReluPromptPolicy: (
+    id: string,
+    data: Partial<{
+      description: string | null;
+      systemPrompt: string;
+      policyJson: Record<string, unknown> | null;
+    }>,
+  ) =>
+    adminFetch<ReluAgent>(`/relu/prompts-policies/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+  getReluQueue: () => adminFetch<ReluQueueSnapshot>("/relu/queue"),
+  getAiAuditLogs: () => adminFetch<AiAuditLog[]>("/audit/ai-actions"),
+  getAgents: () => adminFetch<ReluAgent[]>("/gemini/agents"),
+  updateAgent: (id: string, data: unknown) =>
+    adminFetch<ReluAgent>(`/gemini/agents/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+  getTaxonomyImportOptions: () =>
+    adminFetch<{
+      supportedTypes: TaxonomyImportOption[];
+      acceptedFileTypes: string[];
+    }>("/taxonomy/admin/import-options"),
+  uploadTaxonomyImport: (entityType: TaxonomyImportType, file: File) => {
+    const formData = new FormData();
+    formData.append("entityType", entityType);
+    formData.append("file", file);
+    return adminUpload<TaxonomyImportBatch>("/taxonomy/admin/imports/upload", formData);
+  },
+  parseTaxonomyImport: (batchId: string) =>
+    adminFetch<TaxonomyImportBatch & { preview: Array<Record<string, unknown>> }>(
+      `/taxonomy/admin/imports/${batchId}/parse`,
+      { method: "POST" },
+    ),
+  validateTaxonomyImport: (batchId: string) =>
+    adminFetch<
+      TaxonomyImportBatch & {
+        preview: Array<Record<string, unknown>>;
+        errors: TaxonomyImportBatch["errors"];
+        duplicateSummary: TaxonomyImportBatch["duplicateSummary"];
+        validationSummary: TaxonomyImportBatch["validationSummary"];
+      }
+    >(`/taxonomy/admin/imports/${batchId}/validate`, {
+      method: "POST",
+    }),
+  commitTaxonomyImport: (batchId: string) =>
+    adminFetch<TaxonomyImportBatch & { commitSummary: TaxonomyImportBatch["commitSummary"] }>(
+      `/taxonomy/admin/imports/${batchId}/commit`,
+      { method: "POST" },
+    ),
+  listTaxonomyImports: () =>
+    adminFetch<TaxonomyImportBatch[]>("/taxonomy/admin/imports"),
+  getTaxonomyImport: (batchId: string) =>
+    adminFetch<TaxonomyImportBatch>(`/taxonomy/admin/imports/${batchId}`),
+  browseTaxonomy: (entityType: TaxonomyImportType, query = "") =>
+    adminFetch<{ entityType: TaxonomyImportType; items: Array<Record<string, unknown>> }>(
+      `/taxonomy/admin/browser?entityType=${encodeURIComponent(entityType)}&q=${encodeURIComponent(query)}`,
+    ),
+  updateTaxonomyEntry: (
+    entityType: TaxonomyImportType,
+    id: string,
+    payload: Record<string, unknown>,
+  ) =>
+    adminFetch<Record<string, unknown>>(
+      `/taxonomy/admin/browser/${encodeURIComponent(entityType)}/${encodeURIComponent(id)}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    ),
 };

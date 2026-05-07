@@ -1,69 +1,80 @@
-import { Injectable } from '@nestjs/common';
+import {
+  AccountApprovalStatus,
+  AccountLifecycleStatus,
+  Prisma,
+  ProfileLifecycleStatus,
+  ProfileModerationStatus,
+  Role,
+} from '@prisma/client';
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Role } from '@prisma/client';
 import { APP_MANAGED_ROLES } from '../access-control/access-control.constants';
-
-const TEMP_SUPERADMIN_ID = 'openstaff-superadmin';
-const TEMP_SUPERADMIN_EMAIL = 'admin@openstaff.local';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: {
-    email: string;
-    password: string;
-    role: Role;
-  }) {
-    return this.prisma.user.create({
-      data,
-    });
+  async create(data: Prisma.UserCreateInput) {
+    return this.prisma.user.create({ data });
   }
 
   async findAll() {
-    return this.prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        createdAt: true,
+    const users = await this.prisma.user.findMany({
+      include: {
+        profile: true,
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+    return users.map((user) => ({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      approvalStatus: user.approvalStatus,
+      accountStatus: user.accountStatus,
+      approvedAt: user.approvedAt,
+      suspendedAt: user.suspendedAt,
+      createdAt: user.createdAt,
+      lastLoginAt: user.lastLoginAt,
+      profile: user.profile
+        ? {
+            id: user.profile.id,
+            slug: user.profile.slug,
+            displayName: user.profile.displayName,
+            companyName: user.profile.companyName,
+            profileType: user.profile.profileType,
+            visibility: user.profile.visibility,
+            moderationStatus: user.profile.moderationStatus,
+            status: user.profile.status,
+          }
+        : null,
+    }));
   }
 
   async findAllAdminUsers() {
-    let users: Awaited<ReturnType<UsersService['findAll']>> = [];
-
-    try {
-      users = await this.findAll();
-    } catch (error) {
-      console.error('UsersService.findAllAdminUsers', error);
-    }
-
-    return [
-      {
-        id: TEMP_SUPERADMIN_ID,
-        email: TEMP_SUPERADMIN_EMAIL,
-        role: Role.SUPERADMIN,
-        createdAt: new Date(0),
-        isTemporary: true,
-      },
-      ...users,
-    ];
+    return this.findAll();
   }
 
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
+      include: {
+        profile: true,
+      },
     });
   }
 
   async findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
+      include: {
+        profile: true,
+      },
     });
   }
 
@@ -72,19 +83,136 @@ export class UsersService {
       throw new Error('Role is not assignable from the admin panel');
     }
 
-    if (userId === TEMP_SUPERADMIN_ID) {
-      throw new Error('Temporary superadmin role cannot be modified');
-    }
-
     return this.prisma.user.update({
       where: { id: userId },
       data: { role },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        createdAt: true,
+      include: {
+        profile: true,
       },
     });
+  }
+
+  async updateApproval(userId: string, approvalStatus: AccountApprovalStatus) {
+    const existing = await this.findById(userId);
+
+    if (!existing) {
+      throw new NotFoundException('User not found');
+    }
+
+    const nextAccountStatus =
+      approvalStatus === AccountApprovalStatus.REJECTED
+        ? AccountLifecycleStatus.SUSPENDED
+        : existing.accountStatus;
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        approvalStatus,
+        approvedAt:
+          approvalStatus === AccountApprovalStatus.APPROVED ? new Date() : null,
+        accountStatus: nextAccountStatus,
+      },
+      include: {
+        profile: true,
+      },
+    });
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      approvalStatus: user.approvalStatus,
+      accountStatus: user.accountStatus,
+      approvedAt: user.approvedAt,
+      suspendedAt: user.suspendedAt,
+      createdAt: user.createdAt,
+      lastLoginAt: user.lastLoginAt,
+      profile: user.profile
+        ? {
+            id: user.profile.id,
+            slug: user.profile.slug,
+            displayName: user.profile.displayName,
+            companyName: user.profile.companyName,
+            profileType: user.profile.profileType,
+            visibility: user.profile.visibility,
+            moderationStatus: user.profile.moderationStatus,
+            status: user.profile.status,
+          }
+        : null,
+    };
+  }
+
+  async updateAccountStatus(userId: string, accountStatus: AccountLifecycleStatus) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        accountStatus,
+        suspendedAt:
+          accountStatus === AccountLifecycleStatus.SUSPENDED ? new Date() : null,
+      },
+      include: {
+        profile: true,
+      },
+    });
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      approvalStatus: user.approvalStatus,
+      accountStatus: user.accountStatus,
+      approvedAt: user.approvedAt,
+      suspendedAt: user.suspendedAt,
+      createdAt: user.createdAt,
+      lastLoginAt: user.lastLoginAt,
+      profile: user.profile
+        ? {
+            id: user.profile.id,
+            slug: user.profile.slug,
+            displayName: user.profile.displayName,
+            companyName: user.profile.companyName,
+            profileType: user.profile.profileType,
+            visibility: user.profile.visibility,
+            moderationStatus: user.profile.moderationStatus,
+            status: user.profile.status,
+          }
+        : null,
+    };
+  }
+
+  async updateProfileModeration(
+    userId: string,
+    moderationStatus: ProfileModerationStatus,
+    status: ProfileLifecycleStatus,
+  ) {
+    const existing = await this.findById(userId);
+
+    if (!existing?.profile) {
+      throw new NotFoundException('Profile not found');
+    }
+
+    const profile = await this.prisma.profile.update({
+      where: { id: existing.profile.id },
+      data: {
+        moderationStatus,
+        status,
+        approvedAt:
+          moderationStatus === ProfileModerationStatus.APPROVED ? new Date() : null,
+      },
+    });
+
+    return {
+      userId,
+      profile: {
+        id: profile.id,
+        slug: profile.slug,
+        displayName: profile.displayName,
+        companyName: profile.companyName,
+        profileType: profile.profileType,
+        visibility: profile.visibility,
+        moderationStatus: profile.moderationStatus,
+        status: profile.status,
+      },
+    };
   }
 }

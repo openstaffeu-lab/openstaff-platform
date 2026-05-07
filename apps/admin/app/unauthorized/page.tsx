@@ -5,10 +5,10 @@ export default function UnauthorizedPage() {
     <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6 text-white">
       <div className="w-full max-w-xl rounded-3xl border border-rose-500/20 bg-slate-900 p-8">
         <div className="text-sm uppercase tracking-[0.2em] text-rose-300">Access denied</div>
-        <h1 className="mt-3 text-3xl font-semibold">Administrator claim required</h1>
+        <h1 className="mt-3 text-3xl font-semibold">Backoffice access required</h1>
         <p className="mt-4 text-sm leading-7 text-slate-300">
-          You are signed in, but this backoffice requires elevated Firebase access.
-          Accepted claims are <code>admin: true</code> or <code>role: "SUPERADMIN"</code>.
+          You are signed in, but this area is limited to OpenStaff administrators and
+          superadmins with an approved backoffice role.
         </p>
         <div className="mt-6">
           <Link

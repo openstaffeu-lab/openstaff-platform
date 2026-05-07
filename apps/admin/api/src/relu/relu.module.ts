@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { AccessControlModule } from '../access-control/access-control.module';
+import { AuditModule } from '../audit/audit.module';
 import { AuthModule } from '../auth/auth.module';
 import { GeminiModule } from '../gemini/gemini.module';
 import { PrismaModule } from '../prisma/prisma.module';
@@ -6,7 +8,7 @@ import { ReluController } from './relu.controller';
 import { ReluService } from './relu.service';
 
 @Module({
-  imports: [AuthModule, PrismaModule, GeminiModule],
+  imports: [AuthModule, PrismaModule, GeminiModule, AuditModule, AccessControlModule],
   controllers: [ReluController],
   providers: [ReluService],
   exports: [ReluService],

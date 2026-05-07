@@ -1,25 +1,26 @@
 "use client";
 
-import {
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  type User,
-} from "firebase/auth";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { getFirebaseAuth, isFirebaseConfigured } from "../lib/firebase";
+import {
+  AuthUser,
+  clearStoredToken,
+  fetchCurrentUser,
+  getStoredToken,
+  loginAccount,
+  setStoredToken,
+} from "../lib/api";
 
 type AuthContextType = {
-  user: User | null;
+  user: AuthUser | null;
   loading: boolean;
   isAuthenticated: boolean;
   token: string | null;
   isReady: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  login: (token: string) => void;
+  login: (token: string, user: AuthUser) => void;
   logout: () => Promise<void>;
-  authProvider: "firebase";
+  authProvider: "jwt";
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -32,83 +33,67 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   login: () => {},
   logout: async () => {},
-  authProvider: "firebase",
+  authProvider: "jwt",
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const auth = getFirebaseAuth();
+    const storedToken = getStoredToken();
 
-    if (!auth || !isFirebaseConfigured()) {
-      window.localStorage.removeItem("token");
+    if (!storedToken) {
       setLoading(false);
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (!currentUser) {
-        window.localStorage.removeItem("token");
-        setUser(null);
+    setToken(storedToken);
+
+    fetchCurrentUser(storedToken)
+      .then((currentUser) => {
+        setUser(currentUser);
+      })
+      .catch(() => {
+        clearStoredToken();
         setToken(null);
+        setUser(null);
+      })
+      .finally(() => {
         setLoading(false);
-        return;
-      }
-
-      const idToken = await currentUser.getIdToken();
-      window.localStorage.setItem("token", idToken);
-      setUser(currentUser);
-      setToken(idToken);
-      setLoading(false);
-    });
-
-    return unsubscribe;
+      });
   }, []);
 
   const value = useMemo<AuthContextType>(
     () => ({
       user,
       loading,
-      isAuthenticated: Boolean(user),
+      isAuthenticated: Boolean(user && token),
       token,
       isReady: !loading,
       signIn: async (email: string, password: string) => {
-        const auth = getFirebaseAuth();
-
-        if (!auth) {
-          throw new Error("Firebase Auth is not configured for the public app.");
-        }
-
-        await signInWithEmailAndPassword(auth, email, password);
+        const response = await loginAccount({ email, password });
+        setStoredToken(response.access_token);
+        setToken(response.access_token);
+        setUser(response.user);
       },
       signOut: async () => {
-        const auth = getFirebaseAuth();
-        window.localStorage.removeItem("token");
+        clearStoredToken();
         setUser(null);
         setToken(null);
-
-        if (auth) {
-          await firebaseSignOut(auth);
-        }
       },
-      login: (newToken: string) => {
-        window.localStorage.setItem("token", newToken);
-        setToken(newToken);
+      login: (nextToken: string, nextUser: AuthUser) => {
+        setStoredToken(nextToken);
+        setToken(nextToken);
+        setUser(nextUser);
       },
       logout: async () => {
-        const auth = getFirebaseAuth();
-        window.localStorage.removeItem("token");
+        clearStoredToken();
         setUser(null);
         setToken(null);
-
-        if (auth?.currentUser) {
-          await firebaseSignOut(auth);
-        }
       },
-      authProvider: "firebase",
+      authProvider: "jwt",
     }),
     [loading, token, user],
   );

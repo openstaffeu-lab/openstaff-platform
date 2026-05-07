@@ -2,25 +2,31 @@ import {
   Body,
   Controller,
   Get,
-  ParseIntPipe,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
+  Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { Permission, PlatformRole, TaxonomyType } from '@prisma/client';
+import {
+  Permission,
+  TaxonomyType,
+} from '@prisma/client';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { PermissionsGuard } from '../access-control/permissions.guard';
 import { RequirePermissions } from '../access-control/permissions.decorator';
-import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import { JwtGuard } from '../auth/jwt.guard';
-import { PlatformRoles } from '../auth/platform-roles.decorator';
-import { PlatformRolesGuard } from '../auth/platform-roles.guard';
 import {
+  buildErrorResponse,
   buildInternalErrorResponse,
+  getErrorDetails,
   logEndpointError,
 } from '../common/api-response';
-import { TaxonomyService } from './taxonomy.service';
+import { TaxonomyService, UploadedImportFile } from './taxonomy.service';
 
 @Controller('taxonomy')
 export class TaxonomyController {
@@ -71,9 +77,14 @@ export class TaxonomyController {
     @Query('q') query = '',
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 10,
   ) {
-    return {
-      results: await this.taxonomyService.searchByType(TaxonomyType.NACE, query, limit),
-    };
+    try {
+      return {
+        results: await this.taxonomyService.searchByType(TaxonomyType.NACE, query, limit),
+      };
+    } catch (error) {
+      logEndpointError('TaxonomyController.searchNace', error);
+      return buildInternalErrorResponse(error);
+    }
   }
 
   @Get('esco')
@@ -81,9 +92,14 @@ export class TaxonomyController {
     @Query('q') query = '',
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 10,
   ) {
-    return {
-      results: await this.taxonomyService.searchByType(TaxonomyType.ESCO, query, limit),
-    };
+    try {
+      return {
+        results: await this.taxonomyService.searchByType(TaxonomyType.ESCO, query, limit),
+      };
+    } catch (error) {
+      logEndpointError('TaxonomyController.searchEsco', error);
+      return buildInternalErrorResponse(error);
+    }
   }
 
   @Get('uniclass')
@@ -91,24 +107,22 @@ export class TaxonomyController {
     @Query('q') query = '',
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 10,
   ) {
-    return {
-      results: await this.taxonomyService.searchByType(TaxonomyType.UNICLASS, query, limit),
-    };
-  }
-
-  @UseGuards(FirebaseAuthGuard, PlatformRolesGuard)
-  @PlatformRoles(PlatformRole.ADMIN, PlatformRole.SUPERADMIN)
-  @Post('import')
-  async importBulk(@Body() body: { entries?: Array<Record<string, unknown>> }) {
-    return this.taxonomyService.importBulk(body.entries ?? []);
+    try {
+      return {
+        results: await this.taxonomyService.searchByType(TaxonomyType.UNICLASS, query, limit),
+      };
+    } catch (error) {
+      logEndpointError('TaxonomyController.searchUniclass', error);
+      return buildInternalErrorResponse(error);
+    }
   }
 
   @RequirePermissions(Permission.WRITE)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Post('professions')
-  createProfession(@Body() body: Record<string, unknown>) {
+  async createProfession(@Body() body: Record<string, unknown>) {
     try {
-      return this.taxonomyService.createProfession(body);
+      return await this.taxonomyService.createProfession(body);
     } catch (error) {
       logEndpointError('TaxonomyController.createProfession', error);
       return buildInternalErrorResponse(error);
@@ -118,15 +132,145 @@ export class TaxonomyController {
   @RequirePermissions(Permission.WRITE)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Patch('professions/:id')
-  updateProfession(
+  async updateProfession(
     @Param('id') id: string,
     @Body() body: Record<string, unknown>,
   ) {
     try {
-      return this.taxonomyService.updateProfession(id, body);
+      return await this.taxonomyService.updateProfession(id, body);
     } catch (error) {
       logEndpointError('TaxonomyController.updateProfession', error);
       return buildInternalErrorResponse(error);
+    }
+  }
+
+  @RequirePermissions(Permission.READ)
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @Get('admin/import-options')
+  async getImportOptions() {
+    try {
+      return await this.taxonomyService.getImportOptions();
+    } catch (error) {
+      logEndpointError('TaxonomyController.getImportOptions', error);
+      return buildInternalErrorResponse(error);
+    }
+  }
+
+  @RequirePermissions(Permission.READ)
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @Get('admin/imports')
+  async listImportBatches() {
+    try {
+      return await this.taxonomyService.listImportBatches();
+    } catch (error) {
+      logEndpointError('TaxonomyController.listImportBatches', error);
+      return buildInternalErrorResponse(error);
+    }
+  }
+
+  @RequirePermissions(Permission.READ)
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @Get('admin/imports/:id')
+  async getImportBatch(@Param('id') id: string) {
+    try {
+      return await this.taxonomyService.getImportBatch(id);
+    } catch (error) {
+      logEndpointError('TaxonomyController.getImportBatch', error);
+      return buildInternalErrorResponse(error);
+    }
+  }
+
+  @RequirePermissions(Permission.WRITE)
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  @Post('admin/imports/upload')
+  async uploadImport(
+    @UploadedFile() file: UploadedImportFile | undefined,
+    @Body('entityType') entityType: string,
+    @Req() req: any,
+  ) {
+    try {
+      return await this.taxonomyService.uploadImport(
+        entityType,
+        file,
+        req.user?.sub ?? null,
+      );
+    } catch (error) {
+      logEndpointError('TaxonomyController.uploadImport', error);
+      return buildErrorResponse(
+        'Import upload failed',
+        getErrorDetails(error),
+      );
+    }
+  }
+
+  @RequirePermissions(Permission.WRITE)
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @Post('admin/imports/:id/parse')
+  async parseImport(@Param('id') id: string) {
+    try {
+      return await this.taxonomyService.parseImport(id);
+    } catch (error) {
+      logEndpointError('TaxonomyController.parseImport', error);
+      return buildErrorResponse('Import parsing failed', getErrorDetails(error));
+    }
+  }
+
+  @RequirePermissions(Permission.WRITE)
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @Post('admin/imports/:id/validate')
+  async validateImport(@Param('id') id: string) {
+    try {
+      return await this.taxonomyService.validateImport(id);
+    } catch (error) {
+      logEndpointError('TaxonomyController.validateImport', error);
+      return buildErrorResponse(
+        'Import validation failed',
+        getErrorDetails(error),
+      );
+    }
+  }
+
+  @RequirePermissions(Permission.WRITE)
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @Post('admin/imports/:id/commit')
+  async commitImport(@Param('id') id: string) {
+    try {
+      return await this.taxonomyService.commitImport(id);
+    } catch (error) {
+      logEndpointError('TaxonomyController.commitImport', error);
+      return buildErrorResponse('Import commit failed', getErrorDetails(error));
+    }
+  }
+
+  @RequirePermissions(Permission.READ)
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @Get('admin/browser')
+  async browseEntries(
+    @Query('entityType') entityType?: string,
+    @Query('q') query?: string,
+  ) {
+    try {
+      return await this.taxonomyService.browseEntries(entityType ?? '', query ?? '');
+    } catch (error) {
+      logEndpointError('TaxonomyController.browseEntries', error);
+      return buildInternalErrorResponse(error);
+    }
+  }
+
+  @RequirePermissions(Permission.WRITE)
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @Patch('admin/browser/:entityType/:id')
+  async updateEntry(
+    @Param('entityType') entityType: string,
+    @Param('id') id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    try {
+      return await this.taxonomyService.updateEntry(entityType, id, body);
+    } catch (error) {
+      logEndpointError('TaxonomyController.updateEntry', error);
+      return buildErrorResponse('Taxonomy update failed', getErrorDetails(error));
     }
   }
 }

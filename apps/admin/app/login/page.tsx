@@ -3,7 +3,6 @@
 import { KeyboardEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { isFirebaseConfigured } from "@/lib/firebase";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,7 +11,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [state, setState] = useState<"idle" | "submitting" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
-  const firebaseConfigured = isFirebaseConfigured();
 
   useEffect(() => {
     if (!loading && isAuthenticated && isAdmin) {
@@ -23,7 +21,7 @@ export default function LoginPage() {
   async function handleSubmit() {
     if (!email.trim() || !password.trim()) {
       setState("error");
-      setMessage("Introdu o adresă de email validă și parola asociată.");
+      setMessage("Enter a valid admin email and password.");
       return;
     }
 
@@ -53,17 +51,8 @@ export default function LoginPage() {
         </div>
         <h1 className="mt-3 text-3xl font-semibold">Admin Login</h1>
         <p className="mt-3 text-sm text-slate-400">
-          Secure access for the OpenStaff backoffice through Firebase Auth.
+          Secure access for the OpenStaff backoffice using the API account system.
         </p>
-        <p className="mt-2 text-sm text-slate-500">
-          Login-ul se face cu email Firebase, nu cu username simplu de tip <code>openstaff_admin</code>.
-        </p>
-
-        {!firebaseConfigured ? (
-          <div className="mt-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-            Build-ul curent nu are configurate variabilele <code>NEXT_PUBLIC_FIREBASE_*</code>. Formularul nu poate autentifica până la redeploy cu Firebase configurat.
-          </div>
-        ) : null}
 
         <div className="mt-8 space-y-4">
           <div>
@@ -78,7 +67,7 @@ export default function LoginPage() {
               onKeyDown={handleKeyDown}
               className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-500"
               autoComplete="email"
-              placeholder="admin@openstaff.local"
+              placeholder="admin@openstaff.eu"
             />
           </div>
 
@@ -106,7 +95,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => void handleSubmit()}
-            disabled={state === "submitting" || loading || !firebaseConfigured}
+            disabled={state === "submitting" || loading}
             className="w-full rounded-2xl bg-cyan-400 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {state === "submitting" ? "Signing in..." : "Login"}

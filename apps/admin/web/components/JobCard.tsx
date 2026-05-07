@@ -1,41 +1,39 @@
 "use client";
 
 import Link from "next/link";
+import type { MarketplacePost } from "@/lib/api";
 
 const STATUS_COLORS: Record<string, string> = {
   LIVE: "#00E87A",
-  PENDING_VERIFICATION: "#F59E0B",
-  DRAFT: "#8892B0",
+  PENDING: "#F59E0B",
+  OFFLINE: "#8892B0",
   CLOSED: "#EF4444",
-  COMPLETED: "#3B82F6",
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  DATA_CENTER: "Data Center",
-  PHOTOVOLTAIC: "Fotovoltaic",
-  HORECA: "HoReCa",
-  ENVIRONMENT: "Mediu",
-  CONSTRUCTION: "Construcții",
-  PCB_DESIGN: "PCB Design",
-  LOGISTICS: "Logistică",
-  HEALTHCARE: "Healthcare",
-  OTHER: "Altele",
+  WARRANTY: "#3B82F6",
 };
 
 export default function JobCard({
   id,
   title,
-  category,
+  domain,
   location,
-  regionCode,
-  budget,
-  currency,
+  budgetMin,
+  budgetMax,
+  currencyCode,
   status,
-  naceCode,
+  naceCodes,
   createdAt,
-  actor,
-}: any) {
-  const statusColor = STATUS_COLORS[status] ?? "#8892B0";
+  ownerName,
+}: Partial<MarketplacePost>) {
+  const statusColor = STATUS_COLORS[status ?? "LIVE"] ?? "#8892B0";
+  const budgetLabel =
+    typeof budgetMin === "number" || typeof budgetMax === "number"
+      ? `${currencyCode || "EUR"} ${[
+          typeof budgetMin === "number" ? Number(budgetMin).toLocaleString("ro-RO") : null,
+          typeof budgetMax === "number" ? Number(budgetMax).toLocaleString("ro-RO") : null,
+        ]
+          .filter(Boolean)
+          .join(" - ")}`
+      : null;
 
   return (
     <div
@@ -61,7 +59,7 @@ export default function JobCard({
             fontWeight: 700,
           }}
         >
-          {CATEGORY_LABELS[category] || category}
+          {domain || "Marketplace Project"}
         </span>
         <span
           style={{
@@ -73,31 +71,25 @@ export default function JobCard({
             fontWeight: 700,
           }}
         >
-          {status === "LIVE"
-            ? "● LIVE"
-            : status === "PENDING_VERIFICATION"
-              ? "◐ Verificare"
-              : status}
+          {status || "LIVE"}
         </span>
       </div>
 
       <h3 style={{ color: "#1B2A6B", fontSize: 16, fontWeight: 700, margin: 0 }}>{title}</h3>
 
       <div style={{ color: "#8892B0", fontSize: 13, display: "flex", gap: 16, flexWrap: "wrap" }}>
-        {(location || regionCode) && <span>📍 {location || regionCode}</span>}
-        {naceCode && <span>NACE {naceCode}</span>}
-        {createdAt && <span>{new Date(createdAt).toLocaleDateString("ro-RO")}</span>}
+        {location ? <span>📍 {location}</span> : null}
+        {naceCodes?.[0] ? <span>NACE {naceCodes[0]}</span> : null}
+        {createdAt ? <span>{new Date(createdAt).toLocaleDateString("ro-RO")}</span> : null}
       </div>
 
-      {budget ? (
-        <div style={{ color: "#00E87A", fontWeight: 800, fontSize: 20 }}>
-          {Number(budget).toLocaleString("ro-RO")} {currency || "RON"}
-        </div>
+      {budgetLabel ? (
+        <div style={{ color: "#00E87A", fontWeight: 800, fontSize: 20 }}>{budgetLabel}</div>
       ) : null}
 
-      {actor ? (
+      {ownerName ? (
         <div style={{ color: "#8892B0", fontSize: 12 }}>
-          Postat de: <span style={{ color: "#1B2A6B", fontWeight: 600 }}>{actor.displayName}</span>
+          Postat de: <span style={{ color: "#1B2A6B", fontWeight: 600 }}>{ownerName}</span>
         </div>
       ) : null}
 
@@ -116,7 +108,7 @@ export default function JobCard({
           marginTop: "auto",
         }}
       >
-        Aplică acum
+        Vezi detalii
       </Link>
     </div>
   );

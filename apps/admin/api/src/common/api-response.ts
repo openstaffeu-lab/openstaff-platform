@@ -8,7 +8,7 @@ export type StructuredSuccessResponse<T> = {
 
 export type StructuredErrorResponse = {
   status: 'error';
-  message: 'Internal server error';
+  message: string;
   details?: string;
 };
 
@@ -23,18 +23,28 @@ export function buildSuccessResponse<T>(
   };
 }
 
-export function buildInternalErrorResponse(
-  error: unknown,
+export function buildErrorResponse(
+  message: string,
+  details?: string,
 ): StructuredErrorResponse {
   return {
     status: 'error',
-    message: 'Internal server error',
-    ...(process.env.NODE_ENV !== 'production' && getErrorDetails(error)
+    message,
+    ...(details
       ? {
-          details: getErrorDetails(error),
+          details,
         }
       : {}),
   };
+}
+
+export function buildInternalErrorResponse(
+  error: unknown,
+): StructuredErrorResponse {
+  return buildErrorResponse(
+    'Internal server error',
+    process.env.NODE_ENV !== 'production' ? getErrorDetails(error) : undefined,
+  );
 }
 
 export function isPrismaConnectionOrSchemaError(error: unknown) {
@@ -48,15 +58,16 @@ export function isPrismaConnectionOrSchemaError(error: unknown) {
 
   const details = getErrorDetails(error).toLowerCase();
   return (
-    details.includes('table') && details.includes('does not exist')
-  ) || details.includes('can\'t reach database server');
+    (details.includes('table') && details.includes('does not exist')) ||
+    details.includes("can't reach database server")
+  );
 }
 
 export function logEndpointError(scope: string, error: unknown) {
   console.error(`[${scope}]`, error);
 }
 
-function getErrorDetails(error: unknown) {
+export function getErrorDetails(error: unknown) {
   if (error instanceof Error) {
     return error.message;
   }

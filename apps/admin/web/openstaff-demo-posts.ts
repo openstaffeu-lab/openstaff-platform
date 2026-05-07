@@ -7,7 +7,7 @@ export type Post = {
   title: string;
   location: string;
   domain: string;
-  status: string;
+  status: DemoPostStatus;
   value: string;
   description: string;
   roles: string;
@@ -19,6 +19,15 @@ export type Post = {
   views: number;
   applicants?: number;
 };
+
+export const demoPostStatuses = [
+  "Live",
+  "Pending",
+  "Available",
+  "Looking for project",
+] as const;
+
+export type DemoPostStatus = (typeof demoPostStatuses)[number];
 
 export const projects: Post[] = [
   // lipește aici cele 20 proiecte din codul tău

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenStaff Backoffice Dashboard Mockup</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="page-admin">
+    <div class="admin-shell">
+      <aside class="sidebar">
+        <div class="caption">Operations shell</div>
+        <h2 style="margin-top: 10px">OpenStaff</h2>
+        <p style="margin-top: 8px">Super Admin Control Center</p>
+
+        <nav class="nav-stack">
+          <div class="nav-item active">Dashboard</div>
+          <div class="nav-item">Projects</div>
+          <div class="nav-item">Contracts</div>
+          <div class="nav-item">Professionals</div>
+          <div class="nav-item">Financial</div>
+          <div class="nav-item">AI Control</div>
+          <div class="nav-item">Posts</div>
+          <div class="nav-item">Media</div>
+          <div class="nav-item">Private Messages</div>
+          <div class="nav-item">Admin Users</div>
+          <div class="nav-item">Admin Roles</div>
+          <div class="nav-item">Status</div>
+        </nav>
+
+        <div class="status-card">
+          <div class="caption">System status</div>
+          <h3 style="margin-top: 10px">Operational with blockers</h3>
+          <p style="margin-top: 10px; line-height: 1.6">
+            Contracts, moderation shell, and KPI surfaces are active. AI Control and Posts require
+            API/CORS alignment. SUPERADMIN routing depends on Firebase claims.
+          </p>
+        </div>
+      </aside>
+
+      <main class="content">
+        <header class="admin-header">
+          <div>
+            <div class="caption">European workforce platform</div>
+            <h1 class="admin-title" style="margin-top: 8px">OpenStaff Control Center</h1>
+            <p class="admin-subtle" style="margin-top: 10px; max-width: 760px">
+              Operational cockpit for staffing velocity, moderation quality, AI queues, legal
+              readiness, and public experience governance.
+            </p>
+            <div class="toolbar">
+              <div class="btn btn-primary">Review pending contracts</div>
+              <div class="btn btn-secondary" style="background: rgba(255,255,255,0.06); color: #edf3ff; border-color: rgba(255,255,255,0.12)">Open CMS quick edit</div>
+            </div>
+          </div>
+          <div class="role-badge">Super Admin</div>
+        </header>
+
+        <div class="admin-main-grid">
+          <section class="kpi-grid">
+            <div class="kpi-card">
+              <div class="label">Active projects</div>
+              <div class="value">74</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">Pending contracts</div>
+              <div class="value">31</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">Professionals to review</div>
+              <div class="value">58</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">Moderation incidents</div>
+              <div class="value">9</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">Relu queue</div>
+              <div class="value">23</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">Gemini actions today</div>
+              <div class="value">146</div>
+            </div>
+          </section>
+
+          <section class="two-col">
+            <div class="table-shell">
+              <div class="caption">Operations board</div>
+              <h2 style="margin-top: 8px; font-size: 28px">Contract and moderation queue</h2>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Queue item</th>
+                    <th>Owner</th>
+                    <th>Status</th>
+                    <th>ETA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Contract package - NL data center</td>
+                    <td>Legal Ops</td>
+                    <td class="status-warn">Pending review</td>
+                    <td>2h</td>
+                  </tr>
+                  <tr>
+                    <td>Public post flagged for compliance</td>
+                    <td>Moderation</td>
+                    <td class="status-danger">Needs action</td>
+                    <td>45m</td>
+                  </tr>
+                  <tr>
+                    <td>Professional identity mismatch</td>
+                    <td>Verification</td>
+                    <td class="status-warn">Waiting docs</td>
+                    <td>6h</td>
+                  </tr>
+                  <tr>
+                    <td>Client onboarding handoff</td>
+                    <td>Platform Success</td>
+                    <td class="status-ok">On track</td>
+                    <td>Today</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="module-card">
+              <div class="caption">AI governance</div>
+              <h2 style="margin-top: 8px; font-size: 28px">Gemini + Relu health</h2>
+              <div class="module-list">
+                <div class="module-row">
+                  <div>
+                    <strong>Gemini moderation agent</strong>
+                    <div class="admin-subtle" style="margin-top: 6px">Used for content review and structured scoring</div>
+                  </div>
+                  <div class="status-warn">Degraded</div>
+                </div>
+                <div class="module-row">
+                  <div>
+                    <strong>Relu queue processor</strong>
+                    <div class="admin-subtle" style="margin-top: 6px">Document summaries and role matching pipeline</div>
+                  </div>
+                  <div class="status-ok">Running</div>
+                </div>
+                <div class="module-row">
+                  <div>
+                    <strong>Backoffice AI Control page</strong>
+                    <div class="admin-subtle" style="margin-top: 6px">Current production blocker seen in audit</div>
+                  </div>
+                  <div class="status-danger">API/CORS</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="two-col">
+            <div class="cms-card">
+              <div class="caption">CMS quick edit</div>
+              <h2 style="margin-top: 8px; font-size: 28px">Dynamic site governance</h2>
+              <div class="cms-grid">
+                <div class="cms-block">
+                  <strong>Logo module</strong>
+                  <p class="admin-subtle" style="margin-top: 8px">Primary logo, inverse logo, favicon, footer mark</p>
+                </div>
+                <div class="cms-block">
+                  <strong>Hero banner</strong>
+                  <p class="admin-subtle" style="margin-top: 8px">Headline, subtitle, CTAs, trust metrics, media</p>
+                </div>
+                <div class="cms-block">
+                  <strong>Footer links</strong>
+                  <p class="admin-subtle" style="margin-top: 8px">Policies, legal, contact, investor, support groups</p>
+                </div>
+                <div class="cms-block">
+                  <strong>Alert strips</strong>
+                  <p class="admin-subtle" style="margin-top: 8px">Regional notices, high-priority banners, CTA modules</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="module-card">
+              <div class="caption">Approval note</div>
+              <h2 style="margin-top: 8px; font-size: 28px">Pre-implementation gate</h2>
+              <div class="module-list">
+                <div class="module-row">
+                  <div>
+                    <strong>Home Page</strong>
+                    <div class="admin-subtle" style="margin-top: 6px">Approve visual hierarchy, sectors, trust layout</div>
+                  </div>
+                  <div class="status-ok">Ready</div>
+                </div>
+                <div class="module-row">
+                  <div>
+                    <strong>Dashboard</strong>
+                    <div class="admin-subtle" style="margin-top: 6px">Approve KPI density and operations composition</div>
+                  </div>
+                  <div class="status-ok">Ready</div>
+                </div>
+                <div class="module-row">
+                  <div>
+                    <strong>Implementation</strong>
+                    <div class="admin-subtle" style="margin-top: 6px">Should begin only after local review and approval</div>
+                  </div>
+                  <div class="status-warn">Blocked until approval</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

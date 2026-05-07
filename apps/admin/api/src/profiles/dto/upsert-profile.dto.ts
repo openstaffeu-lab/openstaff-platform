@@ -1,11 +1,14 @@
 import {
   ProfileAvailabilityStatus,
+  ProfileLifecycleStatus,
   ProfileType,
+  ProfileVisibility,
 } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   ArrayUnique,
   IsArray,
+  IsEnum,
   IsIn,
   IsInt,
   IsNumber,
@@ -17,7 +20,6 @@ import {
   Min,
   MinLength,
   ValidateNested,
-  IsEnum,
 } from 'class-validator';
 
 class ContractorProfileDetailsDto {
@@ -62,6 +64,12 @@ export class UpsertProfileDto {
   @IsEnum(ProfileType)
   profileType?: ProfileType;
 
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(160)
+  slug?: string;
+
   @IsString()
   @MinLength(2)
   @MaxLength(160)
@@ -74,11 +82,63 @@ export class UpsertProfileDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(160)
+  publicHeadline?: string | null;
+
+  @IsOptional()
+  @IsString()
   summary?: string | null;
 
   @IsOptional()
   @IsString()
   description?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  websiteUrl?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  publicEmail?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  publicPhone?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  privateEmail?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  privatePhone?: string | null;
+
+  @IsOptional()
+  @IsString()
+  privateNotes?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  companyRegistrationNumber?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  taxNumber?: string | null;
+
+  @IsOptional()
+  @IsEnum(ProfileVisibility)
+  visibility?: ProfileVisibility;
+
+  @IsOptional()
+  @IsEnum(ProfileLifecycleStatus)
+  status?: ProfileLifecycleStatus;
 
   @IsOptional()
   @IsString()

@@ -7,7 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn, isAuthenticated, loading } = useAuth();
+  const { signIn, isAuthenticated, loading, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +15,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      router.replace("/projects");
+      router.replace("/profile");
     }
   }, [isAuthenticated, loading, router]);
 
@@ -26,7 +26,7 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password);
-      router.push("/projects");
+      router.push("/profile");
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "Login failed.");
     } finally {
@@ -43,12 +43,16 @@ export default function LoginPage() {
           </div>
           <h1 className="mt-4 text-4xl font-bold text-brand-charcoal">Login</h1>
           <p className="mt-4 text-slate-600">
-            Continue into the OpenStaff workspace to manage structured projects, compliance,
-            contracts, execution, payroll, and messaging across the OpenStaff platform.
+            Continue into your account workspace to manage approval status, profile visibility, public presentation, and uploads.
           </p>
-          <div className="mt-8 rounded-[1.7rem] border border-indigo-100 bg-indigo-50 p-5 text-sm leading-7 text-slate-600">
-            The Structure for Global Work.
+          <div className="mt-8 rounded-[1.7rem] border border-indigo-100 bg-indigo-50 p-5 text-sm leading-7 text-slate-700">
+            Accounts can sign in even while pending approval, but public visibility and moderated discovery remain controlled by backoffice approval.
           </div>
+          {user ? (
+            <div className="mt-4 rounded-[1.5rem] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+              Signed in as {user.email}
+            </div>
+          ) : null}
           <div className="mt-8 text-sm text-slate-500">
             Need an account?{" "}
             <Link href="/register" className="font-semibold text-brand-navy">

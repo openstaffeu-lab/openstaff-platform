@@ -25,11 +25,9 @@ export class JwtGuard implements CanActivate {
     }
 
     try {
-      const payload = this.jwtService.verify(token, {
-        secret: 'SUPER_SECRET_KEY',
+      request.user = this.jwtService.verify(token, {
+        secret: process.env.JWT_SECRET ?? 'SUPER_SECRET_KEY',
       });
-
-      request.user = payload;
       return true;
     } catch {
       throw new UnauthorizedException('Invalid token');

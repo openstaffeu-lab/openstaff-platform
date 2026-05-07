@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { buildSuccessResponse } from '../common/api-response';
 
 type AuthenticatedUser = {
   sub: string;
@@ -11,7 +12,7 @@ export class AuditService {
   constructor(private readonly prisma: PrismaService) {}
 
   async log(input: {
-    actorUserId: string;
+    actorUserId?: string | null;
     projectId?: string | null;
     entityType: string;
     entityId: string;
@@ -22,8 +23,8 @@ export class AuditService {
   }) {
     return this.prisma.auditLog.create({
       data: {
-        actorUserId: input.actorUserId,
-        projectId: input.projectId ?? null,
+        ...(input.actorUserId ? { actorUserId: input.actorUserId } : {}),
+        ...(input.projectId ? { projectId: input.projectId } : {}),
         entityType: input.entityType,
         entityId: input.entityId,
         action: input.action,
@@ -43,7 +44,11 @@ export class AuditService {
       throw new ForbiddenException('Project not found');
     }
 
-    if (user.role !== 'ADMIN' && project.createdById !== user.sub) {
+    if (
+      user.role !== 'ADMIN' &&
+      user.role !== 'SUPERADMIN' &&
+      project.createdById !== user.sub
+    ) {
       throw new ForbiddenException('You do not have access to this audit timeline');
     }
 
@@ -65,7 +70,42 @@ export class AuditService {
       },
     });
 
-    return logs.map((log) => ({
+    return buildSuccessResponse(logs.map((log) => this.toAuditResponse(log)));
+  }
+
+  async listAiAuditLogs(user: AuthenticatedUser) {
+    if (user.role !== 'ADMIN' && user.role !== 'SUPERADMIN') {
+      throw new ForbiddenException('You do not have access to AI audit logs');
+    }
+
+    const logs = await this.prisma.auditLog.findMany({
+      where: {
+        OR: [
+          { entityType: 'RELU_TASK' },
+          { entityType: 'GEMINI_AGENT' },
+          { action: { startsWith: 'RELU_' } },
+        ],
+      },
+      include: {
+        actorUser: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 100,
+    });
+
+    return buildSuccessResponse(logs.map((log) => this.toAuditResponse(log)));
+  }
+
+  private toAuditResponse(log: any) {
+    return {
       id: log.id,
       actorUserId: log.actorUserId,
       projectId: log.projectId,
@@ -76,8 +116,8 @@ export class AuditService {
       afterJson: this.parse(log.afterJson),
       metadataJson: this.parse(log.metadataJson),
       createdAt: log.createdAt,
-      actorUser: log.actorUser,
-    }));
+      actorUser: log.actorUser ?? null,
+    };
   }
 
   private serialize(value: unknown) {

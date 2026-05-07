@@ -1,199 +1,338 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { adminApi } from "@/lib/api";
+import {
+  ReluAccessMode,
+  ReluAgent,
+  adminApi,
+} from "@/lib/api";
+
+type LoadState = "loading" | "ready" | "error";
+
+type EditableConfig = {
+  model: string;
+  accessMode: ReluAccessMode;
+  temperature: number;
+  enabled: boolean;
+  publicEnabled: boolean;
+  maxContextItems: number;
+  webhookUrl: string;
+};
+
+const ACCESS_MODE_LABELS: Record<ReluAccessMode, string> = {
+  PUBLIC_LIMITED: "Public limited",
+  AUTHENTICATED_USER: "Authenticated user",
+  ADMIN_SECURED: "Admin secured",
+};
 
 export default function AiConfigPage() {
-  const [agents, setAgents] = useState<any[]>([]);
-  const [editing, setEditing] = useState<string | null>(null);
-  const [editData, setEditData] = useState<any>({});
+  const [agents, setAgents] = useState<ReluAgent[]>([]);
+  const [state, setState] = useState<LoadState>("loading");
+  const [message, setMessage] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, EditableConfig>>({});
 
   useEffect(() => {
-    adminApi.getAgents().then((items: any) => setAgents(Array.isArray(items) ? items : []));
+    let active = true;
+
+    async function load() {
+      try {
+        const data = await adminApi.getReluConfig();
+
+        if (!active) {
+          return;
+        }
+
+        setAgents(data);
+        setDrafts(
+          Object.fromEntries(
+            data.map((agent) => [
+              agent.id,
+              {
+                model: agent.model,
+                accessMode: agent.accessMode,
+                temperature: agent.temperature ?? 0.3,
+                enabled: agent.enabled,
+                publicEnabled: agent.publicEnabled,
+                maxContextItems: agent.maxContextItems ?? 12,
+                webhookUrl: agent.webhookUrl ?? "",
+              },
+            ]),
+          ),
+        );
+        setState("ready");
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+
+        setMessage(error instanceof Error ? error.message : "Failed to load Relu AI config.");
+        setState("error");
+      }
+    }
+
+    void load();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
-  async function save(id: string) {
-    await adminApi.updateAgent(id, editData);
-    setAgents((current) => current.map((agent) => (agent.id === id ? { ...agent, ...editData } : agent)));
-    setEditing(null);
+  async function saveAgent(agentId: string) {
+    const draft = drafts[agentId];
+    if (!draft) {
+      return;
+    }
+
+    setSavingId(agentId);
+    setMessage(null);
+
+    try {
+      const updated = await adminApi.updateReluConfig(agentId, {
+        model: draft.model,
+        accessMode: draft.accessMode,
+        temperature: draft.temperature,
+        enabled: draft.enabled,
+        publicEnabled: draft.publicEnabled,
+        maxContextItems: draft.maxContextItems,
+        webhookUrl: draft.webhookUrl.trim() || null,
+      });
+
+      setAgents((current) =>
+        current.map((agent) => (agent.id === agentId ? { ...agent, ...updated } : agent)),
+      );
+      setMessage(`Saved configuration for ${updated.name}.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to save agent configuration.");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  function updateDraft(agentId: string, patch: Partial<EditableConfig>) {
+    setDrafts((current) => ({
+      ...current,
+      [agentId]: {
+        ...current[agentId],
+        ...patch,
+      },
+    }));
   }
 
   return (
-    <div style={{ padding: 32 }}>
-      <h1 style={{ color: "#1B2A6B", fontSize: 28, fontWeight: 800, marginBottom: 8 }}>
-        Configurare Agenți AI
-      </h1>
-      <p style={{ color: "#8892B0", marginBottom: 32 }}>
-        Gestionează sistemele Gemini Enterprise ale platformei
-      </p>
+    <main className="space-y-8 p-8 text-white">
+      <section className="flex flex-col gap-4 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">
+            Relu AI
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold text-white">Operational Configuration</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
+            Configure which Relu agents are enabled, which security mode they run in,
+            and how much secured context they are allowed to consume from OpenStaff.
+            Public mode stays generic by design. Authenticated and admin modes only use
+            OpenStaff data loaded inside the API for the active task.
+          </p>
+        </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {agents.map((agent) => (
-          <div
-            key={agent.id}
-            style={{
-              background: "white",
-              borderRadius: 12,
-              padding: 24,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-              border: agent.enabled ? "1.5px solid #00E87A" : "1px solid #E8EBF5",
-            }}
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/ai-control"
+            className="rounded-2xl border border-slate-700 px-4 py-3 text-sm font-medium text-slate-200 transition hover:border-cyan-500/50 hover:text-white"
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 12,
-                gap: 12,
-              }}
-            >
-              <div>
-                <h3 style={{ color: "#1B2A6B", margin: 0, fontWeight: 700 }}>{agent.name}</h3>
-                <span style={{ color: "#8892B0", fontSize: 12 }}>{agent.type}</span>
-              </div>
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <button
-                  onClick={() =>
-                    adminApi.updateAgent(agent.id, { enabled: !agent.enabled }).then(() =>
-                      setAgents((current) =>
-                        current.map((item) =>
-                          item.id === agent.id ? { ...item, enabled: !item.enabled } : item,
-                        ),
-                      ),
-                    )
-                  }
-                  style={{
-                    background: agent.enabled ? "#00E87A" : "#E8EBF5",
-                    border: "none",
-                    borderRadius: 20,
-                    padding: "6px 14px",
-                    cursor: "pointer",
-                    fontWeight: 700,
-                    fontSize: 12,
-                    color: agent.enabled ? "#1B2A6B" : "#8892B0",
-                  }}
-                >
-                  {agent.enabled ? "ACTIV" : "INACTIV"}
-                </button>
-                <button
-                  onClick={() => {
-                    setEditing(agent.id);
-                    setEditData({
-                      systemPrompt: agent.systemPrompt,
-                      temperature: agent.temperature,
-                    });
-                  }}
-                  style={{
-                    background: "#1B2A6B",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 8,
-                    padding: "6px 14px",
-                    cursor: "pointer",
-                    fontSize: 12,
-                    fontWeight: 700,
-                  }}
-                >
-                  Editează
-                </button>
-              </div>
-            </div>
+            Prompts and policies
+          </Link>
+          <Link
+            href="/ai-queue"
+            className="rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
+          >
+            View AI queue
+          </Link>
+        </div>
+      </section>
 
-            <div style={{ color: "#8892B0", fontSize: 12, marginBottom: 8 }}>
-              Model: <b style={{ color: "#1B2A6B" }}>{agent.model}</b>
-              {" · "}Temperature: <b style={{ color: "#1B2A6B" }}>{agent.temperature}</b>
-            </div>
+      {message ? (
+        <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-5 py-4 text-sm text-slate-200">
+          {message}
+        </div>
+      ) : null}
 
-            {editing !== agent.id ? (
-              <div
-                style={{
-                  background: "#F0F2F8",
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 12,
-                  color: "#1B2A6B",
-                  fontFamily: "monospace",
-                  maxHeight: 80,
-                  overflowY: "auto",
-                }}
+      {state === "loading" ? (
+        <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-300">
+          Loading Relu AI configuration...
+        </div>
+      ) : null}
+
+      {state === "error" ? (
+        <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6 text-sm text-rose-100">
+          {message ?? "Failed to load Relu AI configuration."}
+        </div>
+      ) : null}
+
+      {state === "ready" ? (
+        <section className="grid gap-6 xl:grid-cols-2">
+          {agents.map((agent) => {
+            const draft = drafts[agent.id];
+
+            return (
+              <article
+                key={agent.id}
+                className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/40"
               >
-                {agent.systemPrompt?.substring(0, 200)}
-                {agent.systemPrompt?.length > 200 ? "..." : ""}
-              </div>
-            ) : (
-              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 12 }}>
-                <textarea
-                  value={editData.systemPrompt}
-                  onChange={(event) =>
-                    setEditData((current: any) => ({ ...current, systemPrompt: event.target.value }))
-                  }
-                  rows={8}
-                  style={{
-                    width: "100%",
-                    padding: 12,
-                    borderRadius: 8,
-                    fontSize: 13,
-                    border: "1.5px solid #1B2A6B",
-                    fontFamily: "monospace",
-                    color: "#1B2A6B",
-                    resize: "vertical",
-                    boxSizing: "border-box",
-                  }}
-                />
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <label style={{ color: "#8892B0", fontSize: 13 }}>Temperature:</label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={1}
-                    step={0.1}
-                    value={editData.temperature}
-                    onChange={(event) =>
-                      setEditData((current: any) => ({ ...current, temperature: Number(event.target.value) }))
-                    }
-                    style={{
-                      width: 70,
-                      padding: "6px 8px",
-                      borderRadius: 6,
-                      border: "1px solid #E8EBF5",
-                      fontSize: 13,
-                    }}
-                  />
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                      {agent.type}
+                    </p>
+                    <h2 className="mt-2 text-xl font-semibold text-white">{agent.name}</h2>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">
+                      {agent.description ?? "No description yet."}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <span className="rounded-full bg-slate-800 px-3 py-1 text-slate-200">
+                      {ACCESS_MODE_LABELS[agent.accessMode]}
+                    </span>
+                    <span
+                      className={`rounded-full px-3 py-1 font-semibold ${
+                        agent.enabled
+                          ? "bg-emerald-500/20 text-emerald-200"
+                          : "bg-slate-800 text-slate-400"
+                      }`}
+                    >
+                      {agent.enabled ? "Enabled" : "Disabled"}
+                    </span>
+                  </div>
+                </div>
+
+                {draft ? (
+                  <div className="mt-6 grid gap-4 md:grid-cols-2">
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-300">Model</span>
+                      <input
+                        value={draft.model}
+                        onChange={(event) =>
+                          updateDraft(agent.id, { model: event.target.value })
+                        }
+                        className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-500"
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-300">Access mode</span>
+                      <select
+                        value={draft.accessMode}
+                        onChange={(event) =>
+                          updateDraft(agent.id, {
+                            accessMode: event.target.value as ReluAccessMode,
+                          })
+                        }
+                        className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-500"
+                      >
+                        {Object.entries(ACCESS_MODE_LABELS).map(([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-300">Temperature</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={1}
+                        step={0.05}
+                        value={draft.temperature}
+                        onChange={(event) =>
+                          updateDraft(agent.id, {
+                            temperature: Number(event.target.value),
+                          })
+                        }
+                        className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-500"
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-300">Max context items</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={30}
+                        step={1}
+                        value={draft.maxContextItems}
+                        onChange={(event) =>
+                          updateDraft(agent.id, {
+                            maxContextItems: Number(event.target.value),
+                          })
+                        }
+                        className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-500"
+                      />
+                    </label>
+
+                    <label className="block md:col-span-2">
+                      <span className="text-sm font-medium text-slate-300">
+                        Webhook URL
+                      </span>
+                      <input
+                        value={draft.webhookUrl}
+                        onChange={(event) =>
+                          updateDraft(agent.id, { webhookUrl: event.target.value })
+                        }
+                        placeholder="Optional external operational webhook"
+                        className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-500"
+                      />
+                    </label>
+
+                    <div className="flex flex-wrap gap-6 md:col-span-2">
+                      <label className="flex items-center gap-3 text-sm text-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={draft.enabled}
+                          onChange={(event) =>
+                            updateDraft(agent.id, { enabled: event.target.checked })
+                          }
+                          className="h-4 w-4 rounded border-slate-600 bg-slate-900"
+                        />
+                        Agent enabled
+                      </label>
+
+                      <label className="flex items-center gap-3 text-sm text-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={draft.publicEnabled}
+                          onChange={(event) =>
+                            updateDraft(agent.id, {
+                              publicEnabled: event.target.checked,
+                            })
+                          }
+                          className="h-4 w-4 rounded border-slate-600 bg-slate-900"
+                        />
+                        Public entry allowed
+                      </label>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-800 pt-5">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                    Updated {new Date(agent.updatedAt).toLocaleString()}
+                  </p>
                   <button
-                    onClick={() => void save(agent.id)}
-                    style={{
-                      background: "#00E87A",
-                      color: "#1B2A6B",
-                      border: "none",
-                      borderRadius: 8,
-                      padding: "8px 20px",
-                      cursor: "pointer",
-                      fontWeight: 700,
-                      marginLeft: "auto",
-                    }}
+                    onClick={() => void saveAgent(agent.id)}
+                    disabled={savingId === agent.id}
+                    className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
                   >
-                    Salvează
-                  </button>
-                  <button
-                    onClick={() => setEditing(null)}
-                    style={{
-                      background: "none",
-                      border: "1px solid #E8EBF5",
-                      borderRadius: 8,
-                      padding: "8px 16px",
-                      cursor: "pointer",
-                      fontSize: 13,
-                    }}
-                  >
-                    Anulează
+                    {savingId === agent.id ? "Saving..." : "Save configuration"}
                   </button>
                 </div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
+              </article>
+            );
+          })}
+        </section>
+      ) : null}
+    </main>
   );
 }

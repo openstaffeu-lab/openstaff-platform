@@ -1,8 +1,216 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { AgentType } from '@prisma/client';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { PrismaService } from '../prisma/prisma.service';
 
 type GeminiHistory = { role: 'user' | 'model'; parts: string }[];
+
+type AgentExecutionInput = {
+  agentType: AgentType;
+  userMessage: string;
+  history?: GeminiHistory;
+  contextBlocks?: string[];
+  temperatureOverride?: number;
+};
+
+const DEFAULT_AGENT_DEFINITIONS: Array<{
+  name: string;
+  type: AgentType;
+  description: string;
+  accessMode: 'PUBLIC_LIMITED' | 'AUTHENTICATED_USER' | 'ADMIN_SECURED';
+  publicEnabled: boolean;
+  temperature: number;
+  systemPrompt: string;
+  policyJson: Record<string, unknown>;
+}> = [
+  {
+    name: 'Relu Public Assistant',
+    type: 'CHATBOT_PUBLIC',
+    description:
+      'Answers only generic OpenStaff platform questions without using secured profile, project, or contract data.',
+    accessMode: 'PUBLIC_LIMITED',
+    publicEnabled: true,
+    temperature: 0.3,
+    systemPrompt:
+      'You are Relu AI in restricted public mode. Answer only generic OpenStaff platform questions, onboarding basics, public taxonomy concepts, and safe marketplace guidance. Never reveal or infer private user, profile, project, contract, message, moderation, or compliance data. If asked for protected data, say authentication is required.',
+    policyJson: {
+      allowSecuredContext: false,
+      allowedDomains: ['public-platform-help', 'public-taxonomy-help'],
+      blockedDomains: [
+        'private-profile-data',
+        'project-private-data',
+        'contract-sensitive-data',
+        'messages',
+      ],
+    },
+  },
+  {
+    name: 'Relu Onboarding Assistant',
+    type: 'ONBOARDING_ASSISTANT',
+    description:
+      'Guides authenticated users through account, profile, and compliance onboarding.',
+    accessMode: 'AUTHENTICATED_USER',
+    publicEnabled: false,
+    temperature: 0.35,
+    systemPrompt:
+      'You are Relu AI for authenticated onboarding. Use only secured OpenStaff data supplied in context. Produce concise next-step guidance, highlight missing fields, and never expose data from any other user.',
+    policyJson: {
+      allowSecuredContext: true,
+      allowedDomains: ['own-profile', 'own-onboarding', 'own-compliance'],
+    },
+  },
+  {
+    name: 'Relu Profile Completion Assistant',
+    type: 'PROFILE_COMPLETION_ASSISTANT',
+    description:
+      'Suggests profile improvements, missing data, and better public positioning for the current user.',
+    accessMode: 'AUTHENTICATED_USER',
+    publicEnabled: false,
+    temperature: 0.4,
+    systemPrompt:
+      'You are Relu AI for profile completion. Improve clarity, completeness, and trust signals using only the current user profile context. Never reference other user data.',
+    policyJson: {
+      allowSecuredContext: true,
+      allowedDomains: ['own-profile', 'own-documents', 'own-classifications'],
+    },
+  },
+  {
+    name: 'Relu Project Interpreter',
+    type: 'PROJECT_JOB_INTERPRETER',
+    description:
+      'Interprets projects and jobs into structured summaries, taxonomy suggestions, and risks.',
+    accessMode: 'AUTHENTICATED_USER',
+    publicEnabled: false,
+    temperature: 0.25,
+    systemPrompt:
+      'You are Relu AI for project and job interpretation. Convert OpenStaff project or job inputs into structured JSON with summary, taxonomy suggestions, required skills, certifications, and key risks. Use only supplied secured context.',
+    policyJson: {
+      allowSecuredContext: true,
+      outputFormat: 'json',
+    },
+  },
+  {
+    name: 'Relu Matching Engine',
+    type: 'MATCHING_ENGINE',
+    description:
+      'Scores profile-to-project and project-to-profile relevance using OpenStaff data only.',
+    accessMode: 'AUTHENTICATED_USER',
+    publicEnabled: false,
+    temperature: 0.2,
+    systemPrompt:
+      'You are Relu AI for OpenStaff matching. Evaluate compatibility using only supplied OpenStaff profile/project/job context. Return structured reasons, gaps, and recommendations.',
+    policyJson: {
+      allowSecuredContext: true,
+      outputFormat: 'json',
+    },
+  },
+  {
+    name: 'Relu Eligibility Engine',
+    type: 'ELIGIBILITY_ENGINE',
+    description:
+      'Computes and explains eligibility percentage for a user or profile against a project or job.',
+    accessMode: 'AUTHENTICATED_USER',
+    publicEnabled: false,
+    temperature: 0.2,
+    systemPrompt:
+      'You are Relu AI for eligibility scoring. Explain fit percentage, missing items, and readiness using only supplied OpenStaff context.',
+    policyJson: {
+      allowSecuredContext: true,
+      outputFormat: 'json',
+    },
+  },
+  {
+    name: 'Relu Certification Gap Detector',
+    type: 'CERTIFICATION_GAP_DETECTOR',
+    description:
+      'Detects missing certifications and compliance gaps for a profile relative to a project or role.',
+    accessMode: 'AUTHENTICATED_USER',
+    publicEnabled: false,
+    temperature: 0.2,
+    systemPrompt:
+      'You are Relu AI for certification gap analysis. Compare required and available certifications, then return only the missing, optional, and satisfied items.',
+    policyJson: {
+      allowSecuredContext: true,
+      outputFormat: 'json',
+    },
+  },
+  {
+    name: 'Relu Test Generator',
+    type: 'TEST_FORM_GENERATOR',
+    description:
+      'Generates structured assessment questions from secured OpenStaff project/job context.',
+    accessMode: 'AUTHENTICATED_USER',
+    publicEnabled: false,
+    temperature: 0.35,
+    systemPrompt:
+      'You are Relu AI for test generation. Create concise, role-relevant screening questions from supplied OpenStaff context. Return structured JSON.',
+    policyJson: {
+      allowSecuredContext: true,
+      outputFormat: 'json',
+    },
+  },
+  {
+    name: 'Relu Recommendation Engine',
+    type: 'RECOMMENDATION_ENGINE',
+    description:
+      'Recommends candidate profiles or project opportunities using only secured OpenStaff context.',
+    accessMode: 'AUTHENTICATED_USER',
+    publicEnabled: false,
+    temperature: 0.25,
+    systemPrompt:
+      'You are Relu AI for recommendations. Rank only the supplied OpenStaff options and explain why they fit.',
+    policyJson: {
+      allowSecuredContext: true,
+      outputFormat: 'json',
+    },
+  },
+  {
+    name: 'Relu Contract Lifecycle Monitor',
+    type: 'CONTRACT_LIFECYCLE_MONITOR',
+    description:
+      'Monitors contract lifecycle, deadlines, milestones, and risk signals for admins and owners.',
+    accessMode: 'ADMIN_SECURED',
+    publicEnabled: false,
+    temperature: 0.2,
+    systemPrompt:
+      'You are Relu AI for contract lifecycle monitoring. Detect deadlines, milestone risks, and status anomalies from supplied OpenStaff contract context only.',
+    policyJson: {
+      allowSecuredContext: true,
+      outputFormat: 'json',
+    },
+  },
+  {
+    name: 'Relu Notification Generator',
+    type: 'NOTIFICATION_GENERATOR',
+    description:
+      'Generates safe notification copy for onboarding, matching, eligibility, and contract events.',
+    accessMode: 'ADMIN_SECURED',
+    publicEnabled: false,
+    temperature: 0.3,
+    systemPrompt:
+      'You are Relu AI for notification generation. Produce short, clear user-facing notification titles and messages from supplied OpenStaff event summaries.',
+    policyJson: {
+      allowSecuredContext: true,
+      outputFormat: 'json',
+      maxMessageLength: 220,
+    },
+  },
+  {
+    name: 'Relu Compliance Monitor',
+    type: 'COMPLIANCE_MONITOR',
+    description:
+      'Reviews compliance-related content and risk notes for admin and compliance teams.',
+    accessMode: 'ADMIN_SECURED',
+    publicEnabled: false,
+    temperature: 0.2,
+    systemPrompt:
+      'You are Relu AI for compliance monitoring. Summarize compliance risks and required actions using only secured OpenStaff context.',
+    policyJson: {
+      allowSecuredContext: true,
+      outputFormat: 'json',
+    },
+  },
+];
 
 @Injectable()
 export class GeminiService {
@@ -17,9 +225,10 @@ export class GeminiService {
     this.genAI = new GoogleGenerativeAI(apiKey);
   }
 
-  async getAgentConfig(type: string) {
+  async getAgentConfig(type: AgentType | string) {
+    await this.ensureDefaultAgents();
     return this.prisma.geminiAgent.findFirst({
-      where: { type: type as any, enabled: true },
+      where: { type: type as AgentType, enabled: true },
     });
   }
 
@@ -29,6 +238,12 @@ export class GeminiService {
     temperature = 0.7,
     history: GeminiHistory = [],
   ): Promise<string> {
+    const apiKey = process.env.GEMINI_API_KEY ?? '';
+
+    if (!apiKey) {
+      return this.fallbackTextResponse(userMessage);
+    }
+
     const model = this.genAI.getGenerativeModel({
       model: process.env.GEMINI_MODEL || 'gemini-1.5-pro-latest',
       systemInstruction: systemPrompt,
@@ -49,50 +264,62 @@ export class GeminiService {
     return result.response.text();
   }
 
-  async chat(message: string, history: GeminiHistory = [], actorId?: string) {
-    const agent = await this.getAgentConfig('CHATBOT_PUBLIC');
+  async executeAgent(input: AgentExecutionInput) {
+    const agent = await this.getAgentConfig(input.agentType);
+
     if (!agent) {
       return {
-        response:
-          'Serviciul AI este temporar indisponibil. Contactati support@openstaff.eu',
         agentName: 'Fallback',
-        actorId: actorId ?? null,
+        response: this.fallbackTextResponse(input.userMessage),
+        raw: this.fallbackTextResponse(input.userMessage),
       };
     }
 
-    try {
-      const response = await this.callGemini(
-        agent.systemPrompt,
-        message,
-        agent.temperature,
-        history,
-      );
-      return { response, agentName: agent.name, actorId: actorId ?? null };
-    } catch (error) {
-      this.logger.error('Gemini chat error', error as Error);
-      return {
-        response:
-          'Serviciul AI este temporar indisponibil. Contactati support@openstaff.eu',
-        agentName: 'Fallback',
-        actorId: actorId ?? null,
-      };
-    }
+    const promptParts = [...(input.contextBlocks ?? []), input.userMessage].filter(Boolean);
+    const response = await this.callGemini(
+      agent.systemPrompt,
+      promptParts.join('\n\n'),
+      input.temperatureOverride ?? agent.temperature,
+      input.history ?? [],
+    );
+
+    return {
+      agent,
+      agentName: agent.name,
+      response,
+      raw: response,
+    };
+  }
+
+  async chat(message: string, history: GeminiHistory = [], actorId?: string) {
+    const execution = await this.executeAgent({
+      agentType: 'CHATBOT_PUBLIC',
+      userMessage: message,
+      history,
+      contextBlocks: ['Mode: restricted public assistant'],
+      temperatureOverride: 0.3,
+    });
+
+    return {
+      response: execution.response,
+      agentName: execution.agentName,
+      actorId: actorId ?? null,
+    };
   }
 
   async analyzeDocument(fileUrl: string, documentType: string) {
-    const agent = await this.getAgentConfig('DOCUMENT_OCR');
-    if (!agent) {
-      return { error: 'Extragere date esuata', confidence: 0 };
-    }
-
     try {
-      const prompt = `Analizeaza documentul de tip ${documentType} de la URL: ${fileUrl}. Extrage toate datele relevante.`;
-      const raw = await this.callGemini(agent.systemPrompt, prompt, agent.temperature);
-      const clean = raw.replace(/```json|```/g, '').trim();
-      return JSON.parse(clean);
+      const execution = await this.executeAgent({
+        agentType: 'DOCUMENT_OCR',
+        userMessage: `Analyze document type "${documentType}" from secure file reference "${fileUrl}" and return structured JSON with extracted entities, dates, and confidence.`,
+      });
+      return this.parseJsonOrFallback(execution.response, {
+        extracted: [],
+        confidence: 0,
+      });
     } catch (error) {
       this.logger.error('Gemini analyzeDocument error', error as Error);
-      return { error: 'Extragere date esuata', confidence: 0 };
+      return { extracted: [], confidence: 0 };
     }
   }
 
@@ -109,48 +336,35 @@ export class GeminiService {
       throw new Error('Job sau actor negasit');
     }
 
-    const agent = await this.getAgentConfig('MATCHING_ENGINE');
-    if (!agent) {
-      return {
-        score: 0,
-        reasons: ['Matching agent not configured'],
-        recommendation: 'Verificare manuala necesara',
-      };
-    }
+    const execution = await this.executeAgent({
+      agentType: 'MATCHING_ENGINE',
+      userMessage: 'Score this application and return JSON with score, reasons, and recommendation.',
+      contextBlocks: [
+        `JOB: ${job.title}`,
+        `Job category: ${job.category}`,
+        `Job NACE: ${job.naceCode}`,
+        `Job ESCO: ${job.escoRequired.join(', ')}`,
+        `Actor: ${actor.displayName}`,
+        `Actor NACE: ${actor.naceCode}`,
+        `Actor ESCO: ${actor.escoOccupations.join(', ')}`,
+        `Experience years: ${actor.experienceYears}`,
+        `Verified: ${actor.isVerified}`,
+      ],
+      temperatureOverride: 0.2,
+    });
 
-    const prompt = `
-JOB: ${job.title}
-Categorie: ${job.category}, NACE: ${job.naceCode}
-ESCO cerut: ${job.escoRequired.join(', ')}
-Buget: ${job.budget} ${job.currency}
-Descriere: ${job.description}
+    const result = this.parseJsonOrFallback(execution.response, {
+      score: 0,
+      reasons: ['Matching engine fallback response'],
+      recommendation: 'Manual review required',
+    });
 
-CANDIDAT: ${actor.displayName}
-NACE: ${actor.naceCode}, ESCO: ${actor.escoOccupations.join(', ')}
-Experienta: ${actor.experienceYears} ani, Rating: ${actor.rating}/5
-Verificat: ${actor.isVerified}
+    await this.prisma.application.updateMany({
+      where: { jobId, actorId },
+      data: { reluScore: Number(result.score ?? 0) },
+    });
 
-Calculeaza compatibilitatea si returneaza JSON.`;
-
-    try {
-      const raw = await this.callGemini(agent.systemPrompt, prompt, agent.temperature);
-      const clean = raw.replace(/```json|```/g, '').trim();
-      const result = JSON.parse(clean);
-
-      await this.prisma.application.updateMany({
-        where: { jobId, actorId },
-        data: { reluScore: result.score },
-      });
-
-      return result;
-    } catch (error) {
-      this.logger.error('Gemini scoreApplication error', error as Error);
-      return {
-        score: 0,
-        reasons: ['Eroare procesare'],
-        recommendation: 'Verificare manuala necesara',
-      };
-    }
+    return result;
   }
 
   async generateTestForm(jobId: string) {
@@ -159,62 +373,41 @@ Calculeaza compatibilitatea si returneaza JSON.`;
       throw new Error('Job negasit');
     }
 
-    const agent = await this.getAgentConfig('TEST_FORM_GENERATOR');
-    if (!agent) {
-      return { questions: [], error: 'Generare esuata' };
-    }
+    const execution = await this.executeAgent({
+      agentType: 'TEST_FORM_GENERATOR',
+      userMessage:
+        'Generate structured screening questions as JSON with question, intent, and scoring guidance.',
+      contextBlocks: [
+        `Job title: ${job.title}`,
+        `Category: ${job.category}`,
+        `NACE: ${job.naceCode}`,
+        `ESCO: ${job.escoRequired.join(', ')}`,
+        `Description: ${job.description}`,
+      ],
+      temperatureOverride: 0.35,
+    });
 
-    const prompt = `
-Job: ${job.title}
-Categorie: ${job.category}
-NACE: ${job.naceCode}
-ESCO cerut: ${job.escoRequired.join(', ')}
-Descriere: ${job.description}
+    const form = this.parseJsonOrFallback(execution.response, {
+      questions: [],
+      error: 'Generare esuata',
+    });
 
-Genereaza formularul de evaluare tehnica.`;
+    await this.prisma.job.update({
+      where: { id: jobId },
+      data: { reluTestForm: form as any, reluProcessed: true },
+    });
 
-    try {
-      const raw = await this.callGemini(agent.systemPrompt, prompt, agent.temperature);
-      const clean = raw.replace(/```json|```/g, '').trim();
-      const form = JSON.parse(clean);
-
-      await this.prisma.job.update({
-        where: { id: jobId },
-        data: { reluTestForm: form, reluProcessed: true },
-      });
-
-      return form;
-    } catch (error) {
-      this.logger.error('Gemini generateTestForm error', error as Error);
-      return { questions: [], error: 'Generare esuata' };
-    }
+    return form;
   }
 
   async pcbAssist(prompt: string, context?: string) {
-    const agent = await this.getAgentConfig('PCB_DESIGN_ASSISTANT');
-    if (!agent) {
-      return {
-        response: 'Serviciul PCB Assistant este temporar indisponibil',
-        agentName: 'Fallback',
-      };
-    }
+    const execution = await this.executeAgent({
+      agentType: 'PCB_DESIGN_ASSISTANT',
+      userMessage: prompt,
+      contextBlocks: context ? [context] : [],
+    });
 
-    const fullPrompt = context ? `Context: ${context}\n\nIntrebare: ${prompt}` : prompt;
-
-    try {
-      const response = await this.callGemini(
-        agent.systemPrompt,
-        fullPrompt,
-        agent.temperature,
-      );
-      return { response, agentName: agent.name };
-    } catch (error) {
-      this.logger.error('Gemini pcbAssist error', error as Error);
-      return {
-        response: 'Serviciul PCB Assistant este temporar indisponibil',
-        agentName: 'Fallback',
-      };
-    }
+    return { response: execution.response, agentName: execution.agentName };
   }
 
   async generateContract(contractId: string) {
@@ -231,70 +424,128 @@ Genereaza formularul de evaluare tehnica.`;
       throw new Error('Contract negasit');
     }
 
-    const agent = await this.getAgentConfig('CONTRACT_GENERATOR');
-    if (!agent) {
-      return { error: 'Generare contract esuata', contractId };
-    }
+    const execution = await this.executeAgent({
+      agentType: 'CONTRACT_GENERATOR',
+      userMessage:
+        'Generate a contract markdown draft based only on the supplied secured OpenStaff contract context.',
+      contextBlocks: [
+        `Employer: ${contract.employer.displayName}`,
+        `Contractor: ${contract.contractor.displayName}`,
+        `Project: ${contract.job.title}`,
+        `Value: ${contract.value} ${contract.currency}`,
+        `Start: ${contract.startDate}`,
+        `End: ${contract.endDate}`,
+        `Platform fee: ${contract.transactionFee} ${contract.currency}`,
+      ],
+    });
 
-    const prompt = `
-Angajator: ${contract.employer.displayName}
-  CUI: ${contract.employer.companyProfile?.cui || 'N/A'}
-  Adresa: ${contract.employer.companyProfile?.adresa || 'N/A'}
-
-Contractor: ${contract.contractor.displayName}
-  CUI: ${contract.contractor.companyProfile?.cui || 'N/A'}
-  Adresa: ${contract.contractor.companyProfile?.adresa || 'N/A'}
-
-Proiect: ${contract.job.title}
-Valoare: ${contract.value} ${contract.currency}
-Perioada: ${contract.startDate} - ${contract.endDate}
-Fee platforma: ${contract.transactionFee} ${contract.currency} (3%)
-
-Genereaza contractul complet conform legislatiei romane.`;
-
-    try {
-      const response = await this.callGemini(agent.systemPrompt, prompt, agent.temperature);
-      return { contractMarkdown: response, contractId };
-    } catch (error) {
-      this.logger.error('Gemini generateContract error', error as Error);
-      return { error: 'Generare contract esuata', contractId };
-    }
+    return { contractMarkdown: execution.response, contractId };
   }
 
   async complianceCheck(content: string) {
-    const agent = await this.getAgentConfig('COMPLIANCE_MONITOR');
-    if (!agent) {
-      return { issues: [], risk_level: 'UNKNOWN', recommendations: [] };
-    }
+    const execution = await this.executeAgent({
+      agentType: 'COMPLIANCE_MONITOR',
+      userMessage: 'Review the supplied content and return structured compliance findings.',
+      contextBlocks: [content],
+      temperatureOverride: 0.2,
+    });
 
-    try {
-      const raw = await this.callGemini(agent.systemPrompt, content, agent.temperature);
-      const clean = raw.replace(/```json|```/g, '').trim();
-      return JSON.parse(clean);
-    } catch (error) {
-      this.logger.error('Gemini complianceCheck error', error as Error);
-      return { issues: [], risk_level: 'UNKNOWN', recommendations: [] };
-    }
+    return this.parseJsonOrFallback(execution.response, {
+      issues: [],
+      risk_level: 'UNKNOWN',
+      recommendations: [],
+    });
   }
 
   async listAgents() {
+    await this.ensureDefaultAgents();
     return this.prisma.geminiAgent.findMany({
-      orderBy: { type: 'asc' },
+      orderBy: [{ accessMode: 'asc' }, { type: 'asc' }],
     });
   }
 
   async updateAgent(
     id: string,
     data: Partial<{
+      name: string;
+      description: string | null;
+      model: string;
+      accessMode: 'PUBLIC_LIMITED' | 'AUTHENTICATED_USER' | 'ADMIN_SECURED';
       systemPrompt: string;
+      policyJson: Record<string, unknown> | null;
       temperature: number;
       enabled: boolean;
-      webhookUrl: string;
+      publicEnabled: boolean;
+      maxContextItems: number;
+      webhookUrl: string | null;
     }>,
   ) {
     return this.prisma.geminiAgent.update({
       where: { id },
-      data,
+      data: {
+        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.model !== undefined ? { model: data.model } : {}),
+        ...(data.accessMode !== undefined ? { accessMode: data.accessMode as any } : {}),
+        ...(data.systemPrompt !== undefined ? { systemPrompt: data.systemPrompt } : {}),
+        ...(data.policyJson !== undefined ? { policyJson: data.policyJson as any } : {}),
+        ...(data.temperature !== undefined ? { temperature: data.temperature } : {}),
+        ...(data.enabled !== undefined ? { enabled: data.enabled } : {}),
+        ...(data.publicEnabled !== undefined ? { publicEnabled: data.publicEnabled } : {}),
+        ...(data.maxContextItems !== undefined
+          ? { maxContextItems: data.maxContextItems }
+          : {}),
+        ...(data.webhookUrl !== undefined ? { webhookUrl: data.webhookUrl } : {}),
+      },
     });
+  }
+
+  private async ensureDefaultAgents() {
+    await Promise.all(
+      DEFAULT_AGENT_DEFINITIONS.map((definition) =>
+        this.prisma.geminiAgent.upsert({
+          where: {
+            name_type: {
+              name: definition.name,
+              type: definition.type,
+            },
+          },
+          update: {
+            description: definition.description,
+            accessMode: definition.accessMode as any,
+            publicEnabled: definition.publicEnabled,
+            policyJson: definition.policyJson as any,
+            systemPrompt: definition.systemPrompt,
+            temperature: definition.temperature,
+            model: process.env.GEMINI_MODEL || 'gemini-1.5-pro-latest',
+          },
+          create: {
+            name: definition.name,
+            type: definition.type,
+            description: definition.description,
+            accessMode: definition.accessMode as any,
+            systemPrompt: definition.systemPrompt,
+            policyJson: definition.policyJson as any,
+            publicEnabled: definition.publicEnabled,
+            temperature: definition.temperature,
+            model: process.env.GEMINI_MODEL || 'gemini-1.5-pro-latest',
+            enabled: true,
+            maxContextItems: 12,
+          },
+        }),
+      ),
+    );
+  }
+
+  private parseJsonOrFallback<T>(value: string, fallback: T): T {
+    try {
+      return JSON.parse(value.replace(/```json|```/g, '').trim()) as T;
+    } catch {
+      return fallback;
+    }
+  }
+
+  private fallbackTextResponse(userMessage: string) {
+    return `Relu AI fallback response: ${userMessage.slice(0, 280)}`;
   }
 }
