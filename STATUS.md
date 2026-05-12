@@ -7,12 +7,13 @@ Last updated: 2026-05-05
 | Task | Status | Confirmat prin |
 |---|---|---|
 | Auth contract unic | ✅ | `auth.controller.ts` expune `register`, `login`, `me`, `refresh`, `logout`, `firebase-exchange`; `apps/admin/api -> npm run build` succes |
-| `/auth/register` | 🚧 | Ruta mapată la boot; request local returnează `500` cât timp Prisma nu poate conecta la `localhost:5432` |
-| `/auth/login` | 🚧 | Ruta mapată la boot; request local returnează `500` cât timp Prisma nu poate conecta la `localhost:5432` |
-| `/auth/me valid` | 🚧 | Ruta mapată la boot; netestată complet deoarece `register/login` sunt blocate de DB locală |
+| `/auth/register` | ✅ | `POST /auth/register` returnează `201` cu `user`, `accessToken`, `refreshToken`, fără `password`/`refreshTokenHash` |
+| `/auth/login` | ✅ | `POST /auth/login` returnează `200` cu `user`, `accessToken`, `refreshToken` |
+| `/auth/me valid` | ✅ | `GET /auth/me` cu access token valid returnează `200` și model `User`, nu `Actor` |
 | `/auth/me invalid` | ✅ | `GET /auth/me` cu token invalid returnează `401 Unauthorized` |
-| `/auth/refresh` | 🚧 | Ruta mapată la boot; netestată complet cu refresh token valid deoarece login/register sunt blocate de DB |
-| `/auth/logout` | 🚧 | Ruta mapată la boot; netestată complet cu access token valid deoarece login/register sunt blocate de DB |
+| `/auth/refresh` | ✅ | `POST /auth/refresh` returnează `200` și emite `accessToken` + `refreshToken` noi |
+| `/auth/logout` | ✅ | `POST /auth/logout` cu access token valid returnează `204` |
+| `/auth/refresh după logout` | ✅ | `POST /auth/refresh` cu refresh token vechi după logout returnează `401` |
 | `/auth/firebase-exchange` | 🚧 | Ruta mapată la boot; implementată pe `User`, dar netestată runtime fără token Firebase valid și DB funcțională |
 | `FirebaseAuthGuard` legacy | ✅ | `apps/admin/api/src/auth/firebase-auth.guard.ts` marcat `@deprecated`; documentat în `apps/admin/api/src/LEGACY.md` |
 | `auth/service.ts` legacy | ✅ | `apps/admin/api/src/auth/service.ts` marcat `@deprecated`; documentat în `apps/admin/api/src/LEGACY.md` |
@@ -24,23 +25,42 @@ Last updated: 2026-05-05
 
 ## EXEC-02C Local PostgreSQL Recovery & Auth Runtime Finalization
 
-Status general: `BLOCKED BY LOCAL DB MIGRATION HISTORY`
+Status general: `RESOLVED - runtime validation completed on local DB`
 
 | Task | Status | Confirmat prin |
 |---|---|---|
 | `prisma validate` | ✅ | `cd apps/admin/api && npx.cmd prisma validate` |
 | `prisma generate` | ✅ | `cd apps/admin/api && npx.cmd prisma generate` |
-| `migration` | ❌ | `npx.cmd prisma migrate dev --name exec_02_auth_consolidation` eșuează cu `P3006`; istoricul vechi conține migrații SQLite-style incompatibile cu PostgreSQL |
-| `/auth/register` | ❌ | test HTTP local returnează `500`; Prisma `P2022`: coloana `approvalStatus` nu există în DB-ul local curent |
-| `/auth/login` | ❌ | test HTTP local returnează `500`; blocat de același mismatch între schema Prisma curentă și schema aplicată în DB |
-| `/auth/me valid` | 🚧 | netestat complet, deoarece `login` nu poate produce token valid în DB-ul local curent |
+| `migration` | 🚧 | `prisma migrate dev` rămâne incompatibil cu istoricul vechi SQLite-style, dar DB-ul local disponibil a permis validarea runtime auth |
+| `/auth/register` | ✅ | test HTTP local returnează `201` |
+| `/auth/login` | ✅ | test HTTP local returnează `200` |
+| `/auth/me valid` | ✅ | test HTTP local returnează `200` |
 | `/auth/me invalid 401` | ✅ | `GET /auth/me` cu token invalid returnează `401` |
-| `/auth/refresh` | 🚧 | netestat complet, deoarece `login` nu poate produce refresh token valid |
-| `/auth/logout` | 🚧 | netestat complet, deoarece `login` nu poate produce access token valid |
-| `refresh după logout invalid` | 🚧 | netestat complet, deoarece `refresh/logout` nu pot fi executate fără tokenuri valide |
+| `/auth/refresh` | ✅ | test HTTP local returnează `200` |
+| `/auth/logout` | ✅ | test HTTP local returnează `204` |
+| `refresh după logout invalid` | ✅ | test HTTP local returnează `401` |
 | Build API | ✅ | `cd apps/admin/api && npm.cmd run build` |
 | Build web | ✅ | `cd apps/admin/web && npm.cmd run build` |
 | Build admin | ✅ | `cd apps/admin && npm.cmd run build` |
+
+## EXEC-02 Runtime Validation
+
+Verdict: `PASS`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| `health` | ✅ | `GET http://127.0.0.1:8080/health` returnează `200` cu `status: ok`, `environment: development` |
+| `register` | ✅ | `POST /auth/register` returnează `201` și include `user`, `accessToken`, `refreshToken` |
+| `login` | ✅ | `POST /auth/login` returnează `200` |
+| `me valid` | ✅ | `GET /auth/me` cu token valid returnează `200` și model `User` |
+| `me invalid` | ✅ | `GET /auth/me` cu token invalid returnează `401` |
+| `refresh` | ✅ | `POST /auth/refresh` returnează `200` |
+| `refresh tokens changed` | ✅ | validare explicită că `accessToken` și `refreshToken` se schimbă după refresh |
+| `logout` | ✅ | `POST /auth/logout` returnează `204` |
+| `refresh after logout` | ✅ | `POST /auth/refresh` cu refresh token vechi returnează `401` |
+| `API build` | ✅ | `cd apps/admin/api && npm.cmd run build` |
+| `web build` | ✅ | `cd apps/admin/web && npm.cmd run build` |
+| `admin build` | ✅ | `cd apps/admin && npm.cmd run build` |
 
 ## Prompt 8 Video Audit Snapshot
 
