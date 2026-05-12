@@ -14,9 +14,9 @@ CREATE TABLE "ProjectDispute" (
     "title" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "resolutionNotes" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    "resolvedAt" DATETIME,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "resolvedAt" TIMESTAMP(3),
     CONSTRAINT "ProjectDispute_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "ProjectDispute_contractId_fkey" FOREIGN KEY ("contractId") REFERENCES "ProjectContract" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "ProjectDispute_milestoneId_fkey" FOREIGN KEY ("milestoneId") REFERENCES "ProjectMilestone" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
@@ -34,7 +34,7 @@ CREATE TABLE "ProjectDisputeEvent" (
     "type" TEXT NOT NULL,
     "message" TEXT NOT NULL,
     "metadataJson" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "ProjectDisputeEvent_disputeId_fkey" FOREIGN KEY ("disputeId") REFERENCES "ProjectDispute" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "ProjectDisputeEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );

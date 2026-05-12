@@ -18,7 +18,7 @@ export const publicRouteStatuses: RouteStatusItem[] = [
     label: "Login",
     path: "/login",
     status: "implemented",
-    note: "Login route now signs users in through Firebase Auth.",
+    note: "Login route uses the OpenStaff JWT auth contract through /auth/login.",
   },
   {
     label: "Register",
@@ -61,5 +61,5 @@ export const publicRouteStatuses: RouteStatusItem[] = [
 export const publicEnvironmentStatus = {
   localApiUrl: "http://localhost:8080",
   productionApiUrl: "https://api.openstaff.eu",
-  authMode: "Firebase Auth client session; API bearer validation still needs backend alignment",
+  authMode: "OpenStaff JWT auth via /auth/login, /auth/register, /auth/me, with refresh token support",
 };

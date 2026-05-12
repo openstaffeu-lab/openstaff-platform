@@ -76,7 +76,7 @@ CREATE TABLE "Invoice" (
     "vat" REAL NOT NULL,
     "total" REAL NOT NULL,
     "status" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "contractId" TEXT NOT NULL,
     CONSTRAINT "Invoice_contractId_fkey" FOREIGN KEY ("contractId") REFERENCES "Contract" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
@@ -114,14 +114,12 @@ CREATE TABLE "_ContractToUser" (
 );
 
 -- RedefineTables
-PRAGMA defer_foreign_keys=ON;
-PRAGMA foreign_keys=OFF;
 CREATE TABLE "new_Contract" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "code" TEXT NOT NULL,
     "value" REAL NOT NULL,
     "status" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "projectId" TEXT NOT NULL,
     CONSTRAINT "Contract_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
@@ -134,7 +132,7 @@ CREATE TABLE "new_Project" (
     "name" TEXT NOT NULL,
     "location" TEXT NOT NULL,
     "status" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "countryId" TEXT,
     "regionId" TEXT,
     "cityId" TEXT,
@@ -147,8 +145,6 @@ CREATE TABLE "new_Project" (
 INSERT INTO "new_Project" ("createdAt", "id", "location", "name", "status") SELECT "createdAt", "id", "location", "name", "status" FROM "Project";
 DROP TABLE "Project";
 ALTER TABLE "new_Project" RENAME TO "Project";
-PRAGMA foreign_keys=ON;
-PRAGMA defer_foreign_keys=OFF;
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Country_code_key" ON "Country"("code");

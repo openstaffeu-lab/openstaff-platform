@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn, isAuthenticated, isAdmin, loading } = useAuth();
+  const { login, isAuthenticated, isAdmin, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [state, setState] = useState<"idle" | "submitting" | "error">("idle");
@@ -29,7 +29,7 @@ export default function LoginPage() {
     setMessage(null);
 
     try {
-      await signIn(email.trim(), password);
+      await login(email.trim(), password);
       router.push("/dashboard");
     } catch (error) {
       setState("error");

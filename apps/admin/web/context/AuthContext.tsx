@@ -5,8 +5,13 @@ import {
   AuthUser,
   clearStoredToken,
   fetchCurrentUser,
+  getRefreshToken,
   getStoredToken,
   loginAccount,
+  logoutAccount,
+  refreshAuthToken,
+  registerAccount,
+  setStoredRefreshToken,
   setStoredToken,
 } from "../lib/api";
 
@@ -16,9 +21,14 @@ type AuthContextType = {
   isAuthenticated: boolean;
   token: string | null;
   isReady: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  login: (token: string, user: AuthUser) => void;
+  login: (email: string, password: string) => Promise<void>;
+  register: (payload: {
+    email: string;
+    password: string;
+    displayName: string;
+    actorType: string;
+  }) => Promise<void>;
+  refresh: () => Promise<void>;
   logout: () => Promise<void>;
   authProvider: "jwt";
 };
@@ -29,9 +39,9 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   token: null,
   isReady: false,
-  signIn: async () => {},
-  signOut: async () => {},
-  login: () => {},
+  login: async () => {},
+  register: async () => {},
+  refresh: async () => {},
   logout: async () => {},
   authProvider: "jwt",
 });
@@ -72,23 +82,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: Boolean(user && token),
       token,
       isReady: !loading,
-      signIn: async (email: string, password: string) => {
+      login: async (email: string, password: string) => {
         const response = await loginAccount({ email, password });
-        setStoredToken(response.access_token);
-        setToken(response.access_token);
+        setStoredToken(response.accessToken);
+        setStoredRefreshToken(response.refreshToken);
+        setToken(response.accessToken);
         setUser(response.user);
       },
-      signOut: async () => {
-        clearStoredToken();
-        setUser(null);
-        setToken(null);
+      register: async (payload) => {
+        const response = await registerAccount(payload);
+        setStoredToken(response.accessToken);
+        setStoredRefreshToken(response.refreshToken);
+        setToken(response.accessToken);
+        setUser(response.user);
       },
-      login: (nextToken: string, nextUser: AuthUser) => {
-        setStoredToken(nextToken);
-        setToken(nextToken);
-        setUser(nextUser);
+      refresh: async () => {
+        const refreshToken = getRefreshToken();
+
+        if (!refreshToken) {
+          throw new Error("No refresh token available.");
+        }
+
+        const response = await refreshAuthToken(refreshToken);
+        setStoredToken(response.accessToken);
+        setStoredRefreshToken(response.refreshToken);
+        setToken(response.accessToken);
+        setUser(response.user);
       },
       logout: async () => {
+        try {
+          await logoutAccount(token);
+        } catch {
+          // The local session should still be cleared if the API logout fails.
+        }
         clearStoredToken();
         setUser(null);
         setToken(null);

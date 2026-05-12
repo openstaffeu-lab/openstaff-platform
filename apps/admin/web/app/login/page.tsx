@@ -7,7 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn, isAuthenticated, loading, user } = useAuth();
+  const { login, isAuthenticated, loading, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +25,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await signIn(email, password);
+      await login(email, password);
       router.push("/profile");
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "Login failed.");

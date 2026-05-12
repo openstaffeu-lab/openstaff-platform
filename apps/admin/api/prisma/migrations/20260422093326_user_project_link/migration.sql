@@ -43,54 +43,36 @@ DROP INDEX "_NaceToProfile_B_index";
 DROP INDEX "_NaceToProfile_AB_unique";
 
 -- DropTable
-PRAGMA foreign_keys=off;
 DROP TABLE "Contract";
-PRAGMA foreign_keys=on;
 
 -- DropTable
-PRAGMA foreign_keys=off;
 DROP TABLE "Invoice";
-PRAGMA foreign_keys=on;
 
 -- DropTable
-PRAGMA foreign_keys=off;
 DROP TABLE "Profile";
-PRAGMA foreign_keys=on;
 
 -- DropTable
-PRAGMA foreign_keys=off;
 DROP TABLE "Wallet";
-PRAGMA foreign_keys=on;
 
 -- DropTable
-PRAGMA foreign_keys=off;
 DROP TABLE "_ContractToUser";
-PRAGMA foreign_keys=on;
 
 -- DropTable
-PRAGMA foreign_keys=off;
 DROP TABLE "_EscoSkillToProfile";
-PRAGMA foreign_keys=on;
 
 -- DropTable
-PRAGMA foreign_keys=off;
 DROP TABLE "_NaceToProfile";
-PRAGMA foreign_keys=on;
 
 -- RedefineTables
-PRAGMA defer_foreign_keys=ON;
-PRAGMA foreign_keys=OFF;
 CREATE TABLE "new_Project" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
     "location" TEXT NOT NULL,
     "status" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdById" TEXT NOT NULL,
     CONSTRAINT "Project_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 INSERT INTO "new_Project" ("createdAt", "id", "location", "name", "status") SELECT "createdAt", "id", "location", "name", "status" FROM "Project";
 DROP TABLE "Project";
 ALTER TABLE "new_Project" RENAME TO "Project";
-PRAGMA foreign_keys=ON;
-PRAGMA defer_foreign_keys=OFF;

@@ -97,7 +97,9 @@ model Nace {
 model User {
   id                        String                    @id @default(uuid())
   email                     String                    @unique
+  firebaseUid               String?                   @unique
   password                  String
+  refreshTokenHash          String?
   role                      Role
   approvalStatus            AccountApprovalStatus     @default(PENDING)
   accountStatus             AccountLifecycleStatus    @default(OFFLINE)

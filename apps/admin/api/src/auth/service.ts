@@ -1,3 +1,4 @@
+/** @deprecated Legacy auth service boundary. Do not add new functionality here. */
 import {
   AccountApprovalStatus,
   AccountLifecycleStatus,

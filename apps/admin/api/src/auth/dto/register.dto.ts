@@ -1,4 +1,4 @@
-import { ProfileType, Role } from '@prisma/client';
+import { ActorType, ProfileType, Role } from '@prisma/client';
 import {
   IsEmail,
   IsEnum,
@@ -16,8 +16,12 @@ export class RegisterDto {
   @MinLength(6)
   password!: string;
 
+  @IsEnum(ActorType)
+  actorType!: ActorType;
+
+  @IsOptional()
   @IsEnum(ProfileType)
-  profileType!: ProfileType;
+  profileType?: ProfileType;
 
   @IsOptional()
   @IsEnum(Role)

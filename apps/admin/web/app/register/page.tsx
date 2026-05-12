@@ -3,28 +3,21 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { registerAccount } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
-const PROFILE_TYPES = [
-  { value: "CONTRACTOR", label: "Contractor" },
-  { value: "SUBCONTRACTOR", label: "Subcontractor" },
-  { value: "PROFESSIONAL", label: "Professional" },
-  { value: "INVESTOR", label: "Investor" },
-  { value: "TRAINING_COMPANY", label: "Training Company" },
-  { value: "SUPERVISOR", label: "Supervisor" },
-  { value: "HSE_SAFETY", label: "HSE / Safety" },
-  { value: "SUPPLIER", label: "Supplier" },
+const ACTOR_TYPES = [
+  { value: "INDIVIDUAL", label: "Individual professional" },
+  { value: "COMPANY", label: "Company / employer" },
+  { value: "PUBLIC_INSTITUTION", label: "Public institution" },
 ] as const;
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { register } = useAuth();
   const [displayName, setDisplayName] = useState("");
-  const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [profileType, setProfileType] = useState<(typeof PROFILE_TYPES)[number]["value"]>("CONTRACTOR");
+  const [actorType, setActorType] = useState<(typeof ACTOR_TYPES)[number]["value"]>("INDIVIDUAL");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -33,15 +26,12 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      const response = await registerAccount({
+      await register({
         email,
         password,
         displayName,
-        companyName,
-        profileType,
+        actorType,
       });
-
-      login(response.access_token, response.user);
       router.push("/profile");
     } catch (registrationError) {
       setError(
@@ -61,7 +51,7 @@ export default function RegisterPage() {
           <div className="text-xs font-semibold uppercase tracking-[0.4em] text-brand-navy/70">OpenStaff</div>
           <h1 className="mt-4 text-4xl font-bold text-brand-charcoal">Create your account</h1>
           <p className="mt-4 text-slate-600">
-            Start with a real OpenStaff account, choose your marketplace role, and continue directly into your profile workspace.
+            Start with your OpenStaff account, choose the actor type that matches your business, and continue directly into your profile workspace.
           </p>
           <div className="mt-8 rounded-[1.7rem] border border-amber-100 bg-amber-50 p-5 text-sm leading-7 text-slate-700">
             New accounts start in <strong>pending approval</strong>. You can complete your profile immediately, and the backoffice can then approve or moderate it for public visibility.
@@ -87,25 +77,15 @@ export default function RegisterPage() {
             </label>
 
             <label className="block md:col-span-2">
-              <span className="mb-2 block text-sm font-medium text-slate-600">Company name</span>
-              <input
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none"
-                placeholder="Optional"
-                value={companyName}
-                onChange={(event) => setCompanyName(event.target.value)}
-              />
-            </label>
-
-            <label className="block md:col-span-2">
-              <span className="mb-2 block text-sm font-medium text-slate-600">Marketplace role</span>
+              <span className="mb-2 block text-sm font-medium text-slate-600">Actor type</span>
               <select
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none"
-                value={profileType}
+                value={actorType}
                 onChange={(event) =>
-                  setProfileType(event.target.value as (typeof PROFILE_TYPES)[number]["value"])
+                  setActorType(event.target.value as (typeof ACTOR_TYPES)[number]["value"])
                 }
               >
-                {PROFILE_TYPES.map((option) => (
+                {ACTOR_TYPES.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>

@@ -2,6 +2,46 @@
 
 Last updated: 2026-05-05
 
+## EXEC-02 Sprint 1A Auth Consolidation
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| Auth contract unic | ✅ | `auth.controller.ts` expune `register`, `login`, `me`, `refresh`, `logout`, `firebase-exchange`; `apps/admin/api -> npm run build` succes |
+| `/auth/register` | 🚧 | Ruta mapată la boot; request local returnează `500` cât timp Prisma nu poate conecta la `localhost:5432` |
+| `/auth/login` | 🚧 | Ruta mapată la boot; request local returnează `500` cât timp Prisma nu poate conecta la `localhost:5432` |
+| `/auth/me valid` | 🚧 | Ruta mapată la boot; netestată complet deoarece `register/login` sunt blocate de DB locală |
+| `/auth/me invalid` | ✅ | `GET /auth/me` cu token invalid returnează `401 Unauthorized` |
+| `/auth/refresh` | 🚧 | Ruta mapată la boot; netestată complet cu refresh token valid deoarece login/register sunt blocate de DB |
+| `/auth/logout` | 🚧 | Ruta mapată la boot; netestată complet cu access token valid deoarece login/register sunt blocate de DB |
+| `/auth/firebase-exchange` | 🚧 | Ruta mapată la boot; implementată pe `User`, dar netestată runtime fără token Firebase valid și DB funcțională |
+| `FirebaseAuthGuard` legacy | ✅ | `apps/admin/api/src/auth/firebase-auth.guard.ts` marcat `@deprecated`; documentat în `apps/admin/api/src/LEGACY.md` |
+| `auth/service.ts` legacy | ✅ | `apps/admin/api/src/auth/service.ts` marcat `@deprecated`; documentat în `apps/admin/api/src/LEGACY.md` |
+| Public web auth aligned | ✅ | `apps/admin/web -> npm run build` succes; `AuthContext`, `login`, `register`, `refresh`, `logout` mutate pe contractul JWT `/auth/*` |
+| Admin auth aligned | ✅ | `apps/admin -> npm run build` succes; login admin folosește același `/auth/login` + `/auth/me`, cu verificare rol `ADMIN/SUPERADMIN` |
+| Build API | ✅ | `apps/admin/api -> npx prisma validate` succes; `apps/admin/api -> npm run build` succes |
+| Build web | ✅ | `apps/admin/web -> npm run build` succes |
+| Build admin | ✅ | `apps/admin -> npm run build` succes |
+
+## EXEC-02C Local PostgreSQL Recovery & Auth Runtime Finalization
+
+Status general: `BLOCKED BY LOCAL DB MIGRATION HISTORY`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| `prisma validate` | ✅ | `cd apps/admin/api && npx.cmd prisma validate` |
+| `prisma generate` | ✅ | `cd apps/admin/api && npx.cmd prisma generate` |
+| `migration` | ❌ | `npx.cmd prisma migrate dev --name exec_02_auth_consolidation` eșuează cu `P3006`; istoricul vechi conține migrații SQLite-style incompatibile cu PostgreSQL |
+| `/auth/register` | ❌ | test HTTP local returnează `500`; Prisma `P2022`: coloana `approvalStatus` nu există în DB-ul local curent |
+| `/auth/login` | ❌ | test HTTP local returnează `500`; blocat de același mismatch între schema Prisma curentă și schema aplicată în DB |
+| `/auth/me valid` | 🚧 | netestat complet, deoarece `login` nu poate produce token valid în DB-ul local curent |
+| `/auth/me invalid 401` | ✅ | `GET /auth/me` cu token invalid returnează `401` |
+| `/auth/refresh` | 🚧 | netestat complet, deoarece `login` nu poate produce refresh token valid |
+| `/auth/logout` | 🚧 | netestat complet, deoarece `login` nu poate produce access token valid |
+| `refresh după logout invalid` | 🚧 | netestat complet, deoarece `refresh/logout` nu pot fi executate fără tokenuri valide |
+| Build API | ✅ | `cd apps/admin/api && npm.cmd run build` |
+| Build web | ✅ | `cd apps/admin/web && npm.cmd run build` |
+| Build admin | ✅ | `cd apps/admin && npm.cmd run build` |
+
 ## Prompt 8 Video Audit Snapshot
 
 Surse analizate:

@@ -1,3 +1,4 @@
+/** @deprecated Legacy Firebase Actor guard. Do not add new functionality here. */
 import {
   CanActivate,
   ExecutionContext,

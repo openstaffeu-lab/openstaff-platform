@@ -14,8 +14,8 @@ CREATE TABLE "Profile" (
     "certificationsText" TEXT,
     "availabilityStatus" TEXT NOT NULL DEFAULT 'AVAILABLE',
     "rating" REAL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     CONSTRAINT "Profile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "Profile_countryId_fkey" FOREIGN KEY ("countryId") REFERENCES "Country" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT "Profile_regionId_fkey" FOREIGN KEY ("regionId") REFERENCES "Region" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
@@ -29,8 +29,8 @@ CREATE TABLE "ContractorProfile" (
     "tradeFocus" TEXT,
     "teamSize" INTEGER,
     "serviceArea" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     CONSTRAINT "ContractorProfile_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES "Profile" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -41,8 +41,8 @@ CREATE TABLE "ProfessionalProfile" (
     "headline" TEXT,
     "yearsExperience" INTEGER,
     "portfolioFocus" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     CONSTRAINT "ProfessionalProfile_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES "Profile" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -50,7 +50,7 @@ CREATE TABLE "ProfessionalProfile" (
 CREATE TABLE "ProfileLanguage" (
     "profileId" TEXT NOT NULL,
     "languageId" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY ("profileId", "languageId"),
     CONSTRAINT "ProfileLanguage_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES "Profile" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -75,9 +75,9 @@ CREATE TABLE "ProfileDocument" (
     "extractedText" TEXT,
     "extractionStatus" TEXT NOT NULL DEFAULT 'NOT_REQUESTED',
     "extractionError" TEXT,
-    "extractedAt" DATETIME,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "extractedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     CONSTRAINT "ProfileDocument_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES "Profile" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "ProfileDocument_uploadedById_fkey" FOREIGN KEY ("uploadedById") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
@@ -86,7 +86,7 @@ CREATE TABLE "ProfileDocument" (
 CREATE TABLE "ProfileEscoClassification" (
     "profileId" TEXT NOT NULL,
     "escoSkillId" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY ("profileId", "escoSkillId"),
     CONSTRAINT "ProfileEscoClassification_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES "Profile" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -97,7 +97,7 @@ CREATE TABLE "ProfileEscoClassification" (
 CREATE TABLE "ProfileNaceClassification" (
     "profileId" TEXT NOT NULL,
     "naceId" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY ("profileId", "naceId"),
     CONSTRAINT "ProfileNaceClassification_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES "Profile" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -108,7 +108,7 @@ CREATE TABLE "ProfileNaceClassification" (
 CREATE TABLE "ProfileUniclassClassification" (
     "profileId" TEXT NOT NULL,
     "uniclassId" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY ("profileId", "uniclassId"),
     CONSTRAINT "ProfileUniclassClassification_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES "Profile" ("id") ON DELETE CASCADE ON UPDATE CASCADE,

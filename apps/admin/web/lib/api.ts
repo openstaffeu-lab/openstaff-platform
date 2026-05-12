@@ -5,6 +5,7 @@ const API_URL =
     : "http://localhost:8080");
 
 const AUTH_TOKEN_KEY = "openstaff_web_access_token";
+const REFRESH_TOKEN_KEY = "openstaff_web_refresh_token";
 
 type StructuredSuccessResponse<T> = {
   status: "ok";
@@ -18,10 +19,10 @@ export type AuthUser = {
   role: string;
   approvalStatus: "PENDING" | "APPROVED" | "REJECTED";
   accountStatus: "LIVE" | "OFFLINE" | "SUSPENDED";
-  approvedAt: string | null;
-  suspendedAt: string | null;
-  createdAt: string;
-  lastLoginAt: string | null;
+  displayName: string;
+  actorType: string;
+  onboardingStep: number;
+  onboardingDone: boolean;
   profile: {
     id: string;
     slug: string;
@@ -32,10 +33,12 @@ export type AuthUser = {
     moderationStatus: string;
     status: string;
   } | null;
+  subscription?: unknown;
 };
 
 export type AuthResponse = {
-  access_token: string;
+  accessToken: string;
+  refreshToken: string;
   user: AuthUser;
 };
 
@@ -143,6 +146,14 @@ export function getStoredToken() {
   return window.localStorage.getItem(AUTH_TOKEN_KEY);
 }
 
+export function getStoredRefreshToken() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return window.localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
 export function setStoredToken(token: string) {
   if (typeof window === "undefined") {
     return;
@@ -151,16 +162,29 @@ export function setStoredToken(token: string) {
   window.localStorage.setItem(AUTH_TOKEN_KEY, token);
 }
 
+export function setStoredRefreshToken(token: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(REFRESH_TOKEN_KEY, token);
+}
+
 export function clearStoredToken() {
   if (typeof window === "undefined") {
     return;
   }
 
   window.localStorage.removeItem(AUTH_TOKEN_KEY);
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
 export function getAuthToken() {
   return getStoredToken();
+}
+
+export function getRefreshToken() {
+  return getStoredRefreshToken();
 }
 
 async function parseError(response: Response) {
@@ -242,8 +266,7 @@ export async function registerAccount(payload: {
   email: string;
   password: string;
   displayName: string;
-  companyName?: string;
-  profileType: string;
+  actorType: string;
 }) {
   return apiRequest<AuthResponse>("/auth/register", {
     method: "POST",
@@ -261,10 +284,40 @@ export async function loginAccount(payload: {
   });
 }
 
-export async function fetchCurrentUser(token?: string | null) {
-  return apiRequest<AuthUser>("/auth/me", {
+export async function refreshAuthToken(refreshToken?: string | null) {
+  return apiRequest<AuthResponse>("/auth/refresh", {
+    method: "POST",
+    body: {
+      refreshToken: refreshToken ?? getRefreshToken(),
+    },
+  });
+}
+
+export async function logoutAccount(token?: string | null) {
+  return apiRequest<void>("/auth/logout", {
+    method: "POST",
     token: token ?? getAuthToken(),
   });
+}
+
+export async function fetchCurrentUser(token?: string | null) {
+  try {
+    return await apiRequest<AuthUser>("/auth/me", {
+      token: token ?? getAuthToken(),
+    });
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status !== 401) {
+      throw error;
+    }
+
+    const authResponse = await refreshAuthToken();
+    setStoredToken(authResponse.accessToken);
+    setStoredRefreshToken(authResponse.refreshToken);
+
+    return apiRequest<AuthUser>("/auth/me", {
+      token: authResponse.accessToken,
+    });
+  }
 }
 
 const API = API_URL;

@@ -1,6 +1,7 @@
 const LOCAL_API_URL = "http://localhost:8080";
 const PRODUCTION_API_URL = "https://api.openstaff.eu";
 const ACCESS_TOKEN_KEY = "openstaff_admin_access_token";
+const REFRESH_TOKEN_KEY = "openstaff_admin_refresh_token";
 
 export type ApiFetchResult<T> =
   | { ok: true; status: number; data: T }
@@ -29,6 +30,10 @@ export type AdminAuthUser = {
   role: string;
   approvalStatus: string;
   accountStatus: string;
+  displayName: string;
+  actorType: string;
+  onboardingStep: number;
+  onboardingDone: boolean;
   profile: {
     id: string;
     slug: string;
@@ -39,10 +44,12 @@ export type AdminAuthUser = {
     moderationStatus: string;
     status: string;
   } | null;
+  subscription?: unknown;
 };
 
 export type AdminAuthResponse = {
-  access_token: string;
+  accessToken: string;
+  refreshToken: string;
   user: AdminAuthUser;
 };
 
@@ -233,6 +240,14 @@ export function getAccessToken() {
   return window.localStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
+export function getRefreshToken() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return window.localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
 export function setAccessToken(token: string) {
   if (typeof window === "undefined") {
     return;
@@ -241,12 +256,21 @@ export function setAccessToken(token: string) {
   window.localStorage.setItem(ACCESS_TOKEN_KEY, token);
 }
 
+export function setRefreshToken(token: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(REFRESH_TOKEN_KEY, token);
+}
+
 export function clearAccessToken() {
   if (typeof window === "undefined") {
     return;
   }
 
   window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
 export function redirectToLogin() {
@@ -262,6 +286,7 @@ export function redirectToLogin() {
 export async function fetchApiJson<T>(
   path: string,
   init?: RequestInit,
+  options: { retryOnUnauthorized?: boolean } = {},
 ): Promise<ApiFetchResult<T>> {
   const headers = new Headers(init?.headers);
   const accessToken = getAccessToken();
@@ -278,7 +303,27 @@ export async function fetchApiJson<T>(
       cache: "no-store",
     });
 
-    if (response.status === 401) {
+    if (response.status === 401 && options.retryOnUnauthorized !== false) {
+      const refreshToken = getRefreshToken();
+
+      if (refreshToken) {
+        const refreshed = await refreshAdminToken(refreshToken).catch(() => null);
+
+        if (refreshed) {
+          setAccessToken(refreshed.accessToken);
+          setRefreshToken(refreshed.refreshToken);
+
+          return fetchApiJson<T>(
+            path,
+            {
+              ...init,
+              headers: init?.headers,
+            },
+            { retryOnUnauthorized: false },
+          );
+        }
+      }
+
       clearAccessToken();
       redirectToLogin();
 
@@ -356,14 +401,55 @@ export async function loginAdmin(payload: { email: string; password: string }) {
   return data as AdminAuthResponse;
 }
 
-export async function fetchCurrentAdmin(accessToken?: string | null) {
-  const result = await fetchApiJson<AdminAuthUser>("/auth/me", {
+export async function refreshAdminToken(refreshToken?: string | null) {
+  const response = await fetch(buildApiUrl("/auth/refresh"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      refreshToken: refreshToken ?? getRefreshToken(),
+    }),
+    cache: "no-store",
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      data && typeof data === "object" && "message" in data
+        ? String(data.message)
+        : "Refresh failed.",
+    );
+  }
+
+  return data as AdminAuthResponse;
+}
+
+export async function logoutAdmin(accessToken?: string | null) {
+  await fetch(buildApiUrl("/auth/logout"), {
+    method: "POST",
     headers: accessToken
       ? {
           Authorization: `Bearer ${accessToken}`,
         }
       : undefined,
+    cache: "no-store",
   });
+}
+
+export async function fetchCurrentAdmin(accessToken?: string | null) {
+  const result = await fetchApiJson<AdminAuthUser>(
+    "/auth/me",
+    {
+      headers: accessToken
+        ? {
+            Authorization: `Bearer ${accessToken}`,
+          }
+        : undefined,
+    },
+    { retryOnUnauthorized: true },
+  );
 
   if (!result.ok) {
     throw new Error(result.message);

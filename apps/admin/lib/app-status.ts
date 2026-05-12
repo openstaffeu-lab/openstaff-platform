@@ -97,5 +97,5 @@ export const adminRouteStatuses: RouteStatusItem[] = [
 export const adminEnvironmentStatus = {
   localApiUrl: "http://localhost:8080",
   productionApiUrl: "https://api.openstaff.eu",
-  authMode: "Firebase Auth with admin custom-claim guard; API bearer validation still needs backend alignment",
+  authMode: "OpenStaff JWT auth via /auth/login and /auth/me with admin role verification in the backoffice client",
 };

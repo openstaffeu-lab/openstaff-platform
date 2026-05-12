@@ -6,8 +6,12 @@ import {
   clearAccessToken,
   fetchCurrentAdmin,
   getAccessToken,
+  getRefreshToken,
   loginAdmin,
+  logoutAdmin,
+  refreshAdminToken,
   setAccessToken,
+  setRefreshToken,
 } from "@/lib/api";
 
 type AuthContextType = {
@@ -16,8 +20,9 @@ type AuthContextType = {
   isAuthenticated: boolean;
   isAdmin: boolean;
   token: string | null;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  refresh: () => Promise<void>;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -26,8 +31,9 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isAdmin: false,
   token: null,
-  signIn: async () => {},
-  signOut: async () => {},
+  login: async () => {},
+  refresh: async () => {},
+  logout: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -69,19 +75,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: Boolean(user && token),
       isAdmin,
       token,
-      signIn: async (email: string, password: string) => {
+      login: async (email: string, password: string) => {
         const response = await loginAdmin({ email, password });
 
         if (response.user.role !== "ADMIN" && response.user.role !== "SUPERADMIN") {
           throw new Error("This account does not have backoffice access.");
         }
 
-        setAccessToken(response.access_token);
-        setToken(response.access_token);
+        setAccessToken(response.accessToken);
+        setRefreshToken(response.refreshToken);
+        setToken(response.accessToken);
         setUser(response.user);
         setIsAdmin(true);
       },
-      signOut: async () => {
+      refresh: async () => {
+        const refreshToken = getRefreshToken();
+
+        if (!refreshToken) {
+          throw new Error("No refresh token available.");
+        }
+
+        const response = await refreshAdminToken(refreshToken);
+
+        if (response.user.role !== "ADMIN" && response.user.role !== "SUPERADMIN") {
+          throw new Error("This account does not have backoffice access.");
+        }
+
+        setAccessToken(response.accessToken);
+        setRefreshToken(response.refreshToken);
+        setToken(response.accessToken);
+        setUser(response.user);
+        setIsAdmin(true);
+      },
+      logout: async () => {
+        try {
+          await logoutAdmin(token);
+        } catch {
+          // Local session still needs to be cleared.
+        }
         clearAccessToken();
         setUser(null);
         setToken(null);

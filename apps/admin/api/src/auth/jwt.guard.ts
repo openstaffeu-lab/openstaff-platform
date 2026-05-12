@@ -1,17 +1,48 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { AccountLifecycleStatus } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from '../prisma/prisma.service';
+import { IS_PUBLIC_KEY } from './public.decorator';
 
 @Injectable()
 export class JwtGuard implements CanActivate {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly prisma: PrismaService,
+    private readonly reflector: Reflector,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest();
+    const isDevBypass =
+      (process.env.NODE_ENV ?? 'development') !== 'production' &&
+      process.env.SKIP_JWT_AUTH === 'true';
+
+    if (isDevBypass) {
+      request.user = {
+        sub: process.env.DEV_USER_ID ?? 'dev-user-skip-jwt',
+        email: process.env.DEV_USER_EMAIL ?? 'dev@openstaff.eu',
+        role: process.env.DEV_USER_ROLE ?? 'SUPERADMIN',
+      };
+      return true;
+    }
+
     const authHeader = request.headers.authorization;
 
     if (!authHeader) {
@@ -25,11 +56,46 @@ export class JwtGuard implements CanActivate {
     }
 
     try {
-      request.user = this.jwtService.verify(token, {
+      const payload = await this.jwtService.verifyAsync<{
+        sub: string;
+        email: string;
+        role: string;
+        accountStatus?: AccountLifecycleStatus;
+      }>(token, {
         secret: process.env.JWT_SECRET ?? 'SUPER_SECRET_KEY',
       });
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          accountStatus: true,
+        },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      if (user.accountStatus === AccountLifecycleStatus.SUSPENDED) {
+        throw new ForbiddenException('Your account is suspended');
+      }
+
+      request.user = {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        accountStatus: user.accountStatus,
+      };
+
       return true;
-    } catch {
+    } catch (error) {
+      if (error instanceof ForbiddenException || error instanceof UnauthorizedException) {
+        throw error;
+      }
+
       throw new UnauthorizedException('Invalid token');
     }
   }

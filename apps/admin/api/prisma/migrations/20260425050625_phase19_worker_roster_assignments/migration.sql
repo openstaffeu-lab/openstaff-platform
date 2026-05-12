@@ -10,8 +10,8 @@ CREATE TABLE "ProfileWorker" (
     "roleTitle" TEXT NOT NULL,
     "employmentType" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'ACTIVE',
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     CONSTRAINT "ProfileWorker_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES "Profile" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "ProfileWorker_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
@@ -23,8 +23,8 @@ CREATE TABLE "WorkerDocument" (
     "type" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "issuer" TEXT,
-    "issuedAt" DATETIME,
-    "expiresAt" DATETIME,
+    "issuedAt" TIMESTAMP(3),
+    "expiresAt" TIMESTAMP(3),
     "status" TEXT NOT NULL DEFAULT 'PENDING',
     "fileName" TEXT,
     "mimeType" TEXT,
@@ -32,8 +32,8 @@ CREATE TABLE "WorkerDocument" (
     "storageProvider" TEXT,
     "storageKey" TEXT,
     "medicalCategory" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     CONSTRAINT "WorkerDocument_workerId_fkey" FOREIGN KEY ("workerId") REFERENCES "ProfileWorker" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -44,7 +44,7 @@ CREATE TABLE "WorkerSkill" (
     "escoSkillId" TEXT,
     "title" TEXT NOT NULL,
     "level" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "WorkerSkill_workerId_fkey" FOREIGN KEY ("workerId") REFERENCES "ProfileWorker" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "WorkerSkill_escoSkillId_fkey" FOREIGN KEY ("escoSkillId") REFERENCES "EscoSkill" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
@@ -60,9 +60,9 @@ CREATE TABLE "ProjectWorkerAssignment" (
     "status" TEXT NOT NULL DEFAULT 'PROPOSED',
     "assignedById" TEXT NOT NULL,
     "approvedById" TEXT,
-    "assignedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "approvedAt" DATETIME,
-    "removedAt" DATETIME,
+    "assignedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "approvedAt" TIMESTAMP(3),
+    "removedAt" TIMESTAMP(3),
     CONSTRAINT "ProjectWorkerAssignment_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "ProjectWorkerAssignment_contractId_fkey" FOREIGN KEY ("contractId") REFERENCES "ProjectContract" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT "ProjectWorkerAssignment_jobRequestId_fkey" FOREIGN KEY ("jobRequestId") REFERENCES "ProjectJobRequest" ("id") ON DELETE SET NULL ON UPDATE CASCADE,

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { UsersModule } from '../users/users.module';
 import { AuthModule } from '../auth/auth.module';
@@ -7,6 +7,7 @@ import { PermissionsGuard } from './permissions.guard';
 import { AdminRolesController } from './admin-roles.controller';
 import { AdminUsersController } from './admin-users.controller';
 
+@Global()
 @Module({
   imports: [PrismaModule, UsersModule, AuthModule],
   controllers: [AdminRolesController, AdminUsersController],

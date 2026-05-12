@@ -21,13 +21,13 @@ CREATE TABLE "ProjectJobRequest" (
     "currencyCode" TEXT,
     "requiredExperienceYears" INTEGER,
     "requiresCertification" BOOLEAN NOT NULL DEFAULT false,
-    "startDate" DATETIME,
-    "endDate" DATETIME,
-    "responseDeadline" DATETIME,
+    "startDate" TIMESTAMP(3),
+    "endDate" TIMESTAMP(3),
+    "responseDeadline" TIMESTAMP(3),
     "languageId" TEXT,
     "notes" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     CONSTRAINT "ProjectJobRequest_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "ProjectJobRequest_languageId_fkey" FOREIGN KEY ("languageId") REFERENCES "Language" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
@@ -44,8 +44,8 @@ CREATE TABLE "ProjectCondition" (
     "content" TEXT NOT NULL,
     "isMandatory" BOOLEAN NOT NULL DEFAULT true,
     "sortOrder" INTEGER NOT NULL DEFAULT 0,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     CONSTRAINT "ProjectCondition_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "ProjectCondition_jobRequestId_fkey" FOREIGN KEY ("jobRequestId") REFERENCES "ProjectJobRequest" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -63,8 +63,8 @@ CREATE TABLE "ProjectAIInterpretation" (
     "promptVersion" TEXT,
     "reviewedById" TEXT,
     "reviewNotes" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     CONSTRAINT "ProjectAIInterpretation_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "ProjectAIInterpretation_reviewedById_fkey" FOREIGN KEY ("reviewedById") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
@@ -86,8 +86,8 @@ CREATE TABLE "ProjectDocument" (
     "storageKey" TEXT NOT NULL,
     "checksumSha256" TEXT,
     "isPublic" BOOLEAN NOT NULL DEFAULT false,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     CONSTRAINT "ProjectDocument_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "ProjectDocument_jobRequestId_fkey" FOREIGN KEY ("jobRequestId") REFERENCES "ProjectJobRequest" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "ProjectDocument_uploadedById_fkey" FOREIGN KEY ("uploadedById") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
@@ -97,7 +97,7 @@ CREATE TABLE "ProjectDocument" (
 CREATE TABLE "ProjectEscoClassification" (
     "projectId" TEXT NOT NULL,
     "escoSkillId" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY ("projectId", "escoSkillId"),
     CONSTRAINT "ProjectEscoClassification_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -108,7 +108,7 @@ CREATE TABLE "ProjectEscoClassification" (
 CREATE TABLE "ProjectNaceClassification" (
     "projectId" TEXT NOT NULL,
     "naceId" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY ("projectId", "naceId"),
     CONSTRAINT "ProjectNaceClassification_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -119,7 +119,7 @@ CREATE TABLE "ProjectNaceClassification" (
 CREATE TABLE "ProjectUniclassClassification" (
     "projectId" TEXT NOT NULL,
     "uniclassId" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY ("projectId", "uniclassId"),
     CONSTRAINT "ProjectUniclassClassification_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -130,7 +130,7 @@ CREATE TABLE "ProjectUniclassClassification" (
 CREATE TABLE "ProjectJobRequestEscoClassification" (
     "jobRequestId" TEXT NOT NULL,
     "escoSkillId" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY ("jobRequestId", "escoSkillId"),
     CONSTRAINT "ProjectJobRequestEscoClassification_jobRequestId_fkey" FOREIGN KEY ("jobRequestId") REFERENCES "ProjectJobRequest" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -141,7 +141,7 @@ CREATE TABLE "ProjectJobRequestEscoClassification" (
 CREATE TABLE "ProjectJobRequestNaceClassification" (
     "jobRequestId" TEXT NOT NULL,
     "naceId" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY ("jobRequestId", "naceId"),
     CONSTRAINT "ProjectJobRequestNaceClassification_jobRequestId_fkey" FOREIGN KEY ("jobRequestId") REFERENCES "ProjectJobRequest" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -152,7 +152,7 @@ CREATE TABLE "ProjectJobRequestNaceClassification" (
 CREATE TABLE "ProjectJobRequestUniclassClassification" (
     "jobRequestId" TEXT NOT NULL,
     "uniclassId" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY ("jobRequestId", "uniclassId"),
     CONSTRAINT "ProjectJobRequestUniclassClassification_jobRequestId_fkey" FOREIGN KEY ("jobRequestId") REFERENCES "ProjectJobRequest" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -160,8 +160,6 @@ CREATE TABLE "ProjectJobRequestUniclassClassification" (
 );
 
 -- RedefineTables
-PRAGMA defer_foreign_keys=ON;
-PRAGMA foreign_keys=OFF;
 CREATE TABLE "new_Project" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "slug" TEXT NOT NULL,
@@ -185,13 +183,13 @@ CREATE TABLE "new_Project" (
     "budgetMinCents" INTEGER,
     "budgetMaxCents" INTEGER,
     "currencyCode" TEXT,
-    "startDate" DATETIME,
-    "endDate" DATETIME,
-    "responseDeadline" DATETIME,
-    "publishedAt" DATETIME,
-    "archivedAt" DATETIME,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "startDate" TIMESTAMP(3),
+    "endDate" TIMESTAMP(3),
+    "responseDeadline" TIMESTAMP(3),
+    "publishedAt" TIMESTAMP(3),
+    "archivedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     "createdById" TEXT NOT NULL,
     CONSTRAINT "Project_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "Project_countryId_fkey" FOREIGN KEY ("countryId") REFERENCES "Country" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
@@ -233,8 +231,6 @@ CREATE UNIQUE INDEX "Project_slug_key" ON "Project"("slug");
 CREATE INDEX "Project_createdById_createdAt_idx" ON "Project"("createdById", "createdAt");
 CREATE INDEX "Project_status_engagementModel_idx" ON "Project"("status", "engagementModel");
 CREATE INDEX "Project_countryId_regionId_cityId_idx" ON "Project"("countryId", "regionId", "cityId");
-PRAGMA foreign_keys=ON;
-PRAGMA defer_foreign_keys=OFF;
 
 -- CreateIndex
 CREATE INDEX "ProjectJobRequest_projectId_status_idx" ON "ProjectJobRequest"("projectId", "status");
