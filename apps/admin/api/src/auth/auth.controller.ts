@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  HttpStatus,
   Post,
   Req,
   Res,
@@ -29,6 +30,7 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   async login(@Body() body: LoginDto) {
     return this.authService.login(body);
   }
@@ -41,6 +43,7 @@ export class AuthController {
 
   @Public()
   @Post('refresh')
+  @HttpCode(HttpStatus.OK)
   async refresh(@Body() body: RefreshDto) {
     return this.authService.refresh(body.refreshToken);
   }
@@ -55,6 +58,7 @@ export class AuthController {
 
   @Public()
   @Post('firebase-exchange')
+  @HttpCode(HttpStatus.OK)
   async firebaseExchange(@Body() body: FirebaseExchangeDto) {
     return this.authService.firebaseExchange(body.idToken);
   }
