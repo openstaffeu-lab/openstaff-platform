@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  approveUpgradeRequest,
   getAdminUpgradeRequests,
   type UpgradeRequest,
   updateUpgradeRequestStatus,
@@ -23,6 +24,7 @@ export default function AdminSubscriptionsPage() {
   const [requests, setRequests] = useState<UpgradeRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -65,6 +67,7 @@ export default function AdminSubscriptionsPage() {
   ) {
     setBusyId(requestId);
     setError(null);
+    setSuccess(null);
 
     try {
       const updated = await updateUpgradeRequestStatus(requestId, status);
@@ -76,6 +79,33 @@ export default function AdminSubscriptionsPage() {
         updateError instanceof Error
           ? updateError.message
           : "Nu am putut actualiza statusul cererii.",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleApprove(requestId: string) {
+    setBusyId(requestId);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const result = await approveUpgradeRequest(requestId, {
+        billingStatus: "PENDING",
+      });
+
+      setRequests((current) =>
+        current.map((item) => (item.id === requestId ? result.request : item)),
+      );
+      setSuccess(
+        `Plan activated: ${result.subscription?.planCode ?? "unknown"} for request ${requestId}.`,
+      );
+    } catch (approveError) {
+      setError(
+        approveError instanceof Error
+          ? approveError.message
+          : "Nu am putut aproba cererea de upgrade.",
       );
     } finally {
       setBusyId(null);
@@ -101,6 +131,12 @@ export default function AdminSubscriptionsPage() {
         </section>
       ) : null}
 
+      {success ? (
+        <section className="rounded-[1.5rem] border border-emerald-500/30 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-100">
+          {success}
+        </section>
+      ) : null}
+
       <section className="overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950/70">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-800 text-sm text-slate-200">
@@ -114,12 +150,13 @@ export default function AdminSubscriptionsPage() {
                 <th className="px-4 py-4">Requested</th>
                 <th className="px-4 py-4">Source</th>
                 <th className="px-4 py-4">Status</th>
+                <th className="px-4 py-4">Approve</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
               {loading ? (
                 <tr>
-                  <td className="px-4 py-6 text-slate-400" colSpan={8}>
+                  <td className="px-4 py-6 text-slate-400" colSpan={9}>
                     Loading upgrade requests...
                   </td>
                 </tr>
@@ -157,11 +194,24 @@ export default function AdminSubscriptionsPage() {
                         ))}
                       </select>
                     </td>
+                    <td className="px-4 py-4">
+                      <button
+                        type="button"
+                        disabled={
+                          busyId === request.id ||
+                          (request.status !== "PENDING" && request.status !== "CONTACTED")
+                        }
+                        onClick={() => void handleApprove(request.id)}
+                        className="rounded-full bg-cyan-400 px-4 py-2 text-xs font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Approve
+                      </button>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td className="px-4 py-6 text-slate-400" colSpan={8}>
+                  <td className="px-4 py-6 text-slate-400" colSpan={9}>
                     No upgrade requests recorded yet.
                   </td>
                 </tr>

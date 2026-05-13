@@ -84,6 +84,22 @@ export type CreateUpgradeRequestInput = {
   source?: "PRICING" | "LIMIT_REACHED" | "CONTACT_SALES";
 };
 
+export type ApproveUpgradeRequestInput = {
+  note?: string;
+  billingStatus?: "PENDING" | "ISSUED" | "PAID";
+};
+
+export type SubscriptionSummary = {
+  planCode: "BASIC" | "BRONZE" | "GOLD" | "ENTERPRISE";
+  planName: string;
+  status: "ACTIVE" | "CANCELED" | "EXPIRED";
+  startedAt: string;
+  expiresAt: string | null;
+  contactLimit: number;
+  contactsUsed: number;
+  features: Record<string, boolean>;
+};
+
 export type TaxonomyImportType =
   | "ESCO"
   | "NACE"
@@ -539,6 +555,22 @@ async function adminUpload<T>(path: string, formData: FormData): Promise<T> {
 export const adminApi = {
   getAdminUpgradeRequests: () =>
     adminFetch<UpgradeRequest[]>("/admin/subscription-upgrade-requests"),
+  approveUpgradeRequest: (id: string, input: ApproveUpgradeRequestInput) =>
+    adminFetch<{
+      request: UpgradeRequest;
+      subscription: SubscriptionSummary | null;
+      billingEvent: {
+        id: string;
+        type: string;
+        amount: number;
+        currency: string;
+        status: string;
+      };
+    }>(`/admin/subscription-upgrade-requests/${id}/approve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }),
   updateUpgradeRequestStatus: (
     id: string,
     status: "CONTACTED" | "APPROVED" | "REJECTED" | "CLOSED",
@@ -547,6 +579,19 @@ export const adminApi = {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
+    }),
+  changeUserSubscription: (
+    userId: string,
+    input: {
+      planCode: "BASIC" | "BRONZE" | "GOLD" | "ENTERPRISE";
+      status?: "ACTIVE";
+      note?: string;
+    },
+  ) =>
+    adminFetch<SubscriptionSummary>(`/admin/users/${userId}/subscription`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
     }),
   getUsers: () => adminFetch("/admin/users"),
   updateUserRole: (userId: string, role: string) =>
@@ -695,9 +740,27 @@ export async function getAdminUpgradeRequests() {
   return adminApi.getAdminUpgradeRequests();
 }
 
+export async function approveUpgradeRequest(
+  id: string,
+  input: ApproveUpgradeRequestInput,
+) {
+  return adminApi.approveUpgradeRequest(id, input);
+}
+
 export async function updateUpgradeRequestStatus(
   id: string,
   status: "CONTACTED" | "APPROVED" | "REJECTED" | "CLOSED",
 ) {
   return adminApi.updateUpgradeRequestStatus(id, status);
+}
+
+export async function changeUserSubscription(
+  userId: string,
+  input: {
+    planCode: "BASIC" | "BRONZE" | "GOLD" | "ENTERPRISE";
+    status?: "ACTIVE";
+    note?: string;
+  },
+) {
+  return adminApi.changeUserSubscription(userId, input);
 }

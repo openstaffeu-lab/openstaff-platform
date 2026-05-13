@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -18,6 +19,8 @@ import {
   buildSuccessResponse,
   logEndpointError,
 } from '../common/api-response';
+import { ApproveUpgradeRequestDto } from './dto/approve-upgrade-request.dto';
+import { ChangeUserSubscriptionDto } from './dto/change-user-subscription.dto';
 import { CreateUpgradeRequestDto } from './dto/create-upgrade-request.dto';
 import { UpdateUpgradeRequestStatusDto } from './dto/update-upgrade-request-status.dto';
 import { SubscriptionsService } from './subscriptions.service';
@@ -100,6 +103,48 @@ export class AdminSubscriptionUpgradeRequestsController {
       );
     } catch (error) {
       logEndpointError('AdminSubscriptionUpgradeRequestsController.updateStatus', error);
+      throw error;
+    }
+  }
+
+  @Post(':id/approve')
+  async approveRequest(
+    @Param('id') id: string,
+    @Body() body: ApproveUpgradeRequestDto,
+    @Req() req: any,
+  ) {
+    try {
+      return buildSuccessResponse(
+        await this.subscriptionsService.approveUpgradeRequest(id, body, req.user.sub),
+      );
+    } catch (error) {
+      logEndpointError('AdminSubscriptionUpgradeRequestsController.approveRequest', error);
+      throw error;
+    }
+  }
+}
+
+@Controller('admin/users')
+@UseGuards(JwtGuard, new RolesGuard([Role.ADMIN, Role.SUPERADMIN]))
+export class AdminUserSubscriptionsController {
+  constructor(private readonly subscriptionsService: SubscriptionsService) {}
+
+  @Post(':userId/subscription')
+  async changeUserSubscription(
+    @Param('userId') userId: string,
+    @Body() body: ChangeUserSubscriptionDto,
+    @Req() req: any,
+  ) {
+    try {
+      if (body.status && body.status !== 'ACTIVE') {
+        throw new BadRequestException('Only ACTIVE manual subscription changes are supported.');
+      }
+
+      return buildSuccessResponse(
+        await this.subscriptionsService.changeUserSubscription(userId, body, req.user.sub),
+      );
+    } catch (error) {
+      logEndpointError('AdminUserSubscriptionsController.changeUserSubscription', error);
       throw error;
     }
   }

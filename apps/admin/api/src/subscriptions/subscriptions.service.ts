@@ -1,5 +1,7 @@
 import {
   AccountSubscriptionStatus,
+  BillingEventStatus,
+  BillingEventType,
   Role,
   SubscriptionPlanCode,
   SubscriptionPlanStatus,
@@ -10,7 +12,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ApproveUpgradeRequestDto } from './dto/approve-upgrade-request.dto';
+import { ChangeUserSubscriptionDto } from './dto/change-user-subscription.dto';
 import { CreateUpgradeRequestDto } from './dto/create-upgrade-request.dto';
 
 type SubscriptionFeatureMap = Record<string, boolean>;
@@ -27,6 +32,7 @@ export class SubscriptionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly auditService: AuditService,
   ) {}
 
   async listPlans() {
@@ -302,6 +308,337 @@ export class SubscriptionsService {
         source: true,
       },
     });
+  }
+
+  async approveUpgradeRequest(
+    id: string,
+    input: ApproveUpgradeRequestDto,
+    actorUserId?: string | null,
+  ) {
+    const upgradeRequest = await this.prisma.subscriptionUpgradeRequest.findUnique({
+      where: { id },
+    });
+
+    if (!upgradeRequest) {
+      throw new NotFoundException('Upgrade request not found.');
+    }
+
+    if (upgradeRequest.status === 'APPROVED' || upgradeRequest.status === 'CLOSED') {
+      throw new BadRequestException('Upgrade request cannot be approved from its current status.');
+    }
+
+    if (!upgradeRequest.userId) {
+      throw new BadRequestException('Upgrade request is not linked to a user');
+    }
+
+    const plan = await this.prisma.subscriptionPlan.findUnique({
+      where: { code: upgradeRequest.requestedPlanCode as SubscriptionPlanCode },
+      include: {
+        entitlements: {
+          orderBy: { featureKey: 'asc' },
+        },
+      },
+    });
+
+    if (!plan || plan.status !== SubscriptionPlanStatus.ACTIVE) {
+      throw new BadRequestException('Requested plan does not exist.');
+    }
+
+    const previousSubscription = await this.prisma.accountSubscription.findFirst({
+      where: {
+        userId: upgradeRequest.userId,
+        status: AccountSubscriptionStatus.ACTIVE,
+      },
+      include: {
+        plan: true,
+      },
+      orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      if (previousSubscription) {
+        await tx.accountSubscription.update({
+          where: { id: previousSubscription.id },
+          data: {
+            status: AccountSubscriptionStatus.CANCELED,
+            canceledAt: new Date(),
+          },
+        });
+      }
+
+      const nextSubscription = await tx.accountSubscription.create({
+        data: {
+          userId: upgradeRequest.userId!,
+          planId: plan.id,
+          status: AccountSubscriptionStatus.ACTIVE,
+        },
+        include: {
+          plan: {
+            include: {
+              entitlements: {
+                orderBy: { featureKey: 'asc' },
+              },
+            },
+          },
+        },
+      });
+
+      await tx.usageMeter.upsert({
+        where: {
+          userId_metricKey: {
+            userId: upgradeRequest.userId!,
+            metricKey: 'PRIVATE_CONTACTS',
+          },
+        },
+        update: {
+          subscriptionId: nextSubscription.id,
+          used: 0,
+          periodStart: new Date(),
+          periodEnd: null,
+        },
+        create: {
+          userId: upgradeRequest.userId!,
+          subscriptionId: nextSubscription.id,
+          metricKey: 'PRIVATE_CONTACTS',
+          used: 0,
+          periodStart: new Date(),
+          periodEnd: null,
+        },
+      });
+
+      const updatedRequest = await tx.subscriptionUpgradeRequest.update({
+        where: { id: upgradeRequest.id },
+        data: {
+          status: 'APPROVED',
+          metadata: {
+            ...(upgradeRequest.metadata as Record<string, unknown> | null),
+            approvalNote: input.note ?? null,
+            approvedAt: new Date().toISOString(),
+            approvedByUserId: actorUserId ?? null,
+          },
+        },
+      });
+
+      const billingEvent = await tx.billingEvent.create({
+        data: {
+          userId: upgradeRequest.userId!,
+          subscriptionId: nextSubscription.id,
+          type: BillingEventType.SUBSCRIPTION_UPGRADE,
+          amount: plan.priceMonthly,
+          currency: plan.currencyCode,
+          status: (input.billingStatus as BillingEventStatus | undefined) ?? BillingEventStatus.PENDING,
+          description: `Approved upgrade request for ${plan.code}`,
+          metadata: {
+            upgradeRequestId: upgradeRequest.id,
+            note: input.note ?? null,
+            previousPlanCode: previousSubscription?.plan.code ?? null,
+            nextPlanCode: plan.code,
+          },
+        },
+      });
+
+      return {
+        request: updatedRequest,
+        subscription: nextSubscription,
+        billingEvent,
+      };
+    });
+
+    await this.auditService.log({
+      actorUserId,
+      entityType: 'SubscriptionUpgradeRequest',
+      entityId: upgradeRequest.id,
+      action: 'APPROVE',
+      before: {
+        status: upgradeRequest.status,
+        currentPlanCode: upgradeRequest.currentPlanCode,
+        requestedPlanCode: upgradeRequest.requestedPlanCode,
+      },
+      after: {
+        status: result.request.status,
+        planCode: result.subscription.plan.code,
+        subscriptionId: result.subscription.id,
+        billingEventId: result.billingEvent.id,
+      },
+      metadata: {
+        note: input.note ?? null,
+        billingStatus: input.billingStatus ?? 'PENDING',
+      },
+    });
+
+    return {
+      request: this.toUpgradeRequestResponse(result.request),
+      subscription: await this.getCurrentSubscriptionSummary(upgradeRequest.userId!),
+      billingEvent: {
+        id: result.billingEvent.id,
+        type: result.billingEvent.type,
+        amount: result.billingEvent.amount,
+        currency: result.billingEvent.currency,
+        status: result.billingEvent.status,
+      },
+    };
+  }
+
+  async changeUserSubscription(
+    userId: string,
+    input: ChangeUserSubscriptionDto,
+    actorUserId?: string | null,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const plan = await this.prisma.subscriptionPlan.findUnique({
+      where: { code: input.planCode as SubscriptionPlanCode },
+    });
+
+    if (!plan || plan.status !== SubscriptionPlanStatus.ACTIVE) {
+      throw new BadRequestException('Requested plan does not exist.');
+    }
+
+    const previousSubscription = await this.prisma.accountSubscription.findFirst({
+      where: {
+        userId,
+        status: AccountSubscriptionStatus.ACTIVE,
+      },
+      include: {
+        plan: true,
+      },
+      orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      if (previousSubscription) {
+        await tx.accountSubscription.update({
+          where: { id: previousSubscription.id },
+          data: {
+            status: AccountSubscriptionStatus.CANCELED,
+            canceledAt: new Date(),
+          },
+        });
+      }
+
+      const nextSubscription = await tx.accountSubscription.create({
+        data: {
+          userId,
+          planId: plan.id,
+          status: AccountSubscriptionStatus.ACTIVE,
+        },
+      });
+
+      await tx.usageMeter.upsert({
+        where: {
+          userId_metricKey: {
+            userId,
+            metricKey: 'PRIVATE_CONTACTS',
+          },
+        },
+        update: {
+          subscriptionId: nextSubscription.id,
+          used: 0,
+          periodStart: new Date(),
+          periodEnd: null,
+        },
+        create: {
+          userId,
+          subscriptionId: nextSubscription.id,
+          metricKey: 'PRIVATE_CONTACTS',
+          used: 0,
+          periodStart: new Date(),
+          periodEnd: null,
+        },
+      });
+
+      const billingEvent = await tx.billingEvent.create({
+        data: {
+          userId,
+          subscriptionId: nextSubscription.id,
+          type: BillingEventType.MANUAL_ADJUSTMENT,
+          amount: plan.priceMonthly,
+          currency: plan.currencyCode,
+          status: BillingEventStatus.PENDING,
+          description: `Manual subscription change to ${plan.code}`,
+          metadata: {
+            note: input.note ?? null,
+            previousPlanCode: previousSubscription?.plan.code ?? null,
+            nextPlanCode: plan.code,
+          },
+        },
+      });
+
+      return { nextSubscription, billingEvent };
+    });
+
+    await this.auditService.log({
+      actorUserId,
+      entityType: 'AccountSubscription',
+      entityId: result.nextSubscription.id,
+      action: 'MANUAL_CHANGE',
+      before: previousSubscription
+        ? {
+            subscriptionId: previousSubscription.id,
+            planCode: previousSubscription.plan.code,
+            status: previousSubscription.status,
+          }
+        : null,
+      after: {
+        subscriptionId: result.nextSubscription.id,
+        planCode: plan.code,
+        status: result.nextSubscription.status,
+        billingEventId: result.billingEvent.id,
+      },
+      metadata: {
+        userId,
+        note: input.note ?? null,
+      },
+    });
+
+    return this.getCurrentSubscriptionSummary(userId);
+  }
+
+  async findBillingEventsForUser(userId: string) {
+    return this.prisma.billingEvent.findMany({
+      where: { userId },
+      orderBy: [{ createdAt: 'desc' }],
+      select: {
+        id: true,
+        type: true,
+        amount: true,
+        currency: true,
+        status: true,
+        description: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  private toUpgradeRequestResponse(request: {
+    id: string;
+    createdAt: Date;
+    email: string;
+    name: string | null;
+    companyName: string | null;
+    currentPlanCode: string | null;
+    requestedPlanCode: string;
+    status: string;
+    source: string;
+  }) {
+    return {
+      id: request.id,
+      createdAt: request.createdAt,
+      email: request.email,
+      name: request.name,
+      companyName: request.companyName,
+      currentPlanCode: request.currentPlanCode,
+      requestedPlanCode: request.requestedPlanCode,
+      status: request.status,
+      source: request.source,
+    };
   }
 
   private mapEntitlements(

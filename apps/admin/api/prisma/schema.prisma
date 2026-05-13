@@ -135,6 +135,7 @@ model User {
   subscriptions             AccountSubscription[]
   usageMeters               UsageMeter[]
   upgradeRequests           SubscriptionUpgradeRequest[]
+  billingEvents             BillingEvent[]
   profileWorkers            ProfileWorker[]           @relation("ProfileWorkerLinkedUser")
   assignedWorkerAssignments ProjectWorkerAssignment[] @relation("ProjectWorkerAssignmentAssignedBy")
   approvedWorkerAssignments ProjectWorkerAssignment[] @relation("ProjectWorkerAssignmentApprovedBy")
@@ -194,9 +195,30 @@ model AccountSubscription {
   user         User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   plan         SubscriptionPlan          @relation(fields: [planId], references: [id], onDelete: Restrict)
   usageMeters  UsageMeter[]
+  billingEvents BillingEvent[]
 
   @@index([userId, status, startedAt])
   @@index([planId, status])
+}
+
+model BillingEvent {
+  id             String             @id @default(uuid())
+  createdAt      DateTime           @default(now())
+  userId         String
+  subscriptionId String?
+  type           BillingEventType
+  amount         Int
+  currency       String             @default("EUR")
+  status         BillingEventStatus @default(PENDING)
+  description    String
+  metadata       Json?
+
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription   AccountSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([subscriptionId, createdAt])
+  @@index([type, status, createdAt])
 }
 
 model UsageMeter {
@@ -2419,6 +2441,20 @@ enum AccountSubscriptionStatus {
   ACTIVE
   CANCELED
   EXPIRED
+}
+
+enum BillingEventType {
+  SUBSCRIPTION_UPGRADE
+  MANUAL_ADJUSTMENT
+  SUCCESS_FEE
+  DISPUTE_FEE
+}
+
+enum BillingEventStatus {
+  PENDING
+  ISSUED
+  PAID
+  CANCELLED
 }
 
 enum ProfileVisibility {

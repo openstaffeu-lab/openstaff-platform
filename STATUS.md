@@ -1,6 +1,6 @@
 # OpenStaff Platform Status
 
-Last updated: 2026-05-12
+Last updated: 2026-05-13
 
 ## EXEC-02 Sprint 1A Auth Consolidation
 
@@ -64,7 +64,7 @@ Verdict: `PASS`
 
 ## EXEC-03 Subscription Plans, Entitlements & Gating
 
-Status general: `IN PROGRESS - backend-first subscription contract live; private contact limit enforced end-to-end`
+Status general: `PASS - backend-first subscription contract, upgrade requests, and entitlement gating validated locally`
 
 | Task | Status | Confirmat prin |
 |---|---|---|
@@ -86,6 +86,25 @@ Status general: `IN PROGRESS - backend-first subscription contract live; private
 | Build API | ✅ | `cd apps/admin/api && npm.cmd run build` |
 | Build web | ✅ | `cd apps/admin/web && npm.cmd run build` |
 | Build admin | ✅ | `cd apps/admin && npm.cmd run build` |
+
+## EXEC-04 Billing & Commercial Foundations
+
+Status general: `PASS - admin approval now activates plans, records billing events, and logs audit entries`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| `BillingEvent` model | ✅ | Prisma schema include `BillingEvent` cu `type`, `amount`, `currency`, `status`, `metadata` |
+| audit log commercial | ✅ | approve flow și manual plan change creează `AuditLog` cu `entityType`, `action`, `beforeJson`, `afterJson` |
+| approve upgrade request endpoint | ✅ | `POST /admin/subscription-upgrade-requests/:id/approve` returnează `200` |
+| upgrade request `APPROVED` -> plan activated | ✅ | approve runtime returnează `request.status = APPROVED`, `subscription.planCode = GOLD` |
+| `/auth/me` reflects approved plan | ✅ | după approve, `GET /auth/me` pentru userul normal returnează `subscription.planCode = GOLD` |
+| manual plan change endpoint | ✅ | `POST /admin/users/:userId/subscription` returnează `200` și schimbă planul la `BRONZE` |
+| usage reset on plan change | ✅ | după manual change, `GET /auth/me` returnează `contactsUsed = 0` |
+| admin UI approve action | ✅ | `apps/admin/app/admin/subscriptions/page.tsx` compilează cu buton `Approve` și hook admin API |
+| non-admin protected | ✅ | approve endpoint și manual change endpoint returnează `401/403` fără token și cu token non-admin |
+| API build | ✅ | `cd apps/admin/api && npm.cmd run build` |
+| web build | ✅ | `cd apps/admin/web && npm.cmd run build` |
+| admin build | ✅ | `cd apps/admin && npm.cmd run build` |
 
 ## Prompt 8 Video Audit Snapshot
 
