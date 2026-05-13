@@ -21,6 +21,7 @@ const menu = [
   { name: "Private Messages", path: "/admin/private-messages" },
   { name: "Comments & Reviews", path: "/admin/comments-reviews" },
   { name: "Subscriptions", path: "/admin/subscriptions" },
+  { name: "Billing", path: "/admin/billing" },
   { name: "Admin Users", path: "/admin/users" },
   { name: "Admin Roles", path: "/admin/roles" },
   { name: "Status", path: "/status" },

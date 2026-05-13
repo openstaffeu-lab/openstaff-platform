@@ -106,6 +106,30 @@ Status general: `PASS - admin approval now activates plans, records billing even
 | web build | ✅ | `cd apps/admin/web && npm.cmd run build` |
 | admin build | ✅ | `cd apps/admin && npm.cmd run build` |
 
+## EXEC-04B Billing Engine Foundation
+
+Status general: `PASS - invoice aggregation, webhook intake, reconciliation placeholder, and renewals validated locally`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| `BillingInvoice` model | ✅ | Prisma schema include `BillingInvoice` cu `invoiceNumber`, `status`, `subtotal`, `total`, `issuedAt`, `dueAt` |
+| `BillingInvoiceLine` model | ✅ | Prisma schema include `BillingInvoiceLine` legat optional la `BillingEvent` |
+| `PaymentRecord` model | ✅ | Prisma schema include `PaymentRecord` cu `provider`, `status`, `amount`, `paidAt` |
+| `BillingWebhookEvent` model | ✅ | Prisma schema include `BillingWebhookEvent` cu `provider`, `eventType`, `status`, `payload` |
+| `SubscriptionRenewal` model | ✅ | Prisma schema include `SubscriptionRenewal` cu `periodStart`, `periodEnd`, `scheduledAt`, `billingInvoiceId` |
+| invoice generation | ✅ | `POST /admin/billing/invoices/generate` returneaza `200`, `status = ISSUED`, `lines.Count = 1` |
+| mark invoice paid | ✅ | `POST /admin/billing/invoices/:id/mark-paid` returneaza `200`, invoice `PAID` |
+| payment reconciliation placeholder | ✅ | dupa mark paid, `PaymentRecord.status = RECONCILED` si `BillingEvent.status = PAID` |
+| webhook receive | ✅ | `POST /billing/webhooks/stripe-placeholder` returneaza `200`, `status = RECEIVED` |
+| webhook process placeholder | ✅ | `POST /admin/billing/webhooks/:id/process` returneaza `200`, `status = PROCESSED` |
+| renewal generation | ✅ | `POST /admin/billing/renewals/generate` returneaza `200`, `createdCount = 2` pe subscriptions active platite |
+| renewal process | ✅ | `POST /admin/billing/renewals/:id/process` returneaza `200`, `renewal.status = PROCESSED`, `invoice.id` prezent |
+| admin billing page | ✅ | `apps/admin/app/admin/billing/page.tsx` compileaza si ruta `/admin/billing` apare in build |
+| admin protected endpoints | ✅ | `GET /admin/billing/invoices` fara token si cu token non-admin returneaza `401/403` |
+| API build | ✅ | `cd apps/admin/api && npm.cmd run build` |
+| web build | ✅ | `cd apps/admin/web && npm.cmd run build` |
+| admin build | ✅ | `cd apps/admin && npm.cmd run build` |
+
 ## Prompt 8 Video Audit Snapshot
 
 Surse analizate:

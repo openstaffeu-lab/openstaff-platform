@@ -100,6 +100,96 @@ export type SubscriptionSummary = {
   features: Record<string, boolean>;
 };
 
+export type BillingInvoice = {
+  id: string;
+  invoiceNumber: string;
+  status: "DRAFT" | "ISSUED" | "PAID" | "OVERDUE" | "CANCELLED";
+  currency: string;
+  subtotal: number;
+  taxAmount: number;
+  total: number;
+  issuedAt: string;
+  dueAt: string;
+  paidAt: string | null;
+  user: {
+    id: string;
+    email: string;
+  };
+  lineCount?: number;
+  lines?: Array<{
+    id: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    amount: number;
+    billingEvent: {
+      id: string;
+      type: string;
+      status: string;
+      amount: number;
+      currency: string;
+    } | null;
+  }>;
+  payments?: PaymentRecord[];
+};
+
+export type PaymentRecord = {
+  id: string;
+  provider: "MANUAL" | "BANK_TRANSFER" | "STRIPE_PLACEHOLDER";
+  providerPaymentId: string | null;
+  status: "PENDING" | "RECONCILED" | "FAILED" | "CANCELLED";
+  amount: number;
+  currency: string;
+  paidAt: string | null;
+  createdAt: string;
+  user?: {
+    id: string;
+    email: string;
+  };
+  invoice?: {
+    id: string;
+    invoiceNumber: string;
+    status: string;
+  } | null;
+};
+
+export type BillingWebhookEvent = {
+  id: string;
+  provider: string;
+  eventType: string;
+  externalId: string | null;
+  status: "RECEIVED" | "PROCESSED" | "FAILED";
+  payload: unknown;
+  error: string | null;
+  processedAt: string | null;
+  createdAt: string;
+};
+
+export type SubscriptionRenewal = {
+  id: string;
+  status: "SCHEDULED" | "PROCESSED" | "FAILED" | "CANCELLED";
+  periodStart: string;
+  periodEnd: string;
+  scheduledAt: string;
+  processedAt: string | null;
+  user: {
+    id: string;
+    email: string;
+  };
+  subscription: {
+    id: string;
+    plan: {
+      code: string;
+      name: string;
+    };
+  };
+  billingInvoice: {
+    id: string;
+    invoiceNumber: string;
+    status: string;
+  } | null;
+};
+
 export type TaxonomyImportType =
   | "ESCO"
   | "NACE"
@@ -593,6 +683,70 @@ export const adminApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     }),
+  getBillingInvoices: () => adminFetch<BillingInvoice[]>("/admin/billing/invoices"),
+  getBillingInvoice: (id: string) =>
+    adminFetch<BillingInvoice>(`/admin/billing/invoices/${id}`),
+  generateInvoice: (input: {
+    userId: string;
+    billingEventIds: string[];
+    dueDays?: number;
+  }) =>
+    adminFetch<BillingInvoice>("/admin/billing/invoices/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }),
+  markInvoicePaid: (
+    id: string,
+    input: {
+      provider: "MANUAL" | "BANK_TRANSFER";
+      providerPaymentId?: string;
+      note?: string;
+    },
+  ) =>
+    adminFetch<{ invoice: BillingInvoice; payment: PaymentRecord }>(
+      `/admin/billing/invoices/${id}/mark-paid`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      },
+    ),
+  getBillingPayments: () => adminFetch<PaymentRecord[]>("/admin/billing/payments"),
+  getBillingWebhooks: () =>
+    adminFetch<BillingWebhookEvent[]>("/admin/billing/webhooks"),
+  processBillingWebhook: (
+    id: string,
+    input?: {
+      status?: "PROCESSED" | "FAILED";
+      note?: string;
+    },
+  ) =>
+    adminFetch<BillingWebhookEvent>(`/admin/billing/webhooks/${id}/process`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input ?? {}),
+    }),
+  getBillingRenewals: () =>
+    adminFetch<SubscriptionRenewal[]>("/admin/billing/renewals"),
+  generateRenewals: (input: { periodStart: string; periodEnd: string }) =>
+    adminFetch<{
+      createdCount: number;
+      renewals: Array<{ id: string; subscriptionId: string; billingEventId: string }>;
+    }>("/admin/billing/renewals/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }),
+  processRenewal: (id: string) =>
+    adminFetch<{
+      renewal: SubscriptionRenewal;
+      invoice: BillingInvoice | null;
+    }>(`/admin/billing/renewals/${id}/process`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    }),
   getUsers: () => adminFetch("/admin/users"),
   updateUserRole: (userId: string, role: string) =>
     adminFetch(`/admin/users/${userId}/role`, {
@@ -763,4 +917,60 @@ export async function changeUserSubscription(
   },
 ) {
   return adminApi.changeUserSubscription(userId, input);
+}
+
+export async function getBillingInvoices() {
+  return adminApi.getBillingInvoices();
+}
+
+export async function generateInvoice(input: {
+  userId: string;
+  billingEventIds: string[];
+  dueDays?: number;
+}) {
+  return adminApi.generateInvoice(input);
+}
+
+export async function markInvoicePaid(
+  id: string,
+  input: {
+    provider: "MANUAL" | "BANK_TRANSFER";
+    providerPaymentId?: string;
+    note?: string;
+  },
+) {
+  return adminApi.markInvoicePaid(id, input);
+}
+
+export async function getBillingPayments() {
+  return adminApi.getBillingPayments();
+}
+
+export async function getBillingWebhooks() {
+  return adminApi.getBillingWebhooks();
+}
+
+export async function processBillingWebhook(
+  id: string,
+  input?: {
+    status?: "PROCESSED" | "FAILED";
+    note?: string;
+  },
+) {
+  return adminApi.processBillingWebhook(id, input);
+}
+
+export async function getBillingRenewals() {
+  return adminApi.getBillingRenewals();
+}
+
+export async function generateRenewals(input: {
+  periodStart: string;
+  periodEnd: string;
+}) {
+  return adminApi.generateRenewals(input);
+}
+
+export async function processRenewal(id: string) {
+  return adminApi.processRenewal(id);
 }
