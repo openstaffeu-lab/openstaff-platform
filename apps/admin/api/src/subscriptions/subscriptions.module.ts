@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module';
 import { AuthModule } from '../auth/auth.module';
+import { BillingModule } from '../billing/billing.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import {
   AdminSubscriptionUpgradeRequestsController,
@@ -10,7 +11,7 @@ import {
 import { SubscriptionsService } from './subscriptions.service';
 
 @Module({
-  imports: [PrismaModule, AuthModule, AuditModule],
+  imports: [PrismaModule, AuthModule, AuditModule, BillingModule],
   controllers: [
     SubscriptionsController,
     AdminSubscriptionUpgradeRequestsController,

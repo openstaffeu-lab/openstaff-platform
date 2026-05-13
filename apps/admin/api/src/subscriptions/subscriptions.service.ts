@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuditService } from '../audit/audit.service';
+import { BillingService } from '../billing/billing.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApproveUpgradeRequestDto } from './dto/approve-upgrade-request.dto';
 import { ChangeUserSubscriptionDto } from './dto/change-user-subscription.dto';
@@ -33,6 +34,7 @@ export class SubscriptionsService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly auditService: AuditService,
+    private readonly billingService: BillingService,
   ) {}
 
   async listPlans() {
@@ -466,6 +468,15 @@ export class SubscriptionsService {
       },
     });
 
+    const invoice = await this.billingService.generateInvoice(
+      {
+        userId: upgradeRequest.userId!,
+        billingEventIds: [result.billingEvent.id],
+        dueDays: 14,
+      },
+      actorUserId,
+    );
+
     return {
       request: this.toUpgradeRequestResponse(result.request),
       subscription: await this.getCurrentSubscriptionSummary(upgradeRequest.userId!),
@@ -475,6 +486,14 @@ export class SubscriptionsService {
         amount: result.billingEvent.amount,
         currency: result.billingEvent.currency,
         status: result.billingEvent.status,
+      },
+      invoice: {
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        invoiceType: invoice.invoiceType,
+        status: invoice.status,
+        total: invoice.total,
+        taxAmount: invoice.taxAmount,
       },
     };
   }

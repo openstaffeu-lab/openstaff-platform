@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { JwtGuard } from '../auth/jwt.guard';
 import { Public } from '../auth/public.decorator';
@@ -12,6 +21,7 @@ import { GenerateInvoiceDto } from './dto/generate-invoice.dto';
 import { GenerateRenewalsDto } from './dto/generate-renewals.dto';
 import { MarkInvoicePaidDto } from './dto/mark-invoice-paid.dto';
 import { ProcessBillingWebhookDto } from './dto/process-billing-webhook.dto';
+import { UpsertBillingProfileDto } from './dto/upsert-billing-profile.dto';
 import { BillingService } from './billing.service';
 
 @Controller('admin/billing')
@@ -133,6 +143,39 @@ export class BillingAdminController {
       );
     } catch (error) {
       logEndpointError('BillingAdminController.processRenewal', error);
+      throw error;
+    }
+  }
+}
+
+@Controller('billing/profile')
+@UseGuards(JwtGuard)
+export class BillingProfileController {
+  constructor(private readonly billingService: BillingService) {}
+
+  @Get('me')
+  async getMyBillingProfile(@Req() req: any) {
+    try {
+      return buildSuccessResponse(
+        await this.billingService.getBillingProfile(req.user.sub),
+      );
+    } catch (error) {
+      logEndpointError('BillingProfileController.getMyBillingProfile', error);
+      throw error;
+    }
+  }
+
+  @Put('me')
+  async upsertMyBillingProfile(
+    @Req() req: any,
+    @Body() body: UpsertBillingProfileDto,
+  ) {
+    try {
+      return buildSuccessResponse(
+        await this.billingService.upsertBillingProfile(req.user.sub, body),
+      );
+    } catch (error) {
+      logEndpointError('BillingProfileController.upsertMyBillingProfile', error);
       throw error;
     }
   }

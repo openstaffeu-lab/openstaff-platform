@@ -14,4 +14,9 @@ export class MarkInvoicePaidDto {
   @IsString()
   @MaxLength(500)
   note?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  fiscalSeries?: string;
 }

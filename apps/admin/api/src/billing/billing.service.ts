@@ -3,10 +3,12 @@ import {
   BillingEventStatus,
   BillingEventType,
   BillingInvoiceStatus,
+  BillingInvoiceType,
+  BillingVatMode,
   BillingWebhookStatus,
-  Prisma,
   PaymentProvider,
   PaymentRecordStatus,
+  Prisma,
   SubscriptionRenewalStatus,
 } from '@prisma/client';
 import {
@@ -20,6 +22,7 @@ import { GenerateInvoiceDto } from './dto/generate-invoice.dto';
 import { GenerateRenewalsDto } from './dto/generate-renewals.dto';
 import { MarkInvoicePaidDto } from './dto/mark-invoice-paid.dto';
 import { ProcessBillingWebhookDto } from './dto/process-billing-webhook.dto';
+import { UpsertBillingProfileDto } from './dto/upsert-billing-profile.dto';
 
 type BillingInvoiceWithRelations = Prisma.BillingInvoiceGetPayload<{
   include: {
@@ -46,12 +49,161 @@ type BillingInvoiceWithRelations = Prisma.BillingInvoiceGetPayload<{
   };
 }>;
 
+type BillingProfileLike = {
+  companyName?: string | null;
+  vatId?: string | null;
+  country: string;
+  region?: string | null;
+  city?: string | null;
+  addressLine1: string;
+  addressLine2?: string | null;
+  postalCode?: string | null;
+  currency: string;
+  isCompany: boolean;
+  isVatPayer: boolean;
+  vatMode?: BillingVatMode | null;
+};
+
+const EU_COUNTRIES = new Set([
+  'AT',
+  'AUSTRIA',
+  'BE',
+  'BELGIUM',
+  'BG',
+  'BULGARIA',
+  'HR',
+  'CROATIA',
+  'CY',
+  'CYPRUS',
+  'CZ',
+  'CZECHIA',
+  'CZECH REPUBLIC',
+  'DE',
+  'GERMANY',
+  'DK',
+  'DENMARK',
+  'EE',
+  'ESTONIA',
+  'ES',
+  'SPAIN',
+  'FI',
+  'FINLAND',
+  'FR',
+  'FRANCE',
+  'GR',
+  'GREECE',
+  'HU',
+  'HUNGARY',
+  'IE',
+  'IRELAND',
+  'IT',
+  'ITALY',
+  'LT',
+  'LITHUANIA',
+  'LU',
+  'LUXEMBOURG',
+  'LV',
+  'LATVIA',
+  'MT',
+  'MALTA',
+  'NL',
+  'NETHERLANDS',
+  'PL',
+  'POLAND',
+  'PT',
+  'PORTUGAL',
+  'RO',
+  'ROMANIA',
+  'SE',
+  'SWEDEN',
+  'SI',
+  'SLOVENIA',
+  'SK',
+  'SLOVAKIA',
+]);
+
 @Injectable()
 export class BillingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
   ) {}
+
+  async getBillingProfile(userId: string) {
+    return this.prisma.billingProfile.findUnique({
+      where: { userId },
+    });
+  }
+
+  async upsertBillingProfile(userId: string, input: UpsertBillingProfileDto) {
+    const vatMode = this.resolveVatMode({
+      country: input.country,
+      isCompany: input.isCompany,
+      isVatPayer: input.isVatPayer,
+      vatId: input.vatId ?? null,
+      currency: input.currency,
+      addressLine1: input.addressLine1,
+      addressLine2: input.addressLine2 ?? null,
+      city: input.city ?? null,
+      companyName: input.companyName ?? null,
+      postalCode: input.postalCode ?? null,
+      region: input.region ?? null,
+      vatMode: input.vatMode as BillingVatMode | undefined,
+    });
+
+    return this.prisma.billingProfile.upsert({
+      where: { userId },
+      update: {
+        companyName: input.companyName?.trim() || null,
+        vatId: input.vatId?.trim() || null,
+        country: input.country.trim(),
+        region: input.region?.trim() || null,
+        city: input.city?.trim() || null,
+        addressLine1: input.addressLine1.trim(),
+        addressLine2: input.addressLine2?.trim() || null,
+        postalCode: input.postalCode?.trim() || null,
+        currency: input.currency.trim().toUpperCase(),
+        isCompany: input.isCompany,
+        isVatPayer: input.isVatPayer,
+        vatMode,
+      },
+      create: {
+        userId,
+        companyName: input.companyName?.trim() || null,
+        vatId: input.vatId?.trim() || null,
+        country: input.country.trim(),
+        region: input.region?.trim() || null,
+        city: input.city?.trim() || null,
+        addressLine1: input.addressLine1.trim(),
+        addressLine2: input.addressLine2?.trim() || null,
+        postalCode: input.postalCode?.trim() || null,
+        currency: input.currency.trim().toUpperCase(),
+        isCompany: input.isCompany,
+        isVatPayer: input.isVatPayer,
+        vatMode,
+      },
+    });
+  }
+
+  calculateVat(
+    profile: BillingProfileLike,
+    subtotal: number,
+  ): { vatMode: BillingVatMode; vatRatePercent: number; vatAmount: number; total: number } {
+    const vatMode = this.resolveVatMode(profile);
+    const vatRatePercent = vatMode === BillingVatMode.DOMESTIC ? 19 : 0;
+    const vatAmount = this.roundMoney((subtotal * vatRatePercent) / 100);
+
+    return {
+      vatMode,
+      vatRatePercent,
+      vatAmount,
+      total: this.roundMoney(subtotal + vatAmount),
+    };
+  }
+
+  private roundMoney(value: number) {
+    return Math.round((value + Number.EPSILON) * 100) / 100;
+  }
 
   async generateInvoice(input: GenerateInvoiceDto, actorUserId?: string | null) {
     const billingEvents = await this.prisma.billingEvent.findMany({
@@ -98,8 +250,12 @@ export class BillingService {
     return invoices.map((invoice) => ({
       id: invoice.id,
       invoiceNumber: invoice.invoiceNumber,
+      invoiceType: invoice.invoiceType,
       status: invoice.status,
       currency: invoice.currency,
+      fiscalSeries: invoice.fiscalSeries,
+      fiscalNumber: invoice.fiscalNumber,
+      proformaReference: invoice.proformaReference,
       subtotal: invoice.subtotal,
       taxAmount: invoice.taxAmount,
       total: invoice.total,
@@ -161,6 +317,9 @@ export class BillingService {
             billingEventId: true,
           },
         },
+        payments: {
+          orderBy: [{ createdAt: 'desc' }],
+        },
       },
     });
 
@@ -168,38 +327,74 @@ export class BillingService {
       throw new NotFoundException('Billing invoice not found.');
     }
 
-    if (invoice.status === BillingInvoiceStatus.PAID) {
-      throw new BadRequestException('Billing invoice is already marked as paid.');
+    if (invoice.status === BillingInvoiceStatus.PAID && invoice.invoiceType === BillingInvoiceType.FISCAL) {
+      throw new BadRequestException('Billing invoice is already finalized and paid.');
     }
 
     const billingEventIds = invoice.lines
       .map((line) => line.billingEventId)
       .filter((value): value is string => Boolean(value));
 
+    const pendingPayment = invoice.payments.find(
+      (payment) => payment.status === PaymentRecordStatus.PENDING,
+    );
+
+    const fiscalSeries = input.fiscalSeries?.trim() || invoice.fiscalSeries || 'OS';
+    const fiscalNumber =
+      invoice.fiscalNumber || (await this.generateFiscalNumber(fiscalSeries));
+    const proformaReference =
+      invoice.invoiceType === BillingInvoiceType.PROFORMA
+        ? invoice.proformaReference || invoice.invoiceNumber
+        : invoice.proformaReference;
+
     const result = await this.prisma.$transaction(async (tx) => {
       const paidAt = new Date();
 
-      const payment = await tx.paymentRecord.create({
-        data: {
-          userId: invoice.userId,
-          invoiceId: invoice.id,
-          provider: input.provider as PaymentProvider,
-          providerPaymentId: input.providerPaymentId ?? null,
-          status: PaymentRecordStatus.RECONCILED,
-          amount: invoice.total,
-          currency: invoice.currency,
-          paidAt,
-          metadata: {
-            note: input.note ?? null,
-          },
-        },
-      });
+      const payment = pendingPayment
+        ? await tx.paymentRecord.update({
+            where: { id: pendingPayment.id },
+            data: {
+              provider: input.provider as PaymentProvider,
+              providerPaymentId: input.providerPaymentId ?? null,
+              status: PaymentRecordStatus.RECONCILED,
+              amount: invoice.total,
+              currency: invoice.currency,
+              paidAt,
+              metadata: {
+                ...(pendingPayment.metadata &&
+                typeof pendingPayment.metadata === 'object'
+                  ? (pendingPayment.metadata as Record<string, unknown>)
+                  : {}),
+                note: input.note ?? null,
+                finalizedFromPlaceholder: true,
+              },
+            },
+          })
+        : await tx.paymentRecord.create({
+            data: {
+              userId: invoice.userId,
+              invoiceId: invoice.id,
+              provider: input.provider as PaymentProvider,
+              providerPaymentId: input.providerPaymentId ?? null,
+              status: PaymentRecordStatus.RECONCILED,
+              amount: invoice.total,
+              currency: invoice.currency,
+              paidAt,
+              metadata: {
+                note: input.note ?? null,
+              },
+            },
+          });
 
       const updatedInvoice = await tx.billingInvoice.update({
         where: { id: invoice.id },
         data: {
           status: BillingInvoiceStatus.PAID,
           paidAt,
+          invoiceType: BillingInvoiceType.FISCAL,
+          fiscalSeries,
+          fiscalNumber,
+          proformaReference,
         },
       });
 
@@ -221,14 +416,20 @@ export class BillingService {
       actorUserId,
       entityType: 'BillingInvoice',
       entityId: id,
-      action: 'MARK_PAID',
+      action: 'FINALIZE_FISCAL_AND_MARK_PAID',
       before: {
         status: invoice.status,
         paidAt: invoice.paidAt,
+        invoiceType: invoice.invoiceType,
+        fiscalSeries: invoice.fiscalSeries,
+        fiscalNumber: invoice.fiscalNumber,
       },
       after: {
         status: result.invoice.status,
         paidAt: result.invoice.paidAt,
+        invoiceType: result.invoice.invoiceType,
+        fiscalSeries: result.invoice.fiscalSeries,
+        fiscalNumber: result.invoice.fiscalNumber,
         paymentRecordId: result.payment.id,
       },
       metadata: {
@@ -257,7 +458,10 @@ export class BillingService {
           select: {
             id: true,
             invoiceNumber: true,
+            invoiceType: true,
             status: true,
+            fiscalSeries: true,
+            fiscalNumber: true,
           },
         },
       },
@@ -317,7 +521,10 @@ export class BillingService {
       data: {
         status: nextStatus,
         processedAt: nextStatus === BillingWebhookStatus.PROCESSED ? new Date() : null,
-        error: nextStatus === BillingWebhookStatus.FAILED ? input.note ?? 'Processing failed' : null,
+        error:
+          nextStatus === BillingWebhookStatus.FAILED
+            ? input.note ?? 'Processing failed'
+            : null,
       },
     });
 
@@ -364,7 +571,10 @@ export class BillingService {
           select: {
             id: true,
             invoiceNumber: true,
+            invoiceType: true,
             status: true,
+            fiscalSeries: true,
+            fiscalNumber: true,
           },
         },
       },
@@ -394,7 +604,8 @@ export class BillingService {
       },
     });
 
-    const createdRenewals: Array<{ id: string; subscriptionId: string; billingEventId: string }> = [];
+    const createdRenewals: Array<{ id: string; subscriptionId: string; billingEventId: string }> =
+      [];
 
     await this.prisma.$transaction(async (tx) => {
       for (const subscription of activeSubscriptions) {
@@ -532,12 +743,7 @@ export class BillingService {
             billingEvent.invoiceLine.invoice.id,
           )) as BillingInvoiceWithRelations;
         } else {
-          const createdInvoice = await this.createInvoiceForEvents(
-            [billingEvent],
-            14,
-            actorUserId,
-          );
-          invoice = createdInvoice;
+          invoice = await this.createInvoiceForEvents([billingEvent], 14, actorUserId);
         }
       }
     }
@@ -554,7 +760,10 @@ export class BillingService {
           select: {
             id: true,
             invoiceNumber: true,
+            invoiceType: true,
             status: true,
+            fiscalSeries: true,
+            fiscalNumber: true,
           },
         },
       },
@@ -616,7 +825,9 @@ export class BillingService {
     const subscriptionId = subscriptionIds.length === 1 ? subscriptionIds[0] : null;
     const issuedAt = new Date();
     const dueAt = new Date(issuedAt.getTime() + dueDays * 24 * 60 * 60 * 1000);
-    const invoiceNumber = await this.generateInvoiceNumber();
+    const invoiceNumber = await this.generateProformaNumber();
+    const billingProfile = await this.ensureBillingProfile(first.userId, currency);
+    const vatSummary = this.calculateVat(billingProfile, subtotal);
 
     const invoice = await this.prisma.$transaction(async (tx) => {
       const createdInvoice = await tx.billingInvoice.create({
@@ -624,15 +835,32 @@ export class BillingService {
           userId: first.userId,
           subscriptionId,
           invoiceNumber,
+          invoiceType: BillingInvoiceType.PROFORMA,
           status: BillingInvoiceStatus.ISSUED,
           currency,
           subtotal,
-          taxAmount: 0,
-          total: subtotal,
+          taxAmount: vatSummary.vatAmount,
+          total: vatSummary.total,
           issuedAt,
           dueAt,
           metadata: {
             generatedFromBillingEventIds: billingEvents.map((event) => event.id),
+            vatMode: vatSummary.vatMode,
+            vatRatePercent: vatSummary.vatRatePercent,
+            billingProfileSnapshot: {
+              companyName: billingProfile.companyName,
+              vatId: billingProfile.vatId,
+              country: billingProfile.country,
+              region: billingProfile.region,
+              city: billingProfile.city,
+              addressLine1: billingProfile.addressLine1,
+              addressLine2: billingProfile.addressLine2,
+              postalCode: billingProfile.postalCode,
+              currency: billingProfile.currency,
+              isCompany: billingProfile.isCompany,
+              isVatPayer: billingProfile.isVatPayer,
+              vatMode: billingProfile.vatMode,
+            },
           },
         },
       });
@@ -653,6 +881,21 @@ export class BillingService {
           },
         });
       }
+
+      await tx.paymentRecord.create({
+        data: {
+          userId: first.userId,
+          invoiceId: createdInvoice.id,
+          provider: PaymentProvider.MANUAL,
+          status: PaymentRecordStatus.PENDING,
+          amount: vatSummary.total,
+          currency,
+          metadata: {
+            placeholder: true,
+            reason: 'Awaiting manual/admin reconciliation',
+          },
+        },
+      });
 
       await tx.billingEvent.updateMany({
         where: {
@@ -696,23 +939,124 @@ export class BillingService {
       actorUserId,
       entityType: 'BillingInvoice',
       entityId: invoice.id,
-      action: 'GENERATE',
+      action: 'GENERATE_PROFORMA',
       before: null,
       after: {
         invoiceNumber: invoice.invoiceNumber,
+        invoiceType: invoice.invoiceType,
         status: invoice.status,
         total: invoice.total,
+        taxAmount: invoice.taxAmount,
       },
       metadata: {
         billingEventIds: billingEvents.map((event) => event.id),
+        vatMode: vatSummary.vatMode,
+        vatRatePercent: vatSummary.vatRatePercent,
       },
     });
 
     return invoice;
   }
 
-  private async generateInvoiceNumber() {
-    const count = await this.prisma.billingInvoice.count();
-    return `INV-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(count + 1).padStart(4, '0')}`;
+  private async ensureBillingProfile(userId: string, currency: string) {
+    const existing = await this.prisma.billingProfile.findUnique({
+      where: { userId },
+    });
+
+    if (existing) {
+      return existing;
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        email: true,
+        profile: {
+          select: {
+            displayName: true,
+            companyName: true,
+          },
+        },
+      },
+    });
+
+    return this.prisma.billingProfile.create({
+      data: {
+        userId,
+        companyName: user?.profile?.companyName ?? null,
+        country: 'Romania',
+        addressLine1: 'Pending billing profile completion',
+        currency,
+        isCompany: Boolean(user?.profile?.companyName),
+        isVatPayer: false,
+        vatMode: BillingVatMode.DOMESTIC,
+      },
+    });
+  }
+
+  private resolveVatMode(profile: BillingProfileLike) {
+    if (profile.vatMode === BillingVatMode.EXEMPT) {
+      return BillingVatMode.EXEMPT;
+    }
+
+    const country = this.normalizeCountry(profile.country);
+
+    if (country === 'RO' || country === 'ROMANIA') {
+      return BillingVatMode.DOMESTIC;
+    }
+
+    if (EU_COUNTRIES.has(country)) {
+      if (profile.isCompany && profile.isVatPayer && Boolean(profile.vatId?.trim())) {
+        return BillingVatMode.EU_REVERSE_CHARGE;
+      }
+
+      return BillingVatMode.DOMESTIC;
+    }
+
+    return BillingVatMode.EXPORT;
+  }
+
+  private normalizeCountry(value: string) {
+    return value.trim().toUpperCase();
+  }
+
+  private async generateProformaNumber() {
+    const now = new Date();
+    const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const timePart = `${String(now.getHours()).padStart(2, '0')}${String(
+      now.getMinutes(),
+    ).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}${String(
+      now.getMilliseconds(),
+    ).padStart(3, '0')}`;
+
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const candidate = `PRO-${datePart}-${timePart}${attempt > 0 ? `-${attempt}` : ''}`;
+      const existing = await this.prisma.billingInvoice.findUnique({
+        where: { invoiceNumber: candidate },
+        select: { id: true },
+      });
+
+      if (!existing) {
+        return candidate;
+      }
+    }
+
+    throw new BadRequestException('Unable to generate a unique proforma invoice number.');
+  }
+
+  private async generateFiscalNumber(series: string) {
+    const latest = await this.prisma.billingInvoice.findFirst({
+      where: {
+        invoiceType: BillingInvoiceType.FISCAL,
+        fiscalSeries: series,
+      },
+      orderBy: [{ createdAt: 'desc' }],
+      select: { fiscalNumber: true },
+    });
+
+    const latestValue = Number.parseInt(latest?.fiscalNumber ?? '0', 10);
+    const nextValue = Number.isFinite(latestValue) ? latestValue + 1 : 1;
+
+    return String(nextValue).padStart(4, '0');
   }
 }

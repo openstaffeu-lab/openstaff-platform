@@ -130,6 +130,34 @@ Status general: `PASS - invoice aggregation, webhook intake, reconciliation plac
 | web build | ✅ | `cd apps/admin/web && npm.cmd run build` |
 | admin build | ✅ | `cd apps/admin && npm.cmd run build` |
 
+## EXEC-04C Billing Profile, VAT & Fiscalization Integration
+
+Status general: `PASS - billing profile, VAT logic, proforma/fiscal invoice lifecycle validated locally on PostgreSQL`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| `BillingProfile` model | ✅ | Prisma schema include `BillingProfile` cu date de facturare, `currency`, `isCompany`, `isVatPayer`, `vatMode` |
+| `BillingVatMode` enum | ✅ | Prisma schema include `DOMESTIC`, `EU_REVERSE_CHARGE`, `EXPORT`, `EXEMPT` |
+| `BillingInvoice` fiscal fields | ✅ | Prisma schema include `invoiceType`, `fiscalSeries`, `fiscalNumber`, `proformaReference`, plus `subtotal`, `taxAmount`, `total` |
+| `BillingService.calculateVat(...)` | ✅ | serviciul aplică `RO -> 19%`, `EU B2B + VAT -> 0% reverse charge`, `EU B2C -> TVA standard`, `NON-EU -> 0%` |
+| billing profile endpoints | ✅ | `GET /billing/profile/me` și `PUT /billing/profile/me` adăugate în `BillingProfileController` |
+| upgrade approved -> invoice generated | ✅ | `SubscriptionsService.approveUpgradeRequest()` creează `BillingEvent` și cheamă `BillingService.generateInvoice(...)` |
+| payment placeholder on invoice issue | ✅ | `BillingService.createInvoiceForEvents()` creează `PaymentRecord` `PENDING` la emiterea proformei |
+| mark invoice paid -> fiscal invoice finalized | ✅ | `BillingService.markInvoicePaid()` transformă proforma în `FISCAL`, setează `fiscalSeries`, `fiscalNumber`, `proformaReference` |
+| `prisma validate` | ✅ | `cd apps/admin/api && npx.cmd prisma validate` |
+| `prisma generate` | ✅ | `cd apps/admin/api && npx.cmd prisma generate` |
+| `prisma db push` | ✅ | `cd apps/admin/api && npx.cmd prisma db push --accept-data-loss` |
+| `PUT /billing/profile/me` | ✅ | update runtime returnează profil fiscal cu `country = Romania`, `vatId = RO12345678`, `vatMode = DOMESTIC` |
+| approve upgrade -> auto invoice | ✅ | `POST /admin/subscription-upgrade-requests/:id/approve` returnează `request.status = APPROVED`, `subscription.planCode = GOLD`, `invoice.invoiceType = PROFORMA` |
+| payment placeholder created | ✅ | `GET /admin/billing/invoices/:id` după approve include `payments[0].status = PENDING`, `placeholder = true` |
+| mark invoice paid | ✅ | `POST /admin/billing/invoices/:id/mark-paid` returnează `invoice.status = PAID`, `payment.status = RECONCILED` |
+| fiscal invoice finalized | ✅ | după `mark-paid`, factura are `invoiceType = FISCAL`, `fiscalSeries = OS`, `fiscalNumber` setat, `proformaReference` populat |
+| VAT amount correct | ✅ | pentru `subtotal = 130` și `Romania`, runtime returnează `taxAmount = 24.7`, `total = 154.7` |
+| `/auth/me` reflects approved plan | ✅ | după approve, `GET /auth/me` returnează `subscription.planCode = GOLD`, `contactLimit = 100` |
+| API build | ✅ | `cd apps/admin/api && npm.cmd run build` |
+| web build | ✅ | `cd apps/admin/web && npm.cmd run build` |
+| admin build | ✅ | `cd apps/admin && npm.cmd run build` |
+
 ## Prompt 8 Video Audit Snapshot
 
 Surse analizate:
