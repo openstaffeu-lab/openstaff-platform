@@ -1,8 +1,80 @@
-import { AgentType, PrismaClient, TaxonomyType } from '@prisma/client';
+import {
+  AgentType,
+  PrismaClient,
+  SubscriptionPlanCode,
+  TaxonomyType,
+} from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  const subscriptionPlanCatalog = [
+    {
+      code: SubscriptionPlanCode.BASIC,
+      name: 'Basic',
+      description: 'Passive visibility and AI-assisted profile setup.',
+      displayOrder: 1,
+      priceMonthly: 0,
+      priceYearly: 0,
+      entitlements: [
+        { featureKey: 'AI_PROFILE_SETUP', enabled: true },
+        { featureKey: 'PROJECT_INGESTION', enabled: false },
+        { featureKey: 'TIMESHEETS', enabled: false },
+        { featureKey: 'INVOICES', enabled: false },
+        { featureKey: 'COMPLIANCE_ADVANCED', enabled: false },
+        { featureKey: 'PRIVATE_CONTACTS_PER_MONTH', enabled: true, limitInt: 5 },
+      ],
+    },
+    {
+      code: SubscriptionPlanCode.BRONZE,
+      name: 'Bronze',
+      description: 'Active AI recruitment with higher contact limits.',
+      displayOrder: 2,
+      priceMonthly: 30,
+      priceYearly: 300,
+      entitlements: [
+        { featureKey: 'AI_PROFILE_SETUP', enabled: true },
+        { featureKey: 'PROJECT_INGESTION', enabled: true },
+        { featureKey: 'TIMESHEETS', enabled: false },
+        { featureKey: 'INVOICES', enabled: false },
+        { featureKey: 'COMPLIANCE_ADVANCED', enabled: false },
+        { featureKey: 'PRIVATE_CONTACTS_PER_MONTH', enabled: true, limitInt: 25 },
+      ],
+    },
+    {
+      code: SubscriptionPlanCode.GOLD,
+      name: 'Gold',
+      description: 'Full project lifecycle with operational tooling.',
+      displayOrder: 3,
+      priceMonthly: 130,
+      priceYearly: 1300,
+      entitlements: [
+        { featureKey: 'AI_PROFILE_SETUP', enabled: true },
+        { featureKey: 'PROJECT_INGESTION', enabled: true },
+        { featureKey: 'TIMESHEETS', enabled: true },
+        { featureKey: 'INVOICES', enabled: true },
+        { featureKey: 'COMPLIANCE_ADVANCED', enabled: false },
+        { featureKey: 'PRIVATE_CONTACTS_PER_MONTH', enabled: true, limitInt: 100 },
+      ],
+    },
+    {
+      code: SubscriptionPlanCode.ENTERPRISE,
+      name: 'Enterprise',
+      description: 'Custom high-volume workflows, governance, and compliance.',
+      displayOrder: 4,
+      priceMonthly: 0,
+      priceYearly: 0,
+      entitlements: [
+        { featureKey: 'AI_PROFILE_SETUP', enabled: true },
+        { featureKey: 'PROJECT_INGESTION', enabled: true },
+        { featureKey: 'TIMESHEETS', enabled: true },
+        { featureKey: 'INVOICES', enabled: true },
+        { featureKey: 'COMPLIANCE_ADVANCED', enabled: true },
+        { featureKey: 'PRIVATE_CONTACTS_PER_MONTH', enabled: true, limitInt: 0 },
+      ],
+    },
+  ] as const;
+
   await prisma.currency.createMany({
     skipDuplicates: true,
     data: [
@@ -202,6 +274,56 @@ async function main() {
       },
     ],
   });
+
+  for (const plan of subscriptionPlanCatalog) {
+    await prisma.subscriptionPlan.upsert({
+      where: { code: plan.code },
+      create: {
+        code: plan.code,
+        name: plan.name,
+        description: plan.description,
+        displayOrder: plan.displayOrder,
+        priceMonthly: plan.priceMonthly,
+        priceYearly: plan.priceYearly,
+        entitlements: {
+          create: plan.entitlements.map((entitlement) => ({
+            featureKey: entitlement.featureKey,
+            enabled: entitlement.enabled,
+            limitInt: entitlement.limitInt ?? null,
+          })),
+        },
+      },
+      update: {
+        name: plan.name,
+        description: plan.description,
+        displayOrder: plan.displayOrder,
+        priceMonthly: plan.priceMonthly,
+        priceYearly: plan.priceYearly,
+      },
+    });
+
+    const storedPlan = await prisma.subscriptionPlan.findUnique({
+      where: { code: plan.code },
+      select: { id: true },
+    });
+
+    if (!storedPlan) {
+      continue;
+    }
+
+    await prisma.planEntitlement.deleteMany({
+      where: { planId: storedPlan.id },
+    });
+
+    await prisma.planEntitlement.createMany({
+      data: plan.entitlements.map((entitlement) => ({
+        planId: storedPlan.id,
+        featureKey: entitlement.featureKey,
+        enabled: entitlement.enabled,
+        limitInt: entitlement.limitInt ?? null,
+      })),
+    });
+  }
 
   console.log('Seed completed successfully.');
 }

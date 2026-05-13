@@ -33,13 +33,57 @@ export type AuthUser = {
     moderationStatus: string;
     status: string;
   } | null;
-  subscription?: unknown;
+  subscription?: {
+    planCode: "BASIC" | "BRONZE" | "GOLD" | "ENTERPRISE";
+    planName: string;
+    status: "ACTIVE" | "CANCELED" | "EXPIRED";
+    startedAt: string;
+    expiresAt: string | null;
+    contactLimit: number;
+    contactsUsed: number;
+    features: Record<string, boolean>;
+  } | null;
 };
 
 export type AuthResponse = {
   accessToken: string;
   refreshToken: string;
   user: AuthUser;
+};
+
+export type SubscriptionPlan = {
+  code: "BASIC" | "BRONZE" | "GOLD" | "ENTERPRISE";
+  name: string;
+  description: string | null;
+  status: "ACTIVE" | "INACTIVE";
+  priceMonthly: number;
+  priceYearly: number;
+  currency: string;
+  contactLimit: number;
+  features: Record<string, boolean>;
+};
+
+export type UpgradeRequest = {
+  id: string;
+  createdAt?: string;
+  email: string;
+  name: string | null;
+  companyName: string | null;
+  currentPlanCode: string | null;
+  requestedPlanCode: "BRONZE" | "GOLD" | "ENTERPRISE";
+  status: "PENDING" | "CONTACTED" | "APPROVED" | "REJECTED" | "CLOSED";
+  source: "PRICING" | "LIMIT_REACHED" | "CONTACT_SALES";
+  message?: string;
+};
+
+export type CreateUpgradeRequestInput = {
+  requestedPlanCode: "BRONZE" | "GOLD" | "ENTERPRISE";
+  name?: string;
+  email?: string;
+  companyName?: string;
+  phone?: string;
+  message?: string;
+  source?: "PRICING" | "LIMIT_REACHED" | "CONTACT_SALES";
 };
 
 export type MarketplacePostType =
@@ -318,6 +362,21 @@ export async function fetchCurrentUser(token?: string | null) {
       token: authResponse.accessToken,
     });
   }
+}
+
+export async function fetchSubscriptionPlans() {
+  return apiRequest<SubscriptionPlan[]>("/plans");
+}
+
+export async function createUpgradeRequest(
+  input: CreateUpgradeRequestInput,
+  token?: string | null,
+) {
+  return apiRequest<UpgradeRequest>("/subscriptions/upgrade-requests", {
+    method: "POST",
+    body: input,
+    token: token ?? getAuthToken(),
+  });
 }
 
 const API = API_URL;

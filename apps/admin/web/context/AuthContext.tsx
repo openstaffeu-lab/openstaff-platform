@@ -15,12 +15,24 @@ import {
   setStoredToken,
 } from "../lib/api";
 
+type SubscriptionFeatureKey =
+  | "aiProfileSetup"
+  | "projectIngestion"
+  | "timesheets"
+  | "invoices"
+  | "complianceAdvanced";
+
 type AuthContextType = {
   user: AuthUser | null;
+  subscription: AuthUser["subscription"] | null;
   loading: boolean;
   isAuthenticated: boolean;
   token: string | null;
   isReady: boolean;
+  hasFeature: (feature: SubscriptionFeatureKey) => boolean;
+  canCreateProjects: boolean;
+  canStartPrivateChat: boolean;
+  remainingPrivateContacts: number | null;
   login: (email: string, password: string) => Promise<void>;
   register: (payload: {
     email: string;
@@ -35,10 +47,15 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  subscription: null,
   loading: true,
   isAuthenticated: false,
   token: null,
   isReady: false,
+  hasFeature: () => false,
+  canCreateProjects: false,
+  canStartPrivateChat: false,
+  remainingPrivateContacts: null,
   login: async () => {},
   register: async () => {},
   refresh: async () => {},
@@ -76,51 +93,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextType>(
-    () => ({
-      user,
-      loading,
-      isAuthenticated: Boolean(user && token),
-      token,
-      isReady: !loading,
-      login: async (email: string, password: string) => {
-        const response = await loginAccount({ email, password });
-        setStoredToken(response.accessToken);
-        setStoredRefreshToken(response.refreshToken);
-        setToken(response.accessToken);
-        setUser(response.user);
-      },
-      register: async (payload) => {
-        const response = await registerAccount(payload);
-        setStoredToken(response.accessToken);
-        setStoredRefreshToken(response.refreshToken);
-        setToken(response.accessToken);
-        setUser(response.user);
-      },
-      refresh: async () => {
-        const refreshToken = getRefreshToken();
+    () => {
+      const subscription = user?.subscription ?? null;
+      const features = subscription?.features ?? {};
+      const contactLimit = subscription?.contactLimit ?? 0;
+      const contactsUsed = subscription?.contactsUsed ?? 0;
+      const remainingPrivateContacts =
+        contactLimit > 0 ? Math.max(contactLimit - contactsUsed, 0) : null;
+      const hasFeature = (feature: SubscriptionFeatureKey) =>
+        Boolean(features[feature]);
 
-        if (!refreshToken) {
-          throw new Error("No refresh token available.");
-        }
+      return {
+        user,
+        subscription,
+        loading,
+        isAuthenticated: Boolean(user && token),
+        token,
+        isReady: !loading,
+        hasFeature,
+        canCreateProjects: hasFeature("projectIngestion"),
+        canStartPrivateChat:
+          Boolean(subscription) &&
+          (contactLimit === 0 || remainingPrivateContacts === null || remainingPrivateContacts > 0),
+        remainingPrivateContacts,
+        login: async (email: string, password: string) => {
+          const response = await loginAccount({ email, password });
+          setStoredToken(response.accessToken);
+          setStoredRefreshToken(response.refreshToken);
+          setToken(response.accessToken);
+          setUser(response.user);
+        },
+        register: async (payload) => {
+          const response = await registerAccount(payload);
+          setStoredToken(response.accessToken);
+          setStoredRefreshToken(response.refreshToken);
+          setToken(response.accessToken);
+          setUser(response.user);
+        },
+        refresh: async () => {
+          const refreshToken = getRefreshToken();
 
-        const response = await refreshAuthToken(refreshToken);
-        setStoredToken(response.accessToken);
-        setStoredRefreshToken(response.refreshToken);
-        setToken(response.accessToken);
-        setUser(response.user);
-      },
-      logout: async () => {
-        try {
-          await logoutAccount(token);
-        } catch {
-          // The local session should still be cleared if the API logout fails.
-        }
-        clearStoredToken();
-        setUser(null);
-        setToken(null);
-      },
-      authProvider: "jwt",
-    }),
+          if (!refreshToken) {
+            throw new Error("No refresh token available.");
+          }
+
+          const response = await refreshAuthToken(refreshToken);
+          setStoredToken(response.accessToken);
+          setStoredRefreshToken(response.refreshToken);
+          setToken(response.accessToken);
+          setUser(response.user);
+        },
+        logout: async () => {
+          try {
+            await logoutAccount(token);
+          } catch {
+            // The local session should still be cleared if the API logout fails.
+          }
+          clearStoredToken();
+          setUser(null);
+          setToken(null);
+        },
+        authProvider: "jwt",
+      };
+    },
     [loading, token, user],
   );
 

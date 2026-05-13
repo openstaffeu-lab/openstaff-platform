@@ -1,6 +1,6 @@
 # OpenStaff Platform Status
 
-Last updated: 2026-05-05
+Last updated: 2026-05-12
 
 ## EXEC-02 Sprint 1A Auth Consolidation
 
@@ -61,6 +61,31 @@ Verdict: `PASS`
 | `API build` | ✅ | `cd apps/admin/api && npm.cmd run build` |
 | `web build` | ✅ | `cd apps/admin/web && npm.cmd run build` |
 | `admin build` | ✅ | `cd apps/admin && npm.cmd run build` |
+
+## EXEC-03 Subscription Plans, Entitlements & Gating
+
+Status general: `IN PROGRESS - backend-first subscription contract live; private contact limit enforced end-to-end`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| `SubscriptionPlan` catalog | ✅ | Prisma schema include `SubscriptionPlan`; `GET /plans` răspunde `200` |
+| `PlanEntitlement` model | ✅ | Prisma schema include `PlanEntitlement`; seed minim pentru feature-uri și limite |
+| `AccountSubscription` model | ✅ | Prisma schema include `AccountSubscription`; userii noi primesc automat planul `BASIC` |
+| `UsageMeter` model | ✅ | Prisma schema include `UsageMeter`; utilizat pentru `PRIVATE_CONTACTS` |
+| seed planuri minime | ✅ | `npx.cmd prisma db seed` creează `BASIC`, `BRONZE`, `GOLD`, `ENTERPRISE` |
+| `GET /plans` | ✅ | test HTTP local returnează `200` și 4 planuri |
+| `/auth/me.subscription` | ✅ | `GET /auth/me` returnează `subscription.planCode`, `contactLimit`, `contactsUsed`, `features` |
+| `GET /subscriptions/me` | ✅ | test HTTP local returnează `200` pentru user autentificat |
+| project gating web | ✅ | `/projects` și `/projects/new` blochează crearea când `projectIngestion = false` |
+| admin subscription visibility | ✅ | dashboard admin afișează planul activ și contactele private rămase |
+| private chat gating UI | ✅ | paginile job/professional și `MessagingDock` afișează planul și limitele rămase |
+| `PRIVATE_CONTACTS` runtime enforcement | ✅ | primele 5 `POST /private-conversations` returnează `201`, a 6-a returnează `403` pe planul `BASIC` |
+| `UsageMeter` increment runtime | ✅ | după 5 conversații private, `GET /auth/me` returnează `contactsUsed = 5`, `contactLimit = 5`, `planCode = BASIC` |
+| `/pricing` conectat la `GET /plans` | ✅ | pagina publică `/pricing` compilează și afișează planurile din backend-first contract |
+| upgrade CTA pentru private contact limit | ✅ | `MessagingDock`, `DirectConversationsPanel`, `jobs/[id]`, `professionals/[id]` trimit către `/pricing` când limita sau `403` blochează fluxul |
+| Build API | ✅ | `cd apps/admin/api && npm.cmd run build` |
+| Build web | ✅ | `cd apps/admin/web && npm.cmd run build` |
+| Build admin | ✅ | `cd apps/admin && npm.cmd run build` |
 
 ## Prompt 8 Video Audit Snapshot
 

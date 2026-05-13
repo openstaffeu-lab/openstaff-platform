@@ -1,4 +1,5 @@
 import {
+  AccountSubscriptionStatus,
   AccountApprovalStatus,
   AccountLifecycleStatus,
   ActorType,
@@ -7,6 +8,7 @@ import {
   ProfileType,
   ProfileVisibility,
   Role,
+  SubscriptionPlanCode,
 } from '@prisma/client';
 import {
   ConflictException,
@@ -53,7 +55,16 @@ type AuthenticatedUserSummary = {
     moderationStatus: string;
     status: string;
   } | null;
-  subscription: null;
+  subscription: {
+    planCode: SubscriptionPlanCode;
+    planName: string;
+    status: AccountSubscriptionStatus;
+    startedAt: Date;
+    expiresAt: Date | null;
+    contactLimit: number;
+    contactsUsed: number;
+    features: Record<string, boolean>;
+  } | null;
 };
 
 @Injectable()
@@ -106,6 +117,8 @@ export class AuthService {
       return createdUser;
     });
 
+    await this.ensureDefaultSubscriptionForUser(user.id);
+
     return this.buildAuthResponse(user.id);
   }
 
@@ -141,6 +154,8 @@ export class AuthService {
         lastLoginAt: new Date(),
       },
     });
+
+    await this.ensureDefaultSubscriptionForUser(user.id);
 
     return this.buildAuthResponse(user.id);
   }
@@ -246,6 +261,8 @@ export class AuthService {
       });
     }
 
+    await this.ensureDefaultSubscriptionForUser(user.id);
+
     return this.buildAuthResponse(user.id);
   }
 
@@ -286,6 +303,7 @@ export class AuthService {
       user.profile?.displayName?.trim() || user.email.split('@')[0] || 'OpenStaff User';
     const actorType = this.mapProfileTypeToActorType(user.profile?.profileType);
     const onboardingDone = Boolean(user.profile);
+    const subscription = await this.buildCurrentSubscriptionSummary(user.id);
 
     return {
       id: user.id,
@@ -309,8 +327,112 @@ export class AuthService {
             status: user.profile.status,
           }
         : null,
-      subscription: null,
+      subscription,
     };
+  }
+
+  private async buildCurrentSubscriptionSummary(userId: string) {
+    const subscription = await this.prisma.accountSubscription.findFirst({
+      where: {
+        userId,
+        status: AccountSubscriptionStatus.ACTIVE,
+      },
+      include: {
+        plan: {
+          include: {
+            entitlements: {
+              orderBy: { featureKey: 'asc' },
+            },
+          },
+        },
+      },
+      orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    if (!subscription) {
+      return null;
+    }
+
+    const { features, contactLimit } = this.mapEntitlements(subscription.plan.entitlements);
+    const usageMeter = await this.prisma.usageMeter.findFirst({
+      where: {
+        userId,
+        subscriptionId: subscription.id,
+        metricKey: 'PRIVATE_CONTACTS',
+      },
+      orderBy: [{ updatedAt: 'desc' }],
+    });
+
+    return {
+      planCode: subscription.plan.code,
+      planName: subscription.plan.name,
+      status: subscription.status,
+      startedAt: subscription.startedAt,
+      expiresAt: subscription.expiresAt,
+      contactLimit,
+      contactsUsed: usageMeter?.used ?? 0,
+      features,
+    };
+  }
+
+  private async ensureDefaultSubscriptionForUser(userId: string) {
+    const activeSubscription = await this.prisma.accountSubscription.findFirst({
+      where: {
+        userId,
+        status: AccountSubscriptionStatus.ACTIVE,
+      },
+      select: { id: true },
+    });
+
+    if (activeSubscription) {
+      return activeSubscription;
+    }
+
+    const basicPlan = await this.prisma.subscriptionPlan.findUnique({
+      where: { code: SubscriptionPlanCode.BASIC },
+      select: { id: true },
+    });
+
+    if (!basicPlan) {
+      return null;
+    }
+
+    return this.prisma.accountSubscription.create({
+      data: {
+        userId,
+        planId: basicPlan.id,
+        status: AccountSubscriptionStatus.ACTIVE,
+      },
+      select: { id: true },
+    });
+  }
+
+  private mapEntitlements(
+    entitlements: Array<{ featureKey: string; enabled: boolean; limitInt: number | null }>,
+  ) {
+    const features: Record<string, boolean> = {};
+    let contactLimit = 0;
+
+    for (const entitlement of entitlements) {
+      if (entitlement.featureKey === 'PRIVATE_CONTACTS_PER_MONTH') {
+        contactLimit = entitlement.limitInt ?? 0;
+        continue;
+      }
+
+      features[this.toFeatureFlagKey(entitlement.featureKey)] = entitlement.enabled;
+    }
+
+    return { features, contactLimit };
+  }
+
+  private toFeatureFlagKey(featureKey: string) {
+    return featureKey
+      .toLowerCase()
+      .split('_')
+      .map((segment, index) =>
+        index === 0 ? segment : `${segment.charAt(0).toUpperCase()}${segment.slice(1)}`,
+      )
+      .join('');
   }
 
   private async signAccessToken(user: AuthenticatedUserSummary) {

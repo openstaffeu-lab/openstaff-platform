@@ -27,7 +27,7 @@ function assetUrl(path?: string | null) {
 export default function ProfessionalDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, canStartPrivateChat, remainingPrivateContacts, subscription } = useAuth();
   const [post, setPost] = useState<MarketplacePost | null>(null);
   const [source, setSource] = useState<"api" | "fallback" | null>(null);
   const [state, setState] = useState<LoadState>("loading");
@@ -226,22 +226,70 @@ export default function ProfessionalDetailPage() {
                   return;
                 }
 
+                if (!canStartPrivateChat) {
+                  return;
+                }
+
                 router.push("/profile");
               }}
               style={{
                 alignSelf: "flex-start",
-                background: "#1B2A6B",
+                background: !token || canStartPrivateChat ? "#1B2A6B" : "#94A3B8",
                 color: "white",
                 border: "none",
                 borderRadius: 12,
                 padding: "14px 22px",
                 fontWeight: 700,
-                cursor: "pointer",
+                cursor: !token || canStartPrivateChat ? "pointer" : "not-allowed",
               }}
+              disabled={Boolean(token) && !canStartPrivateChat}
             >
-              {token ? "Use your account to connect" : "Create account to connect"}
+              {!token
+                ? "Create account to connect"
+                : canStartPrivateChat
+                  ? "Use your account to connect"
+                  : "Private contact limit reached"}
             </button>
           </div>
+
+          {token && !canStartPrivateChat ? (
+            <div
+              style={{
+                marginTop: 16,
+                borderRadius: 14,
+                border: "1px solid #FDE68A",
+                background: "#FFFBEB",
+                color: "#92400E",
+                padding: "14px 16px",
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              Your current plan ({subscription?.planName ?? "No active plan"}) has no private
+              contacts remaining.
+              {remainingPrivateContacts !== null
+                ? ` Contacts left this period: ${remainingPrivateContacts}.`
+                : ""}
+              <div style={{ marginTop: 10 }}>
+                  <Link
+                    href="/pricing?reason=private-contact-limit&plan=BRONZE"
+                    style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    borderRadius: 999,
+                    background: "#1B2A6B",
+                    color: "white",
+                    padding: "10px 14px",
+                    fontWeight: 700,
+                    textDecoration: "none",
+                  }}
+                >
+                  View upgrade options
+                </Link>
+              </div>
+            </div>
+          ) : null}
 
           <div
             style={{

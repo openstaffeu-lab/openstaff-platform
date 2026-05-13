@@ -22,6 +22,7 @@ import { ReluModule } from './relu/relu.module';
 import { TaxonomyModule } from './taxonomy/taxonomy.module';
 import { UiConfigModule } from './ui-config/ui-config.module';
 import { UniclassModule } from './uniclass/uniclass.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { UniclassModule } from './uniclass/uniclass.module';
     NaceModule,
     UniclassModule,
     UiConfigModule,
+    SubscriptionsModule,
     TaxonomyModule,
     PublicPostsModule,
     ExternalLinksModule,

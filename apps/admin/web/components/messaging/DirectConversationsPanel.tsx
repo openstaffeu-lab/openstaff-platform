@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { ApiError, apiRequest } from "../../lib/api";
 import { ConversationItem } from "../../lib/project-types";
 import { ConversationThreadPanel } from "./ConversationThreadPanel";
@@ -33,6 +34,7 @@ export function DirectConversationsPanel({
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [upgradeMessage, setUpgradeMessage] = useState<string | null>(null);
 
   const activeConversation = useMemo(
     () =>
@@ -57,6 +59,7 @@ export function DirectConversationsPanel({
         }
 
         setConversations(items);
+        setUpgradeMessage(null);
         setActiveConversationId((current) =>
           current && items.some((item) => item.id === current)
             ? current
@@ -66,6 +69,9 @@ export function DirectConversationsPanel({
         if (!cancelled) {
           if (error instanceof ApiError && error.status === 403) {
             setConversations([]);
+            setUpgradeMessage(
+              "Your current plan no longer allows additional direct marketplace outreach.",
+            );
             return;
           }
 
@@ -107,6 +113,17 @@ export function DirectConversationsPanel({
         </div>
 
         <div className="mt-5 space-y-3">
+          {upgradeMessage ? (
+            <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <div className="font-semibold">{upgradeMessage}</div>
+              <Link
+                href="/pricing?reason=private-contact-limit&plan=BRONZE"
+                className="mt-3 inline-flex rounded-full bg-brand-navy px-4 py-2 text-xs font-semibold text-white"
+              >
+                Compare plans
+              </Link>
+            </div>
+          ) : null}
           {isLoading ? (
             <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
               Loading direct conversations...

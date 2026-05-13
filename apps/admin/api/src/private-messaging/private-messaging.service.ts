@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { AccountSubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   buildSuccessResponse,
@@ -46,7 +47,7 @@ export class PrivateMessagingService {
     return this.listConversations();
   }
 
-  async createConversation(body: Record<string, unknown>) {
+  async createConversation(body: Record<string, unknown>, userId: string) {
     const data = {
       postId: typeof body.postId === 'string' ? body.postId : '',
       requesterName:
@@ -57,6 +58,8 @@ export class PrivateMessagingService {
         typeof body.ownerName === 'string' ? body.ownerName : 'Public post owner',
       status: typeof body.status === 'string' ? body.status : 'OPEN',
     };
+
+    await this.assertPrivateContactAllowance(userId);
 
     try {
       const conversation = await this.prisma.privateConversation.create({
@@ -71,6 +74,8 @@ export class PrivateMessagingService {
           messages: true,
         },
       });
+
+      await this.incrementPrivateContactUsage(userId);
 
       return buildSuccessResponse(conversation);
     } catch (error) {
@@ -233,5 +238,104 @@ export class PrivateMessagingService {
 
       throw error;
     }
+  }
+
+  private async assertPrivateContactAllowance(userId: string) {
+    const activeSubscription = await this.prisma.accountSubscription.findFirst({
+      where: {
+        userId,
+        status: AccountSubscriptionStatus.ACTIVE,
+      },
+      include: {
+        plan: {
+          include: {
+            entitlements: true,
+          },
+        },
+      },
+      orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    if (!activeSubscription) {
+      throw new ForbiddenException(
+        'An active OpenStaff subscription is required to start a private conversation.',
+      );
+    }
+
+    const contactEntitlement = activeSubscription.plan.entitlements.find(
+      (entitlement) => entitlement.featureKey === 'PRIVATE_CONTACTS_PER_MONTH',
+    );
+
+    if (!contactEntitlement?.enabled) {
+      throw new ForbiddenException(
+        'Your current plan does not allow private conversations.',
+      );
+    }
+
+    const contactLimit = contactEntitlement.limitInt ?? 0;
+
+    if (contactLimit === 0) {
+      return;
+    }
+
+    const meter = await this.prisma.usageMeter.findFirst({
+      where: {
+        userId,
+        subscriptionId: activeSubscription.id,
+        metricKey: 'PRIVATE_CONTACTS',
+      },
+    });
+
+    if ((meter?.used ?? 0) >= contactLimit) {
+      throw new ForbiddenException(
+        'Private contact limit reached for your current subscription.',
+      );
+    }
+  }
+
+  private async incrementPrivateContactUsage(userId: string) {
+    const activeSubscription = await this.prisma.accountSubscription.findFirst({
+      where: {
+        userId,
+        status: AccountSubscriptionStatus.ACTIVE,
+      },
+      select: {
+        id: true,
+      },
+      orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    if (!activeSubscription) {
+      return;
+    }
+
+    const now = new Date();
+    const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const periodEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+
+    await this.prisma.usageMeter.upsert({
+      where: {
+        userId_metricKey: {
+          userId,
+          metricKey: 'PRIVATE_CONTACTS',
+        },
+      },
+      update: {
+        used: {
+          increment: 1,
+        },
+        subscriptionId: activeSubscription.id,
+        periodStart,
+        periodEnd,
+      },
+      create: {
+        userId,
+        subscriptionId: activeSubscription.id,
+        metricKey: 'PRIVATE_CONTACTS',
+        used: 1,
+        periodStart,
+        periodEnd,
+      },
+    });
   }
 }

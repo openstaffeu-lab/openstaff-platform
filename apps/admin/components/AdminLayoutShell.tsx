@@ -20,6 +20,7 @@ const menu = [
   { name: "External Links", path: "/admin/external-links" },
   { name: "Private Messages", path: "/admin/private-messages" },
   { name: "Comments & Reviews", path: "/admin/comments-reviews" },
+  { name: "Subscriptions", path: "/admin/subscriptions" },
   { name: "Admin Users", path: "/admin/users" },
   { name: "Admin Roles", path: "/admin/roles" },
   { name: "Status", path: "/status" },

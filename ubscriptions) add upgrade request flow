@@ -1,0 +1,43 @@
+warning: in the working copy of 'STATUS.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/api/prisma/schema.prisma', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/api/prisma/seed.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/api/src/app.module.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/api/src/auth/auth.service.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/api/src/private-messaging/private-messaging.controller.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/api/src/private-messaging/private-messaging.service.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/app/dashboard/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/components/AdminLayoutShell.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/context/AuthContext.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/lib/api.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/web/app/jobs/[id]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/web/app/professionals/[id]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/web/app/projects/new/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/web/app/projects/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/web/components/Navbar.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/web/components/messaging/DirectConversationsPanel.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/web/components/messaging/MessagingDock.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/web/components/projects/ProjectWorkspaceForm.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/web/context/AuthContext.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin/web/lib/api.ts', LF will be replaced by CRLF the next time Git touches it
+ STATUS.md                                          |  27 [32m++++[m[31m-[m
+ apps/admin/api/prisma/schema.prisma                | 117 [32m+++++++++++++++++++[m
+ apps/admin/api/prisma/seed.ts                      | 124 [32m+++++++++++++++++++[m[31m-[m
+ apps/admin/api/src/app.module.ts                   |   2 [32m+[m
+ apps/admin/api/src/auth/auth.service.ts            | 126 [32m+++++++++++++++++++[m[31m-[m
+ .../private-messaging.controller.ts                |   7 [32m+[m[31m-[m
+ .../private-messaging/private-messaging.service.ts | 108 [32m+++++++++++++++++[m[31m-[m
+ apps/admin/app/dashboard/page.tsx                  |  11 [32m++[m
+ apps/admin/components/AdminLayoutShell.tsx         |   1 [32m+[m
+ apps/admin/context/AuthContext.tsx                 | 127 [32m+++++++++++++[m[31m--------[m
+ apps/admin/lib/api.ts                              |  69 [32m++++++++++[m[31m-[m
+ apps/admin/web/app/jobs/[id]/page.tsx              |  56 [32m++++++++[m[31m-[m
+ apps/admin/web/app/professionals/[id]/page.tsx     |  56 [32m++++++++[m[31m-[m
+ apps/admin/web/app/projects/new/page.tsx           |  25 [32m++++[m
+ apps/admin/web/app/projects/page.tsx               |  59 [32m+++++++[m[31m---[m
+ apps/admin/web/components/Navbar.tsx               |   1 [32m+[m
+ .../messaging/DirectConversationsPanel.tsx         |  17 [32m+++[m
+ .../web/components/messaging/MessagingDock.tsx     |  21 [32m+++[m[31m-[m
+ .../components/projects/ProjectWorkspaceForm.tsx   |   9 [32m+[m[31m-[m
+ apps/admin/web/context/AuthContext.tsx             | 121 [32m+++++++++++++[m[31m-------[m
+ apps/admin/web/lib/api.ts                          |  61 [32m+++++++++[m[31m-[m
+ 21 files changed, 1020 insertions(+), 125 deletions(-)

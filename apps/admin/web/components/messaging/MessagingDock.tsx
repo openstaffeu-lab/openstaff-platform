@@ -81,9 +81,10 @@ function getConversationTone(conversation: ConversationItem) {
 }
 
 export function MessagingDock() {
-  const { token, isReady } = useAuth();
+  const { token, isReady, remainingPrivateContacts, subscription } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const [upgradeMessage, setUpgradeMessage] = useState<string | null>(null);
 
   const unreadCount = useMemo(
     () => conversations.reduce((total, item) => total + item.unreadCount, 0),
@@ -103,6 +104,7 @@ export function MessagingDock() {
         const items = await apiRequest<ConversationItem[]>("/conversations", { token });
         if (!cancelled) {
           setConversations(items.slice(0, 8));
+          setUpgradeMessage(null);
         }
       } catch (error) {
         if (cancelled) {
@@ -111,6 +113,7 @@ export function MessagingDock() {
 
         if (error instanceof ApiError && error.status === 403) {
           setConversations([]);
+          setUpgradeMessage("Upgrade your plan to unlock more private outreach and direct threads.");
         }
       }
     };
@@ -156,6 +159,10 @@ export function MessagingDock() {
                 <div className="mt-2 text-sm text-slate-500">
                   Quick access to project, contract, dispute, and direct threads.
                 </div>
+                <div className="mt-2 text-xs text-slate-500">
+                  Plan: {subscription?.planName ?? "No active plan"} · Private contacts left:{" "}
+                  {remainingPrivateContacts === null ? "Unlimited / not tracked" : remainingPrivateContacts}
+                </div>
               </div>
               <Link
                 href="/profile#messages"
@@ -166,6 +173,18 @@ export function MessagingDock() {
             </div>
 
             <div className="mt-4 space-y-3">
+              {upgradeMessage ? (
+                <div className="rounded-[1.35rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  <div className="font-semibold">{upgradeMessage}</div>
+                  <Link
+                    href="/pricing?reason=private-contact-limit&plan=BRONZE"
+                    className="mt-3 inline-flex rounded-full bg-brand-navy px-4 py-2 text-xs font-semibold text-white"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Compare plans
+                  </Link>
+                </div>
+              ) : null}
               {conversations.length > 0 ? (
                 conversations.map((conversation) => (
                   <Link

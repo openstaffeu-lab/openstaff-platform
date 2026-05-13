@@ -132,6 +132,9 @@ model User {
   assignedTasks             UserTask[]                @relation("UserTaskAssignedTo")
   auditLogs                 AuditLog[]                @relation("AuditLogActorUser")
   notifications             Notification[]
+  subscriptions             AccountSubscription[]
+  usageMeters               UsageMeter[]
+  upgradeRequests           SubscriptionUpgradeRequest[]
   profileWorkers            ProfileWorker[]           @relation("ProfileWorkerLinkedUser")
   assignedWorkerAssignments ProjectWorkerAssignment[] @relation("ProjectWorkerAssignmentAssignedBy")
   approvedWorkerAssignments ProjectWorkerAssignment[] @relation("ProjectWorkerAssignmentApprovedBy")
@@ -141,6 +144,102 @@ model User {
   conversationParticipants  ConversationParticipant[]
   sentMessages              Message[]                 @relation("MessageSender")
   messageReads              MessageRead[]
+}
+
+model SubscriptionPlan {
+  id            String                 @id @default(uuid())
+  code          SubscriptionPlanCode   @unique
+  name          String
+  description   String?
+  status        SubscriptionPlanStatus @default(ACTIVE)
+  displayOrder  Int                    @default(0)
+  currencyCode  String                 @default("EUR")
+  priceMonthly  Int                    @default(0)
+  priceYearly   Int                    @default(0)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  entitlements  PlanEntitlement[]
+  subscriptions AccountSubscription[]
+
+  @@index([status, displayOrder])
+}
+
+model PlanEntitlement {
+  id          String           @id @default(uuid())
+  planId      String
+  featureKey  String
+  enabled     Boolean          @default(true)
+  limitInt    Int?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  plan        SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, featureKey])
+  @@index([featureKey])
+}
+
+model AccountSubscription {
+  id          String                    @id @default(uuid())
+  userId       String
+  planId       String
+  status       AccountSubscriptionStatus @default(ACTIVE)
+  startedAt    DateTime                  @default(now())
+  expiresAt    DateTime?
+  canceledAt   DateTime?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+
+  user         User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan         SubscriptionPlan          @relation(fields: [planId], references: [id], onDelete: Restrict)
+  usageMeters  UsageMeter[]
+
+  @@index([userId, status, startedAt])
+  @@index([planId, status])
+}
+
+model UsageMeter {
+  id               String                @id @default(uuid())
+  userId           String
+  subscriptionId   String?
+  metricKey        String
+  used             Int                   @default(0)
+  periodStart      DateTime?
+  periodEnd        DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription     AccountSubscription?  @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, metricKey])
+  @@index([subscriptionId])
+}
+
+model SubscriptionUpgradeRequest {
+  id                String   @id @default(uuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  userId            String?
+  currentPlanCode   String?
+  requestedPlanCode String
+  name              String?
+  email             String
+  companyName       String?
+  phone             String?
+  message           String?  @db.Text
+  source            String   @default("PRICING")
+  status            String   @default("PENDING")
+  metadata          Json?
+
+  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([requestedPlanCode, createdAt])
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+  @@map("subscription_upgrade_requests")
 }
 
 model RolePermission {
@@ -2302,6 +2401,24 @@ enum AccountLifecycleStatus {
   LIVE
   OFFLINE
   SUSPENDED
+}
+
+enum SubscriptionPlanCode {
+  BASIC
+  BRONZE
+  GOLD
+  ENTERPRISE
+}
+
+enum SubscriptionPlanStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum AccountSubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
 }
 
 enum ProfileVisibility {

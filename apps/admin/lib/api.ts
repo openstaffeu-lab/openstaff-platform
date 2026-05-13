@@ -44,13 +44,44 @@ export type AdminAuthUser = {
     moderationStatus: string;
     status: string;
   } | null;
-  subscription?: unknown;
+  subscription?: {
+    planCode: "BASIC" | "BRONZE" | "GOLD" | "ENTERPRISE";
+    planName: string;
+    status: "ACTIVE" | "CANCELED" | "EXPIRED";
+    startedAt: string;
+    expiresAt: string | null;
+    contactLimit: number;
+    contactsUsed: number;
+    features: Record<string, boolean>;
+  } | null;
 };
 
 export type AdminAuthResponse = {
   accessToken: string;
   refreshToken: string;
   user: AdminAuthUser;
+};
+
+export type UpgradeRequest = {
+  id: string;
+  createdAt: string;
+  email: string;
+  name: string | null;
+  companyName: string | null;
+  currentPlanCode: string | null;
+  requestedPlanCode: "BRONZE" | "GOLD" | "ENTERPRISE";
+  status: "PENDING" | "CONTACTED" | "APPROVED" | "REJECTED" | "CLOSED";
+  source: "PRICING" | "LIMIT_REACHED" | "CONTACT_SALES";
+};
+
+export type CreateUpgradeRequestInput = {
+  requestedPlanCode: "BRONZE" | "GOLD" | "ENTERPRISE";
+  name?: string;
+  email?: string;
+  companyName?: string;
+  phone?: string;
+  message?: string;
+  source?: "PRICING" | "LIMIT_REACHED" | "CONTACT_SALES";
 };
 
 export type TaxonomyImportType =
@@ -506,6 +537,17 @@ async function adminUpload<T>(path: string, formData: FormData): Promise<T> {
 }
 
 export const adminApi = {
+  getAdminUpgradeRequests: () =>
+    adminFetch<UpgradeRequest[]>("/admin/subscription-upgrade-requests"),
+  updateUpgradeRequestStatus: (
+    id: string,
+    status: "CONTACTED" | "APPROVED" | "REJECTED" | "CLOSED",
+  ) =>
+    adminFetch<UpgradeRequest>(`/admin/subscription-upgrade-requests/${id}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    }),
   getUsers: () => adminFetch("/admin/users"),
   updateUserRole: (userId: string, role: string) =>
     adminFetch(`/admin/users/${userId}/role`, {
@@ -634,3 +676,28 @@ export const adminApi = {
       },
     ),
 };
+
+export async function createUpgradeRequest(
+  input: CreateUpgradeRequestInput,
+  token?: string | null,
+) {
+  return adminFetch<UpgradeRequest>("/subscriptions/upgrade-requests", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function getAdminUpgradeRequests() {
+  return adminApi.getAdminUpgradeRequests();
+}
+
+export async function updateUpgradeRequestStatus(
+  id: string,
+  status: "CONTACTED" | "APPROVED" | "REJECTED" | "CLOSED",
+) {
+  return adminApi.updateUpgradeRequestStatus(id, status);
+}

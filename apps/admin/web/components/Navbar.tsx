@@ -8,6 +8,7 @@ import { brand } from "../lib/brand";
 const links = [
   { href: "/jobs", label: "Jobs" },
   { href: "/professionals", label: "Professionals" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/categories/construction", label: "Categories" },
   { href: "/status", label: "Status" },
 ];

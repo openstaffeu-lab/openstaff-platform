@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ReluQueueSnapshot, adminApi } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 type DashboardStats = {
   totalActors?: number;
@@ -12,6 +13,7 @@ type DashboardStats = {
 };
 
 export default function DashboardPage() {
+  const { subscription, remainingPrivateContacts } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({});
   const [reluQueue, setReluQueue] = useState<ReluQueueSnapshot | null>(null);
 
@@ -49,6 +51,15 @@ export default function DashboardPage() {
           cards below combine the legacy platform signals still present in the repo
           with the new secured Relu task queue.
         </p>
+        <div className="mt-5 flex flex-wrap gap-3 text-sm">
+          <span className="rounded-full border border-slate-700 bg-slate-950/60 px-4 py-2 text-slate-200">
+            Plan: {subscription?.planName ?? "No active plan"}
+          </span>
+          <span className="rounded-full border border-slate-700 bg-slate-950/60 px-4 py-2 text-slate-200">
+            Private contacts left:{" "}
+            {remainingPrivateContacts === null ? "Unlimited / not tracked" : remainingPrivateContacts}
+          </span>
+        </div>
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">

@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
+  HttpException,
   Param,
   Patch,
   Post,
@@ -46,8 +48,11 @@ export class PrivateMessagingController {
     }
 
     try {
-      return await this.privateMessagingService.createConversation(body);
+      return await this.privateMessagingService.createConversation(body, req.user.sub);
     } catch (error) {
+      if (error instanceof HttpException || error instanceof ForbiddenException) {
+        throw error;
+      }
       logEndpointError('PrivateMessagingController.createConversation', error);
       return buildInternalErrorResponse(error);
     }

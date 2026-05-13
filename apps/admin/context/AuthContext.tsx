@@ -14,12 +14,22 @@ import {
   setRefreshToken,
 } from "@/lib/api";
 
+type SubscriptionFeatureKey =
+  | "aiProfileSetup"
+  | "projectIngestion"
+  | "timesheets"
+  | "invoices"
+  | "complianceAdvanced";
+
 type AuthContextType = {
   user: AdminAuthUser | null;
+  subscription: AdminAuthUser["subscription"] | null;
   loading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
   token: string | null;
+  hasFeature: (feature: SubscriptionFeatureKey) => boolean;
+  remainingPrivateContacts: number | null;
   login: (email: string, password: string) => Promise<void>;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
@@ -27,10 +37,13 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  subscription: null,
   loading: true,
   isAuthenticated: false,
   isAdmin: false,
   token: null,
+  hasFeature: () => false,
+  remainingPrivateContacts: null,
   login: async () => {},
   refresh: async () => {},
   logout: async () => {},
@@ -69,56 +82,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextType>(
-    () => ({
-      user,
-      loading,
-      isAuthenticated: Boolean(user && token),
-      isAdmin,
-      token,
-      login: async (email: string, password: string) => {
-        const response = await loginAdmin({ email, password });
+    () => {
+      const subscription = user?.subscription ?? null;
+      const features = subscription?.features ?? {};
+      const contactLimit = subscription?.contactLimit ?? 0;
+      const contactsUsed = subscription?.contactsUsed ?? 0;
+      const remainingPrivateContacts =
+        contactLimit > 0 ? Math.max(contactLimit - contactsUsed, 0) : null;
+      const hasFeature = (feature: SubscriptionFeatureKey) =>
+        Boolean(features[feature]);
 
-        if (response.user.role !== "ADMIN" && response.user.role !== "SUPERADMIN") {
-          throw new Error("This account does not have backoffice access.");
-        }
+      return {
+        user,
+        subscription,
+        loading,
+        isAuthenticated: Boolean(user && token),
+        isAdmin,
+        token,
+        hasFeature,
+        remainingPrivateContacts,
+        login: async (email: string, password: string) => {
+          const response = await loginAdmin({ email, password });
 
-        setAccessToken(response.accessToken);
-        setRefreshToken(response.refreshToken);
-        setToken(response.accessToken);
-        setUser(response.user);
-        setIsAdmin(true);
-      },
-      refresh: async () => {
-        const refreshToken = getRefreshToken();
+          if (response.user.role !== "ADMIN" && response.user.role !== "SUPERADMIN") {
+            throw new Error("This account does not have backoffice access.");
+          }
 
-        if (!refreshToken) {
-          throw new Error("No refresh token available.");
-        }
+          setAccessToken(response.accessToken);
+          setRefreshToken(response.refreshToken);
+          setToken(response.accessToken);
+          setUser(response.user);
+          setIsAdmin(true);
+        },
+        refresh: async () => {
+          const refreshToken = getRefreshToken();
 
-        const response = await refreshAdminToken(refreshToken);
+          if (!refreshToken) {
+            throw new Error("No refresh token available.");
+          }
 
-        if (response.user.role !== "ADMIN" && response.user.role !== "SUPERADMIN") {
-          throw new Error("This account does not have backoffice access.");
-        }
+          const response = await refreshAdminToken(refreshToken);
 
-        setAccessToken(response.accessToken);
-        setRefreshToken(response.refreshToken);
-        setToken(response.accessToken);
-        setUser(response.user);
-        setIsAdmin(true);
-      },
-      logout: async () => {
-        try {
-          await logoutAdmin(token);
-        } catch {
-          // Local session still needs to be cleared.
-        }
-        clearAccessToken();
-        setUser(null);
-        setToken(null);
-        setIsAdmin(false);
-      },
-    }),
+          if (response.user.role !== "ADMIN" && response.user.role !== "SUPERADMIN") {
+            throw new Error("This account does not have backoffice access.");
+          }
+
+          setAccessToken(response.accessToken);
+          setRefreshToken(response.refreshToken);
+          setToken(response.accessToken);
+          setUser(response.user);
+          setIsAdmin(true);
+        },
+        logout: async () => {
+          try {
+            await logoutAdmin(token);
+          } catch {
+            // Local session still needs to be cleared.
+          }
+          clearAccessToken();
+          setUser(null);
+          setToken(null);
+          setIsAdmin(false);
+        },
+      };
+    },
     [isAdmin, loading, token, user],
   );
 

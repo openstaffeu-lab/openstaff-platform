@@ -248,7 +248,7 @@ export default function ProjectWorkspaceForm({
   projectId,
 }: ProjectWorkspaceFormProps) {
   const router = useRouter();
-  const { token, isReady, logout } = useAuth();
+  const { token, isReady, logout, canCreateProjects, subscription } = useAuth();
 
   const isEditMode = mode === "edit";
 
@@ -593,6 +593,13 @@ export default function ProjectWorkspaceForm({
     event.preventDefault();
 
     if (!token) {
+      return;
+    }
+
+    if (mode === "create" && !canCreateProjects) {
+      setError(
+        `Your current plan (${subscription?.planName ?? "No active plan"}) does not include project ingestion.`,
+      );
       return;
     }
 

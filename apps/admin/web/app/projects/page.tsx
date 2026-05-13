@@ -32,7 +32,7 @@ const engagementOptions: Array<EngagementModel | "ALL"> = [
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const { token, isReady, logout } = useAuth();
+  const { token, isReady, logout, canCreateProjects, subscription } = useAuth();
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -138,12 +138,23 @@ export default function ProjectsPage() {
               >
                 My profile
               </Link>
-              <Link
-                href="/projects/new"
-                className="rounded-2xl bg-cyan-400 px-5 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300"
-              >
-                New structured project
-              </Link>
+              {canCreateProjects ? (
+                <Link
+                  href="/projects/new"
+                  className="rounded-2xl bg-cyan-400 px-5 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300"
+                >
+                  New structured project
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="cursor-not-allowed rounded-2xl border border-cyan-300/20 bg-cyan-400/10 px-5 py-3 font-semibold text-cyan-100/70"
+                  title="Project ingestion is available from Bronze and above."
+                >
+                  Upgrade required for project intake
+                </button>
+              )}
               <button
                 onClick={() => {
                   logout();
@@ -244,6 +255,22 @@ export default function ProjectsPage() {
           </div>
         </section>
 
+        {!canCreateProjects ? (
+          <section className="mt-6 rounded-[1.75rem] border border-amber-300/20 bg-amber-400/10 p-5 text-amber-100">
+            <div className="text-xs uppercase tracking-[0.3em] text-amber-100/80">
+              Plan Gate
+            </div>
+            <h2 className="mt-2 text-xl font-semibold">
+              Structured project intake is not enabled on your current plan.
+            </h2>
+            <p className="mt-2 text-sm text-amber-50/90">
+              Current plan: {subscription?.planName ?? "No active plan"}.
+              Upgrade to Bronze or above to create project workspaces with AI-assisted
+              ingestion.
+            </p>
+          </section>
+        ) : null}
+
         <section className="mt-6">
           {isLoading ? (
             <div className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8 text-slate-300">
@@ -261,12 +288,18 @@ export default function ProjectsPage() {
                 demand, clauses, taxonomy, AI interpretation, and match signals are
                 captured from day one.
               </p>
-              <Link
-                href="/projects/new"
-                className="mt-6 inline-flex rounded-2xl bg-cyan-400 px-5 py-3 font-semibold text-slate-950"
-              >
-                Create first project
-              </Link>
+              {canCreateProjects ? (
+                <Link
+                  href="/projects/new"
+                  className="mt-6 inline-flex rounded-2xl bg-cyan-400 px-5 py-3 font-semibold text-slate-950"
+                >
+                  Create first project
+                </Link>
+              ) : (
+                <div className="mt-6 inline-flex rounded-2xl border border-cyan-300/20 bg-cyan-400/10 px-5 py-3 font-semibold text-cyan-100/70">
+                  Project creation available from Bronze plan
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid gap-5 lg:grid-cols-2">
