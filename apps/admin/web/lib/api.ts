@@ -86,6 +86,153 @@ export type CreateUpgradeRequestInput = {
   source?: "PRICING" | "LIMIT_REACHED" | "CONTACT_SALES";
 };
 
+export type VerificationStatus =
+  | "UNVERIFIED"
+  | "PENDING"
+  | "VERIFIED"
+  | "REJECTED";
+
+export type OnboardingStatus =
+  | "NOT_STARTED"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "SKIPPED";
+
+export type IdentityProfile = {
+  id: string;
+  publicSlug: string;
+  firstName: string | null;
+  lastName: string | null;
+  displayName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  language: string | null;
+  timezone: string | null;
+  country: string | null;
+  city: string | null;
+  phone: string | null;
+  website: string | null;
+  linkedinUrl: string | null;
+  githubUrl: string | null;
+  portfolioUrl: string | null;
+  verificationStatus: VerificationStatus;
+  onboardingCompletedAt: string | null;
+  profileCompletionPercent: number;
+};
+
+export type IdentityCompanyProfile = {
+  id: string;
+  companyName: string;
+  legalName: string | null;
+  registrationNumber: string | null;
+  vatId: string | null;
+  country: string | null;
+  city: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  postalCode: string | null;
+  website: string | null;
+  logoUrl: string | null;
+  verificationStatus: VerificationStatus;
+  onboardingCompletedAt: string | null;
+};
+
+export type OnboardingSession = {
+  id: string;
+  currentStep: string;
+  completedSteps: string[];
+  completionPercent: number;
+  status: OnboardingStatus;
+  startedAt: string;
+  completedAt: string | null;
+};
+
+export type OnboardingMe = {
+  identityProfile: IdentityProfile;
+  companyProfile: IdentityCompanyProfile | null;
+  onboardingSession: OnboardingSession;
+  completionPercent: number;
+  verificationStates: {
+    identityProfile: VerificationStatus;
+    companyProfile: VerificationStatus;
+  };
+  legacyProfile: {
+    id: string;
+    slug: string;
+    profileType: string;
+  } | null;
+};
+
+export type UpsertIdentityProfileInput = {
+  publicSlug?: string;
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  avatarUrl?: string;
+  bio?: string;
+  language?: string;
+  timezone?: string;
+  country?: string;
+  city?: string;
+  phone?: string;
+  website?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  portfolioUrl?: string;
+};
+
+export type UpsertCompanyProfileInput = {
+  companyName: string;
+  legalName?: string;
+  registrationNumber?: string;
+  vatId?: string;
+  country?: string;
+  city?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  postalCode?: string;
+  website?: string;
+  logoUrl?: string;
+};
+
+export type UpdateOnboardingStepInput = {
+  currentStep?: string;
+  completedStep?: string;
+  completedSteps?: string[];
+  status?: OnboardingStatus;
+  completionPercent?: number;
+};
+
+export type PublicIdentityProfile = {
+  slug: string;
+  displayName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  language: string | null;
+  timezone: string | null;
+  country: string | null;
+  city: string | null;
+  links: {
+    website: string | null;
+    linkedinUrl: string | null;
+    githubUrl: string | null;
+    portfolioUrl: string | null;
+  };
+  companySummary: {
+    companyName: string;
+    legalName: string | null;
+    website: string | null;
+    country: string | null;
+    city: string | null;
+    verificationStatus: VerificationStatus;
+  } | null;
+  publicIndicators: {
+    verificationStatus: VerificationStatus;
+    onboardingCompleted: boolean;
+    profileCompletionPercent: number;
+  };
+};
+
 export type MarketplacePostType =
   | "PROJECT"
   | "PROFESSIONAL"
@@ -377,6 +524,58 @@ export async function createUpgradeRequest(
     body: input,
     token: token ?? getAuthToken(),
   });
+}
+
+export async function getOnboardingMe(token?: string | null) {
+  return apiRequest<OnboardingMe>("/onboarding/me", {
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function getOnboardingProgress(token?: string | null) {
+  return apiRequest<OnboardingSession & { onboardingCompletedAt: string | null }>(
+    "/onboarding/progress",
+    {
+      token: token ?? getAuthToken(),
+    },
+  );
+}
+
+export async function upsertIdentityProfile(
+  input: UpsertIdentityProfileInput,
+  token?: string | null,
+) {
+  return apiRequest<OnboardingMe>("/onboarding/identity-profile", {
+    method: "PUT",
+    body: input,
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function upsertCompanyProfile(
+  input: UpsertCompanyProfileInput,
+  token?: string | null,
+) {
+  return apiRequest<OnboardingMe>("/onboarding/company-profile", {
+    method: "PUT",
+    body: input,
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function updateOnboardingStep(
+  input: UpdateOnboardingStepInput,
+  token?: string | null,
+) {
+  return apiRequest<OnboardingMe>("/onboarding/steps", {
+    method: "PATCH",
+    body: input,
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function getPublicIdentityProfile(slug: string) {
+  return apiRequest<PublicIdentityProfile>(`/profiles/${encodeURIComponent(slug)}`);
 }
 
 const API = API_URL;

@@ -9,6 +9,8 @@ import {
   ProfileVisibility,
   Role,
   SubscriptionPlanCode,
+  VerificationStatus,
+  OnboardingStatus,
 } from '@prisma/client';
 import {
   ConflictException,
@@ -111,6 +113,26 @@ export class AuthService {
           visibility: ProfileVisibility.PRIVATE,
           moderationStatus: ProfileModerationStatus.PENDING,
           status: ProfileLifecycleStatus.OFFLINE,
+        },
+      });
+
+      await tx.identityProfile.create({
+        data: {
+          userId: createdUser.id,
+          publicSlug: slug,
+          displayName,
+          verificationStatus: VerificationStatus.UNVERIFIED,
+          profileCompletionPercent: 10,
+        },
+      });
+
+      await tx.onboardingSession.create({
+        data: {
+          userId: createdUser.id,
+          currentStep: 'welcome',
+          completedSteps: [],
+          completionPercent: 10,
+          status: OnboardingStatus.NOT_STARTED,
         },
       });
 
@@ -246,6 +268,26 @@ export class AuthService {
             visibility: ProfileVisibility.PRIVATE,
             moderationStatus: ProfileModerationStatus.PENDING,
             status: ProfileLifecycleStatus.OFFLINE,
+          },
+        });
+
+        await tx.identityProfile.create({
+          data: {
+            userId: createdUser.id,
+            publicSlug: slug,
+            displayName,
+            verificationStatus: VerificationStatus.UNVERIFIED,
+            profileCompletionPercent: 10,
+          },
+        });
+
+        await tx.onboardingSession.create({
+          data: {
+            userId: createdUser.id,
+            currentStep: 'welcome',
+            completedSteps: [],
+            completionPercent: 10,
+            status: OnboardingStatus.NOT_STARTED,
           },
         });
 

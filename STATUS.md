@@ -158,6 +158,35 @@ Status general: `PASS - billing profile, VAT logic, proforma/fiscal invoice life
 | web build | ✅ | `cd apps/admin/web && npm.cmd run build` |
 | admin build | ✅ | `cd apps/admin && npm.cmd run build` |
 
+## EXEC-05 Onboarding & Digital Identity Completion
+
+Verdict: `PASS`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| `IdentityProfile` model | âœ… | Prisma schema include `IdentityProfile` cu `publicSlug`, `verificationStatus`, `profileCompletionPercent` |
+| `IdentityCompanyProfile` model | âœ… | Prisma schema include model separat pentru company identity, fara conflict cu legacy `CompanyProfile` din actor domain |
+| `OnboardingSession` model | âœ… | Prisma schema include `OnboardingSession` cu `currentStep`, `completedSteps`, `completionPercent`, `status` |
+| register auto-creates onboarding session | âœ… | `POST /auth/register` urmat de `GET /onboarding/me` returneaza `onboardingSession.id` si `currentStep = welcome` |
+| `GET /onboarding/me` | âœ… | test HTTP local returneaza `identityProfile`, `companyProfile`, `onboardingSession`, `completionPercent`, `verificationStates` |
+| `PUT /onboarding/identity-profile` | âœ… | test HTTP local returneaza `200` si `publicSlug = exec05-identity` |
+| `PUT /onboarding/company-profile` | âœ… | test HTTP local returneaza `200` si `companyProfile.companyName = Exec05 Builders` |
+| `PATCH /onboarding/steps` | âœ… | test HTTP local returneaza `status = COMPLETED` |
+| completion engine recalculates | âœ… | `GET /onboarding/progress` returneaza `completionPercent = 90`, `status = COMPLETED` |
+| slug uniqueness handling | âœ… | doi useri cu acelasi `displayName` au primit `exec05-identity` si `exec05-identity-2` |
+| `GET /profiles/:slug` public-safe | âœ… | test HTTP local returneaza `displayName = Exec05 Identity` fara email/billing/auth data |
+| admin onboarding list | âœ… | `GET /admin/onboarding/sessions` cu admin token returneaza `200` si include userul de test |
+| admin endpoint protected fara token | âœ… | `GET /admin/onboarding/sessions` fara token returneaza `401` |
+| admin endpoint protected non-admin | âœ… | `GET /admin/onboarding/sessions` cu user non-admin returneaza `403` |
+| auth still stable | âœ… | `GET /auth/me` dupa onboarding returneaza `subscription.planCode = BASIC` si contractul existent |
+| subscriptions still stable | âœ… | `GET /subscriptions/me` dupa onboarding returneaza `planCode = BASIC` |
+| billing still stable | âœ… | `GET /billing/profile/me` pentru userul de test ramane functional si returneaza `null` fara regresie |
+| public onboarding UX pages | âœ… | `/onboarding`, `/onboarding/welcome`, `/onboarding/identity`, `/onboarding/company`, `/onboarding/completion` compileaza in buildul public |
+| admin onboarding page | âœ… | `/admin/onboarding` compileaza in buildul admin |
+| API build | âœ… | `cd apps/admin/api && npx.cmd prisma validate && npx.cmd prisma generate && npx.cmd prisma db push && npm.cmd run build` |
+| web build | âœ… | `cd apps/admin/web && npm.cmd run build` |
+| admin build | âœ… | `cd apps/admin && npm.cmd run build` |
+
 ## Prompt 8 Video Audit Snapshot
 
 Surse analizate:

@@ -29,7 +29,14 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
           <div style={{ width: `${progress}%`, height: "100%", background: "linear-gradient(90deg, #00E87A 0%, #1B2A6B 100%)" }} />
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 10, marginTop: 14 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${ONBOARDING_STEPS.length}, minmax(0, 1fr))`,
+            gap: 10,
+            marginTop: 14,
+          }}
+        >
           {ONBOARDING_STEPS.map((step, index) => (
             <div key={step.path} style={{ color: index <= currentIndex ? "#1B2A6B" : "#94A3B8", fontSize: 12, fontWeight: 700 }}>
               {index + 1}. {step.label}

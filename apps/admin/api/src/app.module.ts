@@ -13,6 +13,7 @@ import { ExternalLinksModule } from './external-links/external-links.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { JobsModule } from './jobs/jobs.module';
 import { NaceModule } from './nace/nace.module';
+import { OnboardingModule } from './onboarding/onboarding.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PrivateMessagingModule } from './private-messaging/private-messaging.module';
 import { ProfilesModule } from './profiles/profiles.module';
@@ -42,6 +43,7 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
     CountriesModule,
     EscoModule,
     NaceModule,
+    OnboardingModule,
     UniclassModule,
     UiConfigModule,
     SubscriptionsModule,

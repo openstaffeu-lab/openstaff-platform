@@ -6,6 +6,8 @@ export const ONBOARDING_STORAGE_KEY = "openstaff-onboarding-state";
 
 export type OnboardingState = {
   actorType: "INDIVIDUAL" | "COMPANY" | "PUBLIC_INSTITUTION";
+  firstName: string;
+  lastName: string;
   displayName: string;
   email: string;
   phone: string;
@@ -24,10 +26,18 @@ export type OnboardingState = {
   companyAdministrator: string;
   ciFileUrl: string;
   cazierUrl: string;
+  website: string;
+  linkedinUrl: string;
+  githubUrl: string;
+  portfolioUrl: string;
+  timezone: string;
+  currentStep: string;
 };
 
 export const defaultOnboardingState: OnboardingState = {
   actorType: "INDIVIDUAL",
+  firstName: "",
+  lastName: "",
   displayName: "",
   email: "",
   phone: "",
@@ -46,14 +56,19 @@ export const defaultOnboardingState: OnboardingState = {
   companyAdministrator: "",
   ciFileUrl: "",
   cazierUrl: "",
+  website: "",
+  linkedinUrl: "",
+  githubUrl: "",
+  portfolioUrl: "",
+  timezone: "Europe/Bucharest",
+  currentStep: "welcome",
 };
 
 export const ONBOARDING_STEPS = [
-  { path: "/onboarding/step-1-type", label: "Tip cont" },
-  { path: "/onboarding/step-2-location", label: "Locație" },
-  { path: "/onboarding/step-3-classification", label: "Clasificare" },
-  { path: "/onboarding/step-4-profile", label: "Profil" },
-  { path: "/onboarding/step-5-confirm", label: "Confirmare" },
+  { path: "/onboarding/welcome", label: "Welcome" },
+  { path: "/onboarding/identity", label: "Identity" },
+  { path: "/onboarding/company", label: "Company" },
+  { path: "/onboarding/completion", label: "Completion" },
 ];
 
 function readState() {
@@ -67,7 +82,10 @@ function readState() {
       return defaultOnboardingState;
     }
 
-    return { ...defaultOnboardingState, ...(JSON.parse(raw) as Partial<OnboardingState>) };
+    return {
+      ...defaultOnboardingState,
+      ...(JSON.parse(raw) as Partial<OnboardingState>),
+    };
   } catch {
     return defaultOnboardingState;
   }

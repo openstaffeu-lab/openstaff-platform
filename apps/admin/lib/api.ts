@@ -974,3 +974,49 @@ export async function generateRenewals(input: {
 export async function processRenewal(id: string) {
   return adminApi.processRenewal(id);
 }
+
+export type AdminOnboardingSession = {
+  id: string;
+  userId: string;
+  email: string;
+  currentStep: string;
+  completedSteps: string[];
+  completionPercent: number;
+  status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "SKIPPED";
+  startedAt: string;
+  completedAt: string | null;
+  updatedAt: string;
+  identityProfile: {
+    displayName: string;
+    publicSlug: string;
+    verificationStatus: "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED";
+  } | null;
+  companyProfile: {
+    companyName: string;
+    verificationStatus: "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED";
+  } | null;
+};
+
+export async function getAdminOnboardingSessions(filters?: {
+  q?: string;
+  onboardingStatus?: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "SKIPPED";
+  verificationStatus?: "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED";
+}) {
+  const query = new URLSearchParams();
+
+  if (filters?.q) {
+    query.set("q", filters.q);
+  }
+
+  if (filters?.onboardingStatus) {
+    query.set("onboardingStatus", filters.onboardingStatus);
+  }
+
+  if (filters?.verificationStatus) {
+    query.set("verificationStatus", filters.verificationStatus);
+  }
+
+  return adminFetch<AdminOnboardingSession[]>(
+    `/admin/onboarding/sessions${query.toString() ? `?${query.toString()}` : ""}`,
+  );
+}
