@@ -6,6 +6,8 @@ import {
 import {
   OnboardingStatus,
   ProfileType,
+  VerificationCaseStatus,
+  VerificationCaseSubjectType,
   VerificationStatus,
 } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
@@ -217,6 +219,12 @@ export class OnboardingService {
     }
 
     const company = profile.user.identityCompanyProfiles[0] ?? null;
+    const identityCase = await this.prisma.verificationCase.findFirst({
+      where: {
+        identityProfileId: profile.id,
+      },
+      orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
+    });
     return {
       slug: profile.publicSlug,
       displayName: profile.displayName,
@@ -246,6 +254,7 @@ export class OnboardingService {
         verificationStatus: profile.verificationStatus,
         onboardingCompleted: Boolean(profile.onboardingCompletedAt),
         profileCompletionPercent: profile.profileCompletionPercent,
+        verificationCaseStatus: identityCase?.status ?? null,
       },
     };
   }
@@ -369,6 +378,12 @@ export class OnboardingService {
     const identity = context.identityProfile;
     const company = context.identityCompanyProfiles[0] ?? null;
     const completedSteps = this.parseCompletedSteps(context.onboardingSession.completedSteps);
+    const identityCase = (context.verificationCases ?? []).find(
+      (item: any) => item.subjectType === VerificationCaseSubjectType.IDENTITY_PROFILE,
+    );
+    const companyCase = (context.verificationCases ?? []).find(
+      (item: any) => item.subjectType === VerificationCaseSubjectType.COMPANY_PROFILE,
+    );
     const linksCount = [
       identity.website,
       identity.linkedinUrl,
@@ -386,6 +401,8 @@ export class OnboardingService {
     if (identity.timezone?.trim()) score += 10;
     if (linksCount > 0) score += 10;
     if (company) score += 10;
+    if (identityCase) score += 5;
+    if (companyCase) score += 5;
     if (completedSteps.length > 0) {
       score += Math.min(10, completedSteps.length * 3 + 1);
     }
@@ -548,6 +565,18 @@ export class OnboardingService {
           orderBy: { createdAt: 'asc' },
         },
         onboardingSession: true,
+        verificationCases: {
+          include: {
+            reviewedBy: true,
+            decisions: {
+              include: {
+                actorUser: true,
+              },
+              orderBy: { createdAt: 'asc' },
+            },
+          },
+          orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
+        },
       },
     });
   }
@@ -555,6 +584,12 @@ export class OnboardingService {
   private toOnboardingResponse(context: NonNullable<OnboardingContext>) {
     const company = context.identityCompanyProfiles[0] ?? null;
     const completedSteps = this.parseCompletedSteps(context.onboardingSession.completedSteps);
+    const identityCase = (context.verificationCases ?? []).find(
+      (item: any) => item.subjectType === VerificationCaseSubjectType.IDENTITY_PROFILE,
+    );
+    const companyCase = (context.verificationCases ?? []).find(
+      (item: any) => item.subjectType === VerificationCaseSubjectType.COMPANY_PROFILE,
+    );
 
     return {
       identityProfile: {
@@ -616,6 +651,16 @@ export class OnboardingService {
         identityProfile: context.identityProfile.verificationStatus,
         companyProfile: company?.verificationStatus ?? VerificationStatus.UNVERIFIED,
       },
+      verificationSummary: {
+        identityCase: this.toVerificationCaseSummary(identityCase),
+        companyCase: this.toVerificationCaseSummary(companyCase),
+        overallStatus: this.resolveOverallVerificationStatus(
+          context.identityProfile.verificationStatus,
+          company?.verificationStatus ?? VerificationStatus.UNVERIFIED,
+          identityCase?.status,
+          companyCase?.status,
+        ),
+      },
       legacyProfile: context.profile
         ? {
             id: context.profile.id,
@@ -624,6 +669,64 @@ export class OnboardingService {
           }
         : null,
     };
+  }
+
+  private toVerificationCaseSummary(item: any) {
+    if (!item) {
+      return null;
+    }
+
+    return {
+      id: item.id,
+      subjectType: item.subjectType,
+      status: item.status,
+      submittedAt: item.submittedAt,
+      reviewedAt: item.reviewedAt,
+      latestNote: item.latestNote,
+      decisionCount: Array.isArray(item.decisions) ? item.decisions.length : 0,
+      reviewedBy: item.reviewedBy
+        ? {
+            id: item.reviewedBy.id,
+            email: item.reviewedBy.email,
+            role: item.reviewedBy.role,
+          }
+        : null,
+    };
+  }
+
+  private resolveOverallVerificationStatus(
+    identityStatus: VerificationStatus,
+    companyStatus: VerificationStatus,
+    identityCaseStatus?: VerificationCaseStatus,
+    companyCaseStatus?: VerificationCaseStatus,
+  ) {
+    if (
+      identityStatus === VerificationStatus.REJECTED ||
+      companyStatus === VerificationStatus.REJECTED
+    ) {
+      return VerificationStatus.REJECTED;
+    }
+
+    if (
+      identityStatus === VerificationStatus.VERIFIED &&
+      (companyStatus === VerificationStatus.VERIFIED ||
+        companyStatus === VerificationStatus.UNVERIFIED)
+    ) {
+      return VerificationStatus.VERIFIED;
+    }
+
+    if (
+      identityStatus === VerificationStatus.PENDING ||
+      companyStatus === VerificationStatus.PENDING ||
+      identityCaseStatus === VerificationCaseStatus.SUBMITTED ||
+      identityCaseStatus === VerificationCaseStatus.IN_REVIEW ||
+      companyCaseStatus === VerificationCaseStatus.SUBMITTED ||
+      companyCaseStatus === VerificationCaseStatus.IN_REVIEW
+    ) {
+      return VerificationStatus.PENDING;
+    }
+
+    return VerificationStatus.UNVERIFIED;
   }
 
   private toAdminSessionResponse(session: any) {

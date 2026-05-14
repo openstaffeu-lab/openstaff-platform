@@ -98,6 +98,25 @@ export type OnboardingStatus =
   | "COMPLETED"
   | "SKIPPED";
 
+export type VerificationCaseSubjectType =
+  | "IDENTITY_PROFILE"
+  | "COMPANY_PROFILE";
+
+export type VerificationCaseStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "IN_REVIEW"
+  | "APPROVED"
+  | "REJECTED"
+  | "NEEDS_INFO";
+
+export type VerificationDecisionType =
+  | "SUBMIT"
+  | "REQUEST_INFO"
+  | "APPROVE"
+  | "REJECT"
+  | "REOPEN";
+
 export type IdentityProfile = {
   id: string;
   publicSlug: string;
@@ -156,10 +175,220 @@ export type OnboardingMe = {
     identityProfile: VerificationStatus;
     companyProfile: VerificationStatus;
   };
+  verificationSummary: {
+    identityCase: VerificationCaseSummary | null;
+    companyCase: VerificationCaseSummary | null;
+    overallStatus: VerificationStatus;
+  };
   legacyProfile: {
     id: string;
     slug: string;
     profileType: string;
+  } | null;
+};
+
+export type VerificationCaseSummary = {
+  id: string;
+  subjectType: VerificationCaseSubjectType;
+  status: VerificationCaseStatus;
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  latestNote: string | null;
+  decisionCount: number;
+  reviewedBy: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+};
+
+export type VerificationMe = {
+  identityProfile: {
+    id: string;
+    publicSlug: string;
+    displayName: string;
+    verificationStatus: VerificationStatus;
+    profileCompletionPercent: number;
+    onboardingCompletedAt: string | null;
+  } | null;
+  companyProfile: {
+    id: string;
+    companyName: string;
+    legalName: string | null;
+    country: string | null;
+    city: string | null;
+    verificationStatus: VerificationStatus;
+    onboardingCompletedAt: string | null;
+  } | null;
+  identityCase: VerificationCaseSummary | null;
+  companyCase: VerificationCaseSummary | null;
+  availableEvidence: {
+    profileDocuments: Array<{
+      id: string;
+      title: string;
+      type: string;
+      createdAt: string;
+    }>;
+    actorDocuments: Array<{
+      id: string;
+      title: string;
+      type: string;
+      status: string;
+      verifiedAt: string | null;
+      expiresAt: string | null;
+    }>;
+    actorCertifications: Array<{
+      id: string;
+      title: string;
+      type: string;
+      status: string;
+      verifiedAt: string | null;
+      expiresAt: string | null;
+    }>;
+    medicalFitnessCertificates: Array<{
+      id: string;
+      title: string;
+      category: string;
+      status: string;
+      fitnessDecision: string;
+      verifiedAt: string | null;
+      expiresAt: string | null;
+    }>;
+  };
+};
+
+export type SubmitVerificationCaseInput = {
+  note?: string;
+  profileDocumentIds?: string[];
+  actorDocumentIds?: string[];
+  actorCertificationIds?: string[];
+  medicalFitnessCertificateIds?: string[];
+};
+
+export type WorkforceAssignmentStatus = "PENDING" | "ACTIVE" | "ENDED";
+export type WorkforceContractLifecycleStatus =
+  | "DRAFT"
+  | "PENDING_SIGNATURE"
+  | "ACTIVE"
+  | "SUSPENDED"
+  | "TERMINATED"
+  | "COMPLETED";
+
+export type OperationalTimesheetStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "APPROVED"
+  | "REJECTED";
+
+export type OperationalAttendanceStatus =
+  | "CHECKED_IN"
+  | "CHECKED_OUT"
+  | "MISSED";
+
+export type OperationalWorkSessionSource = "MANUAL" | "SYSTEM" | "MOBILE";
+
+export type MyWorkforceAssignment = {
+  id: string;
+  status: WorkforceAssignmentStatus;
+  assignedAt: string;
+  startedAt: string | null;
+  endedAt: string | null;
+  contractStatus: WorkforceContractLifecycleStatus;
+  lifecycleState: WorkforceContractLifecycleStatus;
+  activeProjects: Array<{
+    id: string;
+    name: string;
+    slug: string;
+  }>;
+  job: {
+    id: string;
+    title: string;
+    status: string;
+  };
+  contract: {
+    id: string;
+    lifecycleStatus: WorkforceContractLifecycleStatus;
+    status: string;
+    startDate: string | null;
+    endDate: string | null;
+  };
+};
+
+export type OperationalTimesheet = {
+  id: string;
+  periodStart: string;
+  periodEnd: string;
+  totalHours: number;
+  overtimeHours: number;
+  status: OperationalTimesheetStatus;
+  submittedAt: string | null;
+  approvedAt: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  project: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  assignment: {
+    id: string;
+    status: WorkforceAssignmentStatus;
+    assignedAt: string;
+    startedAt: string | null;
+    endedAt: string | null;
+  };
+  contract: {
+    id: string;
+    lifecycleStatus: WorkforceContractLifecycleStatus;
+    status: string;
+  };
+  job: {
+    id: string;
+    title: string;
+    status: string;
+  };
+  entries: Array<{
+    id: string;
+    workDate: string;
+    hoursWorked: number;
+    overtimeHours: number;
+    notes: string | null;
+    createdAt: string;
+  }>;
+  approvedByUser: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+};
+
+export type OperationalAttendanceRecord = {
+  id: string;
+  checkInAt: string;
+  checkOutAt: string | null;
+  status: OperationalAttendanceStatus;
+  source: OperationalWorkSessionSource;
+  locationMetadata: unknown;
+  createdAt: string;
+  updatedAt: string;
+  durationHours: number | null;
+  assignment: {
+    id: string;
+    status: WorkforceAssignmentStatus;
+  };
+  contract: {
+    id: string;
+    lifecycleStatus: WorkforceContractLifecycleStatus;
+  };
+  job: {
+    id: string;
+    title: string;
+  };
+  project: {
+    id: string;
+    name: string;
+    slug: string;
   } | null;
 };
 
@@ -230,6 +459,7 @@ export type PublicIdentityProfile = {
     verificationStatus: VerificationStatus;
     onboardingCompleted: boolean;
     profileCompletionPercent: number;
+    verificationCaseStatus: VerificationCaseStatus | null;
   };
 };
 
@@ -576,6 +806,249 @@ export async function updateOnboardingStep(
 
 export async function getPublicIdentityProfile(slug: string) {
   return apiRequest<PublicIdentityProfile>(`/profiles/${encodeURIComponent(slug)}`);
+}
+
+export async function getVerificationMe(token?: string | null) {
+  return apiRequest<VerificationMe>("/verification/me", {
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function submitIdentityVerificationCase(
+  input: SubmitVerificationCaseInput,
+  token?: string | null,
+) {
+  return apiRequest<{
+    identityProfile: VerificationMe["identityProfile"];
+    case: VerificationCaseSummary;
+  }>("/verification/identity/submit", {
+    method: "POST",
+    body: input,
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function submitCompanyVerificationCase(
+  input: SubmitVerificationCaseInput,
+  token?: string | null,
+) {
+  return apiRequest<{
+    companyProfile: VerificationMe["companyProfile"];
+    case: VerificationCaseSummary;
+  }>("/verification/company/submit", {
+    method: "POST",
+    body: input,
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function getMyWorkforceAssignments(token?: string | null) {
+  return apiRequest<MyWorkforceAssignment[]>("/workforce/me", {
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function createOperationalTimesheet(
+  input: {
+    workforceAssignmentId: string;
+    periodStart: string;
+    periodEnd: string;
+  },
+  token?: string | null,
+) {
+  return apiRequest<OperationalTimesheet>("/timesheets", {
+    method: "POST",
+    body: input,
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function addOperationalTimesheetEntry(
+  id: string,
+  input: {
+    workDate: string;
+    hoursWorked: number;
+    overtimeHours?: number;
+    notes?: string;
+  },
+  token?: string | null,
+) {
+  return apiRequest<OperationalTimesheet>(`/timesheets/${id}/entries`, {
+    method: "POST",
+    body: input,
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function submitOperationalTimesheet(
+  id: string,
+  input?: { note?: string },
+  token?: string | null,
+) {
+  return apiRequest<OperationalTimesheet>(`/timesheets/${id}/submit`, {
+    method: "POST",
+    body: input ?? {},
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function getMyOperationalTimesheets(token?: string | null) {
+  return apiRequest<OperationalTimesheet[]>("/timesheets/me", {
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function checkInOperationalAttendance(
+  input: {
+    workforceAssignmentId: string;
+    source?: OperationalWorkSessionSource;
+    locationMetadata?: Record<string, unknown>;
+  },
+  token?: string | null,
+) {
+  return apiRequest<OperationalAttendanceRecord>("/attendance/check-in", {
+    method: "POST",
+    body: input,
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function checkOutOperationalAttendance(
+  input: {
+    workforceAssignmentId: string;
+    locationMetadata?: Record<string, unknown>;
+  },
+  token?: string | null,
+) {
+  return apiRequest<OperationalAttendanceRecord>("/attendance/check-out", {
+    method: "POST",
+    body: input,
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function getMyOperationalAttendance(token?: string | null) {
+  return apiRequest<OperationalAttendanceRecord[]>("/attendance/me", {
+    token: token ?? getAuthToken(),
+  });
+}
+
+export type WorkerPayrollSettlementStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "READY_FOR_PAYMENT"
+  | "PAID";
+
+export type WorkerPayrollCycleStatus =
+  | "OPEN"
+  | "PROCESSING"
+  | "LOCKED"
+  | "EXPORTED";
+
+export type WorkerCompensationType =
+  | "HOURLY"
+  | "DAILY"
+  | "WEEKLY"
+  | "MONTHLY"
+  | "FIXED_PROJECT";
+
+export type PayrollSettlementSummary = {
+  id: string;
+  approvedTimesheetIds: string[];
+  regularHours: number;
+  overtimeHours: number;
+  grossAmount: number;
+  deductionsAmount: number;
+  netAmount: number;
+  currency: string;
+  status: WorkerPayrollSettlementStatus;
+  approvedAt: string | null;
+  paidAt: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  payrollCycle: {
+    id: string;
+    periodStart: string;
+    periodEnd: string;
+    status: WorkerPayrollCycleStatus;
+  };
+  user: {
+    id: string;
+    email: string;
+    identityProfile: {
+      id: string;
+      publicSlug: string;
+      displayName: string;
+      verificationStatus: string;
+    } | null;
+  };
+  assignment: MyWorkforceAssignment;
+  lines: Array<{
+    id: string;
+    description: string;
+    quantity: number;
+    unitRate: number;
+    amount: number;
+    createdAt: string;
+  }>;
+  approvedByUser: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+  attendanceSummary: {
+    recordCount: number;
+    totalTrackedHours: number;
+  };
+};
+
+export type PayrollOverview = {
+  assignments: MyWorkforceAssignment[];
+  compensationAgreements: Array<{
+    id: string;
+    compensationType: WorkerCompensationType;
+    currency: string;
+    baseRate: number;
+    overtimeRate: number | null;
+    overtimeThresholdHours: number | null;
+    effectiveFrom: string;
+    effectiveTo: string | null;
+    createdAt: string;
+    updatedAt: string;
+    assignment: MyWorkforceAssignment | null;
+  }>;
+  settlements: PayrollSettlementSummary[];
+  cycles: Array<{
+    id: string;
+    periodStart: string;
+    periodEnd: string;
+    status: WorkerPayrollCycleStatus;
+    totalWorkers: number;
+    totalGrossAmount: number;
+    processedAt: string | null;
+    lockedAt: string | null;
+    exportedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+    settlementCount: number;
+    pendingSettlementCount: number;
+    readyForPaymentCount: number;
+    settlements: PayrollSettlementSummary[];
+  }>;
+};
+
+export async function getMyPayrollOverview(token?: string | null) {
+  return apiRequest<PayrollOverview>("/payroll/me", {
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function getMyPayrollSettlements(token?: string | null) {
+  return apiRequest<PayrollSettlementSummary[]>("/payroll/me/settlements", {
+    token: token ?? getAuthToken(),
+  });
 }
 
 const API = API_URL;

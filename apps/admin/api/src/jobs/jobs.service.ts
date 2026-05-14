@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ApplicationStage } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
@@ -203,13 +204,65 @@ export class JobsService {
       throw new ConflictException('Application already exists for this actor and job');
     }
 
-    const application = await this.prisma.application.create({
-      data: {
-        jobId: id,
-        actorId: resolvedActor.id,
-        status: 'PENDING',
-        message: body.message,
+    const matchedUser = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ email: resolvedActor.email }, { firebaseUid: resolvedActor.firebaseUid }],
       },
+      select: { id: true },
+    });
+
+    const application = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.application.create({
+        data: {
+          jobId: id,
+          actorId: resolvedActor.id,
+          candidateUserId: matchedUser?.id,
+          status: 'PENDING',
+          currentStage: ApplicationStage.APPLIED,
+          message: body.message,
+          stageChangedAt: new Date(),
+        },
+      });
+
+      await tx.applicationStageHistory.create({
+        data: {
+          applicationId: created.id,
+          fromStage: null,
+          toStage: ApplicationStage.APPLIED,
+          note: 'Application submitted.',
+        },
+      });
+
+      const applications = await tx.application.findMany({
+        where: { jobId: id },
+        select: { currentStage: true },
+      });
+
+      await tx.hiringPipeline.upsert({
+        where: { jobId: id },
+        update: {
+          totalApplicants: applications.length,
+          totalShortlisted: applications.filter(
+            (item) => item.currentStage === ApplicationStage.SHORTLISTED,
+          ).length,
+          totalHired: applications.filter(
+            (item) => item.currentStage === ApplicationStage.HIRED,
+          ).length,
+        },
+        create: {
+          jobId: id,
+          status: 'ACTIVE',
+          totalApplicants: applications.length,
+          totalShortlisted: applications.filter(
+            (item) => item.currentStage === ApplicationStage.SHORTLISTED,
+          ).length,
+          totalHired: applications.filter(
+            (item) => item.currentStage === ApplicationStage.HIRED,
+          ).length,
+        },
+      });
+
+      return created;
     });
 
     void this.reluService.scoreApplication({

@@ -11,9 +11,11 @@ import { DocumentsModule } from './documents/documents.module';
 import { EscoModule } from './esco/esco.module';
 import { ExternalLinksModule } from './external-links/external-links.module';
 import { GeminiModule } from './gemini/gemini.module';
+import { HiringModule } from './hiring/hiring.module';
 import { JobsModule } from './jobs/jobs.module';
 import { NaceModule } from './nace/nace.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
+import { PayrollModule } from './payroll/payroll.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PrivateMessagingModule } from './private-messaging/private-messaging.module';
 import { ProfilesModule } from './profiles/profiles.module';
@@ -22,9 +24,12 @@ import { PublicFeedbackModule } from './public-feedback/public-feedback.module';
 import { PublicPostsModule } from './public-posts/public-posts.module';
 import { ReluModule } from './relu/relu.module';
 import { TaxonomyModule } from './taxonomy/taxonomy.module';
+import { TimesheetsModule } from './timesheets/timesheets.module';
 import { UiConfigModule } from './ui-config/ui-config.module';
 import { UniclassModule } from './uniclass/uniclass.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { VerificationModule } from './verification/verification.module';
+import { WorkforceModule } from './workforce/workforce.module';
 
 @Module({
   imports: [
@@ -34,6 +39,8 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
     AuditModule,
     BillingModule,
     ActorsModule,
+    HiringModule,
+    WorkforceModule,
     JobsModule,
     DocumentsModule,
     GeminiModule,
@@ -47,7 +54,10 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
     UniclassModule,
     UiConfigModule,
     SubscriptionsModule,
+    VerificationModule,
     TaxonomyModule,
+    TimesheetsModule,
+    PayrollModule,
     PublicPostsModule,
     ExternalLinksModule,
     PrivateMessagingModule,

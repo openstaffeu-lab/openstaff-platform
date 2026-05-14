@@ -37,6 +37,10 @@ export default async function PublicIdentityProfilePage({ params }: PageProps) {
           {profile.links.githubUrl ? <Pill label="GitHub" /> : null}
           {profile.links.portfolioUrl ? <Pill label="Portfolio" /> : null}
           <Pill label={`Completion ${profile.publicIndicators.profileCompletionPercent}%`} />
+          <Pill label={`Verification ${profile.publicIndicators.verificationStatus}`} />
+          {profile.publicIndicators.verificationCaseStatus ? (
+            <Pill label={`Case ${profile.publicIndicators.verificationCaseStatus}`} />
+          ) : null}
         </div>
       </section>
 
@@ -51,6 +55,7 @@ export default async function PublicIdentityProfilePage({ params }: PageProps) {
         <Card title="Identity">
           <div>Slug: /profiles/{profile.slug}</div>
           <div>Verification: {profile.publicIndicators.verificationStatus}</div>
+          <div>Verification case: {profile.publicIndicators.verificationCaseStatus || "-"}</div>
           <div>Country: {profile.country || "-"}</div>
           <div>City: {profile.city || "-"}</div>
           <div>Language: {profile.language || "-"}</div>

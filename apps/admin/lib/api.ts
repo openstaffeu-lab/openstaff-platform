@@ -997,6 +997,246 @@ export type AdminOnboardingSession = {
   } | null;
 };
 
+export type AdminVerificationCase = {
+  id: string;
+  subjectType: "IDENTITY_PROFILE" | "COMPANY_PROFILE";
+  status: "DRAFT" | "SUBMITTED" | "IN_REVIEW" | "APPROVED" | "REJECTED" | "NEEDS_INFO";
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  latestNote: string | null;
+  decisionCount: number;
+  reviewedBy: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+  };
+  identityProfile: {
+    id: string;
+    publicSlug: string;
+    displayName: string;
+    verificationStatus: "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED";
+    profileCompletionPercent: number;
+    onboardingCompletedAt: string | null;
+  } | null;
+  companyProfile: {
+    id: string;
+    companyName: string;
+    legalName: string | null;
+    country: string | null;
+    city: string | null;
+    verificationStatus: "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED";
+    onboardingCompletedAt: string | null;
+  } | null;
+  documents: Array<{
+    id: string;
+    assetType: string;
+    label: string | null;
+    profileDocument: {
+      id: string;
+      title: string;
+      type: string;
+      mimeType: string;
+    } | null;
+    actorDocument: {
+      id: string;
+      title: string;
+      type: string;
+      status: string;
+      verifiedAt: string | null;
+    } | null;
+    actorCertification: {
+      id: string;
+      title: string;
+      type: string;
+      status: string;
+      verifiedAt: string | null;
+    } | null;
+    medicalFitnessCertificate: {
+      id: string;
+      title: string;
+      category: string;
+      status: string;
+      fitnessDecision: string;
+      verifiedAt: string | null;
+    } | null;
+  }>;
+  decisions: Array<{
+    id: string;
+    decision: string;
+    fromStatus: string | null;
+    toStatus: string;
+    note: string | null;
+    createdAt: string;
+    actorUser: {
+      id: string;
+      email: string;
+      role: string;
+    } | null;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type HiringStage =
+  | "APPLIED"
+  | "SCREENING"
+  | "INTERVIEW"
+  | "SHORTLISTED"
+  | "OFFER_SENT"
+  | "HIRED"
+  | "REJECTED"
+  | "WITHDRAWN";
+
+export type AdminHiringPipelineListItem = {
+  id: string;
+  status: "ACTIVE" | "PAUSED" | "CLOSED";
+  totalApplicants: number;
+  totalShortlisted: number;
+  totalHired: number;
+  createdAt: string;
+  updatedAt: string;
+  job: {
+    id: string;
+    title: string;
+    status: string;
+    actor: {
+      id: string;
+      displayName: string;
+      email: string;
+    };
+  };
+  groupedCounts: Array<{
+    stage: HiringStage;
+    count: number;
+  }>;
+};
+
+export type AdminHiringPipelineApplicant = {
+  id: string;
+  createdAt: string;
+  currentStage: HiringStage;
+  status: string;
+  reluScore: number | null;
+  message: string | null;
+  stageChangedAt: string | null;
+  actor: {
+    id: string;
+    displayName: string;
+    email: string;
+    actorType: string;
+  };
+  identityProfile: {
+    publicSlug: string;
+    displayName: string;
+    verificationStatus: string;
+    profileCompletionPercent: number;
+  } | null;
+};
+
+export type AdminHiringPipelineDetail = {
+  pipeline: {
+    id: string;
+    status: "ACTIVE" | "PAUSED" | "CLOSED";
+    totalApplicants: number;
+    totalShortlisted: number;
+    totalHired: number;
+    createdAt: string;
+    updatedAt: string;
+    job: {
+      id: string;
+      title: string;
+      status: string;
+      actor: {
+        id: string;
+        displayName: string;
+        email: string;
+      };
+    };
+  };
+  counters: {
+    totalApplicants: number;
+    totalShortlisted: number;
+    totalHired: number;
+  };
+  shortlistStats: {
+    current: number;
+  };
+  hiredStats: {
+    current: number;
+  };
+  applicantsByStage: Array<{
+    stage: HiringStage;
+    applicants: AdminHiringPipelineApplicant[];
+  }>;
+};
+
+export type AdminHiringApplicationDetail = {
+  application: {
+    id: string;
+    createdAt: string;
+    currentStage: HiringStage;
+    status: string;
+    reluScore: number | null;
+    message: string | null;
+    stageChangedAt: string | null;
+    withdrawnAt: string | null;
+    job: {
+      id: string;
+      title: string;
+      status: string;
+    };
+  };
+  candidateIdentitySummary: {
+    actor: {
+      id: string;
+      displayName: string;
+      email: string;
+      actorType: string;
+      isVerified: boolean;
+    };
+    identityProfile: {
+      id: string;
+      publicSlug: string;
+      displayName: string;
+      verificationStatus: string;
+      profileCompletionPercent: number;
+    } | null;
+    user: {
+      id: string;
+      email: string;
+      role: string;
+    } | null;
+  };
+  stageHistory: Array<{
+    id: string;
+    fromStage: HiringStage | null;
+    toStage: HiringStage;
+    note: string | null;
+    createdAt: string;
+    changedByUser: {
+      id: string;
+      email: string;
+      role: string;
+    } | null;
+  }>;
+  decisions: Array<{
+    id: string;
+    decision: "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED";
+    reason: string | null;
+    createdAt: string;
+    decidedByUser: {
+      id: string;
+      email: string;
+      role: string;
+    } | null;
+  }>;
+};
+
 export async function getAdminOnboardingSessions(filters?: {
   q?: string;
   onboardingStatus?: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "SKIPPED";
@@ -1019,4 +1259,742 @@ export async function getAdminOnboardingSessions(filters?: {
   return adminFetch<AdminOnboardingSession[]>(
     `/admin/onboarding/sessions${query.toString() ? `?${query.toString()}` : ""}`,
   );
+}
+
+export async function getAdminVerificationCases(filters?: {
+  q?: string;
+  status?: "DRAFT" | "SUBMITTED" | "IN_REVIEW" | "APPROVED" | "REJECTED" | "NEEDS_INFO";
+  subjectType?: "IDENTITY_PROFILE" | "COMPANY_PROFILE";
+}) {
+  const query = new URLSearchParams();
+
+  if (filters?.q) {
+    query.set("q", filters.q);
+  }
+
+  if (filters?.status) {
+    query.set("status", filters.status);
+  }
+
+  if (filters?.subjectType) {
+    query.set("subjectType", filters.subjectType);
+  }
+
+  return adminFetch<AdminVerificationCase[]>(
+    `/admin/verifications/cases${query.toString() ? `?${query.toString()}` : ""}`,
+  );
+}
+
+export async function getAdminVerificationCase(id: string) {
+  return adminFetch<AdminVerificationCase>(`/admin/verifications/cases/${id}`);
+}
+
+export async function reviewVerificationCase(
+  id: string,
+  input: {
+    decision: "REQUEST_INFO" | "APPROVE" | "REJECT" | "REOPEN";
+    note?: string;
+  },
+) {
+  return adminFetch<AdminVerificationCase>(`/admin/verifications/cases/${id}/review`, {
+    method: "POST",
+    body: JSON.stringify(input),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+export async function getAdminHiringPipelines(filters?: {
+  q?: string;
+  status?: "ACTIVE" | "PAUSED" | "CLOSED";
+}) {
+  const query = new URLSearchParams();
+
+  if (filters?.q) {
+    query.set("q", filters.q);
+  }
+
+  if (filters?.status) {
+    query.set("status", filters.status);
+  }
+
+  return adminFetch<AdminHiringPipelineListItem[]>(
+    `/hiring/pipelines${query.toString() ? `?${query.toString()}` : ""}`,
+  );
+}
+
+export async function getAdminHiringPipeline(jobId: string) {
+  return adminFetch<AdminHiringPipelineDetail>(`/hiring/jobs/${jobId}/pipeline`);
+}
+
+export async function getAdminHiringApplication(id: string) {
+  return adminFetch<AdminHiringApplicationDetail>(`/hiring/applications/${id}`);
+}
+
+export async function moveHiringApplicationStage(
+  id: string,
+  input: {
+    targetStage: "SCREENING" | "INTERVIEW" | "OFFER_SENT";
+    note?: string;
+  },
+) {
+  return adminFetch(`/hiring/applications/${id}/stage`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function shortlistHiringApplication(
+  id: string,
+  input?: {
+    note?: string;
+  },
+) {
+  return adminFetch(`/hiring/applications/${id}/shortlist`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input ?? {}),
+  });
+}
+
+export async function approveHiringApplication(
+  id: string,
+  input?: {
+    reason?: string;
+  },
+) {
+  return adminFetch(`/hiring/applications/${id}/approve`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input ?? {}),
+  });
+}
+
+export async function rejectHiringApplication(
+  id: string,
+  input: {
+    reason: string;
+  },
+) {
+  return adminFetch(`/hiring/applications/${id}/reject`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+export type WorkforceAssignmentStatus = "PENDING" | "ACTIVE" | "ENDED";
+export type WorkforceContractLifecycleStatus =
+  | "DRAFT"
+  | "PENDING_SIGNATURE"
+  | "ACTIVE"
+  | "SUSPENDED"
+  | "TERMINATED"
+  | "COMPLETED";
+
+export type AdminWorkforceAssignment = {
+  id: string;
+  status: WorkforceAssignmentStatus;
+  assignedAt: string;
+  startedAt: string | null;
+  endedAt: string | null;
+  user: {
+    id: string;
+    email: string;
+    identityProfile: {
+      id: string;
+      publicSlug: string;
+      displayName: string;
+      verificationStatus: string;
+    } | null;
+  };
+  project: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
+  job: {
+    id: string;
+    title: string;
+    status: string;
+  };
+  application: {
+    id: string;
+    currentStage: HiringStage;
+    status: string;
+    actor: {
+      id: string;
+      displayName: string;
+      email: string;
+    };
+  };
+  contract: {
+    id: string;
+    status: string;
+    lifecycleStatus: WorkforceContractLifecycleStatus;
+    value: string | number;
+    currency: string;
+    startDate: string | null;
+    endDate: string | null;
+  };
+};
+
+export type AdminWorkforceAssignmentDetail = AdminWorkforceAssignment & {
+  timeline: Array<{
+    id: string;
+    eventType: string;
+    metadata: unknown;
+    createdAt: string;
+    actorUser: {
+      id: string;
+      email: string;
+      role: string;
+    } | null;
+  }>;
+};
+
+export type AdminWorkforceContractActionResult = {
+  contract: {
+    id: string;
+    status: string;
+    lifecycleStatus: WorkforceContractLifecycleStatus;
+    signedAt: string | null;
+    startDate: string | null;
+    endDate: string | null;
+  };
+  assignments: Array<{
+    id: string;
+    status: WorkforceAssignmentStatus;
+    assignedAt: string;
+    startedAt: string | null;
+    endedAt: string | null;
+    userId: string;
+  }>;
+  latestEvent: {
+    id: string;
+    eventType: string;
+    metadata: unknown;
+    createdAt: string;
+    actorUser: {
+      id: string;
+      email: string;
+      role: string;
+    } | null;
+  } | null;
+};
+
+export async function getAdminWorkforceAssignments(filters?: {
+  q?: string;
+  status?: WorkforceAssignmentStatus;
+  contractStatus?: WorkforceContractLifecycleStatus;
+}) {
+  const query = new URLSearchParams();
+
+  if (filters?.q) {
+    query.set("q", filters.q);
+  }
+
+  if (filters?.status) {
+    query.set("status", filters.status);
+  }
+
+  if (filters?.contractStatus) {
+    query.set("contractStatus", filters.contractStatus);
+  }
+
+  return adminFetch<AdminWorkforceAssignment[]>(
+    `/workforce/assignments${query.toString() ? `?${query.toString()}` : ""}`,
+  );
+}
+
+export async function getAdminWorkforceAssignment(id: string) {
+  return adminFetch<AdminWorkforceAssignmentDetail>(`/workforce/assignments/${id}`);
+}
+
+export async function createAdminWorkforceAssignment(input: {
+  applicationId: string;
+  contractId: string;
+  projectId?: string;
+  note?: string;
+}) {
+  return adminFetch<AdminWorkforceAssignment>(`/workforce/assignments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function sendWorkforceContract(id: string) {
+  return adminFetch<AdminWorkforceContractActionResult>(`/workforce/contracts/${id}/send`, {
+    method: "POST",
+  });
+}
+
+export async function activateWorkforceContract(
+  id: string,
+  input?: {
+    startDate?: string;
+    note?: string;
+  },
+) {
+  return adminFetch<AdminWorkforceContractActionResult>(
+    `/workforce/contracts/${id}/activate`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input ?? {}),
+    },
+  );
+}
+
+export async function suspendWorkforceContract(
+  id: string,
+  input?: {
+    reason?: string;
+  },
+) {
+  return adminFetch<AdminWorkforceContractActionResult>(
+    `/workforce/contracts/${id}/suspend`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input ?? {}),
+    },
+  );
+}
+
+export async function terminateWorkforceContract(
+  id: string,
+  input?: {
+    reason?: string;
+  },
+) {
+  return adminFetch<AdminWorkforceContractActionResult>(
+    `/workforce/contracts/${id}/terminate`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input ?? {}),
+    },
+  );
+}
+
+export async function getWorkforceContractTimeline(id: string) {
+  return adminFetch<
+    Array<{
+      id: string;
+      eventType: string;
+      metadata: unknown;
+      createdAt: string;
+      actorUser: {
+        id: string;
+        email: string;
+        role: string;
+      } | null;
+    }>
+  >(`/workforce/contracts/${id}/timeline`);
+}
+
+export type OperationalTimesheetStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "APPROVED"
+  | "REJECTED";
+
+export type OperationalAttendanceStatus =
+  | "CHECKED_IN"
+  | "CHECKED_OUT"
+  | "MISSED";
+
+export type OperationalWorkSessionSource = "MANUAL" | "SYSTEM" | "MOBILE";
+
+export type AdminOperationalTimesheet = {
+  id: string;
+  periodStart: string;
+  periodEnd: string;
+  totalHours: number;
+  overtimeHours: number;
+  status: OperationalTimesheetStatus;
+  submittedAt: string | null;
+  approvedAt: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    email: string;
+    identityProfile: {
+      id: string;
+      publicSlug: string;
+      displayName: string;
+      verificationStatus: string;
+    } | null;
+  };
+  project: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  assignment: {
+    id: string;
+    status: WorkforceAssignmentStatus;
+    assignedAt: string;
+    startedAt: string | null;
+    endedAt: string | null;
+  };
+  contract: {
+    id: string;
+    lifecycleStatus: WorkforceContractLifecycleStatus;
+    status: string;
+  };
+  job: {
+    id: string;
+    title: string;
+    status: string;
+  };
+  entries: Array<{
+    id: string;
+    workDate: string;
+    hoursWorked: number;
+    overtimeHours: number;
+    notes: string | null;
+    createdAt: string;
+  }>;
+  approvedByUser: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+};
+
+export type AdminOperationalAttendanceRecord = {
+  id: string;
+  checkInAt: string;
+  checkOutAt: string | null;
+  status: OperationalAttendanceStatus;
+  source: OperationalWorkSessionSource;
+  locationMetadata: unknown;
+  createdAt: string;
+  updatedAt: string;
+  durationHours: number | null;
+  user: {
+    id: string;
+    email: string;
+  };
+  assignment: {
+    id: string;
+    status: WorkforceAssignmentStatus;
+  };
+  contract: {
+    id: string;
+    lifecycleStatus: WorkforceContractLifecycleStatus;
+  };
+  job: {
+    id: string;
+    title: string;
+  };
+  project: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
+};
+
+export async function getAdminOperationalTimesheets(filters?: {
+  q?: string;
+  status?: OperationalTimesheetStatus;
+}) {
+  const query = new URLSearchParams();
+
+  if (filters?.q) {
+    query.set("q", filters.q);
+  }
+
+  if (filters?.status) {
+    query.set("status", filters.status);
+  }
+
+  return adminFetch<AdminOperationalTimesheet[]>(
+    `/admin/timesheets${query.toString() ? `?${query.toString()}` : ""}`,
+  );
+}
+
+export async function getAdminOperationalTimesheet(id: string) {
+  return adminFetch<AdminOperationalTimesheet>(`/admin/timesheets/${id}`);
+}
+
+export async function approveAdminOperationalTimesheet(
+  id: string,
+  input?: { note?: string },
+) {
+  return adminFetch<AdminOperationalTimesheet>(`/admin/timesheets/${id}/approve`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input ?? {}),
+  });
+}
+
+export async function rejectAdminOperationalTimesheet(
+  id: string,
+  input: { reason: string },
+) {
+  return adminFetch<AdminOperationalTimesheet>(`/admin/timesheets/${id}/reject`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function getAdminOperationalAttendance(filters?: { q?: string }) {
+  const query = new URLSearchParams();
+
+  if (filters?.q) {
+    query.set("q", filters.q);
+  }
+
+  return adminFetch<AdminOperationalAttendanceRecord[]>(
+    `/admin/attendance${query.toString() ? `?${query.toString()}` : ""}`,
+  );
+}
+
+export type CompensationType =
+  | "HOURLY"
+  | "DAILY"
+  | "WEEKLY"
+  | "MONTHLY"
+  | "FIXED_PROJECT";
+
+export type PayrollCycleStatus =
+  | "OPEN"
+  | "PROCESSING"
+  | "LOCKED"
+  | "EXPORTED";
+
+export type PayrollSettlementStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "READY_FOR_PAYMENT"
+  | "PAID";
+
+export type AdminCompensationAgreement = {
+  id: string;
+  compensationType: CompensationType;
+  currency: string;
+  baseRate: number;
+  overtimeRate: number | null;
+  overtimeThresholdHours: number | null;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  createdAt: string;
+  updatedAt: string;
+  assignment: AdminWorkforceAssignment | null;
+};
+
+export type AdminPayrollSettlement = {
+  id: string;
+  approvedTimesheetIds: string[];
+  regularHours: number;
+  overtimeHours: number;
+  grossAmount: number;
+  deductionsAmount: number;
+  netAmount: number;
+  currency: string;
+  status: PayrollSettlementStatus;
+  approvedAt: string | null;
+  paidAt: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  payrollCycle: {
+    id: string;
+    periodStart: string;
+    periodEnd: string;
+    status: PayrollCycleStatus;
+  };
+  user: {
+    id: string;
+    email: string;
+    identityProfile: {
+      id: string;
+      publicSlug: string;
+      displayName: string;
+      verificationStatus: string;
+    } | null;
+  };
+  assignment: AdminWorkforceAssignment;
+  lines: Array<{
+    id: string;
+    description: string;
+    quantity: number;
+    unitRate: number;
+    amount: number;
+    createdAt: string;
+  }>;
+  approvedByUser: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+  attendanceSummary: {
+    recordCount: number;
+    totalTrackedHours: number;
+  };
+};
+
+export type AdminPayrollCycle = {
+  id: string;
+  periodStart: string;
+  periodEnd: string;
+  status: PayrollCycleStatus;
+  totalWorkers: number;
+  totalGrossAmount: number;
+  processedAt: string | null;
+  lockedAt: string | null;
+  exportedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  settlementCount: number;
+  pendingSettlementCount: number;
+  readyForPaymentCount: number;
+  settlements: AdminPayrollSettlement[];
+};
+
+export async function createCompensationAgreement(input: {
+  workforceAssignmentId: string;
+  compensationType: CompensationType;
+  currency: string;
+  baseRate: number;
+  overtimeRate?: number;
+  overtimeThresholdHours?: number;
+  effectiveFrom: string;
+  effectiveTo?: string;
+}) {
+  return adminFetch<AdminCompensationAgreement>(`/admin/payroll/compensation`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function createPayrollCycle(input: {
+  periodStart: string;
+  periodEnd: string;
+}) {
+  return adminFetch<AdminPayrollCycle>(`/admin/payroll/cycles`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function getAdminPayrollCycles(filters?: {
+  status?: PayrollCycleStatus;
+}) {
+  const query = new URLSearchParams();
+
+  if (filters?.status) {
+    query.set("status", filters.status);
+  }
+
+  return adminFetch<AdminPayrollCycle[]>(
+    `/admin/payroll/cycles${query.toString() ? `?${query.toString()}` : ""}`,
+  );
+}
+
+export async function getAdminPayrollCycle(id: string) {
+  return adminFetch<AdminPayrollCycle>(`/admin/payroll/cycles/${id}`);
+}
+
+export async function processAdminPayrollCycle(
+  id: string,
+  input?: { note?: string },
+) {
+  return adminFetch<AdminPayrollCycle>(`/admin/payroll/cycles/${id}/process`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input ?? {}),
+  });
+}
+
+export async function getAdminPayrollSettlements(filters?: {
+  q?: string;
+  status?: PayrollSettlementStatus;
+  cycleId?: string;
+}) {
+  const query = new URLSearchParams();
+
+  if (filters?.q) {
+    query.set("q", filters.q);
+  }
+
+  if (filters?.status) {
+    query.set("status", filters.status);
+  }
+
+  if (filters?.cycleId) {
+    query.set("cycleId", filters.cycleId);
+  }
+
+  return adminFetch<AdminPayrollSettlement[]>(
+    `/admin/payroll/settlements${query.toString() ? `?${query.toString()}` : ""}`,
+  );
+}
+
+export async function getAdminPayrollSettlement(id: string) {
+  return adminFetch<AdminPayrollSettlement>(`/admin/payroll/settlements/${id}`);
+}
+
+export async function approveAdminPayrollSettlement(
+  id: string,
+  input?: { note?: string },
+) {
+  return adminFetch<AdminPayrollSettlement>(`/admin/payroll/settlements/${id}/approve`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input ?? {}),
+  });
+}
+
+export async function rejectAdminPayrollSettlement(
+  id: string,
+  input: { reason: string },
+) {
+  return adminFetch<AdminPayrollSettlement>(`/admin/payroll/settlements/${id}/reject`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
 }

@@ -143,6 +143,19 @@ model User {
   identityProfile                    IdentityProfile?
   identityCompanyProfiles            IdentityCompanyProfile[]
   onboardingSession                  OnboardingSession?
+  verificationCases                  VerificationCase[]
+  reviewedVerificationCases          VerificationCase[]             @relation("VerificationCaseReviewedBy")
+  verificationDecisions              VerificationDecision[]         @relation("VerificationDecisionActorUser")
+  candidateApplications              Application[]                 @relation("ApplicationCandidateUser")
+  applicationStageChanges            ApplicationStageHistory[]     @relation("ApplicationStageHistoryChangedBy")
+  hiringDecisions                    HiringDecision[]              @relation("HiringDecisionDecidedBy")
+  workforceAssignments               WorkforceAssignment[]
+  contractLifecycleEvents            ContractLifecycleEvent[]      @relation("ContractLifecycleEventActorUser")
+  operationalTimesheets             Timesheet[]
+  approvedOperationalTimesheets     Timesheet[]                   @relation("TimesheetApprovedBy")
+  attendanceRecords                 AttendanceRecord[]
+  payrollSettlements                PayrollSettlement[]
+  approvedPayrollSettlements        PayrollSettlement[]           @relation("PayrollSettlementApprovedBy")
   profileWorkers                     ProfileWorker[]              @relation("ProfileWorkerLinkedUser")
   assignedWorkerAssignments          ProjectWorkerAssignment[]    @relation("ProjectWorkerAssignmentAssignedBy")
   approvedWorkerAssignments          ProjectWorkerAssignment[]    @relation("ProjectWorkerAssignmentApprovedBy")
@@ -178,7 +191,8 @@ model IdentityProfile {
   createdAt                DateTime           @default(now())
   updatedAt                DateTime           @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verificationCases  VerificationCase[]
 
   @@index([verificationStatus, createdAt])
   @@index([profileCompletionPercent])
@@ -203,7 +217,8 @@ model IdentityCompanyProfile {
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 
-  ownerUser User @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  ownerUser          User               @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  verificationCases  VerificationCase[]
 
   @@index([ownerUserId, createdAt])
   @@index([verificationStatus, createdAt])
@@ -224,6 +239,74 @@ model OnboardingSession {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([status, completionPercent])
+}
+
+model VerificationCase {
+  id                String                      @id @default(uuid())
+  userId            String
+  subjectType       VerificationCaseSubjectType
+  identityProfileId String?
+  companyProfileId  String?
+  status            VerificationCaseStatus     @default(DRAFT)
+  submittedAt       DateTime?
+  reviewedAt        DateTime?
+  reviewedById      String?
+  latestNote        String?
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+
+  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  identityProfile IdentityProfile?       @relation(fields: [identityProfileId], references: [id], onDelete: Cascade)
+  companyProfile  IdentityCompanyProfile? @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
+  reviewedBy      User?                  @relation("VerificationCaseReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  documentLinks   VerificationCaseDocument[]
+  decisions       VerificationDecision[]
+
+  @@index([userId, subjectType, status])
+  @@index([identityProfileId, status])
+  @@index([companyProfileId, status])
+  @@index([reviewedById, reviewedAt])
+}
+
+model VerificationCaseDocument {
+  id                          String                @id @default(uuid())
+  verificationCaseId          String
+  assetType                   VerificationAssetType
+  profileDocumentId           String?
+  actorDocumentId             String?
+  actorCertificationId        String?
+  medicalFitnessCertificateId String?
+  label                       String?
+  createdAt                   DateTime              @default(now())
+
+  verificationCase          VerificationCase          @relation(fields: [verificationCaseId], references: [id], onDelete: Cascade)
+  profileDocument           ProfileDocument?          @relation(fields: [profileDocumentId], references: [id], onDelete: SetNull)
+  actorDocument             ActorDocument?            @relation(fields: [actorDocumentId], references: [id], onDelete: SetNull)
+  actorCertification        ActorCertification?       @relation(fields: [actorCertificationId], references: [id], onDelete: SetNull)
+  medicalFitnessCertificate MedicalFitnessCertificate? @relation(fields: [medicalFitnessCertificateId], references: [id], onDelete: SetNull)
+
+  @@index([verificationCaseId, assetType])
+  @@index([profileDocumentId])
+  @@index([actorDocumentId])
+  @@index([actorCertificationId])
+  @@index([medicalFitnessCertificateId])
+}
+
+model VerificationDecision {
+  id                 String                 @id @default(uuid())
+  verificationCaseId String
+  actorUserId        String?
+  decision           VerificationDecisionType
+  fromStatus         VerificationCaseStatus?
+  toStatus           VerificationCaseStatus
+  note               String?
+  createdAt          DateTime               @default(now())
+
+  verificationCase VerificationCase @relation(fields: [verificationCaseId], references: [id], onDelete: Cascade)
+  actorUser        User?            @relation("VerificationDecisionActorUser", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([verificationCaseId, createdAt])
+  @@index([actorUserId, createdAt])
 }
 
 model SubscriptionPlan {
@@ -842,6 +925,8 @@ model Project {
   workerTimesheets           WorkerTimesheet[]
   workerPayrollCalculations  WorkerPayrollCalculation[]
   conversations              Conversation[]
+  workforceAssignments       WorkforceAssignment[]
+  operationalTimesheets      Timesheet[]
 
   @@index([createdById, createdAt])
   @@index([status, engagementModel])
@@ -1098,6 +1183,7 @@ model ProfileDocument {
   profile        Profile         @relation(fields: [profileId], references: [id], onDelete: Cascade)
   uploadedBy     User?           @relation("ProfileDocumentUploadedBy", fields: [uploadedById], references: [id])
   actorDocuments ActorDocument[]
+  verificationCaseDocuments VerificationCaseDocument[]
 
   @@index([profileId, type])
   @@index([uploadedById])
@@ -1454,6 +1540,7 @@ model ActorDocument {
   medicalFitnessCertificates MedicalFitnessCertificate[]
   complianceAlerts           ComplianceAlert[]
   userTasks                  UserTask[]
+  verificationCaseDocuments  VerificationCaseDocument[]
 
   @@index([profileId, type, status])
   @@index([userId, status])
@@ -1485,6 +1572,7 @@ model ActorCertification {
   verifiedBy       User?             @relation("ActorCertificationVerifiedBy", fields: [verifiedById], references: [id])
   complianceAlerts ComplianceAlert[]
   userTasks        UserTask[]
+  verificationCaseDocuments VerificationCaseDocument[]
 
   @@index([profileId, type, status])
   @@index([userId, status])
@@ -1519,6 +1607,7 @@ model MedicalFitnessCertificate {
   verifiedBy       User?             @relation("MedicalFitnessVerifiedBy", fields: [verifiedById], references: [id])
   complianceAlerts ComplianceAlert[]
   userTasks        UserTask[]
+  verificationCaseDocuments VerificationCaseDocument[]
 
   @@index([profileId, category, status])
   @@index([userId, status])
@@ -1807,7 +1896,9 @@ model Job {
   reluTestForm  Json?
 
   applications Application[]
+  hiringPipeline HiringPipeline?
   contracts    Contract[]
+  workforceAssignments WorkforceAssignment[]
   reviews      Review[]
 
   @@index([actorId, status, createdAt])
@@ -1816,19 +1907,77 @@ model Job {
 }
 
 model Application {
-  id        String    @id @default(uuid())
-  createdAt DateTime  @default(now())
-  jobId     String
-  job       Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  actorId   String
-  actor     Actor     @relation(fields: [actorId], references: [id], onDelete: Cascade)
-  status    AppStatus @default(PENDING)
-  reluScore Float?
-  message   String?   @db.Text
+  id              String                @id @default(uuid())
+  createdAt       DateTime              @default(now())
+  jobId           String
+  job             Job                   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  actorId         String
+  actor           Actor                 @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  candidateUserId String?
+  candidateUser   User?                 @relation("ApplicationCandidateUser", fields: [candidateUserId], references: [id], onDelete: SetNull)
+  status          AppStatus             @default(PENDING)
+  currentStage    ApplicationStage      @default(APPLIED)
+  reluScore       Float?
+  message         String?               @db.Text
+  stageChangedAt  DateTime?
+  withdrawnAt     DateTime?
+
+  stageHistory    ApplicationStageHistory[]
+  hiringDecisions HiringDecision[]
+  workforceAssignment WorkforceAssignment?
 
   @@unique([jobId, actorId])
+  @@index([candidateUserId, createdAt])
   @@index([actorId, status, createdAt])
+  @@index([jobId, currentStage, createdAt])
   @@index([jobId, status, createdAt])
+}
+
+model HiringPipeline {
+  id               String               @id @default(uuid())
+  jobId             String               @unique
+  status            HiringPipelineStatus @default(ACTIVE)
+  totalApplicants   Int                  @default(0)
+  totalShortlisted  Int                  @default(0)
+  totalHired        Int                  @default(0)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([status, updatedAt])
+}
+
+model ApplicationStageHistory {
+  id              String            @id @default(uuid())
+  applicationId   String
+  fromStage       ApplicationStage?
+  toStage         ApplicationStage
+  changedByUserId String?
+  note            String?
+  createdAt       DateTime          @default(now())
+
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  changedByUser User?       @relation("ApplicationStageHistoryChangedBy", fields: [changedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([applicationId, createdAt])
+  @@index([changedByUserId, createdAt])
+}
+
+model HiringDecision {
+  id              String              @id @default(uuid())
+  applicationId   String
+  decision        ApplicationDecision @default(PENDING)
+  decidedByUserId String?
+  reason          String?
+  createdAt       DateTime            @default(now())
+
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  decidedByUser User?       @relation("HiringDecisionDecidedBy", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([applicationId, createdAt])
+  @@index([decidedByUserId, createdAt])
+  @@index([decision, createdAt])
 }
 
 model Contract {
@@ -1841,6 +1990,7 @@ model Contract {
   contractorId   String
   contractor     Actor          @relation("ContractorContracts", fields: [contractorId], references: [id], onDelete: Cascade)
   status         ContractStatus @default(DRAFT)
+  lifecycleStatus ContractLifecycleStatus @default(DRAFT)
   value          Decimal        @db.Decimal(15, 2)
   currency       String         @default("RON")
   transactionFee Decimal?       @db.Decimal(15, 2)
@@ -1850,11 +2000,206 @@ model Contract {
   startDate      DateTime?
   endDate        DateTime?
 
-  disputes Dispute[]
+  disputes             Dispute[]
+  lifecycleEvents      ContractLifecycleEvent[]
+  workforceAssignments WorkforceAssignment[]
 
   @@index([jobId, status, createdAt])
+  @@index([jobId, lifecycleStatus, createdAt])
   @@index([employerId, status, createdAt])
   @@index([contractorId, status, createdAt])
+}
+
+model WorkforceAssignment {
+  id            String           @id @default(uuid())
+  userId        String
+  projectId     String?
+  jobId         String
+  contractId    String
+  applicationId String           @unique
+  status        AssignmentStatus @default(PENDING)
+  assignedAt    DateTime         @default(now())
+  startedAt     DateTime?
+  endedAt       DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project     Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  job         Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  contract    Contract    @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  timesheets  Timesheet[]
+  attendanceRecords AttendanceRecord[]
+  compensationAgreements CompensationAgreement[]
+  payrollSettlements PayrollSettlement[]
+
+  @@index([userId, status, assignedAt])
+  @@index([projectId, status, assignedAt])
+  @@index([jobId, status, assignedAt])
+  @@index([contractId, status, assignedAt])
+}
+
+model Timesheet {
+  id                    String          @id @default(uuid())
+  workforceAssignmentId String
+  userId                String
+  projectId             String
+  periodStart           DateTime
+  periodEnd             DateTime
+  totalHours            Float           @default(0)
+  overtimeHours         Float           @default(0)
+  status                TimesheetStatus @default(DRAFT)
+  submittedAt           DateTime?
+  approvedAt            DateTime?
+  approvedByUserId      String?
+  rejectionReason       String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  workforceAssignment WorkforceAssignment @relation(fields: [workforceAssignmentId], references: [id], onDelete: Cascade)
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project             Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  approvedByUser      User?               @relation("TimesheetApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  entries             TimesheetEntry[]
+
+  @@unique([workforceAssignmentId, periodStart, periodEnd])
+  @@index([userId, status, periodStart, periodEnd])
+  @@index([projectId, status, periodStart, periodEnd])
+  @@index([approvedByUserId, approvedAt])
+}
+
+model TimesheetEntry {
+  id            String   @id @default(uuid())
+  timesheetId    String
+  workDate       DateTime
+  hoursWorked    Float
+  overtimeHours  Float   @default(0)
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  timesheet Timesheet @relation(fields: [timesheetId], references: [id], onDelete: Cascade)
+
+  @@index([timesheetId, workDate])
+}
+
+model AttendanceRecord {
+  id                    String            @id @default(uuid())
+  workforceAssignmentId String
+  userId                String
+  checkInAt             DateTime
+  checkOutAt            DateTime?
+  status                AttendanceStatus
+  source                WorkSessionSource @default(MANUAL)
+  locationMetadata      Json?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  workforceAssignment WorkforceAssignment @relation(fields: [workforceAssignmentId], references: [id], onDelete: Cascade)
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workforceAssignmentId, checkInAt])
+  @@index([userId, checkInAt])
+  @@index([status, checkInAt])
+}
+
+model CompensationAgreement {
+  id                     String           @id @default(uuid())
+  workforceAssignmentId  String
+  compensationType       CompensationType
+  currency               String           @default("RON")
+  baseRate               Decimal          @db.Decimal(15, 2)
+  overtimeRate           Decimal?         @db.Decimal(15, 2)
+  overtimeThresholdHours Float?
+  effectiveFrom          DateTime
+  effectiveTo            DateTime?
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+
+  workforceAssignment WorkforceAssignment @relation(fields: [workforceAssignmentId], references: [id], onDelete: Cascade)
+
+  @@index([workforceAssignmentId, effectiveFrom])
+  @@index([compensationType, effectiveFrom])
+}
+
+model PayrollCycle {
+  id               String             @id @default(uuid())
+  periodStart      DateTime
+  periodEnd        DateTime
+  status           PayrollCycleStatus @default(OPEN)
+  totalWorkers     Int                @default(0)
+  totalGrossAmount Decimal            @default(0) @db.Decimal(15, 2)
+  processedAt      DateTime?
+  lockedAt         DateTime?
+  exportedAt       DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  settlements PayrollSettlement[]
+
+  @@unique([periodStart, periodEnd])
+  @@index([status, periodStart, periodEnd])
+}
+
+model PayrollSettlement {
+  id                    String           @id @default(uuid())
+  payrollCycleId        String
+  workforceAssignmentId String
+  userId                String
+  approvedTimesheetIds  Json
+  regularHours          Float            @default(0)
+  overtimeHours         Float            @default(0)
+  grossAmount           Decimal          @default(0) @db.Decimal(15, 2)
+  deductionsAmount      Decimal          @default(0) @db.Decimal(15, 2)
+  netAmount             Decimal          @default(0) @db.Decimal(15, 2)
+  currency              String           @default("RON")
+  status                SettlementStatus @default(PENDING)
+  approvedAt            DateTime?
+  approvedByUserId      String?
+  paidAt                DateTime?
+  rejectionReason       String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  payrollCycle        PayrollCycle        @relation(fields: [payrollCycleId], references: [id], onDelete: Cascade)
+  workforceAssignment WorkforceAssignment @relation(fields: [workforceAssignmentId], references: [id], onDelete: Cascade)
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvedByUser      User?               @relation("PayrollSettlementApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  lines               PayrollSettlementLine[]
+
+  @@index([payrollCycleId, status, createdAt])
+  @@index([workforceAssignmentId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model PayrollSettlementLine {
+  id                  String   @id @default(uuid())
+  payrollSettlementId String
+  description         String
+  quantity            Float
+  unitRate            Decimal  @db.Decimal(15, 2)
+  amount              Decimal  @db.Decimal(15, 2)
+  createdAt           DateTime @default(now())
+
+  payrollSettlement PayrollSettlement @relation(fields: [payrollSettlementId], references: [id], onDelete: Cascade)
+
+  @@index([payrollSettlementId, createdAt])
+}
+
+model ContractLifecycleEvent {
+  id          String                     @id @default(uuid())
+  contractId  String
+  eventType   ContractLifecycleEventType
+  actorUserId String?
+  metadata    Json?
+  createdAt   DateTime                   @default(now())
+
+  contract  Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  actorUser User?    @relation("ContractLifecycleEventActorUser", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([contractId, createdAt])
+  @@index([eventType, createdAt])
+  @@index([actorUserId, createdAt])
 }
 
 model Dispute {
@@ -2359,6 +2704,98 @@ enum AppStatus {
   REJECTED
 }
 
+enum ApplicationStage {
+  APPLIED
+  SCREENING
+  INTERVIEW
+  SHORTLISTED
+  OFFER_SENT
+  HIRED
+  REJECTED
+  WITHDRAWN
+}
+
+enum ApplicationDecision {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum HiringPipelineStatus {
+  ACTIVE
+  PAUSED
+  CLOSED
+}
+
+enum ContractLifecycleStatus {
+  DRAFT
+  PENDING_SIGNATURE
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+  COMPLETED
+}
+
+enum AssignmentStatus {
+  PENDING
+  ACTIVE
+  ENDED
+}
+
+enum ContractLifecycleEventType {
+  CREATED
+  SENT
+  SIGNED
+  ACTIVATED
+  SUSPENDED
+  REACTIVATED
+  TERMINATED
+  COMPLETED
+}
+
+enum TimesheetStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum CompensationType {
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+  FIXED_PROJECT
+}
+
+enum PayrollCycleStatus {
+  OPEN
+  PROCESSING
+  LOCKED
+  EXPORTED
+}
+
+enum SettlementStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  READY_FOR_PAYMENT
+  PAID
+}
+
+enum AttendanceStatus {
+  CHECKED_IN
+  CHECKED_OUT
+  MISSED
+}
+
+enum WorkSessionSource {
+  MANUAL
+  SYSTEM
+  MOBILE
+}
+
 enum ContractStatus {
   DRAFT
   PENDING_SIGN
@@ -2690,6 +3127,35 @@ enum VerificationStatus {
   PENDING
   VERIFIED
   REJECTED
+}
+
+enum VerificationCaseSubjectType {
+  IDENTITY_PROFILE
+  COMPANY_PROFILE
+}
+
+enum VerificationCaseStatus {
+  DRAFT
+  SUBMITTED
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  NEEDS_INFO
+}
+
+enum VerificationDecisionType {
+  SUBMIT
+  REQUEST_INFO
+  APPROVE
+  REJECT
+  REOPEN
+}
+
+enum VerificationAssetType {
+  PROFILE_DOCUMENT
+  ACTOR_DOCUMENT
+  ACTOR_CERTIFICATION
+  MEDICAL_FITNESS_CERTIFICATE
 }
 
 enum OnboardingStatus {

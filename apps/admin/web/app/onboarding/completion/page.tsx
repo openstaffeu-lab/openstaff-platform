@@ -5,7 +5,14 @@ import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { getOnboardingMe, updateOnboardingStep } from "@/lib/api";
+import {
+  getVerificationMe,
+  getOnboardingMe,
+  submitCompanyVerificationCase,
+  submitIdentityVerificationCase,
+  type VerificationMe,
+  updateOnboardingStep,
+} from "@/lib/api";
 import { useOnboardingState } from "@/lib/onboarding";
 
 export default function OnboardingCompletionPage() {
@@ -13,7 +20,12 @@ export default function OnboardingCompletionPage() {
   const { token } = useAuth();
   const { ready, reset } = useOnboardingState();
   const [snapshot, setSnapshot] = useState<Awaited<ReturnType<typeof getOnboardingMe>> | null>(null);
+  const [verification, setVerification] = useState<VerificationMe | null>(null);
   const [saving, setSaving] = useState(false);
+  const [submittingIdentity, setSubmittingIdentity] = useState(false);
+  const [submittingCompany, setSubmittingCompany] = useState(false);
+  const [selectedEvidence, setSelectedEvidence] = useState<Record<string, boolean>>({});
+  const [verificationError, setVerificationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ready || !token) {
@@ -23,9 +35,23 @@ export default function OnboardingCompletionPage() {
     let cancelled = false;
 
     async function load() {
-      const nextSnapshot = await getOnboardingMe(token);
-      if (!cancelled) {
-        setSnapshot(nextSnapshot);
+      try {
+        const [nextSnapshot, nextVerification] = await Promise.all([
+          getOnboardingMe(token),
+          getVerificationMe(token),
+        ]);
+        if (!cancelled) {
+          setSnapshot(nextSnapshot);
+          setVerification(nextVerification);
+          setSelectedEvidence(createDefaultEvidenceSelection(nextVerification));
+          setVerificationError(null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setVerificationError(
+            error instanceof Error ? error.message : "Nu am putut incarca datele de verificare.",
+          );
+        }
       }
     }
 
@@ -36,9 +62,16 @@ export default function OnboardingCompletionPage() {
     };
   }, [ready, token]);
 
-  if (!ready || !snapshot) {
+  if (!ready || !snapshot || !verification) {
     return null;
   }
+
+  const evidenceSelection = toEvidencePayload(selectedEvidence);
+  const evidenceCount =
+    evidenceSelection.profileDocumentIds.length +
+    evidenceSelection.actorDocumentIds.length +
+    evidenceSelection.actorCertificationIds.length +
+    evidenceSelection.medicalFitnessCertificateIds.length;
 
   return (
     <section style={{ background: "white", borderRadius: 18, padding: 24, border: "1px solid #E8EBF5" }}>
@@ -54,10 +87,13 @@ export default function OnboardingCompletionPage() {
           <div><strong>Display name:</strong> {snapshot.identityProfile.displayName}</div>
           <div><strong>Public slug:</strong> /profiles/{snapshot.identityProfile.publicSlug}</div>
           <div><strong>Verification:</strong> {snapshot.identityProfile.verificationStatus}</div>
+          <div><strong>Verification overall:</strong> {snapshot.verificationSummary.overallStatus}</div>
           <div><strong>Completion:</strong> {snapshot.completionPercent}%</div>
           <div><strong>Current step:</strong> {snapshot.onboardingSession.currentStep}</div>
           <div><strong>Completed steps:</strong> {snapshot.onboardingSession.completedSteps.join(", ") || "none"}</div>
           <div><strong>Company:</strong> {snapshot.companyProfile?.companyName ?? "not added"}</div>
+          <div><strong>Identity case:</strong> {snapshot.verificationSummary.identityCase?.status ?? "not submitted"}</div>
+          <div><strong>Company case:</strong> {snapshot.verificationSummary.companyCase?.status ?? "not submitted"}</div>
         </div>
 
         <div
@@ -71,6 +107,150 @@ export default function OnboardingCompletionPage() {
         >
           Profilul public nu expune email, billing, tokenuri sau metadata private. Acesta este
           stratul pregatit pentru marketplace si extensii viitoare de compliance.
+        </div>
+
+        <div
+          style={{
+            borderRadius: 16,
+            background: "#F8FAFC",
+            border: "1px solid #E8EBF5",
+            padding: 16,
+            color: "#1E293B",
+            display: "grid",
+            gap: 12,
+          }}
+        >
+          <div style={{ fontWeight: 700, color: "#1B2A6B" }}>Verification workflow</div>
+          <div>
+            Din acest pas poti selecta explicit documentele si evidenta de compliance
+            care intra in dosarul de verificare pentru identitate si, optional, pentru
+            companie. Review-ul se face in backoffice de catre admin.
+          </div>
+          <div style={{ fontSize: 14, color: "#475569" }}>
+            Evidence selectat: <strong>{evidenceCount}</strong>
+          </div>
+          {verificationError ? (
+            <div
+              style={{
+                borderRadius: 12,
+                border: "1px solid #FCA5A5",
+                background: "#FEF2F2",
+                color: "#991B1B",
+                padding: 12,
+              }}
+            >
+              {verificationError}
+            </div>
+          ) : null}
+          <EvidenceGroup
+            title="Profile documents"
+            description="Documente generale legate de profilul public."
+            items={verification.availableEvidence.profileDocuments.map((item) => ({
+              id: `profile:${item.id}`,
+              title: item.title,
+              meta: [item.type, formatDate(item.createdAt)].filter(Boolean).join(" • "),
+            }))}
+            selectedEvidence={selectedEvidence}
+            onToggle={(id) => {
+              setSelectedEvidence((current) => ({ ...current, [id]: !current[id] }));
+            }}
+          />
+          <EvidenceGroup
+            title="Actor documents"
+            description="Documente operationale sau de identitate din workspace-ul de compliance."
+            items={verification.availableEvidence.actorDocuments.map((item) => ({
+              id: `actor-document:${item.id}`,
+              title: item.title,
+              meta: [item.type, item.status, formatExpiry(item.expiresAt)].filter(Boolean).join(" • "),
+            }))}
+            selectedEvidence={selectedEvidence}
+            onToggle={(id) => {
+              setSelectedEvidence((current) => ({ ...current, [id]: !current[id] }));
+            }}
+          />
+          <EvidenceGroup
+            title="Certifications"
+            description="Certificari profesionale reutilizabile pentru KYC si director public."
+            items={verification.availableEvidence.actorCertifications.map((item) => ({
+              id: `actor-certification:${item.id}`,
+              title: item.title,
+              meta: [item.type, item.status, formatExpiry(item.expiresAt)].filter(Boolean).join(" • "),
+            }))}
+            selectedEvidence={selectedEvidence}
+            onToggle={(id) => {
+              setSelectedEvidence((current) => ({ ...current, [id]: !current[id] }));
+            }}
+          />
+          <EvidenceGroup
+            title="Medical fitness"
+            description="Certificate medicale sau fitness relevante pentru eligibilitate si verificare."
+            items={verification.availableEvidence.medicalFitnessCertificates.map((item) => ({
+              id: `medical:${item.id}`,
+              title: item.title,
+              meta: [item.category, item.status, item.fitnessDecision, formatExpiry(item.expiresAt)]
+                .filter(Boolean)
+                .join(" • "),
+            }))}
+            selectedEvidence={selectedEvidence}
+            onToggle={(id) => {
+              setSelectedEvidence((current) => ({ ...current, [id]: !current[id] }));
+            }}
+          />
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button
+              onClick={async () => {
+                if (!token) {
+                  return;
+                }
+
+                setSubmittingIdentity(true);
+                try {
+                  setVerificationError(null);
+                  await submitIdentityVerificationCase(evidenceSelection, token);
+                  const [nextSnapshot, nextVerification] = await Promise.all([
+                    getOnboardingMe(token),
+                    getVerificationMe(token),
+                  ]);
+                  setSnapshot(nextSnapshot);
+                  setVerification(nextVerification);
+                } finally {
+                  setSubmittingIdentity(false);
+                }
+              }}
+              disabled={submittingIdentity}
+              style={secondaryButton}
+            >
+              {submittingIdentity ? "Se trimite..." : "Trimite verificarea identitatii"}
+            </button>
+
+            {snapshot.companyProfile ? (
+              <button
+                onClick={async () => {
+                  if (!token) {
+                    return;
+                  }
+
+                  setSubmittingCompany(true);
+                  try {
+                    setVerificationError(null);
+                    await submitCompanyVerificationCase(evidenceSelection, token);
+                    const [nextSnapshot, nextVerification] = await Promise.all([
+                      getOnboardingMe(token),
+                      getVerificationMe(token),
+                    ]);
+                    setSnapshot(nextSnapshot);
+                    setVerification(nextVerification);
+                  } finally {
+                    setSubmittingCompany(false);
+                  }
+                }}
+                disabled={submittingCompany}
+                style={secondaryButton}
+              >
+                {submittingCompany ? "Se trimite..." : "Trimite verificarea companiei"}
+              </button>
+            ) : null}
+          </div>
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -140,3 +320,132 @@ const secondaryButton: CSSProperties = {
   background: "white",
   color: "#1B2A6B",
 };
+
+function EvidenceGroup({
+  title,
+  description,
+  items,
+  selectedEvidence,
+  onToggle,
+}: {
+  title: string;
+  description: string;
+  items: Array<{ id: string; title: string; meta: string }>;
+  selectedEvidence: Record<string, boolean>;
+  onToggle: (id: string) => void;
+}) {
+  return (
+    <div
+      style={{
+        borderRadius: 14,
+        border: "1px solid #E8EBF5",
+        background: "white",
+        padding: 14,
+        display: "grid",
+        gap: 10,
+      }}
+    >
+      <div>
+        <div style={{ fontWeight: 700, color: "#1B2A6B" }}>{title}</div>
+        <div style={{ fontSize: 13, color: "#64748B", marginTop: 4 }}>{description}</div>
+      </div>
+      {items.length ? (
+        items.map((item) => (
+          <label
+            key={item.id}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "18px minmax(0, 1fr)",
+              gap: 10,
+              alignItems: "start",
+              borderRadius: 12,
+              border: "1px solid #E8EBF5",
+              padding: 12,
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={Boolean(selectedEvidence[item.id])}
+              onChange={() => onToggle(item.id)}
+              style={{ marginTop: 2 }}
+            />
+            <span style={{ display: "grid", gap: 4 }}>
+              <span style={{ color: "#0F172A", fontWeight: 600 }}>{item.title}</span>
+              <span style={{ color: "#64748B", fontSize: 13 }}>{item.meta}</span>
+            </span>
+          </label>
+        ))
+      ) : (
+        <div style={{ color: "#64748B", fontSize: 14 }}>Nu exista elemente disponibile inca.</div>
+      )}
+    </div>
+  );
+}
+
+function createDefaultEvidenceSelection(verification: VerificationMe) {
+  const next: Record<string, boolean> = {};
+
+  for (const item of verification.availableEvidence.profileDocuments) {
+    next[`profile:${item.id}`] = true;
+  }
+  for (const item of verification.availableEvidence.actorDocuments) {
+    next[`actor-document:${item.id}`] = true;
+  }
+  for (const item of verification.availableEvidence.actorCertifications) {
+    next[`actor-certification:${item.id}`] = true;
+  }
+  for (const item of verification.availableEvidence.medicalFitnessCertificates) {
+    next[`medical:${item.id}`] = true;
+  }
+
+  return next;
+}
+
+function toEvidencePayload(selectedEvidence: Record<string, boolean>) {
+  const payload = {
+    profileDocumentIds: [] as string[],
+    actorDocumentIds: [] as string[],
+    actorCertificationIds: [] as string[],
+    medicalFitnessCertificateIds: [] as string[],
+  };
+
+  for (const [key, selected] of Object.entries(selectedEvidence)) {
+    if (!selected) {
+      continue;
+    }
+
+    const [prefix, id] = key.split(":");
+    if (!id) {
+      continue;
+    }
+
+    if (prefix === "profile") {
+      payload.profileDocumentIds.push(id);
+    } else if (prefix === "actor-document") {
+      payload.actorDocumentIds.push(id);
+    } else if (prefix === "actor-certification") {
+      payload.actorCertificationIds.push(id);
+    } else if (prefix === "medical") {
+      payload.medicalFitnessCertificateIds.push(id);
+    }
+  }
+
+  return payload;
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("ro-RO", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  }).format(new Date(value));
+}
+
+function formatExpiry(value: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  return `expira ${formatDate(value)}`;
+}
