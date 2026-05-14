@@ -1,4 +1,4 @@
-import {
+﻿import {
   Body,
   Controller,
   Delete,
@@ -25,7 +25,12 @@ import {
   buildInternalErrorResponse,
   logEndpointError,
 } from '../common/api-response';
-import { PublicPostsService, UploadedMarketplaceFile } from './public-posts.service';
+import {
+  PublicPostsService,
+  UploadedMarketplaceFile,
+} from './public-posts.service';
+import { ModeratePublicPostDto } from './dto/moderate-public-post.dto';
+import { ModeratePublicMediaDto } from './dto/moderate-public-media.dto';
 
 @Controller()
 export class PublicPostsController {
@@ -84,9 +89,7 @@ export class PublicPostsController {
       res.setHeader('Content-Type', file.mimeType);
       res.setHeader(
         'Content-Disposition',
-        `${file.canPreview ? 'inline' : 'attachment'}; filename="${encodeURIComponent(
-          file.fileName,
-        )}"`,
+        `${file.canPreview ? 'inline' : 'attachment'}; filename="${encodeURIComponent(file.fileName)}"`,
       );
       return new StreamableFile(file.stream);
     } catch (error) {
@@ -106,9 +109,7 @@ export class PublicPostsController {
       res.setHeader('Content-Type', file.mimeType);
       res.setHeader(
         'Content-Disposition',
-        `${file.canPreview ? 'inline' : 'attachment'}; filename="${encodeURIComponent(
-          file.fileName,
-        )}"`,
+        `${file.canPreview ? 'inline' : 'attachment'}; filename="${encodeURIComponent(file.fileName)}"`,
       );
       return new StreamableFile(file.stream);
     } catch (error) {
@@ -222,12 +223,12 @@ export class PublicPostsController {
   @RequirePermissions(Permission.MANAGE_USERS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Patch('admin/public-posts/:id/status')
-  async updatePostStatus(
-    @Param('id') id: string,
-    @Body() body: { status?: string; moderationStatus?: string; visibility?: string },
-  ) {
+  async updatePostStatus(@Param('id') id: string, @Body() body: ModeratePublicPostDto) {
     try {
-      return await this.publicPostsService.updatePostStatus(id, body);
+      return await this.publicPostsService.updatePostStatus(id, {
+        status: body.status,
+        moderationStatus: body.status,
+      });
     } catch (error) {
       logEndpointError('PublicPostsController.updatePostStatus', error);
       return buildInternalErrorResponse(error);
@@ -249,10 +250,7 @@ export class PublicPostsController {
   @RequirePermissions(Permission.MANAGE_USERS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Patch('admin/public-post-media/:id/status')
-  async updateMediaStatus(
-    @Param('id') id: string,
-    @Body() body: { status?: string },
-  ) {
+  async updateMediaStatus(@Param('id') id: string, @Body() body: ModeratePublicMediaDto) {
     try {
       return await this.publicPostsService.updateMediaStatus(
         id,
