@@ -193,10 +193,10 @@ export default function JobsPageClient() {
               <p style={{ color: "#8892B0", margin: "8px 0 0" }}>{total} results</p>
             </div>
             <Link
-              href="/register"
+              href="/publish"
               style={{ alignSelf: "center", color: "#00C060", fontWeight: 700 }}
             >
-              Publish your profile
+              Publish your listing
             </Link>
           </div>
 

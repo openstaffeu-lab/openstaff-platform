@@ -63,7 +63,7 @@ export default function HomePage() {
             Explorează Proiecte
           </Link>
           <Link
-            href="/register"
+            href="/publish"
             style={{
               background: "transparent",
               color: "white",

@@ -777,12 +777,13 @@ model PublicPostDocument {
   storageProvider String
   storageBucket   String?
   storageKey      String
+  status          PublicModerationStatus @default(PENDING)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   post PublicPost @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  @@index([postId, createdAt])
+  @@index([postId, status, createdAt])
 }
 
 model ExternalLinkSubmission {

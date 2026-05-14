@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { fetchApiJson } from '@/lib/api';
 
 type MediaItem = {
@@ -16,45 +16,85 @@ type MediaItem = {
   } | null;
 };
 
+type DocumentItem = {
+  id: string;
+  title: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  status: string;
+  createdAt: string;
+  post?: {
+    id: string;
+    title: string;
+  } | null;
+};
+
 type LoadState = 'loading' | 'success' | 'unauthorized' | 'error';
+type QueueMode = 'media' | 'documents';
 
 export default function AdminMediaPage() {
-  const [items, setItems] = useState<MediaItem[]>([]);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [documentItems, setDocumentItems] = useState<DocumentItem[]>([]);
   const [state, setState] = useState<LoadState>('loading');
   const [message, setMessage] = useState<string | null>(null);
+  const [mode, setMode] = useState<QueueMode>('media');
 
   useEffect(() => {
     let mounted = true;
 
-    async function loadMedia() {
+    async function loadQueues() {
       setState('loading');
       setMessage(null);
 
-      const result = await fetchApiJson<MediaItem[]>('/admin/public-post-media');
+      const [mediaResult, documentResult] = await Promise.all([
+        fetchApiJson<MediaItem[]>('/admin/public-post-media'),
+        fetchApiJson<DocumentItem[]>('/admin/public-post-documents'),
+      ]);
 
       if (!mounted) {
         return;
       }
 
-      if (!result.ok) {
-        setState(result.kind);
-        setMessage(result.message);
-        setItems([]);
+      if (!mediaResult.ok) {
+        setState(mediaResult.kind);
+        setMessage(mediaResult.message);
+        setMediaItems([]);
+        setDocumentItems([]);
         return;
       }
 
-      setItems(Array.isArray(result.data) ? result.data : []);
+      if (!documentResult.ok) {
+        setState(documentResult.kind);
+        setMessage(documentResult.message);
+        setMediaItems([]);
+        setDocumentItems([]);
+        return;
+      }
+
+      const mediaData = mediaResult.data;
+      const documentData = documentResult.data;
+
+      setMediaItems(Array.isArray(mediaData) ? mediaData : []);
+      setDocumentItems(Array.isArray(documentData) ? documentData : []);
       setState('success');
     }
 
-    void loadMedia();
+    void loadQueues();
 
     return () => {
       mounted = false;
     };
   }, []);
 
-  async function updateStatus(id: string, status: string) {
+  const pendingCount = useMemo(
+    () =>
+      mediaItems.filter((item) => item.status === 'PENDING').length +
+      documentItems.filter((item) => item.status === 'PENDING').length,
+    [documentItems, mediaItems],
+  );
+
+  async function updateMediaStatus(id: string, status: string) {
     const result = await fetchApiJson<MediaItem>(`/admin/public-post-media/${id}/status`, {
       method: 'PATCH',
       headers: {
@@ -68,22 +108,64 @@ export default function AdminMediaPage() {
       return;
     }
 
-    setItems((current) =>
+    setMediaItems((current) =>
       current.map((item) => (item.id === id ? { ...item, status: result.data.status } : item)),
     );
     setMessage(`Media ${status.toLowerCase()} successfully.`);
   }
 
+  async function updateDocumentStatus(id: string, status: string) {
+    const result = await fetchApiJson<DocumentItem>(`/admin/public-post-documents/${id}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status }),
+    });
+
+    if (!result.ok) {
+      setMessage(result.message);
+      return;
+    }
+
+    setDocumentItems((current) =>
+      current.map((item) => (item.id === id ? { ...item, status: result.data.status } : item)),
+    );
+    setMessage(`Document ${status.toLowerCase()} successfully.`);
+  }
+
+  const visibleItems = mode === 'media' ? mediaItems : documentItems;
+
   return (
     <main className="p-6 text-white md:p-8">
       <section className="rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl shadow-black/20">
-        <p className="text-sm font-black uppercase tracking-[0.18em] text-cyan-300">
-          OpenStaff Asset Moderation
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold">Public Media Queue</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
-          Approve, reject, or flag image and video metadata linked to public listings.
-        </p>
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-cyan-300">
+              OpenStaff Asset Moderation
+            </p>
+            <h1 className="mt-3 text-3xl font-semibold">Public Media & Document Queue</h1>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
+              Review uploaded images, videos, and documents before they become visible on the live
+              public feed.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <MetricCard label="Pending Assets" value={String(pendingCount)} />
+            <MetricCard label="Media Files" value={String(mediaItems.length)} />
+            <MetricCard label="Documents" value={String(documentItems.length)} />
+          </div>
+        </div>
+
+        <div className="mt-8 flex flex-wrap gap-3">
+          <QueueButton active={mode === 'media'} onClick={() => setMode('media')}>
+            Media
+          </QueueButton>
+          <QueueButton active={mode === 'documents'} onClick={() => setMode('documents')}>
+            Documents
+          </QueueButton>
+        </div>
 
         {message ? (
           <div className="mt-6 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-100">
@@ -91,17 +173,21 @@ export default function AdminMediaPage() {
           </div>
         ) : null}
 
-        {state === 'loading' ? <ShellNotice tone="neutral" message="Loading public media..." /> : null}
+        {state === 'loading' ? <ShellNotice tone="neutral" message="Loading moderation assets..." /> : null}
         {state === 'unauthorized' ? (
           <ShellNotice tone="warning" message={message ?? 'Authentication is required.'} />
         ) : null}
         {state === 'error' ? (
-          <ShellNotice tone="danger" message={message ?? 'The media moderation queue could not load.'} />
+          <ShellNotice tone="danger" message={message ?? 'The asset moderation queue could not load.'} />
         ) : null}
 
-        {state === 'success' ? (
+        {state === 'success' && visibleItems.length === 0 ? (
+          <ShellNotice tone="neutral" message="No assets are waiting in this queue." />
+        ) : null}
+
+        {state === 'success' && mode === 'media' ? (
           <div className="mt-8 grid gap-5">
-            {items.map((item) => (
+            {mediaItems.map((item) => (
               <article key={item.id} className="rounded-3xl border border-slate-800 bg-slate-950/80 p-5">
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                   <div className="min-w-0 flex-1">
@@ -119,9 +205,40 @@ export default function AdminMediaPage() {
                   </div>
 
                   <div className="flex w-full flex-col gap-3 xl:w-56">
-                    <ActionButton label="Approve" onClick={() => void updateStatus(item.id, 'APPROVED')} tone="success" />
-                    <ActionButton label="Reject" onClick={() => void updateStatus(item.id, 'REJECTED')} tone="danger" />
-                    <ActionButton label="Flag" onClick={() => void updateStatus(item.id, 'FLAGGED')} tone="warning" />
+                    <ActionButton label="Approve" onClick={() => void updateMediaStatus(item.id, 'APPROVED')} tone="success" />
+                    <ActionButton label="Reject" onClick={() => void updateMediaStatus(item.id, 'REJECTED')} tone="danger" />
+                    <ActionButton label="Flag" onClick={() => void updateMediaStatus(item.id, 'FLAGGED')} tone="warning" />
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : null}
+
+        {state === 'success' && mode === 'documents' ? (
+          <div className="mt-8 grid gap-5">
+            {documentItems.map((item) => (
+              <article key={item.id} className="rounded-3xl border border-slate-800 bg-slate-950/80 p-5">
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge label="DOCUMENT" tone="info" />
+                      <Badge label={item.status} tone={statusTone(item.status)} />
+                    </div>
+                    <h2 className="mt-4 break-all text-lg font-semibold text-cyan-100">{item.title}</h2>
+                    <p className="mt-2 text-sm text-slate-400">
+                      {item.post?.title ?? 'Unlinked post'} · {formatDate(item.createdAt)}
+                    </p>
+                    <p className="mt-4 text-sm text-slate-300">
+                      <strong>File:</strong> {item.fileName} · {item.mimeType} ·{' '}
+                      {Math.max(1, Math.round(item.sizeBytes / 1024))} KB
+                    </p>
+                  </div>
+
+                  <div className="flex w-full flex-col gap-3 xl:w-56">
+                    <ActionButton label="Approve" onClick={() => void updateDocumentStatus(item.id, 'APPROVED')} tone="success" />
+                    <ActionButton label="Reject" onClick={() => void updateDocumentStatus(item.id, 'REJECTED')} tone="danger" />
+                    <ActionButton label="Flag" onClick={() => void updateDocumentStatus(item.id, 'FLAGGED')} tone="warning" />
                   </div>
                 </div>
               </article>
@@ -130,6 +247,39 @@ export default function AdminMediaPage() {
         ) : null}
       </section>
     </main>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-3xl border border-slate-800 bg-slate-950/80 px-5 py-4">
+      <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
+      <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
+    </div>
+  );
+}
+
+function QueueButton({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean;
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-2xl px-4 py-3 text-sm font-black transition ${
+        active
+          ? 'bg-cyan-300 text-slate-950'
+          : 'border border-slate-700 bg-slate-950 text-slate-200'
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 

@@ -9,21 +9,16 @@ import {
   PublicModerationStatus,
   PublicPostType,
   PublicPostVisibility,
+  ReluAccessMode,
+  ReluTaskStatus,
 } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { createReadStream } from 'fs';
 import { mkdir, rm, writeFile } from 'fs/promises';
 import { extname, join } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  buildSuccessResponse,
-  isPrismaConnectionOrSchemaError,
-  logEndpointError,
-} from '../common/api-response';
-import {
-  cloneDemoPublicPosts,
-  demoPublicPostMedia,
-} from '../common/public-interaction-demo';
+import { buildSuccessResponse } from '../common/api-response';
+import { AuditService } from '../audit/audit.service';
 
 export type UploadedMarketplaceFile = {
   originalname: string;
@@ -51,128 +46,96 @@ type NormalizedPublicPostPayload = Prisma.PublicPostUncheckedCreateInput & {
 
 @Injectable()
 export class PublicPostsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditService: AuditService,
+  ) {}
 
   async findAll(filters: PublicPostFilters = {}) {
-    try {
-      const posts = await this.prisma.publicPost.findMany({
-        where: this.buildWhere(filters, false),
-        include: this.postInclude,
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
+    const posts = await this.prisma.publicPost.findMany({
+      where: this.buildWhere(filters, false),
+      include: this.adminPostInclude,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
-      return buildSuccessResponse(posts.map((post) => this.toPublicPostResponse(post)));
-    } catch (error) {
-      logEndpointError('PublicPostsService.findAll', error);
-
-      if (isPrismaConnectionOrSchemaError(error)) {
-        return buildSuccessResponse(cloneDemoPublicPosts(), 'placeholder');
-      }
-
-      throw error;
-    }
+    return buildSuccessResponse(posts.map((post) => this.toPublicPostResponse(post, false)));
   }
 
   async findAllForAdmin(filters: PublicPostFilters = {}) {
-    try {
-      const posts = await this.prisma.publicPost.findMany({
-        where: this.buildWhere(filters, true),
-        include: this.postInclude,
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
+    const posts = await this.prisma.publicPost.findMany({
+      where: this.buildWhere(filters, true),
+      include: this.adminPostInclude,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
-      return buildSuccessResponse(posts.map((post) => this.toPublicPostResponse(post)));
-    } catch (error) {
-      logEndpointError('PublicPostsService.findAllForAdmin', error);
+    return buildSuccessResponse(posts.map((post) => this.toPublicPostResponse(post, true)));
+  }
 
-      if (isPrismaConnectionOrSchemaError(error)) {
-        return buildSuccessResponse(cloneDemoPublicPosts(), 'placeholder');
-      }
+  async findMine(user: AuthenticatedUser) {
+    const posts = await this.prisma.publicPost.findMany({
+      where: {
+        authorUserId: user.sub,
+      },
+      include: this.adminPostInclude,
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
 
-      throw error;
-    }
+    return buildSuccessResponse(posts.map((post) => this.toPublicPostResponse(post, true)));
   }
 
   async findOne(id: string, user?: AuthenticatedUser | null) {
-    try {
-      const post = await this.prisma.publicPost.findUnique({
-        where: { id },
-        include: this.postInclude,
-      });
+    const post = await this.prisma.publicPost.findUnique({
+      where: { id },
+      include: this.adminPostInclude,
+    });
 
-      if (!post) {
-        throw new NotFoundException('Public post not found');
-      }
-
-      if (!this.canReadPost(post, user)) {
-        throw new ForbiddenException('This marketplace post is not public');
-      }
-
-      return buildSuccessResponse(this.toPublicPostResponse(post));
-    } catch (error) {
-      if (isPrismaConnectionOrSchemaError(error)) {
-        const post = cloneDemoPublicPosts().find((item: { id: string }) => item.id === id);
-
-        if (!post) {
-          throw new NotFoundException('Public post not found');
-        }
-
-        return buildSuccessResponse(post, 'placeholder');
-      }
-
-      throw error;
+    if (!post) {
+      throw new NotFoundException('Public post not found');
     }
+
+    if (!this.canReadPost(post, user)) {
+      throw new ForbiddenException('This marketplace post is not public');
+    }
+
+    return buildSuccessResponse(this.toPublicPostResponse(post, this.canManagePost(post, user)));
   }
 
   async create(body: Record<string, unknown>, user: AuthenticatedUser) {
     const normalized = await this.normalizePublicPostPayload(body, user);
     const { externalLinkUrl, ...data } = normalized;
 
-    try {
-      const post = await this.prisma.publicPost.create({
-        data,
-        include: this.postInclude,
+    const post = await this.prisma.publicPost.create({
+      data,
+      include: this.adminPostInclude,
+    });
+
+    if (externalLinkUrl) {
+      await this.prisma.externalLinkSubmission.create({
+        data: this.buildExternalLinkData(post.id, externalLinkUrl, data.ownerName),
       });
-
-      if (externalLinkUrl) {
-        await this.prisma.externalLinkSubmission.create({
-          data: this.buildExternalLinkData(post.id, externalLinkUrl, data.ownerName),
-        });
-      }
-
-      const withRelations = await this.prisma.publicPost.findUnique({
-        where: { id: post.id },
-        include: this.postInclude,
+      await this.createModerationTask('PUBLIC_POST_EXTERNAL_LINK', post.id, user.sub, {
+        postId: post.id,
+        url: externalLinkUrl,
       });
-
-      return buildSuccessResponse(this.toPublicPostResponse(withRelations ?? post));
-    } catch (error) {
-      logEndpointError('PublicPostsService.create', error);
-
-      if (isPrismaConnectionOrSchemaError(error)) {
-        return buildSuccessResponse(
-          {
-            id: `placeholder-public-post-${Date.now()}`,
-            ...this.toPlaceholderPost(normalized),
-            media: [],
-            documents: [],
-            externalLinks: [],
-            privateConversations: [],
-            comments: [],
-            reviews: [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          'placeholder',
-        );
-      }
-
-      throw error;
     }
+
+    await this.createModerationTask('PUBLIC_POST', post.id, user.sub, {
+      type: post.type,
+      title: post.title,
+    });
+
+    const withRelations = await this.prisma.publicPost.findUnique({
+      where: { id: post.id },
+      include: this.adminPostInclude,
+    });
+
+    return buildSuccessResponse(this.toPublicPostResponse(withRelations ?? post, true));
   }
 
   async update(id: string, body: Record<string, unknown>, user: AuthenticatedUser) {
@@ -192,57 +155,44 @@ export class PublicPostsService {
     const normalized = await this.normalizePublicPostPayload(body, user, existing);
     const { externalLinkUrl, ...data } = normalized;
 
-    try {
-      const post = await this.prisma.publicPost.update({
-        where: { id },
-        data,
-        include: this.postInclude,
-      });
+    const post = await this.prisma.publicPost.update({
+      where: { id },
+      data,
+      include: this.adminPostInclude,
+    });
 
-      if (typeof externalLinkUrl === 'string' && externalLinkUrl.trim()) {
-        const existingLink = existing.externalLinks[0] ?? null;
+    if (typeof externalLinkUrl === 'string' && externalLinkUrl.trim()) {
+      const existingLink = existing.externalLinks[0] ?? null;
 
-        if (existingLink) {
-          await this.prisma.externalLinkSubmission.update({
-            where: { id: existingLink.id },
-            data: this.buildExternalLinkUpdateData(externalLinkUrl, data.ownerName),
-          });
-        } else {
-          await this.prisma.externalLinkSubmission.create({
-            data: this.buildExternalLinkData(post.id, externalLinkUrl, data.ownerName),
-          });
-        }
+      if (existingLink) {
+        await this.prisma.externalLinkSubmission.update({
+          where: { id: existingLink.id },
+          data: this.buildExternalLinkUpdateData(externalLinkUrl, data.ownerName),
+        });
+      } else {
+        await this.prisma.externalLinkSubmission.create({
+          data: this.buildExternalLinkData(post.id, externalLinkUrl, data.ownerName),
+        });
       }
 
-      const withRelations = await this.prisma.publicPost.findUnique({
-        where: { id },
-        include: this.postInclude,
+      await this.createModerationTask('PUBLIC_POST_EXTERNAL_LINK', post.id, user.sub, {
+        postId: post.id,
+        url: externalLinkUrl,
       });
-
-      return buildSuccessResponse(this.toPublicPostResponse(withRelations ?? post));
-    } catch (error) {
-      logEndpointError('PublicPostsService.update', error);
-
-      if (isPrismaConnectionOrSchemaError(error)) {
-        return buildSuccessResponse(
-          {
-            id,
-            ...this.toPlaceholderPost(normalized),
-            media: [],
-            documents: [],
-            externalLinks: [],
-            privateConversations: [],
-            comments: [],
-            reviews: [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          'placeholder',
-        );
-      }
-
-      throw error;
     }
+
+    await this.createModerationTask('PUBLIC_POST', post.id, user.sub, {
+      type: post.type,
+      title: post.title,
+      operation: 'update',
+    });
+
+    const withRelations = await this.prisma.publicPost.findUnique({
+      where: { id },
+      include: this.adminPostInclude,
+    });
+
+    return buildSuccessResponse(this.toPublicPostResponse(withRelations ?? post, true));
   }
 
   async remove(id: string, user: AuthenticatedUser) {
@@ -319,6 +269,13 @@ export class PublicPostsService {
       });
     }
 
+    await this.createModerationTask('PUBLIC_POST_MEDIA', created.id, user.sub, {
+      postId,
+      role,
+      type,
+      url: storageKey,
+    });
+
     return buildSuccessResponse(created);
   }
 
@@ -360,7 +317,14 @@ export class PublicPostsService {
         sizeBytes: file.size,
         storageProvider: 'local',
         storageKey,
+        status: PublicModerationStatus.PENDING,
       },
+    });
+
+    await this.createModerationTask('PUBLIC_POST_DOCUMENT', document.id, user.sub, {
+      postId,
+      title: document.title,
+      mimeType: document.mimeType,
     });
 
     return buildSuccessResponse(document);
@@ -385,6 +349,11 @@ export class PublicPostsService {
 
     const created = await this.prisma.externalLinkSubmission.create({
       data: this.buildExternalLinkData(postId, url, post.ownerName),
+    });
+
+    await this.createModerationTask('PUBLIC_POST_EXTERNAL_LINK', created.id, user.sub, {
+      postId,
+      url,
     });
 
     return buildSuccessResponse(created);
@@ -433,6 +402,13 @@ export class PublicPostsService {
       throw new NotFoundException('Public post document not found');
     }
 
+    if (
+      document.status !== PublicModerationStatus.APPROVED &&
+      !(user && (user.role === 'ADMIN' || user.role === 'SUPERADMIN' || document.post.authorUserId === user.sub))
+    ) {
+      throw new ForbiddenException('Document is not available');
+    }
+
     if (!this.canReadPost(document.post, user)) {
       throw new ForbiddenException('Document is not available');
     }
@@ -450,87 +426,90 @@ export class PublicPostsService {
     id: string,
     body: { status?: string; moderationStatus?: string; visibility?: string },
   ) {
+    const nextModerationStatus =
+      typeof body.moderationStatus === 'string'
+        ? body.moderationStatus
+        : undefined;
+    const nextStatus =
+      typeof body.status === 'string' && body.status.trim()
+        ? body.status.trim()
+        : nextModerationStatus === PublicModerationStatus.APPROVED
+          ? 'LIVE'
+          : nextModerationStatus === PublicModerationStatus.REJECTED
+            ? 'REJECTED'
+            : nextModerationStatus === PublicModerationStatus.PENDING
+              ? 'PENDING_MODERATION'
+              : undefined;
+
     const post = await this.prisma.publicPost.update({
       where: { id },
       data: {
-        ...(typeof body.status === 'string' ? { status: body.status } : {}),
-        ...(typeof body.moderationStatus === 'string'
-          ? { moderationStatus: body.moderationStatus as never }
+        ...(nextStatus ? { status: nextStatus } : {}),
+        ...(nextModerationStatus
+          ? { moderationStatus: nextModerationStatus as never }
           : {}),
         ...(typeof body.visibility === 'string'
           ? { visibility: body.visibility as never }
           : {}),
       },
-      include: this.postInclude,
+      include: this.adminPostInclude,
     });
 
-    return buildSuccessResponse(this.toPublicPostResponse(post));
+    return buildSuccessResponse(this.toPublicPostResponse(post, true));
   }
 
   async listMediaForAdmin() {
-    try {
-      const media = await this.prisma.publicPostMedia.findMany({
-        include: {
-          post: true,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
+    const media = await this.prisma.publicPostMedia.findMany({
+      include: {
+        post: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
-      return buildSuccessResponse(media);
-    } catch (error) {
-      logEndpointError('PublicPostsService.listMediaForAdmin', error);
+    return buildSuccessResponse(media);
+  }
 
-      if (isPrismaConnectionOrSchemaError(error)) {
-        const demo = demoPublicPostMedia.map((item: { postId: string }) => ({
-          ...item,
-          post: cloneDemoPublicPosts().find((post: { id: string }) => post.id === item.postId) ?? null,
-        }));
+  async listDocumentsForAdmin() {
+    const documents = await this.prisma.publicPostDocument.findMany({
+      include: {
+        post: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
-        return buildSuccessResponse(demo, 'placeholder');
-      }
-
-      throw error;
-    }
+    return buildSuccessResponse(documents);
   }
 
   async updateMediaStatus(id: string, status: string) {
-    try {
-      const media = await this.prisma.publicPostMedia.update({
-        where: { id },
-        data: {
-          status: status as never,
-        },
-        include: {
-          post: true,
-        },
-      });
+    const media = await this.prisma.publicPostMedia.update({
+      where: { id },
+      data: {
+        status: status as never,
+      },
+      include: {
+        post: true,
+      },
+    });
 
-      return buildSuccessResponse(media);
-    } catch (error) {
-      logEndpointError('PublicPostsService.updateMediaStatus', error);
+    return buildSuccessResponse(media);
+  }
 
-      if (isPrismaConnectionOrSchemaError(error)) {
-        const media = demoPublicPostMedia.find((item: { id: string }) => item.id === id);
+  async updateDocumentStatus(id: string, status: string) {
+    const document = await this.prisma.publicPostDocument.update({
+      where: { id },
+      data: {
+        status: status as never,
+      },
+      include: {
+        post: true,
+      },
+    });
 
-        if (!media) {
-          throw new NotFoundException('Public post media not found');
-        }
-
-        return buildSuccessResponse(
-          {
-            ...media,
-            status,
-            post: cloneDemoPublicPosts().find((post: { id: string }) => post.id === media.postId) ?? null,
-            updatedAt: new Date().toISOString(),
-          },
-          'placeholder',
-        );
-      }
-
-      throw error;
-    }
+    return buildSuccessResponse(document);
   }
 
   private async normalizePublicPostPayload(
@@ -563,8 +542,14 @@ export class PublicPostsService {
       summary: this.nullableStringValue(body.summary, existing?.summary ?? null),
       domain: this.stringValue(body.domain, existing?.domain, 'General'),
       location: this.stringValue(body.location, existing?.location, 'Unspecified'),
-      status: this.stringValue(body.status, existing?.status, 'PENDING'),
-      moderationStatus: existing?.moderationStatus ?? PublicModerationStatus.PENDING,
+      status:
+        user.role === 'ADMIN' || user.role === 'SUPERADMIN'
+          ? this.stringValue(body.status, existing?.status, 'PENDING_MODERATION')
+          : 'PENDING_MODERATION',
+      moderationStatus:
+        user.role === 'ADMIN' || user.role === 'SUPERADMIN'
+          ? existing?.moderationStatus ?? PublicModerationStatus.PENDING
+          : PublicModerationStatus.PENDING,
       bannerUrl: this.nullableStringValue(body.bannerUrl, existing?.bannerUrl ?? null),
       experienceLabel: this.nullableStringValue(body.experienceLabel, existing?.experienceLabel ?? null),
       value: this.stringValue(body.value, existing?.value, 'To be confirmed'),
@@ -675,17 +660,32 @@ export class PublicPostsService {
   }
 
   private assertCanManagePost(post: { authorUserId?: string | null }, user: AuthenticatedUser) {
-    if (user.role === 'ADMIN' || user.role === 'SUPERADMIN') {
+    if (this.canManagePost(post, user)) {
       return;
     }
 
-    if (post.authorUserId !== user.sub) {
-      throw new ForbiddenException('You cannot manage this marketplace post');
-    }
+    throw new ForbiddenException('You cannot manage this marketplace post');
   }
 
-  private toPublicPostResponse(post: Record<string, unknown>) {
-    const typedPost = post as Record<string, unknown>;
+  private canManagePost(
+    post: { authorUserId?: string | null },
+    user?: AuthenticatedUser | null,
+  ) {
+    if (!user) {
+      return false;
+    }
+
+    if (user.role === 'ADMIN' || user.role === 'SUPERADMIN') {
+      return true;
+    }
+
+    return post.authorUserId === user.sub;
+  }
+
+  private toPublicPostResponse(post: Record<string, unknown>, includePrivateRelations = false) {
+    const typedPost = includePrivateRelations
+      ? (post as Record<string, unknown>)
+      : this.filterPublicRelations(post as Record<string, unknown>);
 
     return {
       ...typedPost,
@@ -716,6 +716,71 @@ export class PublicPostsService {
           }))
         : [],
     };
+  }
+
+  private filterPublicRelations(post: Record<string, unknown>) {
+    return {
+      ...post,
+      media: Array.isArray(post.media)
+        ? post.media.filter(
+            (item) =>
+              typeof item === 'object' &&
+              item !== null &&
+              (item as { status?: unknown }).status === PublicModerationStatus.APPROVED,
+          )
+        : [],
+      documents: Array.isArray(post.documents)
+        ? post.documents.filter(
+            (item) =>
+              typeof item === 'object' &&
+              item !== null &&
+              (item as { status?: unknown }).status === PublicModerationStatus.APPROVED,
+          )
+        : [],
+      externalLinks: Array.isArray(post.externalLinks)
+        ? post.externalLinks.filter(
+            (item) =>
+              typeof item === 'object' &&
+              item !== null &&
+              (item as { securityStatus?: unknown }).securityStatus === 'APPROVED',
+          )
+        : [],
+    };
+  }
+
+  private async createModerationTask(
+    contextEntityType: string,
+    contextEntityId: string,
+    requestedByUserId: string,
+    inputSummary: Record<string, unknown>,
+  ) {
+    const task = await this.prisma.reluTask.create({
+      data: {
+        capability: 'public-feed-moderation-placeholder',
+        accessMode: ReluAccessMode.ADMIN_SECURED,
+        status: ReluTaskStatus.PENDING,
+        requestedByUserId,
+        contextEntityType,
+        contextEntityId,
+        title: `Relu moderation placeholder: ${contextEntityType}`,
+        inputSummaryJson: inputSummary as Prisma.InputJsonValue,
+      },
+    });
+
+    await this.auditService.log({
+      actorUserId: requestedByUserId,
+      projectId: null,
+      entityType: 'RELU_TASK',
+      entityId: task.id,
+      action: 'QUEUE_PUBLIC_MODERATION_PLACEHOLDER',
+      before: null,
+      after: {
+        taskId: task.id,
+        contextEntityType,
+        contextEntityId,
+      },
+      metadata: inputSummary,
+    });
   }
 
   private buildExternalLinkData(postId: string, url: string, submittedBy: string) {
@@ -975,47 +1040,7 @@ export class PublicPostsService {
     return mimeMap[mimeType] ?? '';
   }
 
-  private toPlaceholderPost(data: NormalizedPublicPostPayload) {
-    return {
-      slug: data.slug,
-      authorUserId: data.authorUserId,
-      authorProfileId: data.authorProfileId,
-      type: data.type,
-      title: data.title,
-      description: data.description,
-      summary: data.summary,
-      domain: data.domain,
-      location: data.location,
-      status: data.status,
-      moderationStatus: data.moderationStatus,
-      bannerUrl: data.bannerUrl,
-      experienceLabel: data.experienceLabel,
-      value: data.value,
-      currencyCode: data.currencyCode,
-      vatRate: data.vatRate,
-      fiscalMetadataJson: data.fiscalMetadataJson,
-      budgetMin: data.budgetMin,
-      budgetMax: data.budgetMax,
-      salaryMin: data.salaryMin,
-      salaryMax: data.salaryMax,
-      ownerName: data.ownerName,
-      ownerType: data.ownerType,
-      classificationJson: data.classificationJson,
-      certifications: data.certifications,
-      certificationsOffered: data.certificationsOffered,
-      visibility: data.visibility,
-      escoCodesJson: data.escoCodesJson,
-      naceCodesJson: data.naceCodesJson,
-      uniclassCodesJson: data.uniclassCodesJson,
-      languageCodesJson: data.languageCodesJson,
-      documentsJson: data.documentsJson,
-      countryId: data.countryId,
-      regionId: data.regionId,
-      cityId: data.cityId,
-    };
-  }
-
-  private readonly postInclude = {
+  private readonly adminPostInclude = {
     country: true,
     region: true,
     city: true,

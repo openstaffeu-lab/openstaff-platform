@@ -470,6 +470,53 @@ Verdict: `PASS - approved payroll settlements now bridge into billing events/inv
 | admin build | ✅ | `cd apps/admin && npm.cmd run build` |
 | Blockers | ✅ | niciun blocker deschis pentru aceasta faza; bridge-ul settlement -> billing si financial closure local sunt validate |
 
+## EXEC-08 Public Feed, Project Publishing & Admin Moderation
+
+Verdict: `PASS - moderated PublicPost feed, creator self-service, asset approval workflow, admin queues, and runtime validations completed locally`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| `PublicPost` primary public feed source | âœ… | `apps/admin/web/lib/api.ts` foloseste exclusiv `/public-posts` pentru marketplace feed/list/detail |
+| hidden demo fallback removed from live feed | âœ… | homepage `/`, `/jobs`, `/professionals` consuma feed-ul moderat; `apps/admin/web/lib/app-status.ts` documenteaza eliminarea fallback-ului demo |
+| `PublicPostDocument.status` moderation field | âœ… | Prisma schema extinde `PublicPostDocument` cu `status PublicModerationStatus @default(PENDING)` |
+| public post creator flow | âœ… | `POST /public-posts`, `PATCH /public-posts/:id`, `DELETE /public-posts/:id`, `GET /public-posts/me` active si validate runtime |
+| media upload moderation | âœ… | `POST /public-posts/:id/media`, `GET /admin/public-post-media`, `PATCH /admin/public-post-media/:id/status` |
+| document upload moderation | âœ… | `POST /public-posts/:id/documents`, `GET /admin/public-post-documents`, `PATCH /admin/public-post-documents/:id/status` |
+| external link moderation | âœ… | `POST /public-posts/:id/external-links`, `/admin/external-links`, `PATCH /admin/external-links/:id/status` |
+| admin post moderation workflow | âœ… | `PATCH /admin/public-posts/:id/status` muta `PENDING_MODERATION -> LIVE/REJECTED` fara a rupe `buildSuccessResponse(...)` |
+| DTO moderation whitelist-safe | âœ… | `ModeratePublicPostDto` si `ModeratePublicMediaDto` au decoratori `class-validator`, compatibili cu `ValidationPipe({ whitelist: true })` |
+| public asset visibility filtering | âœ… | `PublicPostsService.toPublicPostResponse()` filtreaza public `media`, `documents`, `externalLinks` doar cand sunt aprobate |
+| owner-only edit/delete | âœ… | `PublicPostsController` repropaga `HttpException`; `PATCH/DELETE /public-posts/:id` returneaza `403` pentru non-owner |
+| Relu moderation placeholder | âœ… | `PublicPostsService.createModerationTask(...)` creeaza `ReluTask` pentru `PUBLIC_POST`, `MEDIA`, `DOCUMENT`, `EXTERNAL_LINK` |
+| public publish page | âœ… | `apps/admin/web/app/publish/page.tsx` compileaza cu create/edit/delete + upload media/document/link |
+| public feed/detail pages | âœ… | `/`, `/jobs`, `/jobs/[id]`, `/professionals`, `/professionals/[id]` compileaza pe feed-ul moderat; CTA catre `/publish` adaugat |
+| admin posts UI | âœ… | `apps/admin/app/admin/posts/page.tsx` compileaza cu post status/moderation controls si quick links catre asset queues |
+| admin media/documents UI | âœ… | `apps/admin/app/admin/media/page.tsx` compileaza cu tab-uri pentru media si documente, approve/reject/flag |
+| admin external links UI | âœ… | `apps/admin/app/admin/external-links/page.tsx` compileaza si moderarea linkurilor ramane activa |
+| runtime validation script | âœ… | `cd apps/admin/api && node scripts/exec-08-runtime-check.js` |
+| register normal user | âœ… | runtime local creeaza user owner si returneaza token valid |
+| create public post -> `PENDING_MODERATION` | âœ… | scriptul runtime confirma `status = PENDING_MODERATION`, `moderationStatus = PENDING` |
+| pending post hidden from `GET /public-posts` | âœ… | runtime local confirma ca postarea pending nu apare in feed-ul public si `GET /public-posts/:id` returneaza `403` |
+| admin approve -> `LIVE` | âœ… | runtime local confirma `PATCH /admin/public-posts/:id/status` cu `APPROVED + LIVE` |
+| approved post visible publicly | âœ… | dupa aprobare, `GET /public-posts` si `GET /public-posts/:id` returneaza postarea publica |
+| upload media/document/external link | âœ… | runtime local confirma toate cele 3 fluxuri pe aceeasi postare |
+| approve asset -> visible publicly | âœ… | dupa approve pentru media/document/link, public detail returneaza `media = 1`, `documents = 1`, `externalLinks = 1` |
+| reject post -> hidden publicly | âœ… | dupa reject, `GET /public-posts` nu mai include postarea, iar detail public returneaza `403` |
+| non-owner cannot edit | âœ… | runtime local confirma `PATCH /public-posts/:id` cu token strain returneaza `403` |
+| non-admin cannot moderate | âœ… | runtime local confirma `PATCH /admin/public-posts/:id/status` cu token `PROFESSIONAL` returneaza `403` |
+| `ReluTask` created for moderation | âœ… | runtime local confirma `ReluTaskStatus.PENDING` pentru post, media, document si external link |
+| auth remains stable | âœ… | runtime local confirma `GET /auth/me = 200` dupa flow-ul EXEC-08 |
+| subscriptions remain stable | âœ… | runtime local confirma `GET /subscriptions/me = 200` dupa flow-ul EXEC-08 |
+| billing remains stable | âœ… | runtime local confirma `GET /billing/profile/me = 200` dupa flow-ul EXEC-08 |
+| onboarding remains stable | âœ… | runtime local confirma `GET /onboarding/me = 200` dupa flow-ul EXEC-08 |
+| `prisma validate` | âœ… | `cd apps/admin/api && npx.cmd prisma validate` |
+| `prisma generate` | âœ… | `cd apps/admin/api && npx.cmd prisma generate` |
+| `prisma db push` | âœ… | `cd apps/admin/api && npx.cmd prisma db push` |
+| API build | âœ… | `cd apps/admin/api && npm.cmd run build` |
+| web build | âœ… | `cd apps/admin/web && npm.cmd run build` |
+| admin build | âœ… | `cd apps/admin && npm.cmd run build` |
+| Blockers | âœ… | niciun blocker deschis pentru aceasta faza; au ramas doar warning-uri Next non-blocante despre `images.domains` si `turbopack.root` |
+
 ## Prompt 8 Video Audit Snapshot
 
 Surse analizate:

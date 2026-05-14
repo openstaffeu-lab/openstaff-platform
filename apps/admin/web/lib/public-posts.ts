@@ -908,7 +908,12 @@ export async function getPublicPosts(): Promise<StructuredResult<PublicPostRecor
       message: payload?.source === "placeholder" ? "Loaded placeholder public posts." : undefined,
     };
   } catch (error) {
-    return fallbackResult(cloneFallbackPosts(), getErrorMessage(error, "Public posts API unavailable."));
+    return {
+      ok: false,
+      data: [],
+      source: "api",
+      message: getErrorMessage(error, "Public posts API unavailable."),
+    };
   }
 }
 

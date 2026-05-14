@@ -526,6 +526,7 @@ export type MarketplacePost = {
     fileName: string;
     mimeType: string;
     sizeBytes: number;
+    status?: string;
     downloadUrl: string;
   }>;
   externalLinks?: Array<{
@@ -1312,6 +1313,10 @@ function normalizeMarketplacePost(item: Record<string, unknown>): MarketplacePos
           fileName: String((entry as Record<string, unknown>).fileName ?? ""),
           mimeType: String((entry as Record<string, unknown>).mimeType ?? ""),
           sizeBytes: Number((entry as Record<string, unknown>).sizeBytes ?? 0),
+          status:
+            typeof (entry as Record<string, unknown>).status === "string"
+              ? String((entry as Record<string, unknown>).status)
+              : undefined,
           downloadUrl: String((entry as Record<string, unknown>).downloadUrl ?? ""),
         }))
       : [],
@@ -1402,88 +1407,135 @@ function mapLegacyActorToMarketplace(actor: Record<string, unknown>): Marketplac
 }
 
 export async function getMarketplaceProjects(limit?: number) {
-  try {
-    const posts = await getPublicPosts({ type: "PROJECT", status: "LIVE" });
-    return { data: posts.slice(0, limit ?? posts.length), source: "api" as const };
-  } catch {
-    const fallback = await getJobs({ status: "LIVE", limit: limit ?? 12 });
-    return {
-      data: Array.isArray(fallback.data)
-        ? fallback.data.map((job: Record<string, unknown>) => mapLegacyJobToMarketplace(job))
-        : [],
-      source: "fallback" as const,
-    };
-  }
+  const posts = await getPublicPosts({ type: "PROJECT", status: "LIVE" });
+  return { data: posts.slice(0, limit ?? posts.length), source: "api" as const };
 }
 
 export async function getMarketplaceProfessionals(limit?: number) {
-  try {
-    const [professionals, pools] = await Promise.all([
-      getPublicPosts({ type: "PROFESSIONAL", status: "LIVE" }),
-      getPublicPosts({ type: "SUBCONTRACTOR_POOL", status: "LIVE" }),
-    ]);
+  const [professionals, pools] = await Promise.all([
+    getPublicPosts({ type: "PROFESSIONAL", status: "LIVE" }),
+    getPublicPosts({ type: "SUBCONTRACTOR_POOL", status: "LIVE" }),
+  ]);
 
-    return {
-      data: [...professionals, ...pools].slice(0, limit ?? professionals.length + pools.length),
-      source: "api" as const,
-    };
-  } catch {
-    const fallback = await getActors({ verified: true });
-    return {
-      data: Array.isArray(fallback.data)
-        ? fallback.data.map((actor: Record<string, unknown>) => mapLegacyActorToMarketplace(actor))
-        : [],
-      source: "fallback" as const,
-    };
-  }
+  return {
+    data: [...professionals, ...pools].slice(0, limit ?? professionals.length + pools.length),
+    source: "api" as const,
+  };
 }
 
 export async function getMarketplaceProject(id: string) {
-  try {
-    return { data: await getPublicPost(id), source: "api" as const };
-  } catch {
-    const fallback = await getJob(id);
-    return {
-      data: fallback ? mapLegacyJobToMarketplace(fallback as Record<string, unknown>) : null,
-      source: "fallback" as const,
-    };
-  }
+  return { data: await getPublicPost(id), source: "api" as const };
 }
 
 export async function getMarketplaceProfessional(id: string) {
-  try {
-    return { data: await getPublicPost(id), source: "api" as const };
-  } catch {
-    const fallback = await getActor(id);
-    return {
-      data: fallback ? mapLegacyActorToMarketplace(fallback as Record<string, unknown>) : null,
-      source: "fallback" as const,
-    };
-  }
+  return { data: await getPublicPost(id), source: "api" as const };
 }
 
 export async function getMarketplaceFeed(params?: {
   type?: "PROJECT" | "PROFESSIONAL" | "SUBCONTRACTOR_POOL";
   status?: string;
 }) {
-  try {
-    const posts = await getPublicPosts(params);
-    return { data: posts, total: posts.length, source: "api" as const };
-  } catch {
-    if (params?.type === "PROJECT") {
-      const fallback = await getJobs({ status: params.status ?? "LIVE", limit: 999 });
-      const data = Array.isArray(fallback.data)
-        ? fallback.data.map((job: Record<string, unknown>) => mapLegacyJobToMarketplace(job))
-        : [];
-      return { data, total: data.length, source: "fallback" as const };
-    }
+  const posts = await getPublicPosts(params);
+  return { data: posts, total: posts.length, source: "api" as const };
+}
 
-    const fallback = await getActors({ verified: true });
-    const data = Array.isArray(fallback.data)
-      ? fallback.data.map((actor: Record<string, unknown>) => mapLegacyActorToMarketplace(actor))
-      : [];
-    return { data, total: data.length, source: "fallback" as const };
+export async function getMyPublicPosts(token?: string | null) {
+  return apiRequest<MarketplacePost[]>("/public-posts/me", {
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function createPublicPost(
+  payload: Record<string, unknown>,
+  token?: string | null,
+) {
+  return apiRequest<MarketplacePost>("/public-posts", {
+    method: "POST",
+    token: token ?? getAuthToken(),
+    body: payload,
+  });
+}
+
+export async function updatePublicPost(
+  id: string,
+  payload: Record<string, unknown>,
+  token?: string | null,
+) {
+  return apiRequest<MarketplacePost>(`/public-posts/${id}`, {
+    method: "PATCH",
+    token: token ?? getAuthToken(),
+    body: payload,
+  });
+}
+
+export async function deletePublicPost(id: string, token?: string | null) {
+  return apiRequest<{ success: boolean }>(`/public-posts/${id}`, {
+    method: "DELETE",
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function uploadPublicPostMedia(
+  id: string,
+  input: { file: File; role?: string; alt?: string },
+  token?: string | null,
+) {
+  const formData = new FormData();
+  formData.append("file", input.file);
+  if (input.role) {
+    formData.append("role", input.role);
   }
+  if (input.alt) {
+    formData.append("alt", input.alt);
+  }
+
+  return apiRequest<{ id: string; status: string; url: string; type: string }>(
+    `/public-posts/${id}/media`,
+    {
+      method: "POST",
+      token: token ?? getAuthToken(),
+      formData,
+    },
+  );
+}
+
+export async function uploadPublicPostDocument(
+  id: string,
+  input: { file: File; title?: string; description?: string },
+  token?: string | null,
+) {
+  const formData = new FormData();
+  formData.append("file", input.file);
+  if (input.title) {
+    formData.append("title", input.title);
+  }
+  if (input.description) {
+    formData.append("description", input.description);
+  }
+
+  return apiRequest<{ id: string; status: string; fileName: string; mimeType: string }>(
+    `/public-posts/${id}/documents`,
+    {
+      method: "POST",
+      token: token ?? getAuthToken(),
+      formData,
+    },
+  );
+}
+
+export async function createPublicPostExternalLink(
+  id: string,
+  input: { url: string },
+  token?: string | null,
+) {
+  return apiRequest<{ id: string; securityStatus: string; url: string }>(
+    `/public-posts/${id}/external-links`,
+    {
+      method: "POST",
+      token: token ?? getAuthToken(),
+      body: input,
+    },
+  );
 }
 
 export async function searchNace(q: string) {

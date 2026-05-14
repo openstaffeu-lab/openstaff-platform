@@ -1,8 +1,9 @@
-﻿import {
+import {
   Body,
   Controller,
   Delete,
   Get,
+  HttpException,
   Param,
   Patch,
   Post,
@@ -29,12 +30,18 @@ import {
   PublicPostsService,
   UploadedMarketplaceFile,
 } from './public-posts.service';
-import { ModeratePublicPostDto } from './dto/moderate-public-post.dto';
 import { ModeratePublicMediaDto } from './dto/moderate-public-media.dto';
+import { ModeratePublicPostDto } from './dto/moderate-public-post.dto';
 
 @Controller()
 export class PublicPostsController {
   constructor(private readonly publicPostsService: PublicPostsService) {}
+
+  private rethrowHttpException(error: unknown) {
+    if (error instanceof HttpException) {
+      throw error;
+    }
+  }
 
   @Get('public-posts')
   async findAll(
@@ -46,6 +53,7 @@ export class PublicPostsController {
     try {
       return await this.publicPostsService.findAll({ type, status, visibility, q });
     } catch (error) {
+      this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.findAll', error);
       return buildInternalErrorResponse(error);
     }
@@ -63,7 +71,24 @@ export class PublicPostsController {
     try {
       return await this.publicPostsService.findAllForAdmin({ type, status, visibility, q });
     } catch (error) {
+      this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.findAllForAdmin', error);
+      return buildInternalErrorResponse(error);
+    }
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('public-posts/me')
+  async findMine(@Req() req: any) {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException('Authenticated user not found in request');
+    }
+
+    try {
+      return await this.publicPostsService.findMine(req.user);
+    } catch (error) {
+      this.rethrowHttpException(error);
+      logEndpointError('PublicPostsController.findMine', error);
       return buildInternalErrorResponse(error);
     }
   }
@@ -73,6 +98,7 @@ export class PublicPostsController {
     try {
       return await this.publicPostsService.findOne(id, req.user ?? null);
     } catch (error) {
+      this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.findOne', error);
       return buildInternalErrorResponse(error);
     }
@@ -93,6 +119,7 @@ export class PublicPostsController {
       );
       return new StreamableFile(file.stream);
     } catch (error) {
+      this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.getMediaAsset', error);
       return buildInternalErrorResponse(error);
     }
@@ -113,6 +140,7 @@ export class PublicPostsController {
       );
       return new StreamableFile(file.stream);
     } catch (error) {
+      this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.getDocumentAsset', error);
       return buildInternalErrorResponse(error);
     }
@@ -128,6 +156,7 @@ export class PublicPostsController {
     try {
       return await this.publicPostsService.create(body, req.user);
     } catch (error) {
+      this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.create', error);
       return buildInternalErrorResponse(error);
     }
@@ -143,6 +172,7 @@ export class PublicPostsController {
     try {
       return await this.publicPostsService.update(id, body, req.user);
     } catch (error) {
+      this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.update', error);
       return buildInternalErrorResponse(error);
     }
@@ -158,6 +188,7 @@ export class PublicPostsController {
     try {
       return await this.publicPostsService.remove(id, req.user);
     } catch (error) {
+      this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.remove', error);
       return buildInternalErrorResponse(error);
     }
@@ -179,6 +210,7 @@ export class PublicPostsController {
     try {
       return await this.publicPostsService.addMedia(id, body, file, req.user);
     } catch (error) {
+      this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.addMedia', error);
       return buildInternalErrorResponse(error);
     }
@@ -200,6 +232,7 @@ export class PublicPostsController {
     try {
       return await this.publicPostsService.addDocument(id, body, file, req.user);
     } catch (error) {
+      this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.addDocument', error);
       return buildInternalErrorResponse(error);
     }
@@ -207,7 +240,11 @@ export class PublicPostsController {
 
   @UseGuards(JwtGuard)
   @Post('public-posts/:id/external-links')
-  async addExternalLink(@Param('id') id: string, @Body() body: Record<string, unknown>, @Req() req: any) {
+  async addExternalLink(
+    @Param('id') id: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req: any,
+  ) {
     if (!req.user?.sub) {
       throw new UnauthorizedException('Authenticated user not found in request');
     }
@@ -215,6 +252,7 @@ export class PublicPostsController {
     try {
       return await this.publicPostsService.addExternalLink(id, body, req.user);
     } catch (error) {
+      this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.addExternalLink', error);
       return buildInternalErrorResponse(error);
     }
@@ -227,9 +265,11 @@ export class PublicPostsController {
     try {
       return await this.publicPostsService.updatePostStatus(id, {
         status: body.status,
-        moderationStatus: body.status,
+        moderationStatus: body.moderationStatus,
+        visibility: body.visibility,
       });
     } catch (error) {
+      this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.updatePostStatus', error);
       return buildInternalErrorResponse(error);
     }
@@ -242,7 +282,21 @@ export class PublicPostsController {
     try {
       return await this.publicPostsService.listMediaForAdmin();
     } catch (error) {
+      this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.listMediaForAdmin', error);
+      return buildInternalErrorResponse(error);
+    }
+  }
+
+  @RequirePermissions(Permission.MANAGE_USERS)
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @Get('admin/public-post-documents')
+  async listDocumentsForAdmin() {
+    try {
+      return await this.publicPostsService.listDocumentsForAdmin();
+    } catch (error) {
+      this.rethrowHttpException(error);
+      logEndpointError('PublicPostsController.listDocumentsForAdmin', error);
       return buildInternalErrorResponse(error);
     }
   }
@@ -257,7 +311,24 @@ export class PublicPostsController {
         typeof body.status === 'string' ? body.status : 'PENDING',
       );
     } catch (error) {
+      this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.updateMediaStatus', error);
+      return buildInternalErrorResponse(error);
+    }
+  }
+
+  @RequirePermissions(Permission.MANAGE_USERS)
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @Patch('admin/public-post-documents/:id/status')
+  async updateDocumentStatus(@Param('id') id: string, @Body() body: ModeratePublicMediaDto) {
+    try {
+      return await this.publicPostsService.updateDocumentStatus(
+        id,
+        typeof body.status === 'string' ? body.status : 'PENDING',
+      );
+    } catch (error) {
+      this.rethrowHttpException(error);
+      logEndpointError('PublicPostsController.updateDocumentStatus', error);
       return buildInternalErrorResponse(error);
     }
   }

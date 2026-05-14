@@ -12,7 +12,7 @@ export const publicRouteStatuses: RouteStatusItem[] = [
     label: "Home",
     path: "/",
     status: "implemented",
-    note: "Marketplace home renders and falls back to demo feed when the API is unavailable.",
+    note: "Marketplace home renders from the moderated PublicPost feed without demo fallback data.",
   },
   {
     label: "Login",
@@ -49,6 +49,12 @@ export const publicRouteStatuses: RouteStatusItem[] = [
     path: "/projects/new",
     status: "in_progress",
     note: "Route exists; full production workflow validation remains pending.",
+  },
+  {
+    label: "Marketplace publish",
+    path: "/publish",
+    status: "implemented",
+    note: "Authenticated users can create, edit, delete, and attach moderated public posts and assets.",
   },
   {
     label: "Internal status board",
