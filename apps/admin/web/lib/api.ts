@@ -953,6 +953,13 @@ export type WorkerCompensationType =
   | "MONTHLY"
   | "FIXED_PROJECT";
 
+export type WorkerSettlementBillingStatus =
+  | "NOT_BILLED"
+  | "BILLING_EVENT_CREATED"
+  | "INVOICED"
+  | "PAID"
+  | "CANCELLED";
+
 export type PayrollSettlementSummary = {
   id: string;
   approvedTimesheetIds: string[];
@@ -1002,6 +1009,31 @@ export type PayrollSettlementSummary = {
     recordCount: number;
     totalTrackedHours: number;
   };
+  billingLink: {
+    id: string;
+    status: WorkerSettlementBillingStatus;
+    createdAt: string;
+    updatedAt: string;
+    payrollSettlementId: string;
+    billingEvent: {
+      id: string;
+      type: string;
+      status: string;
+      amount: number;
+      currency: string;
+      description: string;
+      metadata: unknown;
+    } | null;
+    billingInvoice: {
+      id: string;
+      invoiceNumber: string;
+      invoiceType: string;
+      status: string;
+      total: number;
+      currency: string;
+      paidAt: string | null;
+    } | null;
+  } | null;
 };
 
 export type PayrollOverview = {

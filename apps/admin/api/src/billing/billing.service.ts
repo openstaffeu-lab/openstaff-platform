@@ -9,6 +9,8 @@ import {
   PaymentProvider,
   PaymentRecordStatus,
   Prisma,
+  SettlementBillingStatus,
+  SettlementStatus,
   SubscriptionRenewalStatus,
 } from '@prisma/client';
 import {
@@ -229,6 +231,90 @@ export class BillingService {
     return this.createInvoiceForEvents(billingEvents, input.dueDays ?? 14, actorUserId);
   }
 
+  async listBillingEvents() {
+    const events = await this.prisma.billingEvent.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+        invoiceLine: {
+          include: {
+            invoice: {
+              select: {
+                id: true,
+                invoiceNumber: true,
+                invoiceType: true,
+                status: true,
+                total: true,
+                currency: true,
+              },
+            },
+          },
+        },
+        billingLink: {
+          include: {
+            payrollSettlement: {
+              select: {
+                id: true,
+                status: true,
+                payrollCycleId: true,
+                workforceAssignmentId: true,
+                regularHours: true,
+                overtimeHours: true,
+              },
+            },
+            billingInvoice: {
+              select: {
+                id: true,
+                invoiceNumber: true,
+                invoiceType: true,
+                status: true,
+                total: true,
+                currency: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: [{ createdAt: 'desc' }],
+    });
+
+    return events.map((event) => ({
+      id: event.id,
+      createdAt: event.createdAt,
+      type: event.type,
+      amount: event.amount,
+      currency: event.currency,
+      status: event.status,
+      description: event.description,
+      metadata: event.metadata,
+      user: event.user,
+      invoice: event.invoiceLine?.invoice
+        ? {
+            ...event.invoiceLine.invoice,
+            total: Number(event.invoiceLine.invoice.total),
+          }
+        : null,
+      billingLink: event.billingLink
+        ? {
+            id: event.billingLink.id,
+            status: event.billingLink.status,
+            payrollSettlementId: event.billingLink.payrollSettlementId,
+            billingInvoiceId: event.billingLink.billingInvoiceId,
+            payrollCycleId: event.billingLink.payrollSettlement.payrollCycleId,
+            workforceAssignmentId:
+              event.billingLink.payrollSettlement.workforceAssignmentId,
+            regularHours: event.billingLink.payrollSettlement.regularHours,
+            overtimeHours: event.billingLink.payrollSettlement.overtimeHours,
+            invoiceNumber: event.billingLink.billingInvoice?.invoiceNumber ?? null,
+          }
+        : null,
+    }));
+  }
+
   async listInvoices() {
     const invoices = await this.prisma.billingInvoice.findMany({
       include: {
@@ -239,8 +325,23 @@ export class BillingService {
           },
         },
         lines: {
-          select: {
-            id: true,
+          include: {
+            billingEvent: {
+              select: {
+                id: true,
+                type: true,
+                status: true,
+                amount: true,
+                currency: true,
+                metadata: true,
+                user: {
+                  select: {
+                    id: true,
+                    email: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -264,6 +365,41 @@ export class BillingService {
       paidAt: invoice.paidAt,
       user: invoice.user,
       lineCount: invoice.lines.length,
+      sourceTypes: Array.from(
+        new Set(
+          invoice.lines
+            .map((line) => line.billingEvent?.type)
+            .filter((value): value is BillingEventType => Boolean(value)),
+        ),
+      ),
+      workforceSettlementRefs: invoice.lines
+        .map((line) => {
+          const metadata =
+            line.billingEvent?.metadata && typeof line.billingEvent.metadata === 'object'
+              ? (line.billingEvent.metadata as Record<string, unknown>)
+              : null;
+
+          if (!metadata || line.billingEvent?.type !== BillingEventType.WORKFORCE_SETTLEMENT) {
+            return null;
+          }
+
+          return {
+            billingEventId: line.billingEvent.id,
+            payrollSettlementId:
+              typeof metadata.payrollSettlementId === 'string'
+                ? metadata.payrollSettlementId
+                : null,
+            workerUserId:
+              typeof metadata.workerUserId === 'string' ? metadata.workerUserId : null,
+            workerEmail: line.billingEvent.user.email,
+          };
+        })
+        .filter((value): value is {
+          billingEventId: string;
+          payrollSettlementId: string | null;
+          workerUserId: string | null;
+          workerEmail: string;
+        } => Boolean(value)),
     }));
   }
 
@@ -407,6 +543,38 @@ export class BillingService {
             status: BillingEventStatus.PAID,
           },
         });
+
+        await tx.workforceBillingLink.updateMany({
+          where: {
+            billingEventId: { in: billingEventIds },
+          },
+          data: {
+            status: SettlementBillingStatus.PAID,
+          },
+        });
+
+        const workforceLinks = await tx.workforceBillingLink.findMany({
+          where: {
+            billingEventId: { in: billingEventIds },
+          },
+          select: {
+            payrollSettlementId: true,
+          },
+        });
+
+        if (workforceLinks.length > 0) {
+          await tx.payrollSettlement.updateMany({
+            where: {
+              id: {
+                in: workforceLinks.map((link) => link.payrollSettlementId),
+              },
+            },
+            data: {
+              status: SettlementStatus.PAID,
+              paidAt,
+            },
+          });
+        }
       }
 
       return { payment, invoice: updatedInvoice };
@@ -905,6 +1073,18 @@ export class BillingService {
         },
         data: {
           status: BillingEventStatus.ISSUED,
+        },
+      });
+
+      await tx.workforceBillingLink.updateMany({
+        where: {
+          billingEventId: {
+            in: billingEvents.map((event) => event.id),
+          },
+        },
+        data: {
+          billingInvoiceId: createdInvoice.id,
+          status: SettlementBillingStatus.INVOICED,
         },
       });
 

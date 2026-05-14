@@ -1,5 +1,10 @@
 import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { PayrollCycleStatus, Role, SettlementStatus } from '@prisma/client';
+import {
+  PayrollCycleStatus,
+  Role,
+  SettlementBillingStatus,
+  SettlementStatus,
+} from '@prisma/client';
 import { JwtGuard } from '../auth/jwt.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import {
@@ -141,6 +146,49 @@ export class PayrollAdminController {
     } catch (error) {
       logEndpointError('PayrollAdminController.rejectSettlement', error);
       throw error;
+    }
+  }
+
+  @Post('settlements/:id/create-billing-event')
+  async createBillingEventFromSettlement(@Param('id') id: string, @Req() req: any) {
+    try {
+      return buildSuccessResponse(
+        await this.payrollService.createBillingEventFromSettlement(id, req.user),
+      );
+    } catch (error) {
+      logEndpointError('PayrollAdminController.createBillingEventFromSettlement', error);
+      throw error;
+    }
+  }
+
+  @Post('cycles/:id/create-billing-events')
+  async createBillingEventsForCycle(@Param('id') id: string, @Req() req: any) {
+    try {
+      return buildSuccessResponse(
+        await this.payrollService.createBillingEventsForCycle(id, req.user),
+      );
+    } catch (error) {
+      logEndpointError('PayrollAdminController.createBillingEventsForCycle', error);
+      throw error;
+    }
+  }
+
+  @Get('billing-links')
+  async listBillingLinks(
+    @Req() req: any,
+    @Query('cycleId') cycleId?: string,
+    @Query('status') status?: SettlementBillingStatus,
+  ) {
+    try {
+      return buildSuccessResponse(
+        await this.payrollService.listBillingLinks(req.user, {
+          payrollCycleId: cycleId,
+          status,
+        }),
+      );
+    } catch (error) {
+      logEndpointError('PayrollAdminController.listBillingLinks', error);
+      return buildInternalErrorResponse(error);
     }
   }
 }

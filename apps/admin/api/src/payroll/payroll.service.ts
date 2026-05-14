@@ -5,11 +5,14 @@ import {
 } from '@nestjs/common';
 import {
   AssignmentStatus,
+  BillingEventStatus,
+  BillingEventType,
   CompensationType,
   ContractLifecycleStatus,
   PayrollCycleStatus,
   Prisma,
   Role,
+  SettlementBillingStatus,
   SettlementStatus,
   TimesheetStatus,
 } from '@prisma/client';
@@ -363,6 +366,158 @@ export class PayrollService {
     return this.toPayrollSettlementResponse(settlement);
   }
 
+  async createBillingEventFromSettlement(id: string, user: AuthUser) {
+    const settlement = await this.prisma.payrollSettlement.findUnique({
+      where: { id },
+      include: this.payrollSettlementInclude,
+    });
+
+    if (!settlement) {
+      throw new NotFoundException('Payroll settlement not found.');
+    }
+
+    this.assertSettlementBillingEligibility(settlement);
+
+    if (settlement.billingLink) {
+      throw new BadRequestException('A billing event already exists for this payroll settlement.');
+    }
+
+    const previousBillingLinkStatus = 'NOT_BILLED';
+
+    const created = await this.prisma.$transaction(async (tx) => {
+      const billingEvent = await tx.billingEvent.create({
+        data: {
+          userId: settlement.userId,
+          type: BillingEventType.WORKFORCE_SETTLEMENT,
+          amount: Math.round(this.toNumber(settlement.netAmount)),
+          currency: settlement.currency,
+          status: BillingEventStatus.PENDING,
+          description: `Workforce settlement for ${settlement.workforceAssignment.job.title}`,
+          metadata: {
+            payrollSettlementId: settlement.id,
+            payrollCycleId: settlement.payrollCycleId,
+            workforceAssignmentId: settlement.workforceAssignmentId,
+            workerUserId: settlement.userId,
+            regularHours: settlement.regularHours,
+            overtimeHours: settlement.overtimeHours,
+            netAmount: this.toNumber(settlement.netAmount),
+            grossAmount: this.toNumber(settlement.grossAmount),
+            contractId: settlement.workforceAssignment.contract.id,
+            projectId: settlement.workforceAssignment.project?.id ?? null,
+            jobId: settlement.workforceAssignment.job.id,
+          },
+        },
+      });
+
+      await tx.workforceBillingLink.create({
+        data: {
+          payrollSettlementId: settlement.id,
+          billingEventId: billingEvent.id,
+          status: SettlementBillingStatus.BILLING_EVENT_CREATED,
+        },
+      });
+
+      return tx.payrollSettlement.findUniqueOrThrow({
+        where: { id: settlement.id },
+        include: this.payrollSettlementInclude,
+      });
+    });
+
+    await this.auditService.log({
+      actorUserId: user.sub,
+      projectId: settlement.workforceAssignment.projectId ?? null,
+      entityType: 'PayrollSettlement',
+      entityId: settlement.id,
+      action: 'CREATE_BILLING_EVENT',
+      before: {
+        billingLinkStatus: previousBillingLinkStatus,
+      },
+      after: this.toPayrollSettlementResponse(created),
+      metadata: {
+        billingEventType: BillingEventType.WORKFORCE_SETTLEMENT,
+      },
+    });
+
+    return this.toPayrollSettlementResponse(created);
+  }
+
+  async createBillingEventsForCycle(payrollCycleId: string, user: AuthUser) {
+    const cycle = await this.prisma.payrollCycle.findUnique({
+      where: { id: payrollCycleId },
+      include: {
+        settlements: {
+          include: this.payrollSettlementInclude,
+        },
+      },
+    });
+
+    if (!cycle) {
+      throw new NotFoundException('Payroll cycle not found.');
+    }
+
+    const eligibleSettlements = cycle.settlements.filter(
+      (settlement) =>
+        this.isBillableSettlementStatus(settlement.status) && !settlement.billingLink,
+    );
+
+    const createdSettlementIds: string[] = [];
+
+    for (const settlement of eligibleSettlements) {
+      await this.createBillingEventFromSettlement(settlement.id, user);
+      createdSettlementIds.push(settlement.id);
+    }
+
+    const refreshedLinks = await this.listBillingLinks(user, { payrollCycleId });
+
+    await this.auditService.log({
+      actorUserId: user.sub,
+      projectId: null,
+      entityType: 'PayrollCycle',
+      entityId: payrollCycleId,
+      action: 'CREATE_BILLING_EVENTS',
+      before: {
+        settlementCount: cycle.settlements.length,
+      },
+      after: {
+        createdCount: createdSettlementIds.length,
+      },
+      metadata: {
+        createdSettlementIds,
+      },
+    });
+
+    return {
+      payrollCycleId,
+      createdCount: createdSettlementIds.length,
+      links: refreshedLinks,
+    };
+  }
+
+  async listBillingLinks(
+    _user: AuthUser,
+    filters?: {
+      payrollCycleId?: string;
+      status?: SettlementBillingStatus;
+    },
+  ) {
+    const links = await this.prisma.workforceBillingLink.findMany({
+      where: {
+        ...(filters?.status ? { status: filters.status } : {}),
+        ...(filters?.payrollCycleId
+          ? {
+              payrollSettlement: {
+                payrollCycleId: filters.payrollCycleId,
+              },
+            }
+          : {}),
+      },
+      include: this.workforceBillingLinkInclude,
+      orderBy: [{ createdAt: 'desc' }],
+    });
+
+    return links.map((link) => this.toWorkforceBillingLinkResponse(link));
+  }
+
   async approveSettlement(id: string, body: ApprovePayrollSettlementDto, user: AuthUser) {
     const settlement = await this.prisma.payrollSettlement.findUnique({
       where: { id },
@@ -570,6 +725,21 @@ export class PayrollService {
         lockedAt: new Date(),
       },
     });
+  }
+
+  private assertSettlementBillingEligibility(settlement: any) {
+    if (!this.isBillableSettlementStatus(settlement.status)) {
+      throw new BadRequestException(
+        'Only approved or ready-for-payment settlements can create billing events.',
+      );
+    }
+  }
+
+  private isBillableSettlementStatus(status: SettlementStatus) {
+    return (
+      status === SettlementStatus.APPROVED ||
+      status === SettlementStatus.READY_FOR_PAYMENT
+    );
   }
 
   private async collectProcessedTimesheetIds(tx: TxClient) {
@@ -906,6 +1076,55 @@ export class PayrollService {
         recordCount: attendanceRecords.length,
         totalTrackedHours: Number(attendanceHours.toFixed(2)),
       },
+      billingLink: settlement.billingLink
+        ? this.toWorkforceBillingLinkResponse(settlement.billingLink)
+        : null,
+    };
+  }
+
+  private toWorkforceBillingLinkResponse(link: any) {
+    return {
+      id: link.id,
+      status: link.status,
+      createdAt: link.createdAt,
+      updatedAt: link.updatedAt,
+      payrollSettlementId: link.payrollSettlementId,
+      billingEvent: link.billingEvent
+        ? {
+            id: link.billingEvent.id,
+            type: link.billingEvent.type,
+            status: link.billingEvent.status,
+            amount: link.billingEvent.amount,
+            currency: link.billingEvent.currency,
+            description: link.billingEvent.description,
+            metadata: link.billingEvent.metadata,
+          }
+        : null,
+      billingInvoice: link.billingInvoice
+        ? {
+            id: link.billingInvoice.id,
+            invoiceNumber: link.billingInvoice.invoiceNumber,
+            invoiceType: link.billingInvoice.invoiceType,
+            status: link.billingInvoice.status,
+            total: this.toNumber(link.billingInvoice.total),
+            currency: link.billingInvoice.currency,
+            paidAt: link.billingInvoice.paidAt,
+          }
+        : null,
+      settlement: link.payrollSettlement
+        ? {
+            id: link.payrollSettlement.id,
+            status: link.payrollSettlement.status,
+            netAmount: this.toNumber(link.payrollSettlement.netAmount),
+            grossAmount: this.toNumber(link.payrollSettlement.grossAmount),
+            currency: link.payrollSettlement.currency,
+            payrollCycleId: link.payrollSettlement.payrollCycleId,
+            user: {
+              id: link.payrollSettlement.user.id,
+              email: link.payrollSettlement.user.email,
+            },
+          }
+        : null,
     };
   }
 
@@ -968,6 +1187,12 @@ export class PayrollService {
         attendanceRecords: true,
       },
     },
+    billingLink: {
+      include: {
+        billingEvent: true,
+        billingInvoice: true,
+      },
+    },
   } satisfies Prisma.PayrollSettlementInclude;
 
   private readonly payrollCycleInclude = {
@@ -994,8 +1219,24 @@ export class PayrollService {
             attendanceRecords: true,
           },
         },
+        billingLink: {
+          include: {
+            billingEvent: true,
+            billingInvoice: true,
+          },
+        },
       },
       orderBy: [{ createdAt: 'asc' }],
     },
   } satisfies Prisma.PayrollCycleInclude;
+
+  private readonly workforceBillingLinkInclude = {
+    billingEvent: true,
+    billingInvoice: true,
+    payrollSettlement: {
+      include: {
+        user: true,
+      },
+    },
+  } satisfies Prisma.WorkforceBillingLinkInclude;
 }

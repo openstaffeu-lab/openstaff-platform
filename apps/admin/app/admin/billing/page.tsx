@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import {
+  getBillingEvents,
   generateRenewals,
+  type BillingEventSummary,
   getBillingInvoices,
   getBillingPayments,
   getBillingRenewals,
@@ -41,6 +43,7 @@ function currentMonthWindow() {
 }
 
 export default function AdminBillingPage() {
+  const [events, setEvents] = useState<BillingEventSummary[]>([]);
   const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [webhooks, setWebhooks] = useState<BillingWebhookEvent[]>([]);
@@ -57,14 +60,17 @@ export default function AdminBillingPage() {
       try {
         setLoading(true);
         setError(null);
-        const [nextInvoices, nextPayments, nextWebhooks, nextRenewals] = await Promise.all([
+        const [nextEvents, nextInvoices, nextPayments, nextWebhooks, nextRenewals] =
+          await Promise.all([
+            getBillingEvents(),
           getBillingInvoices(),
           getBillingPayments(),
           getBillingWebhooks(),
           getBillingRenewals(),
-        ]);
+          ]);
 
         if (!cancelled) {
+          setEvents(nextEvents);
           setInvoices(nextInvoices);
           setPayments(nextPayments);
           setWebhooks(nextWebhooks);
@@ -229,6 +235,63 @@ export default function AdminBillingPage() {
 
       <section className="overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950/70">
         <div className="border-b border-slate-800 px-6 py-4 text-lg font-semibold text-white">
+          Billing events
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-800 text-sm text-slate-200">
+            <thead className="bg-slate-900/90 text-left text-xs uppercase tracking-[0.24em] text-slate-400">
+              <tr>
+                <th className="px-4 py-4">Source</th>
+                <th className="px-4 py-4">Worker</th>
+                <th className="px-4 py-4">Status</th>
+                <th className="px-4 py-4">Amount</th>
+                <th className="px-4 py-4">Settlement</th>
+                <th className="px-4 py-4">Invoice</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {loading ? (
+                <tr>
+                  <td className="px-4 py-6 text-slate-400" colSpan={6}>
+                    Loading billing events...
+                  </td>
+                </tr>
+              ) : events.length > 0 ? (
+                events.map((event) => (
+                  <tr key={event.id}>
+                    <td className="px-4 py-4 font-medium text-white">{event.type}</td>
+                    <td className="px-4 py-4 text-slate-300">
+                      {event.user.email}
+                    </td>
+                    <td className="px-4 py-4 text-slate-300">
+                      {event.status}
+                      {event.billingLink ? ` / ${event.billingLink.status}` : ""}
+                    </td>
+                    <td className="px-4 py-4 text-slate-300">
+                      {event.amount} {event.currency}
+                    </td>
+                    <td className="px-4 py-4 text-slate-300">
+                      {event.billingLink?.payrollSettlementId ?? "-"}
+                    </td>
+                    <td className="px-4 py-4 text-slate-300">
+                      {event.invoice?.invoiceNumber ?? event.billingLink?.invoiceNumber ?? "-"}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="px-4 py-6 text-slate-400" colSpan={6}>
+                    No billing events generated yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950/70">
+        <div className="border-b border-slate-800 px-6 py-4 text-lg font-semibold text-white">
           Invoices
         </div>
         <div className="overflow-x-auto">
@@ -254,7 +317,12 @@ export default function AdminBillingPage() {
               ) : invoices.length > 0 ? (
                 invoices.map((invoice) => (
                   <tr key={invoice.id}>
-                    <td className="px-4 py-4 font-medium text-white">{invoice.invoiceNumber}</td>
+                    <td className="px-4 py-4 font-medium text-white">
+                      <div>{invoice.invoiceNumber}</div>
+                      <div className="mt-1 text-xs font-normal uppercase tracking-[0.24em] text-slate-400">
+                        {invoice.sourceTypes?.join(", ") || "NO_SOURCE"}
+                      </div>
+                    </td>
                     <td className="px-4 py-4 text-slate-300">{invoice.user.email}</td>
                     <td className="px-4 py-4 text-slate-300">{invoice.status}</td>
                     <td className="px-4 py-4 text-slate-300">

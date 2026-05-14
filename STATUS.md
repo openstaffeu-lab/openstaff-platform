@@ -427,6 +427,49 @@ Verdict: `PASS - compensation agreements, payroll cycles, settlement preparation
 | admin build | ✅ | `cd apps/admin && npm.cmd run build` |
 | Blockers | ✅ | niciun blocker deschis pentru aceasta faza; payroll preparation si settlement guard rails validate local |
 
+## EXEC-07E Settlement to Billing Bridge & Workforce Financial Closure
+
+Verdict: `PASS - approved payroll settlements now bridge into billing events/invoices, admin visibility is extended, and financial closure validations passed locally`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| payroll vs billing audit | ✅ | audit local pe `apps/admin/api/src/billing/*`, `apps/admin/api/src/payroll/*`, `schema.prisma`, `STATUS.md`: `PayrollSettlement` nu era legat persistent de `BillingEvent`/`BillingInvoice`, worker history era stabil, iar admin billing nu expunea originile workforce |
+| `SettlementBillingStatus` enum | ✅ | Prisma schema include `NOT_BILLED`, `BILLING_EVENT_CREATED`, `INVOICED`, `PAID`, `CANCELLED` |
+| `WorkforceBillingLink` model | ✅ | Prisma schema adauga bridge-ul dintre `PayrollSettlement`, `BillingEvent` si optional `BillingInvoice` |
+| `BillingEventType.WORKFORCE_SETTLEMENT` | ✅ | Prisma schema + billing integration adauga tip dedicat pentru settlements din workforce |
+| `PayrollSettlement` extended safely | ✅ | modelul existent a fost extins additiv cu relatia `billingLink` |
+| `BillingEvent` extended safely | ✅ | modelul existent a fost extins additiv cu relatia `billingLink` |
+| `BillingInvoice` extended safely | ✅ | modelul existent a fost extins additiv cu `workforceBillingLinks[]` |
+| bridge backend logic | ✅ | `apps/admin/api/src/payroll/payroll.service.ts` creeaza link imutabil settlement -> billing event si blocheaza duplicatele |
+| `POST /admin/payroll/settlements/:id/create-billing-event` | ✅ | runtime local creeaza billing event doar pentru settlement `APPROVED/READY_FOR_PAYMENT` |
+| `POST /admin/payroll/cycles/:id/create-billing-events` | ✅ | runtime local creeaza batch billing events doar pentru settlements aprobate si fara link existent |
+| `GET /admin/payroll/billing-links` | ✅ | runtime local returneaza bridge overview cu settlement, billing event si invoice refs |
+| only approved settlements billable | ✅ | settlement `PENDING` returneaza `400`, iar settlement `REJECTED` returneaza `400` la create billing event |
+| duplicate billing event blocked | ✅ | al doilea `POST /admin/payroll/settlements/:id/create-billing-event` pe acelasi settlement returneaza `400` |
+| locked cycles still billable | ✅ | dupa lock-ul payroll cycle, settlement-urile `READY_FOR_PAYMENT` pot genera billing events fara a rescrie payroll-ul |
+| workforce settlement metadata propagated | ✅ | `BillingEvent.metadata` include `payrollSettlementId`, `payrollCycleId`, `workforceAssignmentId`, `workerUserId`, `regularHours`, `overtimeHours` |
+| invoice generation still works | ✅ | `POST /admin/billing/invoices/generate` accepta billing event de tip `WORKFORCE_SETTLEMENT` si genereaza proforma valida |
+| mark invoice paid still works | ✅ | `POST /admin/billing/invoices/:id/mark-paid` actualizeaza invoice-ul, payment-ul si bridge-ul la `PAID` |
+| settlement paid propagation | ✅ | dupa `mark-paid`, settlement-ul legat trece in `PAID` si `WorkforceBillingLink.status = PAID` |
+| admin payroll UI bridge actions | ✅ | `apps/admin/app/admin/payroll/page.tsx` compileaza cu buton `Create billing event`, badge de billing status si batch action pe cycle |
+| admin billing visibility | ✅ | `apps/admin/app/admin/billing/page.tsx` compileaza si afiseaza `WORKFORCE_SETTLEMENT`, settlement id si worker reference |
+| admin API helpers | ✅ | `apps/admin/lib/api.ts` include helperii pentru billing links, settlement billing event si cycle batch billing events |
+| worker API helpers stable | ✅ | `apps/admin/web/lib/api.ts` expune billing link visibility in istoricul de settlement fara a schimba contractul payroll existent |
+| runtime validation | ✅ | `cd apps/admin/api && node scripts/exec-07e-runtime-check.js` confirma settlement aprobat, create billing event, duplicate blocked, pending/rejected blocked, batch create, invoice generate, mark-paid si stabilitatea modulelor existente |
+| auth stable | ✅ | runtime local confirma `GET /auth/me = 200` dupa bridge-ul settlement -> billing |
+| onboarding stable | ✅ | runtime local confirma `GET /onboarding/me = 200` dupa bridge-ul settlement -> billing |
+| subscriptions stable | ✅ | runtime local confirma `GET /subscriptions/me = 200` dupa bridge-ul settlement -> billing |
+| workforce stable | ✅ | runtime local confirma `GET /workforce/me = 200` dupa bridge-ul settlement -> billing |
+| payroll stable | ✅ | runtime local confirma `GET /payroll/me/settlements = 200` dupa bridge-ul settlement -> billing |
+| billing stable | ✅ | runtime local confirma list/invoice/mark-paid pentru fluxul workforce-originated |
+| `prisma validate` | ✅ | `cd apps/admin/api && npx.cmd prisma validate` |
+| `prisma generate` | ✅ | `cd apps/admin/api && npx.cmd prisma generate` |
+| `prisma db push` | ✅ | `cd apps/admin/api && npx.cmd prisma db push` |
+| API build | ✅ | `cd apps/admin/api && npm.cmd run build` |
+| web build | ✅ | `cd apps/admin/web && npm.cmd run build` |
+| admin build | ✅ | `cd apps/admin && npm.cmd run build` |
+| Blockers | ✅ | niciun blocker deschis pentru aceasta faza; bridge-ul settlement -> billing si financial closure local sunt validate |
+
 ## Prompt 8 Video Audit Snapshot
 
 Surse analizate:

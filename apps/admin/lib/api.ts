@@ -111,6 +111,13 @@ export type BillingInvoice = {
   issuedAt: string;
   dueAt: string;
   paidAt: string | null;
+  sourceTypes?: string[];
+  workforceSettlementRefs?: Array<{
+    billingEventId: string;
+    payrollSettlementId: string | null;
+    workerUserId: string | null;
+    workerEmail: string;
+  }>;
   user: {
     id: string;
     email: string;
@@ -150,6 +157,40 @@ export type PaymentRecord = {
     id: string;
     invoiceNumber: string;
     status: string;
+  } | null;
+};
+
+export type BillingEventSummary = {
+  id: string;
+  createdAt: string;
+  type: string;
+  amount: number;
+  currency: string;
+  status: string;
+  description: string;
+  metadata: unknown;
+  user: {
+    id: string;
+    email: string;
+  };
+  invoice: {
+    id: string;
+    invoiceNumber: string;
+    invoiceType: string;
+    status: string;
+    total: number;
+    currency: string;
+  } | null;
+  billingLink: {
+    id: string;
+    status: string;
+    payrollSettlementId: string;
+    billingInvoiceId: string | null;
+    payrollCycleId: string;
+    workforceAssignmentId: string;
+    regularHours: number;
+    overtimeHours: number;
+    invoiceNumber: string | null;
   } | null;
 };
 
@@ -643,6 +684,7 @@ async function adminUpload<T>(path: string, formData: FormData): Promise<T> {
 }
 
 export const adminApi = {
+  getBillingEvents: () => adminFetch<BillingEventSummary[]>("/admin/billing/events"),
   getAdminUpgradeRequests: () =>
     adminFetch<UpgradeRequest[]>("/admin/subscription-upgrade-requests"),
   approveUpgradeRequest: (id: string, input: ApproveUpgradeRequestInput) =>
@@ -921,6 +963,10 @@ export async function changeUserSubscription(
 
 export async function getBillingInvoices() {
   return adminApi.getBillingInvoices();
+}
+
+export async function getBillingEvents() {
+  return adminApi.getBillingEvents();
 }
 
 export async function generateInvoice(input: {
@@ -1799,6 +1845,51 @@ export type PayrollSettlementStatus =
   | "READY_FOR_PAYMENT"
   | "PAID";
 
+export type SettlementBillingStatus =
+  | "NOT_BILLED"
+  | "BILLING_EVENT_CREATED"
+  | "INVOICED"
+  | "PAID"
+  | "CANCELLED";
+
+export type WorkforceBillingLinkSummary = {
+  id: string;
+  status: SettlementBillingStatus;
+  createdAt: string;
+  updatedAt: string;
+  payrollSettlementId: string;
+  billingEvent: {
+    id: string;
+    type: string;
+    status: string;
+    amount: number;
+    currency: string;
+    description: string;
+    metadata: unknown;
+  } | null;
+  billingInvoice: {
+    id: string;
+    invoiceNumber: string;
+    invoiceType: string;
+    status: string;
+    total: number;
+    currency: string;
+    paidAt: string | null;
+  } | null;
+  settlement: {
+    id: string;
+    status: PayrollSettlementStatus;
+    netAmount: number;
+    grossAmount: number;
+    currency: string;
+    payrollCycleId: string;
+    user: {
+      id: string;
+      email: string;
+    };
+  } | null;
+};
+
 export type AdminCompensationAgreement = {
   id: string;
   compensationType: CompensationType;
@@ -1862,6 +1953,7 @@ export type AdminPayrollSettlement = {
     recordCount: number;
     totalTrackedHours: number;
   };
+  billingLink: WorkforceBillingLinkSummary | null;
 };
 
 export type AdminPayrollCycle = {
@@ -1997,4 +2089,50 @@ export async function rejectAdminPayrollSettlement(
     },
     body: JSON.stringify(input),
   });
+}
+
+export async function createPayrollSettlementBillingEvent(id: string) {
+  return adminFetch<AdminPayrollSettlement>(
+    `/admin/payroll/settlements/${id}/create-billing-event`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    },
+  );
+}
+
+export async function createPayrollCycleBillingEvents(id: string) {
+  return adminFetch<{
+    payrollCycleId: string;
+    createdCount: number;
+    links: WorkforceBillingLinkSummary[];
+  }>(`/admin/payroll/cycles/${id}/create-billing-events`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({}),
+  });
+}
+
+export async function getPayrollBillingLinks(filters?: {
+  cycleId?: string;
+  status?: SettlementBillingStatus;
+}) {
+  const query = new URLSearchParams();
+
+  if (filters?.cycleId) {
+    query.set("cycleId", filters.cycleId);
+  }
+
+  if (filters?.status) {
+    query.set("status", filters.status);
+  }
+
+  return adminFetch<WorkforceBillingLinkSummary[]>(
+    `/admin/payroll/billing-links${query.toString() ? `?${query.toString()}` : ""}`,
+  );
 }

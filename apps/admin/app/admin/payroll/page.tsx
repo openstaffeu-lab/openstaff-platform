@@ -7,6 +7,8 @@ import {
   PayrollCycleStatus,
   PayrollSettlementStatus,
   approveAdminPayrollSettlement,
+  createPayrollCycleBillingEvents,
+  createPayrollSettlementBillingEvent,
   createPayrollCycle,
   getAdminPayrollCycles,
   getAdminPayrollSettlement,
@@ -178,6 +180,32 @@ export default function PayrollAdminPage() {
     }
   };
 
+  const handleCreateCycleBillingEvents = async () => {
+    if (!selectedCycleId) {
+      setError("Selecteaza un payroll cycle.");
+      return;
+    }
+
+    setActionLoading(true);
+    setError(null);
+    try {
+      await createPayrollCycleBillingEvents(selectedCycleId);
+      await loadData();
+      if (selectedSettlementId) {
+        const detail = await getAdminPayrollSettlement(selectedSettlementId);
+        setSelectedSettlement(detail);
+      }
+    } catch (actionError) {
+      setError(
+        actionError instanceof Error
+          ? actionError.message
+          : "Nu am putut crea billing events pentru cycle.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleApprove = async () => {
     if (!selectedSettlement) {
       return;
@@ -229,6 +257,28 @@ export default function PayrollAdminPage() {
     }
   };
 
+  const handleCreateSettlementBillingEvent = async () => {
+    if (!selectedSettlement) {
+      return;
+    }
+
+    setActionLoading(true);
+    setError(null);
+    try {
+      const updated = await createPayrollSettlementBillingEvent(selectedSettlement.id);
+      setSelectedSettlement(updated);
+      await loadData();
+    } catch (actionError) {
+      setError(
+        actionError instanceof Error
+          ? actionError.message
+          : "Nu am putut crea billing event pentru settlement.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-10 text-white md:px-10">
       <div className="mx-auto max-w-7xl space-y-8">
@@ -268,6 +318,13 @@ export default function PayrollAdminPage() {
               className="rounded-2xl border border-cyan-400/40 px-4 py-3 text-sm font-semibold text-cyan-200"
             >
               Process selected cycle
+            </button>
+            <button
+              onClick={handleCreateCycleBillingEvents}
+              disabled={actionLoading || !selectedCycleId}
+              className="rounded-2xl border border-emerald-400/40 px-4 py-3 text-sm font-semibold text-emerald-200 sm:col-span-2"
+            >
+              Create billing events for approved settlements
             </button>
           </div>
         </div>
@@ -399,7 +456,10 @@ export default function PayrollAdminPage() {
                           {settlement.user.identityProfile?.displayName ?? settlement.user.email}
                         </div>
                         <div className="mt-1 text-xs uppercase tracking-[0.28em] text-slate-400">
-                          {settlement.status}
+                          {settlement.status}{" "}
+                          {settlement.billingLink
+                            ? `· ${settlement.billingLink.status}`
+                            : "· NOT_BILLED"}
                         </div>
                       </div>
                       <div className="text-right text-sm text-slate-300">
@@ -492,6 +552,24 @@ export default function PayrollAdminPage() {
                   </div>
                 </div>
 
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-300">
+                  <div className="font-semibold text-white">Billing bridge</div>
+                  <div className="mt-3 space-y-2">
+                    <div>
+                      Billing status:{" "}
+                      <span className="font-medium text-white">
+                        {selectedSettlement.billingLink?.status ?? "NOT_BILLED"}
+                      </span>
+                    </div>
+                    <div>
+                      Billing event: {selectedSettlement.billingLink?.billingEvent?.id ?? "—"}
+                    </div>
+                    <div>
+                      Invoice: {selectedSettlement.billingLink?.billingInvoice?.invoiceNumber ?? "—"}
+                    </div>
+                  </div>
+                </div>
+
                 <textarea
                   value={approveNote}
                   onChange={(event) => setApproveNote(event.target.value)}
@@ -505,6 +583,18 @@ export default function PayrollAdminPage() {
                   className="w-full rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 disabled:opacity-50"
                 >
                   Approve settlement
+                </button>
+
+                <button
+                  onClick={handleCreateSettlementBillingEvent}
+                  disabled={
+                    actionLoading ||
+                    Boolean(selectedSettlement.billingLink) ||
+                    !["APPROVED", "READY_FOR_PAYMENT"].includes(selectedSettlement.status)
+                  }
+                  className="w-full rounded-2xl border border-cyan-400/40 px-4 py-3 text-sm font-semibold text-cyan-200 disabled:opacity-50"
+                >
+                  Create billing event
                 </button>
 
                 <textarea

@@ -41,6 +41,16 @@ export class BillingAdminController {
     }
   }
 
+  @Get('events')
+  async listBillingEvents() {
+    try {
+      return buildSuccessResponse(await this.billingService.listBillingEvents());
+    } catch (error) {
+      logEndpointError('BillingAdminController.listBillingEvents', error);
+      return buildInternalErrorResponse(error);
+    }
+  }
+
   @Get('invoices')
   async listInvoices() {
     try {

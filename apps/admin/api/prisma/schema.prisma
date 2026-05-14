@@ -380,6 +380,7 @@ model BillingEvent {
   user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   subscription AccountSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
   invoiceLine  BillingInvoiceLine?
+  billingLink  WorkforceBillingLink?
 
   @@index([userId, createdAt])
   @@index([subscriptionId, createdAt])
@@ -435,6 +436,7 @@ model BillingInvoice {
   lines        BillingInvoiceLine[]
   payments     PaymentRecord[]
   renewals     SubscriptionRenewal[]
+  workforceBillingLinks WorkforceBillingLink[]
 
   @@index([userId, createdAt])
   @@index([subscriptionId, createdAt])
@@ -2166,6 +2168,7 @@ model PayrollSettlement {
   user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   approvedByUser      User?               @relation("PayrollSettlementApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
   lines               PayrollSettlementLine[]
+  billingLink         WorkforceBillingLink?
 
   @@index([payrollCycleId, status, createdAt])
   @@index([workforceAssignmentId, createdAt])
@@ -2184,6 +2187,23 @@ model PayrollSettlementLine {
   payrollSettlement PayrollSettlement @relation(fields: [payrollSettlementId], references: [id], onDelete: Cascade)
 
   @@index([payrollSettlementId, createdAt])
+}
+
+model WorkforceBillingLink {
+  id                  String                  @id @default(uuid())
+  payrollSettlementId String                  @unique
+  billingEventId      String                  @unique
+  billingInvoiceId    String?
+  status              SettlementBillingStatus @default(NOT_BILLED)
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  payrollSettlement PayrollSettlement @relation(fields: [payrollSettlementId], references: [id], onDelete: Cascade)
+  billingEvent      BillingEvent      @relation(fields: [billingEventId], references: [id], onDelete: Cascade)
+  billingInvoice    BillingInvoice?   @relation(fields: [billingInvoiceId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([billingInvoiceId, createdAt])
 }
 
 model ContractLifecycleEvent {
@@ -3098,6 +3118,7 @@ enum AccountSubscriptionStatus {
 enum BillingEventType {
   SUBSCRIPTION_UPGRADE
   SUBSCRIPTION_RENEWAL
+  WORKFORCE_SETTLEMENT
   MANUAL_ADJUSTMENT
   SUCCESS_FEE
   DISPUTE_FEE
@@ -3106,6 +3127,14 @@ enum BillingEventType {
 enum BillingEventStatus {
   PENDING
   ISSUED
+  PAID
+  CANCELLED
+}
+
+enum SettlementBillingStatus {
+  NOT_BILLED
+  BILLING_EVENT_CREATED
+  INVOICED
   PAID
   CANCELLED
 }
