@@ -3,18 +3,20 @@ import { Prisma } from '@prisma/client';
 export type StructuredSuccessResponse<T> = {
   status: 'ok';
   data: T;
-  source?: 'database' | 'placeholder';
+  source?: 'database' | 'placeholder' | 'integrated-fallback';
 };
 
 export type StructuredErrorResponse = {
   status: 'error';
   message: string;
+  code?: string;
+  requestId?: string | null;
   details?: string;
 };
 
 export function buildSuccessResponse<T>(
   data: T,
-  source: 'database' | 'placeholder' = 'database',
+  source: 'database' | 'placeholder' | 'integrated-fallback' = 'database',
 ): StructuredSuccessResponse<T> {
   return {
     status: 'ok',
@@ -26,10 +28,22 @@ export function buildSuccessResponse<T>(
 export function buildErrorResponse(
   message: string,
   details?: string,
+  code?: string,
+  requestId?: string | null,
 ): StructuredErrorResponse {
   return {
     status: 'error',
     message,
+    ...(code
+      ? {
+          code,
+        }
+      : {}),
+    ...(requestId !== undefined
+      ? {
+          requestId,
+        }
+      : {}),
     ...(details
       ? {
           details,
@@ -44,6 +58,7 @@ export function buildInternalErrorResponse(
   return buildErrorResponse(
     'Internal server error',
     process.env.NODE_ENV !== 'production' ? getErrorDetails(error) : undefined,
+    'INTERNAL_ERROR',
   );
 }
 

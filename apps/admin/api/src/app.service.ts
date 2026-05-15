@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { API_CORS_ORIGINS } from './app.config';
+import { RuntimeConfigService } from './config/runtime-config.service';
 import { PrismaService } from './prisma/prisma.service';
 
 type ComponentStatus = 'implemented' | 'in_progress' | 'missing';
 
 @Injectable()
 export class AppService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly runtimeConfig: RuntimeConfigService,
+  ) {}
 
   getRoot() {
     return {
@@ -21,7 +25,7 @@ export class AppService {
     return {
       status: 'ok',
       service: 'openstaff-api',
-      environment: process.env.NODE_ENV ?? 'development',
+      environment: this.runtimeConfig.environment,
       timestamp: new Date().toISOString(),
       uptimeSeconds: Math.round(process.uptime()),
     };
@@ -29,12 +33,45 @@ export class AppService {
 
   async getStatus() {
     let db: 'ok' | 'error' = 'ok';
+    let notificationQueue = { pending: 0, failed: 0 };
+    let reluQueue = { pending: 0, failed: 0 };
+    let workflowRuns = { total: 0, failed: 0 };
 
     try {
       await this.prisma.$queryRaw`SELECT 1`;
     } catch {
       db = 'error';
     }
+
+    try {
+      const [pending, failed, reluPending, reluFailed, workflowTotal, workflowFailed] =
+        await Promise.all([
+          this.prisma.notificationDelivery.count({
+            where: { status: 'PENDING' as any },
+          }),
+          this.prisma.notificationDelivery.count({
+            where: { status: 'FAILED' as any },
+          }),
+          this.prisma.reluTask.count({
+            where: { status: 'PENDING' as any },
+          }),
+          this.prisma.reluTask.count({
+            where: { status: 'FAILED' as any },
+          }),
+          this.prisma.workflowAutomationRun.count(),
+          this.prisma.workflowAutomationRun.count({
+            where: { status: 'FAILED' as any },
+          }),
+        ]);
+
+      notificationQueue = { pending, failed };
+      reluQueue = { pending: reluPending, failed: reluFailed };
+      workflowRuns = { total: workflowTotal, failed: workflowFailed };
+    } catch {
+      // Status should still render even if some optional tables are unavailable.
+    }
+
+    const runtimeSummary = this.runtimeConfig.getPublicSummary();
 
     return {
       status: db === 'ok' ? 'ok' : 'error',
@@ -43,7 +80,7 @@ export class AppService {
       service: 'openstaff-api',
       timestamp: new Date().toISOString(),
       runtime: {
-        nodeEnv: process.env.NODE_ENV ?? 'development',
+        nodeEnv: this.runtimeConfig.environment,
         port: Number(process.env.PORT ?? 8080),
         authMode:
           process.env.SKIP_FIREBASE_AUTH === 'true'
@@ -52,6 +89,11 @@ export class AppService {
         databaseConfigured: Boolean(process.env.DATABASE_URL),
         jwtSecretConfigured: Boolean(process.env.JWT_SECRET),
         storageBucketConfigured: Boolean(process.env.STORAGE_BUCKET),
+      },
+      featureFlags: runtimeSummary.featureFlags,
+      readiness: {
+        warnings: runtimeSummary.warnings,
+        errors: runtimeSummary.errors,
       },
       cors: {
         allowedOrigins: API_CORS_ORIGINS,
@@ -63,6 +105,25 @@ export class AppService {
         secretManager: this.getComponentStatus(
           Boolean(process.env.K_SERVICE || process.env.GOOGLE_CLOUD_PROJECT),
         ),
+        gemini: {
+          apiKeyConfigured: Boolean(process.env.GEMINI_API_KEY),
+          fallbackEnabled: this.runtimeConfig.isAiFallbackEnabled(),
+        },
+        billingWebhook: {
+          placeholderEnabled: this.runtimeConfig.isWebhookPlaceholderEnabled(),
+          secretsConfigured: Boolean(process.env.STRIPE_WEBHOOK_SECRET),
+        },
+        billingPlaceholders: {
+          enabled: this.runtimeConfig.isBillingPlaceholdersEnabled(),
+        },
+        smsDelivery: {
+          placeholderEnabled: this.runtimeConfig.isSmsPlaceholderEnabled(),
+        },
+      },
+      queues: {
+        notifications: notificationQueue,
+        relu: reluQueue,
+        workflowAutomation: workflowRuns,
       },
       components: [
         this.component('auth', 'implemented', '/auth'),

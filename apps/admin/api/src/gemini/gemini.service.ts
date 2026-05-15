@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AgentType } from '@prisma/client';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { RuntimeConfigService } from '../config/runtime-config.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 type GeminiHistory = { role: 'user' | 'model'; parts: string }[];
@@ -217,10 +218,17 @@ export class GeminiService {
   private readonly logger = new Logger(GeminiService.name);
   private readonly genAI: GoogleGenerativeAI;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly runtimeConfig: RuntimeConfigService,
+  ) {
     const apiKey = process.env.GEMINI_API_KEY ?? '';
     if (!apiKey) {
-      this.logger.warn('GEMINI_API_KEY not set. Gemini requests will use fallbacks.');
+      if (this.runtimeConfig.isAiFallbackEnabled()) {
+        this.logger.warn('GEMINI_API_KEY not set. Gemini requests will use explicit fallbacks.');
+      } else {
+        this.logger.warn('GEMINI_API_KEY not set. Gemini requests requiring AI will return unavailable responses.');
+      }
     }
     this.genAI = new GoogleGenerativeAI(apiKey);
   }
@@ -241,6 +249,9 @@ export class GeminiService {
     const apiKey = process.env.GEMINI_API_KEY ?? '';
 
     if (!apiKey) {
+      if (!this.runtimeConfig.isAiFallbackEnabled()) {
+        throw new Error('GEMINI_API_KEY is not configured and AI fallback is disabled.');
+      }
       return this.fallbackTextResponse(userMessage);
     }
 
@@ -268,10 +279,11 @@ export class GeminiService {
     const agent = await this.getAgentConfig(input.agentType);
 
     if (!agent) {
+      const fallback = this.fallbackTextResponse(input.userMessage);
       return {
         agentName: 'Fallback',
-        response: this.fallbackTextResponse(input.userMessage),
-        raw: this.fallbackTextResponse(input.userMessage),
+        response: fallback,
+        raw: fallback,
       };
     }
 
@@ -546,6 +558,9 @@ export class GeminiService {
   }
 
   private fallbackTextResponse(userMessage: string) {
+    if (!this.runtimeConfig.isAiFallbackEnabled()) {
+      return 'Relu AI is currently unavailable because no model provider is configured.';
+    }
     return `Relu AI fallback response: ${userMessage.slice(0, 280)}`;
   }
 }

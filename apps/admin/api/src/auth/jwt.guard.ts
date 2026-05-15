@@ -8,6 +8,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { AccountLifecycleStatus } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
+import { RuntimeConfigService } from '../config/runtime-config.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { IS_PUBLIC_KEY } from './public.decorator';
 
@@ -17,6 +18,7 @@ export class JwtGuard implements CanActivate {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly reflector: Reflector,
+    private readonly runtimeConfig: RuntimeConfigService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -31,7 +33,7 @@ export class JwtGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const isDevBypass =
-      (process.env.NODE_ENV ?? 'development') !== 'production' &&
+      this.runtimeConfig.isDevAuthBypassEnabled() &&
       process.env.SKIP_JWT_AUTH === 'true';
 
     if (isDevBypass) {

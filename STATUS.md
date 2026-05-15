@@ -714,6 +714,58 @@ Verdict: `PASS - persistent notification events, delivery tracking, workflow aut
 | admin build | ✅ | `cd apps/admin && npm.cmd run build` |
 | Blockers | ✅ | niciun blocker deschis pentru aceasta faza; EXEC-11 este inchis oficial cu PASS |
 
+## EXEC-12 Production Hardening, Observability & Demo/Live Separation
+
+Verdict: `PASS - runtime hardening, explicit demo/live controls, observability surfaces, and production readiness visibility validated locally`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| audit demo/fallback usage | ✅ | scan local pentru `demo`, `mock`, `fallback`, `placeholder`, `SKIP_`, `BYPASS`; identificate zonele active din `public-posts`, `public-feedback`, auth bypass, Gemini si placeholder-ele billing/notifications |
+| backend runtime config module | ✅ | `apps/admin/api/src/config/runtime-config.service.ts` si `runtime-config.module.ts` centralizeaza feature flags si validarea de env |
+| frontend runtime config helper | ✅ | `apps/admin/web/lib/runtime-config.ts` si `apps/admin/lib/runtime-config.ts` expun aceleasi flag-uri pentru web/admin |
+| feature flags added | ✅ | `DEMO_MODE`, `ENABLE_DEV_AUTH_BYPASS`, `ENABLE_AI_FALLBACK`, `ENABLE_DEMO_PUBLIC_FEED`, `ENABLE_DEMO_MESSAGING`, `ENABLE_BILLING_PLACEHOLDERS`, `ENABLE_WEBHOOK_PLACEHOLDER`, `ENABLE_SMS_PLACEHOLDER`, `ENABLE_DEBUG_LOGS` |
+| production-safe defaults | ✅ | fallback/demo sunt dezactivate implicit pentru productie; bypass auth si demo feed/messaging sunt blocate prin validare |
+| env validation on startup | ✅ | `main.ts` ruleaza `assertRuntimeEnvironment(process.env)` dupa `loadSecrets()` si blocheaza startup-ul nesigur in productie |
+| fail fast for unsafe production flags | ✅ | `cd apps/admin/api && node scripts/exec-12-runtime-check.js` confirma ca startup-ul cu flag-uri demo/bypass in `NODE_ENV=production` esueaza explicit |
+| request id middleware | ✅ | `main.ts` seteaza `x-request-id` si `req.requestId` pentru fiecare request |
+| normalized error envelope | ✅ | `apps/admin/api/src/common/http-exception.filter.ts` returneaza `status`, `message`, `code`, `requestId` |
+| structured logging interceptor | ✅ | `apps/admin/api/src/common/structured-logging.interceptor.ts` logheaza `requestId`, `userId`, `module`, `action`, `status`, `durationMs`, `errorCode` |
+| `/health` improved | ✅ | endpoint-ul ramane lightweight si returneaza `status`, `environment`, `timestamp`, `uptimeSeconds` |
+| `/status` improved | ✅ | endpoint-ul returneaza `db`, `runtime`, `featureFlags`, `readiness`, `queues`, `integrations` fara a expune secrete |
+| notification queue status in `/status` | ✅ | `queues.notifications.pending/failed` expuse din DB cand tabelele sunt disponibile |
+| Relu queue status in `/status` | ✅ | `queues.relu.pending/failed` si `integrations.gemini.fallbackEnabled` sunt expuse |
+| billing webhook/storage summary in `/status` | ✅ | `integrations.billingWebhook`, `billingPlaceholders`, `smsDelivery`, `cloudStorage` expuse pentru readiness |
+| public feed hidden demo fallback removed | ✅ | `apps/admin/web/lib/public-posts.ts` nu mai injecteaza demo data in fluxul live decat daca `ENABLE_DEMO_PUBLIC_FEED=true` |
+| messaging hidden demo fallback removed | ✅ | `apps/admin/web/lib/public-posts.ts` nu mai injecteaza fallback messaging implicit; dev/demo necesita flag explicit |
+| public feedback demo fallback feature-flagged | ✅ | `apps/admin/api/src/public-feedback/public-feedback.service.ts` intoarce rezultate goale sau eroare explicita cand demo feed este dezactivat |
+| AI fallback explicit | ✅ | `apps/admin/api/src/gemini/gemini.service.ts` foloseste fallback doar daca `ENABLE_AI_FALLBACK=true`, altfel returneaza indisponibilitate explicita |
+| admin production readiness page | ✅ | `apps/admin/app/admin/production-readiness/page.tsx` compileaza si afiseaza environment, flags, queue status, warnings si blockers |
+| admin nav wiring | ✅ | `apps/admin/components/AdminLayoutShell.tsx` include intrarea `Production Readiness` |
+| runtime validation script | ✅ | `apps/admin/api/scripts/exec-12-runtime-check.js` valideaza `/health`, `/status`, hardening-ul pe productie si regresiile esentiale |
+| `/health 200` | ✅ | `cd apps/admin/api && node scripts/exec-12-runtime-check.js` |
+| `/status 200` | ✅ | `cd apps/admin/api && node scripts/exec-12-runtime-check.js` |
+| production unsafe flags detected | ✅ | scriptul confirma exit non-zero pentru bootstrap productie nesigur |
+| demo feed disabled unless flag enabled | ✅ | scriptul confirma `featureFlags.ENABLE_DEMO_PUBLIC_FEED = false` si feed-ul live foloseste continut real aprobat |
+| messaging fallback disabled unless flag enabled | ✅ | scriptul confirma `featureFlags.ENABLE_DEMO_MESSAGING = false` si messaging-ul ruleaza pe date reale |
+| billing placeholders visible in status | ✅ | scriptul confirma `integrations.billingPlaceholders.enabled` in `/status` |
+| Relu fallback visible in status | ✅ | scriptul confirma `integrations.gemini.fallbackEnabled` in `/status` |
+| error response shape includes `requestId`/`code` | ✅ | request neautorizat pe `/notifications` returneaza `401` cu envelope normalizat si header `x-request-id` |
+| auth remains stable | ✅ | runtime local confirma `GET /auth/me = 200` dupa hardening |
+| onboarding remains stable | ✅ | runtime local confirma `GET /onboarding/me = 200` dupa hardening |
+| subscriptions remain stable | ✅ | runtime local confirma `GET /subscriptions/me = 200` dupa hardening |
+| billing remains stable | ✅ | runtime local confirma `GET /billing/profile/me = 200` dupa hardening |
+| public feed remains stable | ✅ | runtime local confirma creare + aprobare `PublicPost` si vizibilitate publica fara demo ascuns |
+| Relu remains stable | ✅ | runtime local confirma `POST /relu/public-posts/:id/ingest` si `GET /relu/public-posts/:id/results` |
+| messaging remains stable | ✅ | runtime local confirma creare conversatie directa si trimitere mesaj pe backend real |
+| notifications remain stable | ✅ | runtime local confirma `GET /notifications = 200` dupa hardening |
+| `prisma validate` | ✅ | `cd apps/admin/api && npx.cmd prisma validate` |
+| `prisma generate` | ✅ | `cd apps/admin/api && npx.cmd prisma generate` |
+| `prisma db push` | ✅ | `cd apps/admin/api && npx.cmd prisma db push` |
+| API build | ✅ | `cd apps/admin/api && npm.cmd run build` |
+| web build | ✅ | `cd apps/admin/web && npm.cmd run build` |
+| admin build | ✅ | `cd apps/admin && npm.cmd run build` |
+| Blockers | ✅ | niciun blocker deschis; demo/live separation, observability si readiness gates validate local |
+
 ## Prompt 8 Video Audit Snapshot
 
 Surse analizate:

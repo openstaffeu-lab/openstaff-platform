@@ -31,6 +31,7 @@ const menu = [
   { name: "Payroll", path: "/admin/payroll" },
   { name: "Relu", path: "/admin/relu" },
   { name: "Notifications", path: "/admin/notifications" },
+  { name: "Production Readiness", path: "/admin/production-readiness" },
   { name: "Admin Users", path: "/admin/users" },
   { name: "Admin Roles", path: "/admin/roles" },
   { name: "Status", path: "/status" },

@@ -1,4 +1,8 @@
 import { ApiError, apiRequest, getApiUrl } from "./api";
+import {
+  isDemoMessagingEnabled,
+  isDemoPublicFeedEnabled,
+} from "./runtime-config";
 
 export type PublicFeedKind = "project" | "professional";
 export type PublicPostType = "PROJECT" | "PROFESSIONAL" | "SUBCONTRACTOR_POOL";
@@ -143,6 +147,9 @@ type CreateReviewInput = {
   review: string;
   rating?: number | null;
 };
+
+const DEMO_PUBLIC_FEED_ENABLED = isDemoPublicFeedEnabled();
+const DEMO_MESSAGING_ENABLED = isDemoMessagingEnabled();
 
 const LOCAL_API_URL =
   process.env.NEXT_PUBLIC_API_URL ??
@@ -827,7 +834,7 @@ function normalizePublicPost(input: unknown, index: number): PublicPostRecord {
 
 function normalizePublicPosts(input: unknown) {
   if (!Array.isArray(input)) {
-    return cloneFallbackPosts();
+    return DEMO_PUBLIC_FEED_ENABLED ? cloneFallbackPosts() : [];
   }
 
   return input.map((item, index) => normalizePublicPost(item, index));
@@ -901,19 +908,30 @@ export async function getPublicPosts(): Promise<StructuredResult<PublicPostRecor
     };
     const posts = normalizePublicPosts(payload?.data);
 
+    const placeholderUsed = payload?.source === "placeholder";
     return {
-      ok: true,
-      data: posts,
-      source: payload?.source === "placeholder" ? "fallback" : "api",
-      message: payload?.source === "placeholder" ? "Loaded placeholder public posts." : undefined,
+      ok: !placeholderUsed || DEMO_PUBLIC_FEED_ENABLED,
+      data: placeholderUsed && !DEMO_PUBLIC_FEED_ENABLED ? [] : posts,
+      source: placeholderUsed ? "fallback" : "api",
+      message: placeholderUsed
+        ? DEMO_PUBLIC_FEED_ENABLED
+          ? "Loaded feature-flagged demo public posts."
+          : "Demo public feed is disabled in runtime configuration."
+        : undefined,
     };
   } catch (error) {
-    return {
-      ok: false,
-      data: [],
-      source: "api",
-      message: getErrorMessage(error, "Public posts API unavailable."),
-    };
+    return DEMO_PUBLIC_FEED_ENABLED
+      ? fallbackResult(
+          cloneFallbackPosts(),
+          getErrorMessage(error, "Public posts API unavailable; demo feed enabled."),
+          true,
+        )
+      : {
+          ok: false,
+          data: [],
+          source: "api",
+          message: getErrorMessage(error, "Public posts API unavailable."),
+        };
   }
 }
 
@@ -947,12 +965,17 @@ export async function createPrivateConversation(
       source: "api",
     };
   } catch (error) {
-    return {
-      ok: false,
-      data: fallbackConversation(input.postId, input.ownerName, input.requesterName),
-      source: "api",
-      message: getErrorMessage(error, "Private conversation API unavailable."),
-    };
+    return DEMO_MESSAGING_ENABLED
+      ? fallbackResult(
+          fallbackConversation(input.postId, input.ownerName, input.requesterName),
+          getErrorMessage(error, "Private conversation API unavailable; demo messaging enabled."),
+        )
+      : {
+          ok: false,
+          data: fallbackConversation(input.postId, input.ownerName, input.requesterName),
+          source: "api",
+          message: getErrorMessage(error, "Private conversation API unavailable."),
+        };
   }
 }
 
@@ -981,12 +1004,17 @@ export async function getPrivateConversationMessages(
       source: "api",
     };
   } catch (error) {
-    return {
-      ok: false,
-      data: [],
-      source: "api",
-      message: getErrorMessage(error, "Private messages API unavailable."),
-    };
+    return DEMO_MESSAGING_ENABLED
+      ? fallbackResult(
+          fallbackMessages(conversationId),
+          getErrorMessage(error, "Private messages API unavailable; demo messaging enabled."),
+        )
+      : {
+          ok: false,
+          data: [],
+          source: "api",
+          message: getErrorMessage(error, "Private messages API unavailable."),
+        };
   }
 }
 
@@ -1030,12 +1058,17 @@ export async function sendPrivateMessage(
       source: "api",
     };
   } catch (error) {
-    return {
-      ok: false,
-      data: fallbackMessage,
-      source: "api",
-      message: getErrorMessage(error, "Private message API unavailable."),
-    };
+    return DEMO_MESSAGING_ENABLED
+      ? fallbackResult(
+          fallbackMessage,
+          getErrorMessage(error, "Private message API unavailable; demo messaging enabled."),
+        )
+      : {
+          ok: false,
+          data: fallbackMessage,
+          source: "api",
+          message: getErrorMessage(error, "Private message API unavailable."),
+        };
   }
 }
 
@@ -1048,11 +1081,19 @@ export async function getPostComments(postId: string): Promise<StructuredResult<
       source: "api",
     };
   } catch (error) {
-    const fallbackComments = cloneFallbackPosts().find((post) => post.id === postId)?.comments ?? [];
-    return fallbackResult(
-      fallbackComments,
-      getErrorMessage(error, "Comments API unavailable."),
-    );
+    const fallbackComments =
+      cloneFallbackPosts().find((post) => post.id === postId)?.comments ?? [];
+    return DEMO_PUBLIC_FEED_ENABLED
+      ? fallbackResult(
+          fallbackComments,
+          getErrorMessage(error, "Comments API unavailable; demo feed enabled."),
+        )
+      : {
+          ok: false,
+          data: [],
+          source: "api",
+          message: getErrorMessage(error, "Comments API unavailable."),
+        };
   }
 }
 
@@ -1072,10 +1113,12 @@ export async function addPostComment(
   };
 
   if (!token) {
-    return fallbackResult(
-      fallbackComment,
-      "Comment posting requires an approved OpenStaff account.",
-    );
+    return {
+      ok: false,
+      data: fallbackComment,
+      source: "api",
+      message: "Comment posting requires an approved OpenStaff account.",
+    };
   }
 
   try {
@@ -1094,10 +1137,17 @@ export async function addPostComment(
       source: "api",
     };
   } catch (error) {
-    return fallbackResult(
-      fallbackComment,
-      getErrorMessage(error, "Comments API unavailable."),
-    );
+    return DEMO_PUBLIC_FEED_ENABLED
+      ? fallbackResult(
+          fallbackComment,
+          getErrorMessage(error, "Comments API unavailable; demo feed enabled."),
+        )
+      : {
+          ok: false,
+          data: fallbackComment,
+          source: "api",
+          message: getErrorMessage(error, "Comments API unavailable."),
+        };
   }
 }
 
@@ -1110,11 +1160,19 @@ export async function getPostReviews(postId: string): Promise<StructuredResult<P
       source: "api",
     };
   } catch (error) {
-    const fallbackReviews = cloneFallbackPosts().find((post) => post.id === postId)?.reviews ?? [];
-    return fallbackResult(
-      fallbackReviews,
-      getErrorMessage(error, "Reviews API unavailable."),
-    );
+    const fallbackReviews =
+      cloneFallbackPosts().find((post) => post.id === postId)?.reviews ?? [];
+    return DEMO_PUBLIC_FEED_ENABLED
+      ? fallbackResult(
+          fallbackReviews,
+          getErrorMessage(error, "Reviews API unavailable; demo feed enabled."),
+        )
+      : {
+          ok: false,
+          data: [],
+          source: "api",
+          message: getErrorMessage(error, "Reviews API unavailable."),
+        };
   }
 }
 
@@ -1135,10 +1193,12 @@ export async function addPostReview(
   };
 
   if (!token) {
-    return fallbackResult(
-      fallbackReview,
-      "Review posting requires an approved OpenStaff account.",
-    );
+    return {
+      ok: false,
+      data: fallbackReview,
+      source: "api",
+      message: "Review posting requires an approved OpenStaff account.",
+    };
   }
 
   try {
@@ -1157,13 +1217,20 @@ export async function addPostReview(
       source: "api",
     };
   } catch (error) {
-    return fallbackResult(
-      fallbackReview,
-      getErrorMessage(error, "Reviews API unavailable."),
-    );
+    return DEMO_PUBLIC_FEED_ENABLED
+      ? fallbackResult(
+          fallbackReview,
+          getErrorMessage(error, "Reviews API unavailable; demo feed enabled."),
+        )
+      : {
+          ok: false,
+          data: fallbackReview,
+          source: "api",
+          message: getErrorMessage(error, "Reviews API unavailable."),
+        };
   }
 }
 
 export function getFallbackPublicPosts() {
-  return cloneFallbackPosts();
+  return DEMO_PUBLIC_FEED_ENABLED ? cloneFallbackPosts() : [];
 }

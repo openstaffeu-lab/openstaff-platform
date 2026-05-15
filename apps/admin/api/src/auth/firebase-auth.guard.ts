@@ -6,17 +6,21 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ActorType, PlatformRole } from '@prisma/client';
+import { RuntimeConfigService } from '../config/runtime-config.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { getFirebaseAdminAuth } from './firebase-admin';
 
 @Injectable()
 export class FirebaseAuthGuard implements CanActivate {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly runtimeConfig: RuntimeConfigService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const isDevBypass =
-      (process.env.NODE_ENV ?? 'development') === 'development' &&
+      this.runtimeConfig.isDevAuthBypassEnabled() &&
       process.env.SKIP_FIREBASE_AUTH === 'true';
 
     if (isDevBypass) {

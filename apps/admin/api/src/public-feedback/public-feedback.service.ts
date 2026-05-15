@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { RuntimeConfigService } from '../config/runtime-config.service';
 import {
+  buildErrorResponse,
   buildSuccessResponse,
   isPrismaConnectionOrSchemaError,
   logEndpointError,
@@ -12,7 +14,10 @@ import {
 
 @Injectable()
 export class PublicFeedbackService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly runtimeConfig: RuntimeConfigService,
+  ) {}
 
   async listComments(postId: string) {
     try {
@@ -28,6 +33,10 @@ export class PublicFeedbackService {
       logEndpointError('PublicFeedbackService.listComments', error);
 
       if (isPrismaConnectionOrSchemaError(error)) {
+        if (!this.runtimeConfig.isDemoPublicFeedEnabled()) {
+          return buildSuccessResponse([]);
+        }
+
         return buildSuccessResponse(
           cloneDemoPublicComments().filter((item: any) => item.postId === postId),
           'placeholder',
@@ -66,6 +75,14 @@ export class PublicFeedbackService {
       logEndpointError('PublicFeedbackService.createComment', error);
 
       if (isPrismaConnectionOrSchemaError(error)) {
+        if (!this.runtimeConfig.isDemoPublicFeedEnabled()) {
+          return buildErrorResponse(
+            'Public comments are unavailable.',
+            undefined,
+            'PUBLIC_FEEDBACK_UNAVAILABLE',
+          );
+        }
+
         return buildSuccessResponse(
           {
             id: `placeholder-comment-${Date.now()}`,
@@ -95,6 +112,10 @@ export class PublicFeedbackService {
       logEndpointError('PublicFeedbackService.listReviews', error);
 
       if (isPrismaConnectionOrSchemaError(error)) {
+        if (!this.runtimeConfig.isDemoPublicFeedEnabled()) {
+          return buildSuccessResponse([]);
+        }
+
         return buildSuccessResponse(
           cloneDemoPublicReviews().filter((item: any) => item.postId === postId),
           'placeholder',
@@ -136,6 +157,14 @@ export class PublicFeedbackService {
       logEndpointError('PublicFeedbackService.createReview', error);
 
       if (isPrismaConnectionOrSchemaError(error)) {
+        if (!this.runtimeConfig.isDemoPublicFeedEnabled()) {
+          return buildErrorResponse(
+            'Public reviews are unavailable.',
+            undefined,
+            'PUBLIC_FEEDBACK_UNAVAILABLE',
+          );
+        }
+
         return buildSuccessResponse(
           {
             id: `placeholder-review-${Date.now()}`,
@@ -177,6 +206,13 @@ export class PublicFeedbackService {
       logEndpointError('PublicFeedbackService.listForAdmin', error);
 
       if (isPrismaConnectionOrSchemaError(error)) {
+        if (!this.runtimeConfig.isDemoPublicFeedEnabled()) {
+          return buildSuccessResponse({
+            comments: [],
+            reviews: [],
+          });
+        }
+
         return buildSuccessResponse(
           {
             comments: cloneDemoPublicComments(),
@@ -207,6 +243,10 @@ export class PublicFeedbackService {
       logEndpointError('PublicFeedbackService.updateCommentStatus', error);
 
       if (isPrismaConnectionOrSchemaError(error)) {
+        if (!this.runtimeConfig.isDemoPublicFeedEnabled()) {
+          throw new NotFoundException('Public comment not found');
+        }
+
         const comment = cloneDemoPublicComments().find((item: any) => item.id === id);
 
         if (!comment) {
@@ -244,6 +284,10 @@ export class PublicFeedbackService {
       logEndpointError('PublicFeedbackService.updateReviewStatus', error);
 
       if (isPrismaConnectionOrSchemaError(error)) {
+        if (!this.runtimeConfig.isDemoPublicFeedEnabled()) {
+          throw new NotFoundException('Public review not found');
+        }
+
         const review = cloneDemoPublicReviews().find((item: any) => item.id === id);
 
         if (!review) {

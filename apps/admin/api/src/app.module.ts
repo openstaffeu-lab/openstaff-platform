@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { BillingModule } from './billing/billing.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { RuntimeConfigModule } from './config/runtime-config.module';
 import { CountriesModule } from './countries/countries.module';
 import { DocumentsModule } from './documents/documents.module';
 import { EscoModule } from './esco/esco.module';
@@ -35,6 +36,7 @@ import { WorkforceModule } from './workforce/workforce.module';
 
 @Module({
   imports: [
+    RuntimeConfigModule,
     PrismaModule,
     AuthModule,
     AccessControlModule,
