@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   HttpException,
   Param,
   Patch,
@@ -191,6 +192,118 @@ export class ReluController {
           projectId: body.projectId?.trim(),
           limit: body.limit,
         }),
+      );
+    } catch (error) {
+      return this.toErrorResponse(error);
+    }
+  }
+
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @RequirePermissions(Permission.MANAGE_USERS)
+  @HttpCode(200)
+  @Post('public-posts/:id/ingest')
+  async ingestPublicPost(
+    @Req() request: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    try {
+      return buildSuccessResponse(
+        await this.reluService.ingestPublicPost(id, this.requireUser(request)),
+      );
+    } catch (error) {
+      return this.toErrorResponse(error);
+    }
+  }
+
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @RequirePermissions(Permission.MANAGE_USERS)
+  @HttpCode(200)
+  @Post('public-posts/:id/classify')
+  async classifyPublicPost(
+    @Req() request: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    try {
+      return buildSuccessResponse(
+        await this.reluService.classifyPublicPost(id, this.requireUser(request)),
+      );
+    } catch (error) {
+      return this.toErrorResponse(error);
+    }
+  }
+
+  @UseGuards(JwtGuard)
+  @HttpCode(200)
+  @Post('public-posts/:id/matches')
+  async matchPublicPost(
+    @Req() request: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: { profileId?: string; limit?: number },
+  ) {
+    try {
+      return buildSuccessResponse(
+        await this.reluService.matchPublicPost(id, this.requireUser(request), body),
+      );
+    } catch (error) {
+      return this.toErrorResponse(error);
+    }
+  }
+
+  @Get('public-posts/:id/results')
+  async getPublicPostResults(
+    @Req() request: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    try {
+      return buildSuccessResponse(
+        await this.reluService.getPublicPostResults(id, request.user ?? null),
+      );
+    } catch (error) {
+      return this.toErrorResponse(error);
+    }
+  }
+
+  @UseGuards(JwtGuard)
+  @HttpCode(200)
+  @Post('profiles/:id/enrich')
+  async enrichProfile(
+    @Req() request: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    try {
+      return buildSuccessResponse(
+        await this.reluService.enrichProfile(id, this.requireUser(request)),
+      );
+    } catch (error) {
+      return this.toErrorResponse(error);
+    }
+  }
+
+  @UseGuards(JwtGuard)
+  @HttpCode(200)
+  @Post('profiles/:id/classify')
+  async classifyProfile(
+    @Req() request: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    try {
+      return buildSuccessResponse(
+        await this.reluService.classifyProfile(id, this.requireUser(request)),
+      );
+    } catch (error) {
+      return this.toErrorResponse(error);
+    }
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('profiles/:id/results')
+  async getProfileResults(
+    @Req() request: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    try {
+      return buildSuccessResponse(
+        await this.reluService.getProfileResults(id, this.requireUser(request)),
       );
     } catch (error) {
       return this.toErrorResponse(error);

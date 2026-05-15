@@ -129,6 +129,11 @@ export class PublicPostsService {
       type: post.type,
       title: post.title,
     });
+    await this.createReluIngestionTask(post.id, user.sub, {
+      trigger: 'CREATE',
+      slug: post.slug,
+      moderationStatus: post.moderationStatus,
+    });
 
     const withRelations = await this.prisma.publicPost.findUnique({
       where: { id: post.id },
@@ -185,6 +190,11 @@ export class PublicPostsService {
       type: post.type,
       title: post.title,
       operation: 'update',
+    });
+    await this.createReluIngestionTask(post.id, user.sub, {
+      trigger: 'UPDATE',
+      slug: post.slug,
+      moderationStatus: post.moderationStatus,
     });
 
     const withRelations = await this.prisma.publicPost.findUnique({
@@ -778,6 +788,39 @@ export class PublicPostsService {
         taskId: task.id,
         contextEntityType,
         contextEntityId,
+      },
+      metadata: inputSummary,
+    });
+  }
+
+  private async createReluIngestionTask(
+    postId: string,
+    requestedByUserId: string,
+    inputSummary: Record<string, unknown>,
+  ) {
+    const task = await this.prisma.reluTask.create({
+      data: {
+        capability: 'public-post-ingestion-queued',
+        accessMode: ReluAccessMode.ADMIN_SECURED,
+        status: ReluTaskStatus.PENDING,
+        requestedByUserId,
+        contextEntityType: 'PUBLIC_POST',
+        contextEntityId: postId,
+        title: 'Relu ingestion queue: PUBLIC_POST',
+        inputSummaryJson: inputSummary as Prisma.InputJsonValue,
+      },
+    });
+
+    await this.auditService.log({
+      actorUserId: requestedByUserId,
+      projectId: null,
+      entityType: 'RELU_TASK',
+      entityId: task.id,
+      action: 'QUEUE_PUBLIC_POST_INGESTION',
+      before: null,
+      after: {
+        taskId: task.id,
+        postId,
       },
       metadata: inputSummary,
     });

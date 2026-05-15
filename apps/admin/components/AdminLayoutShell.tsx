@@ -28,6 +28,7 @@ const menu = [
   { name: "Workforce", path: "/admin/workforce" },
   { name: "Timesheets", path: "/admin/timesheets" },
   { name: "Payroll", path: "/admin/payroll" },
+  { name: "Relu", path: "/admin/relu" },
   { name: "Admin Users", path: "/admin/users" },
   { name: "Admin Roles", path: "/admin/roles" },
   { name: "Status", path: "/status" },

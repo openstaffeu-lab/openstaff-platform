@@ -162,6 +162,14 @@ model User {
   approvedWorkerTimesheets           WorkerTimesheet[]            @relation("WorkerTimesheetApprovedBy")
   taxonomyImportBatches              TaxonomyImportBatch[]
   reluTasks                          ReluTask[]
+  reluProcessingRunsAsSubject        ReluProcessingRun[]          @relation("ReluProcessingRunUser")
+  reluTriggeredProcessingRuns        ReluProcessingRun[]          @relation("ReluProcessingRunTriggeredBy")
+  reluClassificationResults          ReluClassificationResult[]   @relation("ReluClassificationUser")
+  reluReviewedClassificationResults  ReluClassificationResult[]   @relation("ReluClassificationReviewedBy")
+  reluMatchResults                   ReluMatchResult[]            @relation("ReluMatchUser")
+  reluReviewedMatchResults           ReluMatchResult[]            @relation("ReluMatchReviewedBy")
+  reluRecommendations                ReluRecommendation[]         @relation("ReluRecommendationUser")
+  reluReviewedRecommendations        ReluRecommendation[]         @relation("ReluRecommendationReviewedBy")
   conversationParticipants           ConversationParticipant[]
   sentMessages                       Message[]                    @relation("MessageSender")
   messageReads                       MessageRead[]
@@ -2322,11 +2330,139 @@ model ReluTask {
   updatedAt         DateTime       @updatedAt
   completedAt       DateTime?
 
-  requestedBy User? @relation(fields: [requestedByUserId], references: [id], onDelete: SetNull)
+  requestedBy   User?               @relation(fields: [requestedByUserId], references: [id], onDelete: SetNull)
+  processingRun ReluProcessingRun?
 
   @@index([status, createdAt])
   @@index([accessMode, createdAt])
   @@index([requestedByUserId, createdAt])
+}
+
+model ReluProcessingRun {
+  id                String               @id @default(uuid())
+  taskId            String?              @unique
+  sourceType        ReluSourceType
+  sourceId          String
+  userId            String?
+  triggeredByUserId String?
+  domain            ReluProcessingDomain
+  status            ReluResultStatus     @default(PENDING)
+  inputSnapshot     Json?
+  outputData        Json?
+  score             Float?
+  explanation       String?              @db.Text
+  fallbackUsed      Boolean              @default(false)
+  errorMessage      String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  completedAt       DateTime?
+
+  task                  ReluTask?                   @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  user                  User?                       @relation("ReluProcessingRunUser", fields: [userId], references: [id], onDelete: SetNull)
+  triggeredBy           User?                       @relation("ReluProcessingRunTriggeredBy", fields: [triggeredByUserId], references: [id], onDelete: SetNull)
+  classificationResults ReluClassificationResult[]
+  matchResults          ReluMatchResult[]
+  recommendations       ReluRecommendation[]
+
+  @@index([sourceType, sourceId, createdAt])
+  @@index([domain, status, createdAt])
+  @@index([triggeredByUserId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model ReluClassificationResult {
+  id               String               @id @default(uuid())
+  runId            String?
+  sourceType       ReluSourceType
+  sourceId         String
+  userId           String?
+  reviewedByUserId String?
+  domain           ReluProcessingDomain
+  status           ReluResultStatus     @default(PENDING)
+  inputSnapshot    Json?
+  outputData       Json?
+  score            Float?
+  explanation      String?              @db.Text
+  overrideData     Json?
+  fallbackUsed     Boolean              @default(false)
+  errorMessage     String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  reviewedAt       DateTime?
+
+  run        ReluProcessingRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
+  user       User?              @relation("ReluClassificationUser", fields: [userId], references: [id], onDelete: SetNull)
+  reviewedBy User?              @relation("ReluClassificationReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([sourceType, sourceId, createdAt])
+  @@index([domain, status, createdAt])
+  @@index([userId, createdAt])
+}
+
+model ReluMatchResult {
+  id                   String               @id @default(uuid())
+  runId                String?
+  sourceType           ReluSourceType
+  sourceId             String
+  userId               String?
+  reviewedByUserId     String?
+  targetSourceType     ReluSourceType?
+  targetSourceId       String?
+  domain               ReluProcessingDomain
+  status               ReluResultStatus     @default(PENDING)
+  inputSnapshot        Json?
+  outputData           Json?
+  score                Float?
+  compatibilityPercent Float?
+  explanation          String?              @db.Text
+  overrideData         Json?
+  fallbackUsed         Boolean              @default(false)
+  errorMessage         String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  reviewedAt           DateTime?
+
+  run        ReluProcessingRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
+  user       User?              @relation("ReluMatchUser", fields: [userId], references: [id], onDelete: SetNull)
+  reviewedBy User?              @relation("ReluMatchReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([sourceType, sourceId, createdAt])
+  @@index([targetSourceType, targetSourceId, createdAt])
+  @@index([domain, status, createdAt])
+  @@index([userId, createdAt])
+}
+
+model ReluRecommendation {
+  id                   String               @id @default(uuid())
+  runId                String?
+  sourceType           ReluSourceType
+  sourceId             String
+  userId               String?
+  reviewedByUserId     String?
+  targetSourceType     ReluSourceType?
+  targetSourceId       String?
+  domain               ReluProcessingDomain
+  status               ReluResultStatus     @default(PENDING)
+  inputSnapshot        Json?
+  outputData           Json?
+  score                Float?
+  explanation          String?              @db.Text
+  recommendedAction    String?
+  overrideData         Json?
+  fallbackUsed         Boolean              @default(false)
+  errorMessage         String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  reviewedAt           DateTime?
+
+  run        ReluProcessingRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
+  user       User?              @relation("ReluRecommendationUser", fields: [userId], references: [id], onDelete: SetNull)
+  reviewedBy User?              @relation("ReluRecommendationReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([sourceType, sourceId, createdAt])
+  @@index([targetSourceType, targetSourceId, createdAt])
+  @@index([domain, status, createdAt])
+  @@index([userId, createdAt])
 }
 
 model Currency {
@@ -2902,6 +3038,30 @@ enum ReluTaskStatus {
   RUNNING
   COMPLETED
   FAILED
+}
+
+enum ReluSourceType {
+  PUBLIC_POST
+  PROFILE
+  PROJECT
+  DOCUMENT
+}
+
+enum ReluProcessingDomain {
+  INGESTION
+  TAXONOMY
+  MATCH
+  MODERATION
+  RECOMMENDATION
+}
+
+enum ReluResultStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  REVIEWED
+  OVERRIDDEN
 }
 
 enum Permission {

@@ -34,6 +34,15 @@ type AdminPost = {
   privateConversations?: Array<{ id: string }>;
 };
 
+type AdminReluResult = {
+  id: string;
+  sourceType: string;
+  sourceId: string;
+  status: string;
+  domain: string;
+  createdAt: string;
+};
+
 type LoadState = 'loading' | 'success' | 'unauthorized' | 'error';
 
 const STATUS_OPTIONS = ['PENDING', 'LIVE', 'OFFLINE', 'CLOSED', 'WARRANTY'];
@@ -42,6 +51,7 @@ const VISIBILITY_OPTIONS = ['PUBLIC', 'PRIVATE'];
 
 export default function AdminPostsPage() {
   const [posts, setPosts] = useState<AdminPost[]>([]);
+  const [reluBySourceId, setReluBySourceId] = useState<Record<string, AdminReluResult>>({});
   const [state, setState] = useState<LoadState>('loading');
   const [message, setMessage] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -61,7 +71,10 @@ export default function AdminPostsPage() {
       setState('loading');
       setMessage(null);
 
-      const result = await fetchApiJson<AdminPost[]>('/admin/public-posts');
+      const [result, reluResult] = await Promise.all([
+        fetchApiJson<AdminPost[]>('/admin/public-posts'),
+        fetchApiJson<AdminReluResult[]>('/admin/relu/results'),
+      ]);
 
       if (!mounted) {
         return;
@@ -76,6 +89,18 @@ export default function AdminPostsPage() {
 
       const nextPosts = Array.isArray(result.data) ? result.data : [];
       setPosts(nextPosts);
+      if (reluResult.ok) {
+        const latestBySourceId = Object.fromEntries(
+          reluResult.data
+            .filter((item) => item.sourceType === 'PUBLIC_POST')
+            .sort(
+              (left, right) =>
+                new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+            )
+            .map((item) => [item.sourceId, item]),
+        );
+        setReluBySourceId(latestBySourceId);
+      }
       setDrafts(
         Object.fromEntries(
           nextPosts.map((post) => [
@@ -295,6 +320,12 @@ export default function AdminPostsPage() {
                         <Badge tone={statusTone(post.status)} label={post.status} />
                         <Badge tone={moderationTone(post.moderationStatus)} label={post.moderationStatus || 'PENDING'} />
                         <Badge tone="neutral" label={post.visibility || 'PUBLIC'} />
+                        {reluBySourceId[post.id] ? (
+                          <Badge
+                            tone={reluTone(reluBySourceId[post.id].status)}
+                            label={`Relu ${reluBySourceId[post.id].status}`}
+                          />
+                        ) : null}
                       </div>
 
                       <h2 className="mt-4 text-2xl font-semibold text-cyan-100">{post.title}</h2>
@@ -568,6 +599,22 @@ function moderationTone(
 
   if (status === 'REJECTED') {
     return 'danger';
+  }
+
+  return 'neutral';
+}
+
+function reluTone(status: string | undefined): 'success' | 'warning' | 'danger' | 'neutral' {
+  if (status === 'COMPLETED' || status === 'REVIEWED') {
+    return 'success';
+  }
+
+  if (status === 'FAILED') {
+    return 'danger';
+  }
+
+  if (status === 'OVERRIDDEN') {
+    return 'warning';
   }
 
   return 'neutral';

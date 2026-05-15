@@ -348,6 +348,144 @@ export type ReluQueueSnapshot = {
   tasks: ReluTask[];
 };
 
+export type ReluSourceType = "PUBLIC_POST" | "PROFILE" | "PROJECT" | "DOCUMENT";
+export type ReluProcessingDomain =
+  | "INGESTION"
+  | "TAXONOMY"
+  | "MATCH"
+  | "MODERATION"
+  | "RECOMMENDATION";
+export type ReluResultStatus =
+  | "PENDING"
+  | "RUNNING"
+  | "COMPLETED"
+  | "FAILED"
+  | "REVIEWED"
+  | "OVERRIDDEN";
+
+export type ReluRun = {
+  id: string;
+  taskId: string | null;
+  sourceType: ReluSourceType;
+  sourceId: string;
+  userId: string | null;
+  triggeredByUserId: string | null;
+  domain: ReluProcessingDomain;
+  status: ReluResultStatus;
+  inputSnapshot: unknown;
+  outputData: unknown;
+  score: number | null;
+  explanation: string | null;
+  fallbackUsed: boolean;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+  task: ReluTask | null;
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+  triggeredBy?: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+};
+
+export type ReluClassificationResult = {
+  kind: "classification";
+  id: string;
+  runId: string | null;
+  sourceType: ReluSourceType;
+  sourceId: string;
+  userId: string | null;
+  domain: ReluProcessingDomain;
+  status: ReluResultStatus;
+  inputSnapshot: unknown;
+  outputData: unknown;
+  score: number | null;
+  explanation: string | null;
+  overrideData: unknown;
+  fallbackUsed: boolean;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+  reviewedAt: string | null;
+  reviewedBy?: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+  run: ReluRun | null;
+};
+
+export type ReluMatchResult = {
+  kind: "match";
+  id: string;
+  runId: string | null;
+  sourceType: ReluSourceType;
+  sourceId: string;
+  targetSourceType: ReluSourceType | null;
+  targetSourceId: string | null;
+  userId: string | null;
+  domain: ReluProcessingDomain;
+  status: ReluResultStatus;
+  inputSnapshot: unknown;
+  outputData: unknown;
+  score: number | null;
+  compatibilityPercent: number | null;
+  explanation: string | null;
+  overrideData: unknown;
+  fallbackUsed: boolean;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+  reviewedAt: string | null;
+  reviewedBy?: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+  run: ReluRun | null;
+};
+
+export type ReluRecommendationResult = {
+  kind: "recommendation";
+  id: string;
+  runId: string | null;
+  sourceType: ReluSourceType;
+  sourceId: string;
+  targetSourceType: ReluSourceType | null;
+  targetSourceId: string | null;
+  userId: string | null;
+  domain: ReluProcessingDomain;
+  status: ReluResultStatus;
+  inputSnapshot: unknown;
+  outputData: unknown;
+  score: number | null;
+  explanation: string | null;
+  recommendedAction: string | null;
+  overrideData: unknown;
+  fallbackUsed: boolean;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+  reviewedAt: string | null;
+  reviewedBy?: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+  run: ReluRun | null;
+};
+
+export type ReluResult =
+  | ReluClassificationResult
+  | ReluMatchResult
+  | ReluRecommendationResult;
+
 export type AiAuditLog = {
   id: string;
   actorUserId: string | null;
@@ -855,6 +993,28 @@ export const adminApi = {
       body: JSON.stringify(data),
     }),
   getReluQueue: () => adminFetch<ReluQueueSnapshot>("/relu/queue"),
+  getAdminReluRuns: () => adminFetch<ReluRun[]>("/admin/relu/runs"),
+  getAdminReluResults: () => adminFetch<ReluResult[]>("/admin/relu/results"),
+  updateAdminReluResultStatus: (id: string, status: ReluResultStatus) =>
+    adminFetch<ReluResult>(`/admin/relu/results/${id}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    }),
+  overrideAdminReluResult: (id: string, data: Record<string, unknown>) =>
+    adminFetch<ReluResult>(`/admin/relu/results/${id}/override`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+  ingestAdminPublicPostRelu: (id: string) =>
+    adminFetch<ReluClassificationResult>(`/relu/public-posts/${id}/ingest`, {
+      method: "POST",
+    }),
+  classifyAdminPublicPostRelu: (id: string) =>
+    adminFetch<ReluClassificationResult>(`/relu/public-posts/${id}/classify`, {
+      method: "POST",
+    }),
   getAiAuditLogs: () => adminFetch<AiAuditLog[]>("/audit/ai-actions"),
   getAgents: () => adminFetch<ReluAgent[]>("/gemini/agents"),
   updateAgent: (id: string, data: unknown) =>

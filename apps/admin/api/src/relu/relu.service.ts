@@ -10,8 +10,12 @@ import {
   PublicModerationStatus,
   PublicPostType,
   ReluAccessMode,
+  ReluProcessingDomain,
+  ReluResultStatus,
+  ReluSourceType,
   ReluTaskStatus,
   Role,
+  TaxonomyType,
 } from '@prisma/client';
 import {
   BadRequestException,
@@ -46,6 +50,11 @@ type ReluTaskPayload = {
 
 type ProfileContext = Prisma.ProfileGetPayload<{
   include: {
+    user: {
+      include: {
+        identityProfile: true;
+      };
+    };
     country: true;
     region: true;
     city: true;
@@ -82,6 +91,19 @@ type ProjectContext = Prisma.ProjectGetPayload<{
   };
 }>;
 
+type PublicPostContext = Prisma.PublicPostGetPayload<{
+  include: {
+    authorUser: true;
+    authorProfile: true;
+    country: true;
+    region: true;
+    city: true;
+    media: true;
+    documents: true;
+    externalLinks: true;
+  };
+}>;
+
 type ContractContext = Prisma.ProjectContractGetPayload<{
   include: {
     project: true;
@@ -91,6 +113,11 @@ type ContractContext = Prisma.ProjectContractGetPayload<{
     payments: true;
   };
 }>;
+
+type ReluMatchRequest = {
+  profileId?: string;
+  limit?: number;
+};
 
 @Injectable()
 export class ReluService {
@@ -264,6 +291,514 @@ export class ReluService {
         requestedBy: task.requestedBy,
       })),
     };
+  }
+
+  async ingestPublicPost(postId: string, actor: AuthenticatedUser) {
+    this.assertAdminActor(actor);
+    const post = await this.getPublicPostContext(postId);
+    const task = await this.createTask({
+      capability: 'public-post-ingestion',
+      accessMode: ReluAccessMode.ADMIN_SECURED,
+      requestedByUserId: actor.sub,
+      contextEntityType: 'PUBLIC_POST',
+      contextEntityId: post.id,
+      title: `Relu ingest public post: ${post.title}`,
+      inputSummary: {
+        postId: post.id,
+        slug: post.slug,
+        moderationStatus: post.moderationStatus,
+      },
+    });
+    const run = await this.createProcessingRun({
+      taskId: task.id,
+      sourceType: ReluSourceType.PUBLIC_POST,
+      sourceId: post.id,
+      userId: post.authorUserId,
+      triggeredByUserId: actor.sub,
+      domain: ReluProcessingDomain.INGESTION,
+      inputSnapshot: this.buildPublicPostSnapshot(post),
+    });
+
+    const interpretation = this.buildPublicPostInterpretation(post);
+    return this.persistOperationalResult({
+      actor,
+      task,
+      run,
+      resultKind: 'classification',
+      resultInput: this.buildPublicPostSnapshot(post),
+      resultData: interpretation,
+      explanation:
+        interpretation.explanation ??
+        'Public post ingestion completed with deterministic Relu taxonomy extraction.',
+      score: interpretation.categoryConfidence ?? 0,
+      fallbackMessage: 'Relu ingestion fallback used because Gemini is unavailable.',
+      auditAction: 'RELU_PUBLIC_POST_INGESTED',
+    });
+  }
+
+  async classifyPublicPost(postId: string, actor: AuthenticatedUser) {
+    this.assertAdminActor(actor);
+    const post = await this.getPublicPostContext(postId);
+    const task = await this.createTask({
+      capability: 'public-post-classification',
+      accessMode: ReluAccessMode.ADMIN_SECURED,
+      requestedByUserId: actor.sub,
+      contextEntityType: 'PUBLIC_POST',
+      contextEntityId: post.id,
+      title: `Relu classify public post: ${post.title}`,
+      inputSummary: {
+        postId: post.id,
+        slug: post.slug,
+        type: post.type,
+      },
+    });
+    const run = await this.createProcessingRun({
+      taskId: task.id,
+      sourceType: ReluSourceType.PUBLIC_POST,
+      sourceId: post.id,
+      userId: post.authorUserId,
+      triggeredByUserId: actor.sub,
+      domain: ReluProcessingDomain.TAXONOMY,
+      inputSnapshot: this.buildPublicPostSnapshot(post),
+    });
+
+    const classification = this.buildPublicPostClassification(post);
+    const persisted = await this.persistOperationalResult({
+      actor,
+      task,
+      run,
+      resultKind: 'classification',
+      resultInput: this.buildPublicPostSnapshot(post),
+      resultData: classification,
+      explanation: classification.explanation,
+      score: classification.categoryConfidence ?? 0,
+      fallbackMessage: 'Relu taxonomy classification fallback used because Gemini is unavailable.',
+      auditAction: 'RELU_PUBLIC_POST_CLASSIFIED',
+    });
+
+    await this.prisma.publicPost.update({
+      where: { id: post.id },
+      data: {
+        classificationJson: classification as Prisma.InputJsonValue,
+        escoCodesJson: JSON.stringify(classification.escoCandidates.map((item: any) => item.code)),
+        naceCodesJson: JSON.stringify(classification.naceCandidates.map((item: any) => item.code)),
+        uniclassCodesJson: JSON.stringify(
+          classification.uniclassCandidates.map((item: any) => item.code),
+        ),
+      },
+    });
+
+    return persisted;
+  }
+
+  async matchPublicPost(postId: string, actor: AuthenticatedUser, request: ReluMatchRequest = {}) {
+    const post = await this.getPublicPostContext(postId);
+    const profile = await this.getAccessibleProfile(request.profileId?.trim(), actor);
+    const task = await this.createTask({
+      capability: 'public-post-matching',
+      accessMode: this.isAdminRole(actor.role)
+        ? ReluAccessMode.ADMIN_SECURED
+        : ReluAccessMode.AUTHENTICATED_USER,
+      requestedByUserId: actor.sub,
+      contextEntityType: 'PUBLIC_POST',
+      contextEntityId: post.id,
+      title: `Relu match public post: ${post.title}`,
+      inputSummary: {
+        postId: post.id,
+        profileId: profile.id,
+      },
+    });
+    const run = await this.createProcessingRun({
+      taskId: task.id,
+      sourceType: ReluSourceType.PUBLIC_POST,
+      sourceId: post.id,
+      userId: profile.userId,
+      triggeredByUserId: actor.sub,
+      domain: ReluProcessingDomain.MATCH,
+      inputSnapshot: {
+        post: this.buildPublicPostSnapshot(post),
+        profile: this.toProfileSummary(profile),
+      },
+    });
+
+    const match = this.buildPublicPostMatch(post, profile);
+    const persisted = await this.persistOperationalResult({
+      actor,
+      task,
+      run,
+      resultKind: 'match',
+      resultInput: {
+        post: this.buildPublicPostSnapshot(post),
+        profile: this.toProfileSummary(profile),
+      },
+      resultData: match,
+      explanation: match.explanation,
+      score: match.compatibilityPercent,
+      compatibilityPercent: match.compatibilityPercent,
+      targetSourceType: ReluSourceType.PROFILE,
+      targetSourceId: profile.id,
+      fallbackMessage: 'Relu matching fallback used because Gemini is unavailable.',
+      auditAction: 'RELU_PUBLIC_POST_MATCHED',
+    });
+
+    if (match.recommendedNextAction) {
+      await this.prisma.reluRecommendation.create({
+        data: {
+          runId: run.id,
+          sourceType: ReluSourceType.PUBLIC_POST,
+          sourceId: post.id,
+          userId: profile.userId,
+          domain: ReluProcessingDomain.RECOMMENDATION,
+          status: persisted.status,
+          inputSnapshot: {
+            post: this.buildPublicPostSnapshot(post),
+            profile: this.toProfileSummary(profile),
+          } as Prisma.InputJsonValue,
+          outputData: {
+            compatibilityPercent: match.compatibilityPercent,
+            matchedSkills: match.matchedSkills,
+            missingSkills: match.missingSkills,
+          } as Prisma.InputJsonValue,
+          score: match.compatibilityPercent,
+          explanation: match.explanation,
+          recommendedAction: match.recommendedNextAction,
+          fallbackUsed: persisted.fallbackUsed,
+          targetSourceType: ReluSourceType.PROFILE,
+          targetSourceId: profile.id,
+        },
+      });
+    }
+
+    return persisted;
+  }
+
+  async getPublicPostResults(postId: string, actor?: AuthenticatedUser | null) {
+    const post = await this.getPublicPostContext(postId);
+
+    if (!this.canReadPublicPostResults(post, actor)) {
+      throw new ForbiddenException('You do not have access to these Relu results');
+    }
+
+    const [runs, classifications, matches, recommendations] = await Promise.all([
+      this.prisma.reluProcessingRun.findMany({
+        where: {
+          sourceType: ReluSourceType.PUBLIC_POST,
+          sourceId: post.id,
+        },
+        include: this.runInclude,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.reluClassificationResult.findMany({
+        where: {
+          sourceType: ReluSourceType.PUBLIC_POST,
+          sourceId: post.id,
+        },
+        include: this.classificationInclude,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.reluMatchResult.findMany({
+        where: {
+          sourceType: ReluSourceType.PUBLIC_POST,
+          sourceId: post.id,
+        },
+        include: this.matchInclude,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.reluRecommendation.findMany({
+        where: {
+          sourceType: ReluSourceType.PUBLIC_POST,
+          sourceId: post.id,
+        },
+        include: this.recommendationInclude,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    return {
+      sourceType: ReluSourceType.PUBLIC_POST,
+      sourceId: post.id,
+      runs: runs.map((item) => this.toRunResponse(item)),
+      classifications: classifications.map((item) => this.toClassificationResponse(item)),
+      matches: matches.map((item) => this.toMatchResponse(item)),
+      recommendations: recommendations.map((item) => this.toRecommendationResponse(item)),
+    };
+  }
+
+  async enrichProfile(profileId: string, actor: AuthenticatedUser) {
+    const profile = await this.getAccessibleProfile(profileId?.trim(), actor);
+    const task = await this.createTask({
+      capability: 'profile-enrichment',
+      accessMode: this.isAdminRole(actor.role)
+        ? ReluAccessMode.ADMIN_SECURED
+        : ReluAccessMode.AUTHENTICATED_USER,
+      requestedByUserId: actor.sub,
+      contextEntityType: 'PROFILE',
+      contextEntityId: profile.id,
+      title: `Relu enrich profile: ${profile.displayName}`,
+      inputSummary: {
+        profileId: profile.id,
+        profileType: profile.profileType,
+      },
+    });
+    const run = await this.createProcessingRun({
+      taskId: task.id,
+      sourceType: ReluSourceType.PROFILE,
+      sourceId: profile.id,
+      userId: profile.userId,
+      triggeredByUserId: actor.sub,
+      domain: ReluProcessingDomain.INGESTION,
+      inputSnapshot: this.toProfileSummary(profile),
+    });
+
+    const enrichment = this.buildProfileEnrichment(profile);
+    return this.persistOperationalResult({
+      actor,
+      task,
+      run,
+      resultKind: 'classification',
+      resultInput: this.toProfileSummary(profile),
+      resultData: enrichment,
+      explanation: enrichment.explanation,
+      score: enrichment.categoryConfidence ?? 0,
+      fallbackMessage: 'Relu profile enrichment fallback used because Gemini is unavailable.',
+      auditAction: 'RELU_PROFILE_ENRICHED',
+    });
+  }
+
+  async classifyProfile(profileId: string, actor: AuthenticatedUser) {
+    const profile = await this.getAccessibleProfile(profileId?.trim(), actor);
+    const task = await this.createTask({
+      capability: 'profile-classification',
+      accessMode: this.isAdminRole(actor.role)
+        ? ReluAccessMode.ADMIN_SECURED
+        : ReluAccessMode.AUTHENTICATED_USER,
+      requestedByUserId: actor.sub,
+      contextEntityType: 'PROFILE',
+      contextEntityId: profile.id,
+      title: `Relu classify profile: ${profile.displayName}`,
+      inputSummary: {
+        profileId: profile.id,
+        profileType: profile.profileType,
+      },
+    });
+    const run = await this.createProcessingRun({
+      taskId: task.id,
+      sourceType: ReluSourceType.PROFILE,
+      sourceId: profile.id,
+      userId: profile.userId,
+      triggeredByUserId: actor.sub,
+      domain: ReluProcessingDomain.TAXONOMY,
+      inputSnapshot: this.toProfileSummary(profile),
+    });
+
+    const classification = this.buildProfileClassification(profile);
+    return this.persistOperationalResult({
+      actor,
+      task,
+      run,
+      resultKind: 'classification',
+      resultInput: this.toProfileSummary(profile),
+      resultData: classification,
+      explanation: classification.explanation,
+      score: classification.categoryConfidence ?? 0,
+      fallbackMessage: 'Relu profile classification fallback used because Gemini is unavailable.',
+      auditAction: 'RELU_PROFILE_CLASSIFIED',
+    });
+  }
+
+  async getProfileResults(profileId: string, actor: AuthenticatedUser) {
+    const profile = await this.getAccessibleProfile(profileId?.trim(), actor);
+    const [runs, classifications, matches, recommendations] = await Promise.all([
+      this.prisma.reluProcessingRun.findMany({
+        where: {
+          sourceType: ReluSourceType.PROFILE,
+          sourceId: profile.id,
+        },
+        include: this.runInclude,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.reluClassificationResult.findMany({
+        where: {
+          sourceType: ReluSourceType.PROFILE,
+          sourceId: profile.id,
+        },
+        include: this.classificationInclude,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.reluMatchResult.findMany({
+        where: {
+          OR: [
+            {
+              sourceType: ReluSourceType.PROFILE,
+              sourceId: profile.id,
+            },
+            {
+              targetSourceType: ReluSourceType.PROFILE,
+              targetSourceId: profile.id,
+            },
+          ],
+        },
+        include: this.matchInclude,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.reluRecommendation.findMany({
+        where: {
+          OR: [
+            {
+              sourceType: ReluSourceType.PROFILE,
+              sourceId: profile.id,
+            },
+            {
+              targetSourceType: ReluSourceType.PROFILE,
+              targetSourceId: profile.id,
+            },
+          ],
+        },
+        include: this.recommendationInclude,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    return {
+      sourceType: ReluSourceType.PROFILE,
+      sourceId: profile.id,
+      runs: runs.map((item) => this.toRunResponse(item)),
+      classifications: classifications.map((item) => this.toClassificationResponse(item)),
+      matches: matches.map((item) => this.toMatchResponse(item)),
+      recommendations: recommendations.map((item) => this.toRecommendationResponse(item)),
+    };
+  }
+
+  async listRuns(actor: AuthenticatedUser) {
+    this.assertAdminActor(actor);
+    const runs = await this.prisma.reluProcessingRun.findMany({
+      include: this.runInclude,
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+
+    return runs.map((item) => this.toRunResponse(item));
+  }
+
+  async listResults(actor: AuthenticatedUser) {
+    this.assertAdminActor(actor);
+    const [classifications, matches, recommendations] = await Promise.all([
+      this.prisma.reluClassificationResult.findMany({
+        include: this.classificationInclude,
+        orderBy: { createdAt: 'desc' },
+        take: 200,
+      }),
+      this.prisma.reluMatchResult.findMany({
+        include: this.matchInclude,
+        orderBy: { createdAt: 'desc' },
+        take: 200,
+      }),
+      this.prisma.reluRecommendation.findMany({
+        include: this.recommendationInclude,
+        orderBy: { createdAt: 'desc' },
+        take: 200,
+      }),
+    ]);
+
+    return [
+      ...classifications.map((item) => this.toClassificationResponse(item)),
+      ...matches.map((item) => this.toMatchResponse(item)),
+      ...recommendations.map((item) => this.toRecommendationResponse(item)),
+    ].sort(
+      (left: any, right: any) =>
+        new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+    );
+  }
+
+  async updateResultStatus(
+    resultId: string,
+    status: ReluResultStatus,
+    actor: AuthenticatedUser,
+  ) {
+    this.assertAdminActor(actor);
+    const target = await this.findResultRecord(resultId);
+
+    if (!target) {
+      throw new NotFoundException('Relu result not found');
+    }
+
+    const delegate = target.delegate as any;
+    const updated = await delegate.update({
+      where: { id: resultId },
+      data: {
+        status,
+        reviewedByUserId: actor.sub,
+        reviewedAt: new Date(),
+      },
+      include: target.include as any,
+    });
+
+    await this.audit.log({
+      actorUserId: actor.sub,
+      entityType: target.entityType,
+      entityId: resultId,
+      action: 'RELU_RESULT_STATUS_UPDATED',
+      after: {
+        status,
+      },
+      metadata: {
+        resultKind: target.kind,
+      },
+    });
+
+    return target.serializer(updated);
+  }
+
+  async overrideResult(
+    resultId: string,
+    override: Record<string, unknown>,
+    actor: AuthenticatedUser,
+  ) {
+    this.assertAdminActor(actor);
+    const target = await this.findResultRecord(resultId);
+
+    if (!target) {
+      throw new NotFoundException('Relu result not found');
+    }
+
+    const patch: Record<string, unknown> = {
+      status: ReluResultStatus.OVERRIDDEN,
+      overrideData: override as Prisma.InputJsonValue,
+      reviewedByUserId: actor.sub,
+      reviewedAt: new Date(),
+    };
+
+    if (typeof override.explanation === 'string' && override.explanation.trim()) {
+      patch.explanation = override.explanation.trim();
+    }
+
+    if (typeof override.score === 'number') {
+      patch.score = override.score;
+    }
+
+    if (target.kind === 'match' && typeof override.compatibilityPercent === 'number') {
+      patch.compatibilityPercent = override.compatibilityPercent;
+    }
+
+    const delegate = target.delegate as any;
+    const updated = await delegate.update({
+      where: { id: resultId },
+      data: patch,
+      include: target.include as any,
+    });
+
+    await this.audit.log({
+      actorUserId: actor.sub,
+      entityType: target.entityType,
+      entityId: resultId,
+      action: 'RELU_RESULT_OVERRIDDEN',
+      after: override,
+      metadata: {
+        resultKind: target.kind,
+      },
+    });
+
+    return target.serializer(updated);
   }
 
   async publicAssistant(payload: { message?: string; history?: ChatHistoryItem[] }) {
@@ -901,6 +1436,11 @@ export class ReluService {
     const profile = await this.prisma.profile.findUnique({
       where: { userId },
       include: {
+        user: {
+          include: {
+            identityProfile: true,
+          },
+        },
         country: true,
         region: true,
         city: true,
@@ -929,6 +1469,11 @@ export class ReluService {
     const profile = await this.prisma.profile.findUnique({
       where: { id: profileId },
       include: {
+        user: {
+          include: {
+            identityProfile: true,
+          },
+        },
         country: true,
         region: true,
         city: true,
@@ -1445,6 +1990,749 @@ export class ReluService {
 
     return score;
   }
+
+  private async createProcessingRun(input: {
+    taskId?: string | null;
+    sourceType: ReluSourceType;
+    sourceId: string;
+    userId?: string | null;
+    triggeredByUserId?: string | null;
+    domain: ReluProcessingDomain;
+    inputSnapshot?: unknown;
+  }) {
+    return this.prisma.reluProcessingRun.create({
+      data: {
+        taskId: input.taskId ?? null,
+        sourceType: input.sourceType,
+        sourceId: input.sourceId,
+        userId: input.userId ?? null,
+        triggeredByUserId: input.triggeredByUserId ?? null,
+        domain: input.domain,
+        status: ReluResultStatus.RUNNING,
+        inputSnapshot: input.inputSnapshot
+          ? (input.inputSnapshot as Prisma.InputJsonValue)
+          : Prisma.JsonNull,
+      },
+    });
+  }
+
+  private async persistOperationalResult(input: {
+    actor: AuthenticatedUser;
+    task: { id: string; capability: string };
+    run: { id: string; sourceType: ReluSourceType; sourceId: string; userId?: string | null; domain: ReluProcessingDomain };
+    resultKind: 'classification' | 'match';
+    resultInput: unknown;
+    resultData: Record<string, unknown>;
+    explanation?: string | null;
+    score?: number | null;
+    compatibilityPercent?: number | null;
+    targetSourceType?: ReluSourceType | null;
+    targetSourceId?: string | null;
+    fallbackMessage: string;
+    auditAction: string;
+  }) {
+    const fallbackUsed = !this.isGeminiAvailable();
+    const status = fallbackUsed ? ReluResultStatus.FAILED : ReluResultStatus.COMPLETED;
+    const errorMessage = fallbackUsed ? 'GEMINI_API_KEY not set' : null;
+
+    await this.prisma.reluProcessingRun.update({
+      where: { id: input.run.id },
+      data: {
+        status,
+        outputData: input.resultData as Prisma.InputJsonValue,
+        score: input.score ?? null,
+        explanation:
+          input.explanation ??
+          (fallbackUsed ? input.fallbackMessage : 'Relu processing completed successfully.'),
+        fallbackUsed,
+        errorMessage,
+        completedAt: new Date(),
+      },
+    });
+
+    let persistedResult: any;
+    if (input.resultKind === 'classification') {
+      persistedResult = await this.prisma.reluClassificationResult.create({
+        data: {
+          runId: input.run.id,
+          sourceType: input.run.sourceType,
+          sourceId: input.run.sourceId,
+          userId: input.run.userId ?? null,
+          domain: input.run.domain,
+          status,
+          inputSnapshot: input.resultInput as Prisma.InputJsonValue,
+          outputData: input.resultData as Prisma.InputJsonValue,
+          score: input.score ?? null,
+          explanation:
+            input.explanation ??
+            (fallbackUsed ? input.fallbackMessage : 'Relu classification completed successfully.'),
+          fallbackUsed,
+          errorMessage,
+        },
+        include: this.classificationInclude,
+      });
+    } else {
+      persistedResult = await this.prisma.reluMatchResult.create({
+        data: {
+          runId: input.run.id,
+          sourceType: input.run.sourceType,
+          sourceId: input.run.sourceId,
+          userId: input.run.userId ?? null,
+          targetSourceType: input.targetSourceType ?? null,
+          targetSourceId: input.targetSourceId ?? null,
+          domain: input.run.domain,
+          status,
+          inputSnapshot: input.resultInput as Prisma.InputJsonValue,
+          outputData: input.resultData as Prisma.InputJsonValue,
+          score: input.score ?? null,
+          compatibilityPercent: input.compatibilityPercent ?? null,
+          explanation:
+            input.explanation ??
+            (fallbackUsed ? input.fallbackMessage : 'Relu matching completed successfully.'),
+          fallbackUsed,
+          errorMessage,
+        },
+        include: this.matchInclude,
+      });
+    }
+
+    if (fallbackUsed) {
+      await this.failTask(input.task.id, input.fallbackMessage);
+    } else {
+      await this.completeTask(input.task.id, input.resultData);
+    }
+
+    await this.audit.log({
+      actorUserId: input.actor.sub,
+      entityType: input.resultKind === 'classification' ? 'RELU_CLASSIFICATION_RESULT' : 'RELU_MATCH_RESULT',
+      entityId: persistedResult.id,
+      action: input.auditAction,
+      after: {
+        runId: input.run.id,
+        status,
+        fallbackUsed,
+      },
+      metadata: {
+        sourceType: input.run.sourceType,
+        sourceId: input.run.sourceId,
+        domain: input.run.domain,
+      },
+    });
+
+    return input.resultKind === 'classification'
+      ? this.toClassificationResponse(persistedResult)
+      : this.toMatchResponse(persistedResult);
+  }
+
+  private isGeminiAvailable() {
+    return Boolean(process.env.GEMINI_API_KEY?.trim());
+  }
+
+  private assertAdminActor(actor: AuthenticatedUser) {
+    if (!this.isAdminRole(actor.role)) {
+      throw new ForbiddenException('Admin access is required');
+    }
+  }
+
+  private async getPublicPostContext(postId: string) {
+    const post = await this.prisma.publicPost.findUnique({
+      where: { id: postId },
+      include: {
+        authorUser: true,
+        authorProfile: true,
+        country: true,
+        region: true,
+        city: true,
+        media: true,
+        documents: true,
+        externalLinks: true,
+      },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Public post not found');
+    }
+
+    return post as PublicPostContext;
+  }
+
+  private canReadPublicPostResults(post: PublicPostContext, actor?: AuthenticatedUser | null) {
+    if (
+      post.visibility === 'PUBLIC' &&
+      post.moderationStatus === PublicModerationStatus.APPROVED &&
+      post.status === 'LIVE'
+    ) {
+      return true;
+    }
+
+    if (!actor) {
+      return false;
+    }
+
+    if (this.isAdminRole(actor.role)) {
+      return true;
+    }
+
+    return post.authorUserId === actor.sub;
+  }
+
+  private buildPublicPostSnapshot(post: PublicPostContext) {
+    return {
+      id: post.id,
+      slug: post.slug,
+      type: post.type,
+      title: post.title,
+      summary: post.summary,
+      description: post.description,
+      domain: post.domain,
+      location: post.location,
+      visibility: post.visibility,
+      moderationStatus: post.moderationStatus,
+      existingClassification: post.classificationJson,
+      escoCodes: this.parseStringList(post.escoCodesJson),
+      naceCodes: this.parseStringList(post.naceCodesJson),
+      uniclassCodes: this.parseStringList(post.uniclassCodesJson),
+      languageCodes: this.parseStringList(post.languageCodesJson),
+      certifications: post.certifications,
+      mediaCount: post.media.length,
+      documentCount: post.documents.length,
+      externalLinks: post.externalLinks.map((item) => ({
+        id: item.id,
+        url: item.url,
+        status: item.securityStatus,
+      })),
+    };
+  }
+
+  private buildPublicPostInterpretation(post: PublicPostContext) {
+    const base = this.buildPublicPostClassification(post);
+    return {
+      ...base,
+      moderationHints: [
+        ...base.moderationHints,
+        ...(post.externalLinks.some((item) => String(item.url).startsWith('http://'))
+          ? ['External link uses HTTP and should be reviewed.']
+          : []),
+      ],
+      explanation: `Relu interpreted "${post.title}" as a ${post.type.toLowerCase()} opportunity in ${post.domain}.`,
+    };
+  }
+
+  private buildPublicPostClassification(post: PublicPostContext) {
+    const sourceText = [
+      post.title,
+      post.summary ?? '',
+      post.description,
+      post.domain,
+      post.location,
+      post.certifications,
+      post.certificationsOffered ?? '',
+      ...this.parseStringList(post.escoCodesJson),
+      ...this.parseStringList(post.naceCodesJson),
+      ...this.parseStringList(post.uniclassCodesJson),
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    const escoCandidates = this.findTaxonomyCandidates(TaxonomyType.ESCO, sourceText, 5);
+    const naceCandidates = this.findTaxonomyCandidates(TaxonomyType.NACE, sourceText, 5);
+    const uniclassCandidates = this.findTaxonomyCandidates(TaxonomyType.UNICLASS, sourceText, 5);
+    const extractedRequirements = this.extractRequirementsText(sourceText);
+    const moderationHints = this.extractModerationHints(post.title, post.description);
+    const missingInformation = [
+      !post.summary ? 'Short summary is missing.' : null,
+      !post.countryId && !post.location ? 'No structured location information is available.' : null,
+      !post.certifications ? 'No certification requirements were provided.' : null,
+    ].filter((item): item is string => Boolean(item));
+
+    return {
+      sourceType: ReluSourceType.PUBLIC_POST,
+      sourceId: post.id,
+      naceCandidates,
+      escoCandidates,
+      uniclassCandidates,
+      categoryConfidence: this.calculateConfidence(escoCandidates, naceCandidates, uniclassCandidates),
+      extractedRequirements,
+      locationSignals: this.extractLocationSignals(post.location),
+      missingInformation,
+      moderationHints,
+      explanation: `Relu mapped "${post.title}" to ${naceCandidates[0]?.code ?? 'unmapped NACE'}, ${escoCandidates[0]?.code ?? 'unmapped ESCO'}, and ${uniclassCandidates[0]?.code ?? 'unmapped Uniclass'}.`,
+    };
+  }
+
+  private buildProfileEnrichment(profile: ProfileContext) {
+    const classification = this.buildProfileClassification(profile);
+    return {
+      ...classification,
+      missingInformation: [
+        ...classification.missingInformation,
+        ...(profile.documents.length === 0 ? ['No supporting profile documents are attached yet.'] : []),
+      ],
+      explanation: `Relu enriched profile "${profile.displayName}" using public summary, classifications, languages, and supporting documents.`,
+    };
+  }
+
+  private buildProfileClassification(profile: ProfileContext) {
+    const sourceText = [
+      profile.displayName,
+      profile.companyName ?? '',
+      profile.publicHeadline ?? '',
+      profile.summary ?? '',
+      profile.description ?? '',
+      profile.certificationsText ?? '',
+      profile.contractorProfile?.tradeFocus ?? '',
+      profile.professionalProfile?.headline ?? '',
+      ...profile.documents.map((document) => document.extractedText ?? ''),
+      ...profile.escoClassifications.map((item) => item.escoSkill.code),
+      ...profile.naceClassifications.map((item) => item.nace.code),
+      ...profile.uniclassClassifications.map((item) => item.uniclass.code),
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    const escoCandidates = this.findTaxonomyCandidates(TaxonomyType.ESCO, sourceText, 5);
+    const naceCandidates = this.findTaxonomyCandidates(TaxonomyType.NACE, sourceText, 5);
+    const uniclassCandidates = this.findTaxonomyCandidates(TaxonomyType.UNICLASS, sourceText, 5);
+
+    return {
+      sourceType: ReluSourceType.PROFILE,
+      sourceId: profile.id,
+      naceCandidates,
+      escoCandidates,
+      uniclassCandidates,
+      categoryConfidence: this.calculateConfidence(escoCandidates, naceCandidates, uniclassCandidates),
+      extractedRequirements: this.extractRequirementsText(sourceText),
+      locationSignals: this.extractLocationSignals(
+        [profile.city?.name, profile.region?.name, profile.country?.name].filter(Boolean).join(', '),
+      ),
+      missingInformation: [
+        !profile.summary ? 'Profile summary is missing.' : null,
+        !profile.countryId ? 'Structured country mapping is missing.' : null,
+        profile.languages.length === 0 ? 'No working languages are configured.' : null,
+      ].filter((item): item is string => Boolean(item)),
+      moderationHints: [],
+      explanation: `Relu mapped "${profile.displayName}" to dominant ESCO/NACE/Uniclass candidates using profile and document context.`,
+    };
+  }
+
+  private buildPublicPostMatch(post: PublicPostContext, profile: ProfileContext) {
+    const postCodes = {
+      esco: this.parseStringList(post.escoCodesJson),
+      nace: this.parseStringList(post.naceCodesJson),
+      uniclass: this.parseStringList(post.uniclassCodesJson),
+      languages: this.parseStringList(post.languageCodesJson),
+    };
+    const profileCodes = {
+      esco: profile.escoClassifications.map((item) => item.escoSkill.code),
+      nace: profile.naceClassifications.map((item) => item.nace.code),
+      uniclass: profile.uniclassClassifications.map((item) => item.uniclass.code),
+      languages: profile.languages.map((item) => item.language.code),
+    };
+
+    const matchedSkills = this.intersectStrings(postCodes.esco, profileCodes.esco);
+    const missingSkills = postCodes.esco.filter((item) => !profileCodes.esco.includes(item));
+    const taxonomyOverlap = {
+      esco: matchedSkills,
+      nace: this.intersectStrings(postCodes.nace, profileCodes.nace),
+      uniclass: this.intersectStrings(postCodes.uniclass, profileCodes.uniclass),
+      languages: this.intersectStrings(postCodes.languages, profileCodes.languages),
+    };
+
+    const locationFit = this.calculateLocationFit(post, profile);
+    const verificationFit =
+      profile.user?.identityProfile?.verificationStatus === 'VERIFIED'
+        ? 'VERIFIED'
+        : 'UNVERIFIED';
+
+    let compatibilityPercent = 30;
+    compatibilityPercent += Math.min(25, matchedSkills.length * 8);
+    compatibilityPercent += Math.min(15, taxonomyOverlap.nace.length * 6);
+    compatibilityPercent += Math.min(15, taxonomyOverlap.uniclass.length * 6);
+    compatibilityPercent += locationFit.score;
+    compatibilityPercent += taxonomyOverlap.languages.length > 0 ? 10 : 0;
+    compatibilityPercent += verificationFit === 'VERIFIED' ? 5 : 0;
+    compatibilityPercent = Math.min(100, compatibilityPercent);
+
+    const recommendedNextAction =
+      compatibilityPercent >= 75
+        ? 'Invite candidate to private conversation.'
+        : compatibilityPercent >= 50
+          ? 'Request missing certifications and confirm availability.'
+          : 'Keep for manual review after profile enrichment.';
+
+    return {
+      compatibilityPercent,
+      matchedSkills,
+      missingSkills,
+      taxonomyOverlap,
+      locationFit: locationFit.label,
+      verificationFit,
+      entitlementAwareness: 'No subscription blocking rule applied to Relu scoring.',
+      explanation: `Relu found ${matchedSkills.length} matched ESCO skills and a ${locationFit.label.toLowerCase()} location fit for "${profile.displayName}".`,
+      recommendedNextAction,
+    };
+  }
+
+  private calculateLocationFit(post: PublicPostContext, profile: ProfileContext) {
+    if (post.cityId && profile.cityId && post.cityId === profile.cityId) {
+      return { score: 15, label: 'STRONG' };
+    }
+
+    if (post.regionId && profile.regionId && post.regionId === profile.regionId) {
+      return { score: 10, label: 'GOOD' };
+    }
+
+    if (post.countryId && profile.countryId && post.countryId === profile.countryId) {
+      return { score: 6, label: 'PARTIAL' };
+    }
+
+    return { score: 0, label: 'WEAK' };
+  }
+
+  private findTaxonomyCandidates(type: TaxonomyType, sourceText: string, limit = 5) {
+    const normalized = sourceText.toLowerCase();
+    const tokens = Array.from(
+      new Set(
+        normalized
+          .split(/[^a-z0-9]+/i)
+          .map((item) => item.trim())
+          .filter((item) => item.length >= 3),
+      ),
+    );
+
+    const catalog = this.taxonomyKeywordCatalog[type];
+
+    return catalog
+      .map((entry) => {
+        const haystack = `${entry.code} ${entry.label} ${entry.labelEn}`.toLowerCase();
+        const score = tokens.reduce((sum, token) => (haystack.includes(token) ? sum + 1 : sum), 0);
+        return {
+          ...entry,
+          confidence: Math.min(1, tokens.length > 0 ? score / Math.max(tokens.length, 1) : 0),
+          score,
+        };
+      })
+      .filter((entry) => entry.score > 0)
+      .sort((left, right) => right.score - left.score || right.confidence - left.confidence)
+      .slice(0, limit)
+      .map(({ code, label, labelEn, confidence }) => ({
+        code,
+        label,
+        labelEn,
+        confidence,
+      }));
+  }
+
+  private extractRequirementsText(sourceText: string) {
+    const normalized = sourceText.toLowerCase();
+    const rules = [
+      { keyword: 'safety', label: 'Safety compliance evidence' },
+      { keyword: 'permit', label: 'Permit handling experience' },
+      { keyword: 'commissioning', label: 'Commissioning experience' },
+      { keyword: 'qa', label: 'Quality assurance experience' },
+      { keyword: 'insurance', label: 'Insurance readiness' },
+      { keyword: 'fiber', label: 'Fiber / structured cabling experience' },
+      { keyword: 'hvac', label: 'HVAC delivery exposure' },
+      { keyword: 'automation', label: 'Automation / controls knowledge' },
+    ];
+
+    return rules
+      .filter((item) => normalized.includes(item.keyword))
+      .map((item) => item.label);
+  }
+
+  private extractModerationHints(title: string, description: string) {
+    const text = `${title} ${description}`.toLowerCase();
+    const hints: string[] = [];
+
+    if (text.includes('whatsapp') || text.includes('telegram')) {
+      hints.push('Contains direct off-platform contact hint.');
+    }
+
+    if (text.includes('urgent payment') || text.includes('wire transfer')) {
+      hints.push('Contains financial urgency language that may require review.');
+    }
+
+    if (/\bhttp:\/\//i.test(text)) {
+      hints.push('Contains insecure HTTP link text.');
+    }
+
+    return hints;
+  }
+
+  private extractLocationSignals(location: string) {
+    return location
+      .split(/[;,|]/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 5);
+  }
+
+  private calculateConfidence(
+    escoCandidates: Array<{ confidence?: number }>,
+    naceCandidates: Array<{ confidence?: number }>,
+    uniclassCandidates: Array<{ confidence?: number }>,
+  ) {
+    const values = [
+      escoCandidates[0]?.confidence ?? 0,
+      naceCandidates[0]?.confidence ?? 0,
+      uniclassCandidates[0]?.confidence ?? 0,
+    ];
+
+    return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2));
+  }
+
+  private intersectStrings(left: string[], right: string[]) {
+    const rightSet = new Set(right.map((item) => item.toLowerCase()));
+    return left.filter((item) => rightSet.has(item.toLowerCase()));
+  }
+
+  private async findResultRecord(resultId: string) {
+    const classification = await this.prisma.reluClassificationResult.findUnique({
+      where: { id: resultId },
+      include: this.classificationInclude,
+    });
+
+    if (classification) {
+      return {
+        kind: 'classification',
+        entityType: 'RELU_CLASSIFICATION_RESULT',
+        delegate: this.prisma.reluClassificationResult,
+        include: this.classificationInclude,
+        serializer: (value: any) => this.toClassificationResponse(value),
+      } as const;
+    }
+
+    const match = await this.prisma.reluMatchResult.findUnique({
+      where: { id: resultId },
+      include: this.matchInclude,
+    });
+
+    if (match) {
+      return {
+        kind: 'match',
+        entityType: 'RELU_MATCH_RESULT',
+        delegate: this.prisma.reluMatchResult,
+        include: this.matchInclude,
+        serializer: (value: any) => this.toMatchResponse(value),
+      } as const;
+    }
+
+    const recommendation = await this.prisma.reluRecommendation.findUnique({
+      where: { id: resultId },
+      include: this.recommendationInclude,
+    });
+
+    if (recommendation) {
+      return {
+        kind: 'recommendation',
+        entityType: 'RELU_RECOMMENDATION',
+        delegate: this.prisma.reluRecommendation,
+        include: this.recommendationInclude,
+        serializer: (value: any) => this.toRecommendationResponse(value),
+      } as const;
+    }
+
+    return null;
+  }
+
+  private toRunResponse(run: any) {
+    return {
+      id: run.id,
+      taskId: run.taskId,
+      sourceType: run.sourceType,
+      sourceId: run.sourceId,
+      userId: run.userId,
+      triggeredByUserId: run.triggeredByUserId,
+      domain: run.domain,
+      status: run.status,
+      inputSnapshot: run.inputSnapshot,
+      outputData: run.outputData,
+      score: run.score,
+      explanation: run.explanation,
+      fallbackUsed: run.fallbackUsed,
+      errorMessage: run.errorMessage,
+      createdAt: run.createdAt,
+      updatedAt: run.updatedAt,
+      completedAt: run.completedAt,
+      task: run.task ?? null,
+      user: run.user ?? null,
+      triggeredBy: run.triggeredBy ?? null,
+    };
+  }
+
+  private toClassificationResponse(result: any) {
+    return {
+      kind: 'classification',
+      id: result.id,
+      runId: result.runId,
+      sourceType: result.sourceType,
+      sourceId: result.sourceId,
+      userId: result.userId,
+      domain: result.domain,
+      status: result.status,
+      inputSnapshot: result.inputSnapshot,
+      outputData: result.outputData,
+      score: result.score,
+      explanation: result.explanation,
+      overrideData: result.overrideData,
+      fallbackUsed: result.fallbackUsed,
+      errorMessage: result.errorMessage,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+      reviewedAt: result.reviewedAt,
+      reviewedBy: result.reviewedBy ?? null,
+      run: result.run ? this.toRunResponse(result.run) : null,
+    };
+  }
+
+  private toMatchResponse(result: any) {
+    return {
+      kind: 'match',
+      id: result.id,
+      runId: result.runId,
+      sourceType: result.sourceType,
+      sourceId: result.sourceId,
+      targetSourceType: result.targetSourceType,
+      targetSourceId: result.targetSourceId,
+      userId: result.userId,
+      domain: result.domain,
+      status: result.status,
+      inputSnapshot: result.inputSnapshot,
+      outputData: result.outputData,
+      score: result.score,
+      compatibilityPercent: result.compatibilityPercent,
+      explanation: result.explanation,
+      overrideData: result.overrideData,
+      fallbackUsed: result.fallbackUsed,
+      errorMessage: result.errorMessage,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+      reviewedAt: result.reviewedAt,
+      reviewedBy: result.reviewedBy ?? null,
+      run: result.run ? this.toRunResponse(result.run) : null,
+    };
+  }
+
+  private toRecommendationResponse(result: any) {
+    return {
+      kind: 'recommendation',
+      id: result.id,
+      runId: result.runId,
+      sourceType: result.sourceType,
+      sourceId: result.sourceId,
+      targetSourceType: result.targetSourceType,
+      targetSourceId: result.targetSourceId,
+      userId: result.userId,
+      domain: result.domain,
+      status: result.status,
+      inputSnapshot: result.inputSnapshot,
+      outputData: result.outputData,
+      score: result.score,
+      explanation: result.explanation,
+      recommendedAction: result.recommendedAction,
+      overrideData: result.overrideData,
+      fallbackUsed: result.fallbackUsed,
+      errorMessage: result.errorMessage,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+      reviewedAt: result.reviewedAt,
+      reviewedBy: result.reviewedBy ?? null,
+      run: result.run ? this.toRunResponse(result.run) : null,
+    };
+  }
+
+  private readonly runInclude = {
+    task: true,
+    user: {
+      select: {
+        id: true,
+        email: true,
+        role: true,
+      },
+    },
+    triggeredBy: {
+      select: {
+        id: true,
+        email: true,
+        role: true,
+      },
+    },
+  } as const;
+
+  private readonly classificationInclude = {
+    run: {
+      include: {
+        task: true,
+      },
+    },
+    reviewedBy: {
+      select: {
+        id: true,
+        email: true,
+        role: true,
+      },
+    },
+  } as const;
+
+  private readonly matchInclude = {
+    run: {
+      include: {
+        task: true,
+      },
+    },
+    reviewedBy: {
+      select: {
+        id: true,
+        email: true,
+        role: true,
+      },
+    },
+  } as const;
+
+  private readonly recommendationInclude = {
+    run: {
+      include: {
+        task: true,
+      },
+    },
+    reviewedBy: {
+      select: {
+        id: true,
+        email: true,
+        role: true,
+      },
+    },
+  } as const;
+
+  private readonly taxonomyKeywordCatalog: Record<
+    TaxonomyType,
+    Array<{ code: string; label: string; labelEn: string }>
+  > = {
+    [TaxonomyType.ESCO]: [
+      { code: '7412.1', label: 'Electrician', labelEn: 'Electrician' },
+      { code: '3114.2', label: 'Electronics technician', labelEn: 'Electronics technician' },
+      { code: '7126.1', label: 'Plumber', labelEn: 'Plumber' },
+      { code: '2142.4', label: 'Civil engineer', labelEn: 'Civil engineer' },
+      { code: '2141.8', label: 'Industrial engineer', labelEn: 'Industrial engineer' },
+      { code: '4321.5', label: 'HVAC technician', labelEn: 'HVAC technician' },
+      { code: '3513.2', label: 'ICT cabling technician', labelEn: 'ICT cabling technician' },
+    ],
+    [TaxonomyType.NACE]: [
+      { code: '41.20', label: 'Construction of residential and non-residential buildings', labelEn: 'Building construction' },
+      { code: '42.22', label: 'Construction of utility projects for electricity and telecommunications', labelEn: 'Utility telecom construction' },
+      { code: '43.21', label: 'Electrical installation', labelEn: 'Electrical installation' },
+      { code: '43.22', label: 'Plumbing, heat and air-conditioning installation', labelEn: 'HVAC installation' },
+      { code: '62.03', label: 'Computer facilities management activities', labelEn: 'ICT operations' },
+    ],
+    [TaxonomyType.UNICLASS]: [
+      { code: 'Pr_65_53', label: 'Communications systems', labelEn: 'Communications systems' },
+      { code: 'Pr_75_50', label: 'Electrical systems', labelEn: 'Electrical systems' },
+      { code: 'Pr_65_36', label: 'Heating, ventilation and air conditioning systems', labelEn: 'HVAC systems' },
+      { code: 'Pr_20_85', label: 'Civil engineering works', labelEn: 'Civil engineering works' },
+      { code: 'Pr_75_76', label: 'Security and access systems', labelEn: 'Security systems' },
+    ],
+  };
 
   private parseStringList(value: string | null | undefined) {
     return (value ?? '')

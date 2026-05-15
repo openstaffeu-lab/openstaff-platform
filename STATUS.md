@@ -1,6 +1,6 @@
 # OpenStaff Platform Status
 
-Last updated: 2026-05-14
+Last updated: 2026-05-15
 
 ## EXEC-02 Sprint 1A Auth Consolidation
 
@@ -516,6 +516,72 @@ Verdict: `PASS - moderated PublicPost feed, creator self-service, asset approval
 | web build | âœ… | `cd apps/admin/web && npm.cmd run build` |
 | admin build | âœ… | `cd apps/admin && npm.cmd run build` |
 | Blockers | âœ… | niciun blocker deschis pentru aceasta faza; au ramas doar warning-uri Next non-blocante despre `images.domains` si `turbopack.root` |
+
+## EXEC-09 Relu AI Taxonomy, Ingestion & Matching Engine
+
+Verdict: `PASS - persistent Relu runs, taxonomy classification, deterministic fallback, matching intelligence, and admin review/override validated locally`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| Relu module audit | ✅ | audit local pe `apps/admin/api/src/relu/*`, `taxonomy/*`, `projects/match-engine.service.ts`, `public-posts/*`, `apps/admin/app/ai-control`, `ai-queue`, `ai-config`, `schema.prisma`, `STATUS.md` |
+| `ReluTask` reused safely | ✅ | modelul existent ramane coada operationala si este extins additiv prin relatia optionala `processingRun` |
+| `ReluSourceType` enum | ✅ | Prisma schema include `PUBLIC_POST`, `PROFILE`, `PROJECT`, `DOCUMENT` |
+| `ReluProcessingDomain` enum | ✅ | Prisma schema include `INGESTION`, `TAXONOMY`, `MATCH`, `MODERATION`, `RECOMMENDATION` |
+| `ReluResultStatus` enum | ✅ | Prisma schema include `PENDING`, `RUNNING`, `COMPLETED`, `FAILED`, `REVIEWED`, `OVERRIDDEN` |
+| `ReluProcessingRun` model | ✅ | Prisma schema persista run-uri cu `sourceType`, `sourceId`, `domain`, `inputSnapshot`, `outputData`, `score`, `explanation`, `fallbackUsed` |
+| `ReluClassificationResult` model | ✅ | Prisma schema persista output de ingestie/clasificare pentru `PUBLIC_POST` si `PROFILE` |
+| `ReluMatchResult` model | ✅ | Prisma schema persista matching cu `compatibilityPercent`, `targetSourceType`, `targetSourceId`, `explanation` |
+| `ReluRecommendation` model | ✅ | Prisma schema persista next action si recomandari derivate din matching |
+| `User` extended safely | ✅ | modelul existent a fost extins additiv cu relatii pentru runs, classification, match, recommendation si review/override |
+| public post ingestion engine | ✅ | `ReluService.ingestPublicPost(...)` extrage NACE/ESCO/UNICLASS candidates, locatie, requirements, moderation hints si le persista |
+| public post taxonomy classification | ✅ | `ReluService.classifyPublicPost(...)` persista outputul si actualizeaza `classificationJson`, `escoCodesJson`, `naceCodesJson`, `uniclassCodesJson` pe `PublicPost` |
+| profile enrichment engine | ✅ | `ReluService.enrichProfile(...)` persista enrichment operational pentru profile accesibile userului/adminului |
+| profile taxonomy classification | ✅ | `ReluService.classifyProfile(...)` persista classification result pentru `PROFILE` |
+| deterministic fallback | ✅ | fara `GEMINI_API_KEY`, rezultatele se persista cu `fallbackUsed = true`, `status = FAILED`, fara a bloca feed-ul sau publish flow-ul |
+| public post matching engine | ✅ | `ReluService.matchPublicPost(...)` calculeaza `compatibilityPercent`, `matchedSkills`, `missingSkills`, `taxonomyOverlap`, `locationFit`, `verificationFit`, `recommendedNextAction` |
+| persistent recommendations | ✅ | matching-ul cu next action creeaza `ReluRecommendation` persistent, nu raspuns efemer |
+| `POST /relu/public-posts/:id/ingest` | ✅ | endpoint admin-protected returneaza `200` si creeaza task + run + classification result |
+| `POST /relu/public-posts/:id/classify` | ✅ | endpoint admin-protected returneaza `200` si sincronizeaza taxonomiile in `PublicPost` |
+| `POST /relu/public-posts/:id/matches` | ✅ | endpoint JWT returneaza `200` cu rezultat persistent de matching pentru profile accesibile |
+| `GET /relu/public-posts/:id/results` | ✅ | endpoint returneaza runs, classifications, matches si recommendations pentru postari publice aprobate sau owner/admin |
+| `POST /relu/profiles/:id/enrich` | ✅ | endpoint JWT returneaza `200` si persista enrichment pentru profile accesibile |
+| `POST /relu/profiles/:id/classify` | ✅ | endpoint JWT returneaza `200` si persista classification result pentru profil |
+| `GET /relu/profiles/:id/results` | ✅ | endpoint JWT returneaza runs, classifications, matches si recommendations pentru profilul curent |
+| `GET /admin/relu/runs` | ✅ | endpoint admin returneaza `200` si listeaza run-urile persistente |
+| `GET /admin/relu/results` | ✅ | endpoint admin returneaza `200` si combina classification/match/recommendation results |
+| `PATCH /admin/relu/results/:id/status` | ✅ | endpoint admin permite `REVIEWED` pentru rezultate persistente |
+| `PATCH /admin/relu/results/:id/override` | ✅ | endpoint admin persista override-ul si muta rezultatul in `OVERRIDDEN` |
+| PublicPost -> Relu queue integration | ✅ | `PublicPostsService` creeaza `ReluTask` placeholder la create/update pentru post si asset moderation, plus task de ingestie queued |
+| publish flow non-blocking if AI fails | ✅ | fallback-ul Relu persista `FAILED` cu output deterministic fara sa blocheze aprobarea sau vizibilitatea continutului |
+| admin Relu review UI | ✅ | `apps/admin/app/admin/relu/page.tsx` compileaza cu runs, results, failed jobs, JSON preview, review, override si rerun |
+| admin posts Relu status | ✅ | `apps/admin/app/admin/posts/page.tsx` compileaza cu badge `Relu {status}` pe baza ultimului rezultat `PUBLIC_POST` |
+| admin nav wiring | ✅ | `apps/admin/components/AdminLayoutShell.tsx` include intrarea `Relu` |
+| admin API helpers | ✅ | `apps/admin/lib/api.ts` include tipuri/helperi pentru runs, results, override si rerun pe public posts |
+| public/web minimal AI visibility | ✅ | feed-ul public foloseste in continuare `PublicPost` ca sursa primara, iar detail/list pot afisa taxonomiile persistate (`ESCO`, `NACE`, `UNICLASS`) fara a expune JSON brut |
+| register normal user | ✅ | runtime local creeaza user owner si admin pentru scenariul EXEC-09 |
+| create + approve public post | ✅ | runtime local confirma `PENDING` -> `APPROVED/LIVE` pe `PublicPost` inainte de rularea Relu |
+| run Relu ingestion | ✅ | `cd apps/admin/api && node scripts/exec-09-runtime-check.js` confirma `POST /relu/public-posts/:id/ingest = 200` |
+| run taxonomy classification | ✅ | runtime local confirma `POST /relu/public-posts/:id/classify = 200` si update taxonomii pe postare |
+| ReluTask/result persisted | ✅ | runtime local confirma task-uri, run-uri si classification results persistate pentru acelasi `PublicPost` |
+| prepare candidate profile | ✅ | runtime local foloseste profilul ownerului si confirma `POST /relu/profiles/:id/classify = 200` |
+| run matching | ✅ | runtime local confirma `POST /relu/public-posts/:id/matches = 200` |
+| compatibility percent + explanation | ✅ | runtime local confirma `compatibilityPercent` numeric si `explanation` text persistat |
+| admin list sees result | ✅ | runtime local confirma `GET /admin/relu/results` si `GET /admin/relu/runs` pentru postarea test |
+| admin override works | ✅ | runtime local confirma `PATCH /admin/relu/results/:id/override` si status final `OVERRIDDEN` |
+| AI fallback works if Gemini missing | ✅ | runtime local confirma `fallbackUsed = true` si status `FAILED` cand `GEMINI_API_KEY` lipseste |
+| public post stays visible | ✅ | dupa approve + Relu fallback, `GET /public-posts` continua sa afiseze postarea aprobata |
+| auth remains stable | ✅ | runtime local confirma `GET /auth/me = 200` dupa flow-ul EXEC-09 |
+| subscriptions remain stable | ✅ | runtime local confirma `GET /subscriptions/me = 200` dupa flow-ul EXEC-09 |
+| billing remains stable | ✅ | runtime local confirma `GET /billing/profile/me = 200` dupa flow-ul EXEC-09 |
+| onboarding remains stable | ✅ | runtime local confirma `GET /onboarding/me = 200` dupa flow-ul EXEC-09 |
+| public feed remains stable | ✅ | runtime local confirma `GET /public-posts` functional dupa ingestie/clasificare/matching |
+| `prisma validate` | ✅ | `cd apps/admin/api && npx.cmd prisma validate` |
+| `prisma generate` | ✅ | `cd apps/admin/api && npx.cmd prisma generate` |
+| `prisma db push` | ✅ | `cd apps/admin/api && npx.cmd prisma db push` |
+| API build | ✅ | `cd apps/admin/api && npm.cmd run build` |
+| web build | ✅ | `cd apps/admin/web && npm.cmd run build` |
+| admin build | ✅ | `cd apps/admin && npm.cmd run build` |
+| Blockers | ✅ | niciun blocker deschis pentru aceasta faza; au ramas doar warning-uri Next non-blocante despre `images.domains` si `turbopack.root` |
 
 ## Prompt 8 Video Audit Snapshot
 
