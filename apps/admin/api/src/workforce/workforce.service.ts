@@ -10,11 +10,13 @@ import {
   ContractLifecycleEventType,
   ContractLifecycleStatus,
   ContractStatus,
+  NotificationCategory,
   Prisma,
   Role,
   VerificationStatus,
 } from '@prisma/client';
 import { MessagingService } from '../messaging/messaging.service';
+import { NotificationService } from '../notifications/notification.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ActivateContractDto } from './dto/activate-contract.dto';
 import { CreateWorkforceAssignmentDto } from './dto/create-workforce-assignment.dto';
@@ -39,6 +41,7 @@ export class WorkforceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly messagingService: MessagingService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createAssignment(body: CreateWorkforceAssignmentDto, user: AuthUser) {
@@ -265,6 +268,22 @@ export class WorkforceService {
           contractId: updated.id,
         },
       );
+      await this.notificationService.emitEvent({
+        key: `workforce:contract:${updated.id}:ACTIVE:${assignment.userId}`,
+        eventType: 'WORKFORCE_CONTRACT_ACTIVATED',
+        sourceType: 'WORKFORCE_ASSIGNMENT',
+        sourceId: assignment.id,
+        userId: assignment.userId,
+        category: NotificationCategory.WORKFORCE,
+        title: 'Workforce contract activated',
+        message: 'Your workforce assignment is active.',
+        relatedEntityType: 'WorkforceAssignment',
+        relatedEntityId: assignment.id,
+        metadata: {
+          contractId: updated.id,
+          lifecycleStatus: updated.lifecycleStatus,
+        },
+      });
     }
 
     return this.toContractLifecycleResponse(updated);
@@ -342,6 +361,22 @@ export class WorkforceService {
           contractId: updated.id,
         },
       );
+      await this.notificationService.emitEvent({
+        key: `workforce:contract:${updated.id}:ACTIVE:${assignment.userId}`,
+        eventType: 'WORKFORCE_CONTRACT_ACTIVATED',
+        sourceType: 'WORKFORCE_ASSIGNMENT',
+        sourceId: assignment.id,
+        userId: assignment.userId,
+        category: NotificationCategory.WORKFORCE,
+        title: 'Workforce contract activated',
+        message: 'Your workforce assignment is active.',
+        relatedEntityType: 'WorkforceAssignment',
+        relatedEntityId: assignment.id,
+        metadata: {
+          contractId: updated.id,
+          lifecycleStatus: updated.lifecycleStatus,
+        },
+      });
     }
 
     return this.toContractLifecycleResponse(updated);
@@ -390,13 +425,30 @@ export class WorkforceService {
       await this.messagingService.createWorkforceUpdateNotification(
         assignment.id,
         user.sub,
-        'Contract terminated. This workspace remains available for historical follow-up only.',
+        'Contract suspended. Please review workforce activity before resuming work.',
         {
-          trigger: 'workforce.contract.terminated',
+          trigger: 'workforce.contract.suspended',
           contractId: updated.id,
           reason: this.normalizeNullableString(body.reason),
         },
       );
+      await this.notificationService.emitEvent({
+        key: `workforce:contract:${updated.id}:SUSPENDED:${assignment.userId}`,
+        eventType: 'WORKFORCE_CONTRACT_SUSPENDED',
+        sourceType: 'WORKFORCE_ASSIGNMENT',
+        sourceId: assignment.id,
+        userId: assignment.userId,
+        category: NotificationCategory.WORKFORCE,
+        title: 'Workforce contract suspended',
+        message: 'Your workforce assignment is suspended.',
+        relatedEntityType: 'WorkforceAssignment',
+        relatedEntityId: assignment.id,
+        metadata: {
+          contractId: updated.id,
+          lifecycleStatus: updated.lifecycleStatus,
+          reason: this.normalizeNullableString(body.reason),
+        },
+      });
     }
 
     return this.toContractLifecycleResponse(updated);
@@ -446,13 +498,30 @@ export class WorkforceService {
       await this.messagingService.createWorkforceUpdateNotification(
         assignment.id,
         user.sub,
-        'Contract suspended. Please review workforce activity before resuming work.',
+        'Contract terminated. This workspace remains available for historical follow-up only.',
         {
-          trigger: 'workforce.contract.suspended',
+          trigger: 'workforce.contract.terminated',
           contractId: updated.id,
           reason: this.normalizeNullableString(body.reason),
         },
       );
+      await this.notificationService.emitEvent({
+        key: `workforce:contract:${updated.id}:TERMINATED:${assignment.userId}`,
+        eventType: 'WORKFORCE_CONTRACT_TERMINATED',
+        sourceType: 'WORKFORCE_ASSIGNMENT',
+        sourceId: assignment.id,
+        userId: assignment.userId,
+        category: NotificationCategory.WORKFORCE,
+        title: 'Workforce contract terminated',
+        message: 'Your workforce assignment has ended.',
+        relatedEntityType: 'WorkforceAssignment',
+        relatedEntityId: assignment.id,
+        metadata: {
+          contractId: updated.id,
+          lifecycleStatus: updated.lifecycleStatus,
+          reason: this.normalizeNullableString(body.reason),
+        },
+      });
     }
 
     return this.toContractLifecycleResponse(updated);

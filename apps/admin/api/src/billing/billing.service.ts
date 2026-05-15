@@ -6,6 +6,7 @@ import {
   BillingInvoiceType,
   BillingVatMode,
   BillingWebhookStatus,
+  NotificationCategory,
   PaymentProvider,
   PaymentRecordStatus,
   Prisma,
@@ -19,6 +20,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
+import { NotificationService } from '../notifications/notification.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { GenerateInvoiceDto } from './dto/generate-invoice.dto';
 import { GenerateRenewalsDto } from './dto/generate-renewals.dto';
@@ -129,6 +131,7 @@ export class BillingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async getBillingProfile(userId: string) {
@@ -153,7 +156,7 @@ export class BillingService {
       vatMode: input.vatMode as BillingVatMode | undefined,
     });
 
-    return this.prisma.billingProfile.upsert({
+    const profile = await this.prisma.billingProfile.upsert({
       where: { userId },
       update: {
         companyName: input.companyName?.trim() || null,
@@ -185,6 +188,26 @@ export class BillingService {
         vatMode,
       },
     });
+
+    await this.notificationService.emitEvent({
+      key: `billing-profile:updated:${userId}`,
+      eventType: 'BILLING_PROFILE_UPDATED',
+      sourceType: 'BILLING_PROFILE',
+      sourceId: profile.id,
+      userId,
+      category: NotificationCategory.BILLING,
+      title: 'Billing profile updated',
+      message: 'Your billing profile details were updated successfully.',
+      relatedEntityType: 'BillingProfile',
+      relatedEntityId: profile.id,
+      metadata: {
+        currency: profile.currency,
+        vatMode: profile.vatMode,
+        isCompany: profile.isCompany,
+      },
+    });
+
+    return profile;
   }
 
   calculateVat(
@@ -604,6 +627,24 @@ export class BillingService {
         provider: input.provider,
         providerPaymentId: input.providerPaymentId ?? null,
         note: input.note ?? null,
+      },
+    });
+
+    await this.notificationService.emitEvent({
+      key: `billing-invoice:paid:${result.invoice.id}`,
+      eventType: 'BILLING_INVOICE_PAID',
+      sourceType: 'BILLING_INVOICE',
+      sourceId: result.invoice.id,
+      userId: invoice.userId,
+      category: NotificationCategory.BILLING,
+      title: 'Invoice paid',
+      message: `Invoice ${result.invoice.invoiceNumber ?? result.invoice.id} was marked as paid.`,
+      relatedEntityType: 'BillingInvoice',
+      relatedEntityId: result.invoice.id,
+      metadata: {
+        provider: input.provider,
+        total: result.invoice.total,
+        currency: result.invoice.currency,
       },
     });
 
@@ -1132,6 +1173,26 @@ export class BillingService {
         billingEventIds: billingEvents.map((event) => event.id),
         vatMode: vatSummary.vatMode,
         vatRatePercent: vatSummary.vatRatePercent,
+      },
+    });
+
+    await this.notificationService.emitEvent({
+      key: `billing-invoice:issued:${invoice.id}`,
+      eventType: 'BILLING_INVOICE_ISSUED',
+      sourceType: 'BILLING_INVOICE',
+      sourceId: invoice.id,
+      userId: first.userId,
+      category: NotificationCategory.BILLING,
+      title: 'Invoice issued',
+      message: `A new invoice ${invoice.invoiceNumber} is available for review.`,
+      relatedEntityType: 'BillingInvoice',
+      relatedEntityId: invoice.id,
+      metadata: {
+        invoiceType: invoice.invoiceType,
+        total: invoice.total,
+        taxAmount: invoice.taxAmount,
+        currency: invoice.currency,
+        billingEventIds: billingEvents.map((event) => event.id),
       },
     });
 

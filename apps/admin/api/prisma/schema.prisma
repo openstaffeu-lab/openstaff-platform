@@ -132,6 +132,11 @@ model User {
   assignedTasks                      UserTask[]                   @relation("UserTaskAssignedTo")
   auditLogs                          AuditLog[]                   @relation("AuditLogActorUser")
   notifications                      Notification[]
+  notificationEvents                 NotificationEvent[]          @relation("NotificationEventUser")
+  notificationDeliveries             NotificationDelivery[]       @relation("NotificationDeliveryUser")
+  notificationPreferences            NotificationPreference?
+  triggeredWorkflowAutomationRuns    WorkflowAutomationRun[]      @relation("WorkflowAutomationRunTriggeredBy")
+  reviewedWorkflowAutomationRuns     WorkflowAutomationRun[]      @relation("WorkflowAutomationRunReviewedBy")
   subscriptions                      AccountSubscription[]
   usageMeters                        UsageMeter[]
   upgradeRequests                    SubscriptionUpgradeRequest[]
@@ -1725,10 +1730,12 @@ model AuditLog {
 model Notification {
   id                String               @id @default(uuid())
   key               String               @unique
+  eventId           String?
   userId            String?
   profileId         String?
   actorId           String?
   type              String
+  category          NotificationCategory?
   channel           NotificationChannel  @default(IN_APP)
   severity          NotificationSeverity @default(INFO)
   title             String
@@ -1739,17 +1746,127 @@ model Notification {
   scheduledFor      DateTime?
   sentAt            DateTime?
   readAt            DateTime?
+  deliveredAt       DateTime?
+  failedAt          DateTime?
+  dismissedAt       DateTime?
+  metadata          Json?
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
 
-  user    User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  profile Profile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  actor   Actor?   @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  event       NotificationEvent?      @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  user        User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile     Profile?                @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  actor       Actor?                  @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  deliveries  NotificationDelivery[]
 
   @@index([userId, status, createdAt])
   @@index([profileId, status, createdAt])
   @@index([actorId, status, createdAt])
   @@index([scheduledFor, status])
+  @@index([eventId, status, createdAt])
+}
+
+model NotificationEvent {
+  id         String               @id @default(uuid())
+  key        String?              @unique
+  eventType  String
+  sourceType String
+  sourceId   String
+  userId     String?
+  channel    NotificationChannel  @default(IN_APP)
+  category   NotificationCategory?
+  status     NotificationStatus   @default(PENDING)
+  retryCount Int                  @default(0)
+  metadata   Json?
+  readAt     DateTime?
+  deliveredAt DateTime?
+  failedAt   DateTime?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  user          User?                    @relation("NotificationEventUser", fields: [userId], references: [id], onDelete: Cascade)
+  notifications Notification[]
+  deliveries    NotificationDelivery[]
+  workflowRuns  WorkflowAutomationRun[]
+
+  @@index([userId, status, createdAt])
+  @@index([sourceType, sourceId, createdAt])
+  @@index([eventType, status, createdAt])
+}
+
+model NotificationDelivery {
+  id             String               @id @default(uuid())
+  notificationId String?
+  eventId        String?
+  userId         String?
+  channel        NotificationChannel
+  status         NotificationStatus   @default(PENDING)
+  retryCount     Int                  @default(0)
+  metadata       Json?
+  readAt         DateTime?
+  deliveredAt    DateTime?
+  failedAt       DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  notification Notification? @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  event        NotificationEvent? @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user         User? @relation("NotificationDeliveryUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([notificationId, status, createdAt])
+  @@index([eventId, status, createdAt])
+  @@index([userId, status, createdAt])
+}
+
+model NotificationPreference {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  inAppEnabled       Boolean  @default(true)
+  emailEnabled       Boolean  @default(true)
+  smsEnabled         Boolean  @default(false)
+  categoryPreferences Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WorkflowAutomationRule {
+  id          String               @id @default(uuid())
+  name        String
+  eventType   String
+  channel     NotificationChannel  @default(SYSTEM)
+  isActive    Boolean              @default(true)
+  config      Json?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  runs WorkflowAutomationRun[]
+
+  @@index([eventType, isActive])
+}
+
+model WorkflowAutomationRun {
+  id               String   @id @default(uuid())
+  ruleId           String?
+  eventId          String?
+  triggeredByUserId String?
+  reviewedByUserId String?
+  status           String
+  inputSnapshot    Json?
+  outputData       Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  completedAt      DateTime?
+
+  rule            WorkflowAutomationRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  event           NotificationEvent?      @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  triggeredByUser User?                   @relation("WorkflowAutomationRunTriggeredBy", fields: [triggeredByUserId], references: [id], onDelete: SetNull)
+  reviewedByUser  User?                   @relation("WorkflowAutomationRunReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([ruleId, createdAt])
+  @@index([eventId, createdAt])
+  @@index([status, createdAt])
 }
 
 model Conversation {
@@ -3629,7 +3746,9 @@ enum NotificationChannel {
   IN_APP
   EMAIL
   SMS
+  SMS_PLACEHOLDER
   PUSH
+  SYSTEM
 }
 
 enum NotificationSeverity {
@@ -3643,6 +3762,19 @@ enum NotificationStatus {
   SENT
   FAILED
   READ
+  DISMISSED
+}
+
+enum NotificationCategory {
+  ACCOUNT
+  BILLING
+  VERIFICATION
+  PROJECTS
+  MESSAGING
+  WORKFORCE
+  PAYROLL
+  RELU
+  ADMIN
 }
 
 enum ConversationType {

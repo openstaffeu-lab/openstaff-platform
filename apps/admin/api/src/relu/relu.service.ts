@@ -10,6 +10,7 @@ import {
   PublicModerationStatus,
   PublicPostType,
   ReluAccessMode,
+  NotificationCategory,
   ReluProcessingDomain,
   ReluResultStatus,
   ReluSourceType,
@@ -26,6 +27,7 @@ import {
 import { AuditService } from '../audit/audit.service';
 import { GeminiService } from '../gemini/gemini.service';
 import { MessagingService } from '../messaging/messaging.service';
+import { NotificationService } from '../notifications/notification.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 type AuthenticatedUser = {
@@ -127,6 +129,7 @@ export class ReluService {
     private readonly gemini: GeminiService,
     private readonly audit: AuditService,
     private readonly messagingService: MessagingService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async listConfig() {
@@ -475,6 +478,26 @@ export class ReluService {
         actor.sub,
         `Relu follow-up: ${post.title}`,
       );
+
+      if (profile.userId) {
+        await this.notificationService.emitEvent({
+          key: `relu:recommendation:${recommendation.id}`,
+          eventType: 'RELU_RECOMMENDATION_GENERATED',
+          sourceType: 'RELU_RECOMMENDATION',
+          sourceId: recommendation.id,
+          userId: profile.userId,
+          category: NotificationCategory.RELU,
+          title: 'Relu recommendation available',
+          message: `Relu generated a recommendation for ${post.title}.`,
+          relatedEntityType: 'ReluRecommendation',
+          relatedEntityId: recommendation.id,
+          metadata: {
+            publicPostId: post.id,
+            compatibilityPercent: match.compatibilityPercent,
+            recommendedAction: match.recommendedNextAction,
+          },
+        });
+      }
     }
 
     return persisted;

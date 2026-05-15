@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { NotificationModule } from '../notifications/notification.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -10,6 +11,7 @@ import { PlatformRolesGuard } from './platform-roles.guard';
 @Module({
   imports: [
     PrismaModule,
+    forwardRef(() => NotificationModule),
     JwtModule.register({
       secret: process.env.JWT_SECRET ?? 'SUPER_SECRET_KEY',
       signOptions: {

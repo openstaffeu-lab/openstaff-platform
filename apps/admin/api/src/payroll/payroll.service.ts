@@ -9,6 +9,7 @@ import {
   BillingEventType,
   CompensationType,
   ContractLifecycleStatus,
+  NotificationCategory,
   PayrollCycleStatus,
   Prisma,
   Role,
@@ -18,6 +19,7 @@ import {
 } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { MessagingService } from '../messaging/messaging.service';
+import { NotificationService } from '../notifications/notification.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApprovePayrollSettlementDto } from './dto/approve-payroll-settlement.dto';
 import { CreateCompensationAgreementDto } from './dto/create-compensation-agreement.dto';
@@ -39,6 +41,7 @@ export class PayrollService {
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
     private readonly messagingService: MessagingService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createCompensationAgreement(body: CreateCompensationAgreementDto, user: AuthUser) {
@@ -570,6 +573,24 @@ export class PayrollService {
       },
     });
 
+    await this.notificationService.emitEvent({
+      key: `payroll:settlement:${updated.id}:APPROVED`,
+      eventType: 'PAYROLL_SETTLEMENT_APPROVED',
+      sourceType: 'PAYROLL_SETTLEMENT',
+      sourceId: updated.id,
+      userId: updated.userId,
+      category: NotificationCategory.PAYROLL,
+      title: 'Payroll settlement approved',
+      message: 'Your payroll settlement was approved.',
+      relatedEntityType: 'PayrollSettlement',
+      relatedEntityId: updated.id,
+      metadata: {
+        payrollCycleId: updated.payrollCycleId,
+        netAmount: updated.netAmount,
+        currency: updated.currency,
+      },
+    });
+
     return this.toPayrollSettlementResponse(updated);
   }
 
@@ -634,6 +655,23 @@ export class PayrollService {
       user.sub,
       body.reason,
     );
+
+    await this.notificationService.emitEvent({
+      key: `payroll:settlement:${updated.id}:REJECTED`,
+      eventType: 'PAYROLL_SETTLEMENT_REJECTED',
+      sourceType: 'PAYROLL_SETTLEMENT',
+      sourceId: updated.id,
+      userId: updated.userId,
+      category: NotificationCategory.PAYROLL,
+      title: 'Payroll settlement rejected',
+      message: 'Your payroll settlement needs review before payment preparation can continue.',
+      relatedEntityType: 'PayrollSettlement',
+      relatedEntityId: updated.id,
+      metadata: {
+        payrollCycleId: updated.payrollCycleId,
+        reason: body.reason.trim(),
+      },
+    });
 
     return this.toPayrollSettlementResponse(updated);
   }

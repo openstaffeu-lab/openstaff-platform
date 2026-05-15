@@ -1,3 +1,9 @@
+import type {
+  NotificationItem,
+  NotificationListResponse,
+  NotificationPreference,
+} from "./project-types";
+
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ??
   (process.env.NODE_ENV === "production"
@@ -1080,6 +1086,61 @@ export async function getMyPayrollOverview(token?: string | null) {
 
 export async function getMyPayrollSettlements(token?: string | null) {
   return apiRequest<PayrollSettlementSummary[]>("/payroll/me/settlements", {
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function getNotifications(token?: string | null) {
+  return apiRequest<NotificationListResponse>("/notifications", {
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function getNotificationUnreadCount(token?: string | null) {
+  return apiRequest<{ unreadCount: number }>("/notifications/unread-count", {
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function markNotificationRead(id: string, token?: string | null) {
+  return apiRequest<NotificationItem>(`/notifications/${id}/read`, {
+    method: "PATCH",
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function markAllNotificationsRead(token?: string | null) {
+  return apiRequest<NotificationListResponse>("/notifications/read-all", {
+    method: "PATCH",
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function dismissNotification(id: string, token?: string | null) {
+  return apiRequest<NotificationItem>(`/notifications/${id}/dismiss`, {
+    method: "PATCH",
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function getNotificationPreferences(token?: string | null) {
+  return apiRequest<NotificationPreference>("/notifications/preferences", {
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function updateNotificationPreferences(
+  input: {
+    inAppEnabled?: boolean;
+    emailEnabled?: boolean;
+    smsEnabled?: boolean;
+    categories?: Record<string, boolean>;
+  },
+  token?: string | null,
+) {
+  return apiRequest<NotificationPreference>("/notifications/preferences", {
+    method: "PUT",
+    body: input,
     token: token ?? getAuthToken(),
   });
 }

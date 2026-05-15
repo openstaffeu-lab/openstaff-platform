@@ -21,7 +21,9 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { NotificationCategory } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationService } from '../notifications/notification.service';
 import { getFirebaseAdminAuth } from './firebase-admin';
 
 type RegisterPayload = {
@@ -74,6 +76,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async register(data: RegisterPayload) {
@@ -140,6 +143,22 @@ export class AuthService {
     });
 
     await this.ensureDefaultSubscriptionForUser(user.id);
+    await this.notificationService.emitEvent({
+      key: `account:registered:${user.id}`,
+      eventType: 'ACCOUNT_REGISTERED',
+      sourceType: 'USER',
+      sourceId: user.id,
+      userId: user.id,
+      category: NotificationCategory.ACCOUNT,
+      title: 'Account registered',
+      message: 'Your OpenStaff account was created successfully. Complete onboarding to unlock the platform.',
+      relatedEntityType: 'User',
+      relatedEntityId: user.id,
+      metadata: {
+        email: normalizedEmail,
+        role,
+      },
+    });
 
     return this.buildAuthResponse(user.id);
   }

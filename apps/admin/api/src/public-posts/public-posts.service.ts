@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  NotificationCategory,
   Prisma,
   PublicModerationStatus,
   PublicPostType,
@@ -19,6 +20,7 @@ import { extname, join } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
 import { buildSuccessResponse } from '../common/api-response';
 import { AuditService } from '../audit/audit.service';
+import { NotificationService } from '../notifications/notification.service';
 
 export type UploadedMarketplaceFile = {
   originalname: string;
@@ -49,6 +51,7 @@ export class PublicPostsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async findAll(filters: PublicPostFilters = {}) {
@@ -464,6 +467,41 @@ export class PublicPostsService {
       },
       include: this.adminPostInclude,
     });
+
+    if (post.authorUserId && nextModerationStatus) {
+      await this.notificationService.emitEvent({
+        key: `public-post:${post.id}:${nextModerationStatus}`,
+        eventType:
+          nextModerationStatus === PublicModerationStatus.APPROVED
+            ? 'PUBLIC_POST_APPROVED'
+            : nextModerationStatus === PublicModerationStatus.REJECTED
+              ? 'PUBLIC_POST_REJECTED'
+              : 'PUBLIC_POST_MODERATION_UPDATED',
+        sourceType: 'PUBLIC_POST',
+        sourceId: post.id,
+        userId: post.authorUserId,
+        category: NotificationCategory.PROJECTS,
+        title:
+          nextModerationStatus === PublicModerationStatus.APPROVED
+            ? 'Public post approved'
+            : nextModerationStatus === PublicModerationStatus.REJECTED
+              ? 'Public post rejected'
+              : 'Public post moderation updated',
+        message:
+          nextModerationStatus === PublicModerationStatus.APPROVED
+            ? `Your post "${post.title}" is now live.`
+            : nextModerationStatus === PublicModerationStatus.REJECTED
+              ? `Your post "${post.title}" was rejected during moderation.`
+              : `Your post "${post.title}" moderation state changed.`,
+        relatedEntityType: 'PublicPost',
+        relatedEntityId: post.id,
+        metadata: {
+          moderationStatus: nextModerationStatus,
+          status: post.status,
+          visibility: post.visibility,
+        },
+      });
+    }
 
     return buildSuccessResponse(this.toPublicPostResponse(post, true));
   }

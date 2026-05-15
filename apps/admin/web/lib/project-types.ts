@@ -212,9 +212,30 @@ export type EligibilityStatus =
   | "PARTIALLY_ELIGIBLE"
   | "NOT_ELIGIBLE"
   | "BLOCKED";
-export type NotificationChannel = "IN_APP" | "EMAIL" | "SMS" | "PUSH";
+export type NotificationChannel =
+  | "IN_APP"
+  | "EMAIL"
+  | "SMS"
+  | "SMS_PLACEHOLDER"
+  | "PUSH"
+  | "SYSTEM";
 export type NotificationSeverity = "INFO" | "WARNING" | "CRITICAL";
-export type NotificationStatus = "PENDING" | "SENT" | "FAILED" | "READ";
+export type NotificationStatus =
+  | "PENDING"
+  | "SENT"
+  | "FAILED"
+  | "READ"
+  | "DISMISSED";
+export type NotificationCategory =
+  | "ACCOUNT"
+  | "BILLING"
+  | "VERIFICATION"
+  | "PROJECTS"
+  | "MESSAGING"
+  | "WORKFORCE"
+  | "PAYROLL"
+  | "RELU"
+  | "ADMIN";
 export type ConversationType =
   | "PROJECT"
   | "CONTRACT"
@@ -951,9 +972,12 @@ export type ComplianceAlert = {
 export type NotificationItem = {
   id: string;
   key: string;
+  eventId: string | null;
   userId: string;
   profileId: string | null;
+  actorId?: string | null;
   type: string;
+  category?: NotificationCategory | null;
   channel: NotificationChannel;
   severity: NotificationSeverity;
   title: string;
@@ -963,7 +987,11 @@ export type NotificationItem = {
   relatedEntityId: string | null;
   scheduledFor: string | null;
   sentAt: string | null;
+  deliveredAt?: string | null;
+  failedAt?: string | null;
   readAt: string | null;
+  dismissedAt?: string | null;
+  metadata?: unknown;
   createdAt: string;
   updatedAt: string;
 };
@@ -971,6 +999,17 @@ export type NotificationItem = {
 export type NotificationListResponse = {
   unreadCount: number;
   items: NotificationItem[];
+};
+
+export type NotificationPreference = {
+  id: string;
+  userId: string;
+  inAppEnabled: boolean;
+  emailEnabled: boolean;
+  smsEnabled: boolean;
+  categories: Record<NotificationCategory, boolean>;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type ConversationMessageRead = {

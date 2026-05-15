@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  NotificationCategory,
   Prisma,
   VerificationAssetType,
   VerificationCaseStatus,
@@ -12,6 +13,7 @@ import {
   VerificationStatus,
 } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { NotificationService } from '../notifications/notification.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ReviewVerificationCaseDto } from './dto/review-verification-case.dto';
 import { SubmitVerificationCaseDto } from './dto/submit-verification-case.dto';
@@ -21,6 +23,7 @@ export class VerificationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async getVerificationMe(userId: string) {
@@ -162,6 +165,22 @@ export class VerificationService {
       after,
     });
 
+    await this.notificationService.emitEvent({
+      key: `verification:submitted:identity:${savedCase.id}`,
+      eventType: 'VERIFICATION_SUBMITTED',
+      sourceType: 'VERIFICATION_CASE',
+      sourceId: savedCase.id,
+      userId,
+      category: NotificationCategory.VERIFICATION,
+      title: 'Identity verification submitted',
+      message: 'Your identity verification case was submitted for review.',
+      relatedEntityType: 'VerificationCase',
+      relatedEntityId: savedCase.id,
+      metadata: {
+        subjectType: VerificationCaseSubjectType.IDENTITY_PROFILE,
+      },
+    });
+
     return {
       identityProfile: this.toIdentitySummary({
         ...identityProfile,
@@ -265,6 +284,22 @@ export class VerificationService {
       action: 'SUBMIT_COMPANY',
       before,
       after,
+    });
+
+    await this.notificationService.emitEvent({
+      key: `verification:submitted:company:${savedCase.id}`,
+      eventType: 'VERIFICATION_SUBMITTED',
+      sourceType: 'VERIFICATION_CASE',
+      sourceId: savedCase.id,
+      userId,
+      category: NotificationCategory.VERIFICATION,
+      title: 'Company verification submitted',
+      message: 'Your company verification case was submitted for review.',
+      relatedEntityType: 'VerificationCase',
+      relatedEntityId: savedCase.id,
+      metadata: {
+        subjectType: VerificationCaseSubjectType.COMPANY_PROFILE,
+      },
     });
 
     return {
@@ -392,6 +427,39 @@ export class VerificationService {
       action: `REVIEW_${body.decision}`,
       before,
       after,
+    });
+
+    await this.notificationService.emitEvent({
+      key: `verification:reviewed:${saved.id}:${body.decision}`,
+      eventType:
+        body.decision === VerificationDecisionType.APPROVE
+          ? 'VERIFICATION_APPROVED'
+          : body.decision === VerificationDecisionType.REJECT
+            ? 'VERIFICATION_REJECTED'
+            : 'VERIFICATION_REVIEWED',
+      sourceType: 'VERIFICATION_CASE',
+      sourceId: saved.id,
+      userId: saved.userId,
+      category: NotificationCategory.VERIFICATION,
+      title:
+        body.decision === VerificationDecisionType.APPROVE
+          ? 'Verification approved'
+          : body.decision === VerificationDecisionType.REJECT
+            ? 'Verification rejected'
+            : 'Verification updated',
+      message:
+        body.decision === VerificationDecisionType.APPROVE
+          ? 'Your verification was approved.'
+          : body.decision === VerificationDecisionType.REJECT
+            ? 'Your verification was rejected. Review the latest note for next steps.'
+            : 'Your verification case status was updated.',
+      relatedEntityType: 'VerificationCase',
+      relatedEntityId: saved.id,
+      metadata: {
+        decision: body.decision,
+        status: saved.status,
+        reviewedByUserId: actorUserId,
+      },
     });
 
     return after;

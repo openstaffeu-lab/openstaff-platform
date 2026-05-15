@@ -2251,6 +2251,129 @@ export type AdminMessageConversation = {
   unreadCount: number;
 };
 
+export type AdminNotificationCategory =
+  | "ACCOUNT"
+  | "BILLING"
+  | "VERIFICATION"
+  | "PROJECTS"
+  | "MESSAGING"
+  | "WORKFORCE"
+  | "PAYROLL"
+  | "RELU"
+  | "ADMIN";
+
+export type AdminNotificationStatus =
+  | "PENDING"
+  | "SENT"
+  | "FAILED"
+  | "READ"
+  | "DISMISSED";
+
+export type AdminNotificationChannel =
+  | "IN_APP"
+  | "EMAIL"
+  | "SMS"
+  | "SMS_PLACEHOLDER"
+  | "PUSH"
+  | "SYSTEM";
+
+export type AdminNotificationEvent = {
+  id: string;
+  key: string | null;
+  eventType: string;
+  sourceType: string;
+  sourceId: string;
+  userId: string | null;
+  channel: AdminNotificationChannel;
+  category: AdminNotificationCategory | null;
+  status: AdminNotificationStatus;
+  retryCount: number;
+  metadata: unknown;
+  readAt: string | null;
+  deliveredAt: string | null;
+  failedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+  notificationCount: number;
+  deliveryCount: number;
+};
+
+export type AdminNotificationDelivery = {
+  id: string;
+  notificationId: string | null;
+  eventId: string | null;
+  userId: string | null;
+  channel: AdminNotificationChannel;
+  status: AdminNotificationStatus;
+  retryCount: number;
+  metadata: unknown;
+  readAt: string | null;
+  deliveredAt: string | null;
+  failedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+  event: {
+    id: string;
+    eventType: string;
+    sourceType: string;
+    sourceId: string;
+    status: AdminNotificationStatus;
+  } | null;
+  notification: {
+    id: string;
+    title: string;
+    status: AdminNotificationStatus;
+  } | null;
+};
+
+export type WorkflowAutomationRun = {
+  id: string;
+  ruleId: string | null;
+  eventId: string | null;
+  triggeredByUserId: string | null;
+  reviewedByUserId: string | null;
+  status: string;
+  inputSnapshot: unknown;
+  outputData: unknown;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+  event: {
+    id: string;
+    eventType: string;
+    sourceType: string;
+    sourceId: string;
+    status: AdminNotificationStatus;
+  } | null;
+  rule: {
+    id: string;
+    name: string;
+    eventType: string;
+    channel: AdminNotificationChannel;
+    isActive: boolean;
+  } | null;
+  triggeredBy: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+  reviewedBy: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+};
+
 export async function createCompensationAgreement(input: {
   workforceAssignmentId: string;
   compensationType: CompensationType;
@@ -2412,4 +2535,26 @@ export async function getPayrollBillingLinks(filters?: {
   return adminFetch<WorkforceBillingLinkSummary[]>(
     `/admin/payroll/billing-links${query.toString() ? `?${query.toString()}` : ""}`,
   );
+}
+
+export async function getAdminNotificationEvents() {
+  return adminFetch<AdminNotificationEvent[]>("/admin/notifications/events");
+}
+
+export async function getAdminNotificationDeliveries() {
+  return adminFetch<AdminNotificationDelivery[]>("/admin/notifications/deliveries");
+}
+
+export async function retryAdminNotificationDelivery(id: string) {
+  return adminFetch<AdminNotificationDelivery>(`/admin/notifications/deliveries/${id}/retry`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({}),
+  });
+}
+
+export async function getWorkflowAutomationRuns() {
+  return adminFetch<WorkflowAutomationRun[]>("/admin/workflow-automation/runs");
 }

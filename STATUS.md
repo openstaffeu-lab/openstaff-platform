@@ -646,6 +646,74 @@ Verdict: `PASS - direct/project/workforce/payroll/relu conversations, attachment
 | admin build | ✅ | `cd apps/admin && npm.cmd run build` |
 | Blockers | ✅ | niciun blocker deschis pentru aceasta faza; EXEC-10 este inchis oficial cu PASS |
 
+## EXEC-11 Notifications, Workflow Automation & Event Bus
+
+Verdict: `PASS - persistent notification events, delivery tracking, workflow automation runs, user preferences, admin audit views, and cross-module event hooks validated locally`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| `NotificationEvent` model | ✅ | Prisma schema adauga eveniment persistent cu `eventType`, `sourceType`, `sourceId`, `userId`, `channel`, `status`, `retryCount`, `metadata`, `readAt`, `deliveredAt`, `failedAt` |
+| `NotificationDelivery` model | ✅ | Prisma schema persista livrarile per canal pentru fiecare notificare si eveniment |
+| `NotificationPreference` model | ✅ | Prisma schema persista preferintele pe user pentru `inApp`, `email`, `sms` placeholder si categorii active |
+| `WorkflowAutomationRule` model | ✅ | Prisma schema pregateste reguli de automatizare additive si auditabile |
+| `WorkflowAutomationRun` model | ✅ | Prisma schema persista run-uri de automatizare pentru fiecare eveniment declansat |
+| notification schema extension | ✅ | modelul existent `Notification` include acum `eventId`, `category`, `deliveredAt`, `failedAt`, `dismissedAt`, `metadata` si relationare la deliveries |
+| channels extended | ✅ | `NotificationChannel` include `IN_APP`, `EMAIL`, `SMS_PLACEHOLDER`, `SYSTEM` plus compatibilitatea existenta |
+| statuses extended | ✅ | `NotificationStatus` suporta `PENDING`, `SENT`, `FAILED`, `READ`, `DISMISSED` in fluxul nou |
+| categories implemented | ✅ | `NotificationCategory` include `ACCOUNT`, `BILLING`, `VERIFICATION`, `PROJECTS`, `MESSAGING`, `WORKFORCE`, `PAYROLL`, `RELU`, `ADMIN` |
+| event bus service | ✅ | `NotificationService` implementeaza `emitEvent`, `createUserNotification`, `queueDelivery`, `markRead`, `markAllRead`, `listForUser`, `listAdminEvents`, `retryFailedDelivery`, `get/updatePreferences` |
+| user endpoints | ✅ | `GET /notifications`, `GET /notifications/unread-count`, `PATCH /notifications/:id/read`, `PATCH /notifications/read-all`, `PATCH /notifications/:id/dismiss` expuse cu `buildSuccessResponse(...)` |
+| preferences endpoints | ✅ | `GET /notifications/preferences` si `PUT /notifications/preferences` expuse pentru control pe categorii si canale |
+| admin notification endpoints | ✅ | `GET /admin/notifications/events`, `GET /admin/notifications/deliveries`, `POST /admin/notifications/deliveries/:id/retry`, `GET /admin/workflow-automation/runs` sunt protejate admin |
+| auth hook | ✅ | `AuthService.register(...)` emite `ACCOUNT_REGISTERED` |
+| onboarding hook | ✅ | `OnboardingService` emite `ONBOARDING_COMPLETED` cand sesiunea devine `COMPLETED` |
+| billing hooks | ✅ | `BillingService` emite `BILLING_PROFILE_UPDATED`, `BILLING_INVOICE_ISSUED`, `BILLING_INVOICE_PAID` |
+| subscriptions hook | ✅ | `SubscriptionsService.approveUpgradeRequest(...)` emite `SUBSCRIPTION_UPGRADE_APPROVED` |
+| verification hooks | ✅ | `VerificationService` emite `VERIFICATION_SUBMITTED`, `VERIFICATION_APPROVED`, `VERIFICATION_REJECTED` |
+| public feed hooks | ✅ | `PublicPostsService.updatePostStatus(...)` emite `PUBLIC_POST_APPROVED`, `PUBLIC_POST_REJECTED` si fallback `PUBLIC_POST_MODERATION_UPDATED` |
+| Relu hook | ✅ | `ReluService.matchPublicPost(...)` emite `RELU_RECOMMENDATION_GENERATED` fara a bloca fallback-ul deterministic |
+| hiring hook | ✅ | `HiringService` emite `HIRING_STAGE_CHANGED` la mutarile de stage, shortlist, approve si reject |
+| workforce hooks | ✅ | `WorkforceService` emite `WORKFORCE_CONTRACT_ACTIVATED`, `WORKFORCE_CONTRACT_SUSPENDED`, `WORKFORCE_CONTRACT_TERMINATED` |
+| payroll hooks | ✅ | `PayrollService` emite `PAYROLL_SETTLEMENT_APPROVED` si `PAYROLL_SETTLEMENT_REJECTED` |
+| messaging hooks | ✅ | `MessagingService` emite `NEW_MESSAGE` si `MESSAGE_MENTION` prin event bus, nu prin feed demo |
+| idempotent event creation | ✅ | `NotificationService.emitEvent(...)` foloseste `key` stabil si upsert pe `NotificationEvent` pentru a evita duplicatele |
+| delivery retry | ✅ | failed deliveries se pot re-rula prin endpoint admin si tranzitioneaza la `SENT` pentru canalele suportate |
+| fallback behavior | ✅ | canalele neimplementate (`EMAIL`, `SMS_PLACEHOLDER`, `PUSH`) persista livrare `FAILED` auditabila fara a bloca fluxul principal |
+| public notifications UI | ✅ | `apps/admin/web/app/notifications/page.tsx` compileaza cu lista, unread badge, mark read, dismiss si preferences |
+| admin notifications UI | ✅ | `apps/admin/app/admin/notifications/page.tsx` compileaza cu event log, delivery statuses, failed deliveries si workflow runs |
+| nav wiring | ✅ | `apps/admin/web/components/Navbar.tsx` si `apps/admin/components/AdminLayoutShell.tsx` includ intrarile pentru notifications |
+| register creates event | ✅ | runtime local confirma `ACCOUNT_REGISTERED` dupa `POST /auth/register` |
+| onboarding complete creates event | ✅ | runtime local confirma `ONBOARDING_COMPLETED` dupa profil valid + `PATCH /onboarding/steps` |
+| upgrade approval creates billing notifications | ✅ | runtime local confirma `SUBSCRIPTION_UPGRADE_APPROVED` si `BILLING_INVOICE_ISSUED` dupa approve |
+| invoice paid creates event | ✅ | runtime local confirma `BILLING_INVOICE_PAID` dupa `POST /admin/billing/invoices/:id/mark-paid` |
+| verification approved creates event | ✅ | runtime local confirma `VERIFICATION_APPROVED` |
+| post approve/reject create events | ✅ | runtime local confirma `PUBLIC_POST_APPROVED` si `PUBLIC_POST_REJECTED` |
+| Relu recommendation creates event | ✅ | runtime local confirma `RELU_RECOMMENDATION_GENERATED`, iar preferinta dezactivata blocheaza doar notificarea user-facing |
+| hiring move creates event | ✅ | runtime local confirma `HIRING_STAGE_CHANGED` |
+| workforce activation creates event | ✅ | runtime local confirma `WORKFORCE_CONTRACT_ACTIVATED` dupa activarea contractului |
+| payroll reject creates event | ✅ | runtime local confirma `PAYROLL_SETTLEMENT_REJECTED` |
+| new message creates event | ✅ | runtime local confirma `NEW_MESSAGE` si unread increment |
+| unread count works | ✅ | runtime local confirma `GET /notifications/unread-count` > 0 dupa mesaj nou |
+| mark read works | ✅ | runtime local confirma `PATCH /notifications/:id/read` si scaderea `unreadCount` |
+| preferences respected | ✅ | runtime local confirma ca `RELU` dezactivat nu creeaza notificare user-facing |
+| admin event list works | ✅ | runtime local confirma `GET /admin/notifications/events`, `GET /admin/notifications/deliveries`, `GET /admin/workflow-automation/runs` |
+| retry failed delivery works | ✅ | runtime local confirma `POST /admin/notifications/deliveries/:id/retry` si status final `SENT` |
+| auth remains stable | ✅ | runtime local confirma `GET /auth/me = 200` dupa flow-ul EXEC-11 |
+| onboarding remains stable | ✅ | runtime local confirma `GET /onboarding/me = 200` dupa flow-ul EXEC-11 |
+| subscriptions remain stable | ✅ | runtime local confirma `GET /subscriptions/me = 200` dupa flow-ul EXEC-11 |
+| billing remains stable | ✅ | runtime local confirma `GET /billing/profile/me = 200` dupa flow-ul EXEC-11 |
+| Relu remains stable | ✅ | runtime local confirma `GET /relu/public-posts/:id/results = 200` dupa flow-ul EXEC-11 |
+| messaging remains stable | ✅ | runtime local confirma `GET /messages/conversations/:id/messages = 200` dupa flow-ul EXEC-11 |
+| public feed remains stable | ✅ | runtime local confirma `GET /public-posts = 200` dupa flow-ul EXEC-11 |
+| runtime validation | ✅ | `cd apps/admin/api && node scripts/exec-11-runtime-check.js` |
+| `prisma validate` | ✅ | `cd apps/admin/api && npx.cmd prisma validate` |
+| `prisma generate` | ✅ | `cd apps/admin/api && npx.cmd prisma generate` |
+| `prisma db push` | ✅ | `cd apps/admin/api && npx.cmd prisma db push` |
+| API build | ✅ | `cd apps/admin/api && npm.cmd run build` |
+| web build | ✅ | `cd apps/admin/web && npm.cmd run build` |
+| admin build | ✅ | `cd apps/admin && npm.cmd run build` |
+| Blockers | ✅ | niciun blocker deschis pentru aceasta faza; EXEC-11 este inchis oficial cu PASS |
+
 ## Prompt 8 Video Audit Snapshot
 
 Surse analizate:

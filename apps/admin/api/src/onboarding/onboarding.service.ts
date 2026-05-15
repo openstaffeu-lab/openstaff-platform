@@ -5,12 +5,14 @@ import {
 } from '@nestjs/common';
 import {
   OnboardingStatus,
+  NotificationCategory,
   ProfileType,
   VerificationCaseStatus,
   VerificationCaseSubjectType,
   VerificationStatus,
 } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { NotificationService } from '../notifications/notification.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateOnboardingStepDto } from './dto/update-onboarding-step.dto';
 import { UpsertCompanyProfileDto } from './dto/upsert-company-profile.dto';
@@ -23,6 +25,7 @@ export class OnboardingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async getOnboardingMe(userId: string) {
@@ -89,6 +92,7 @@ export class OnboardingService {
       before,
       after,
     });
+    await this.emitOnboardingCompletedIfNeeded(userId, after);
     return after;
   }
 
@@ -156,6 +160,7 @@ export class OnboardingService {
       before,
       after,
     });
+    await this.emitOnboardingCompletedIfNeeded(userId, after);
     return after;
   }
 
@@ -197,6 +202,7 @@ export class OnboardingService {
       before,
       after,
     });
+    await this.emitOnboardingCompletedIfNeeded(userId, after);
     return after;
   }
 
@@ -758,5 +764,28 @@ export class OnboardingService {
           }
         : null,
     };
+  }
+
+  private async emitOnboardingCompletedIfNeeded(userId: string, after: any) {
+    if (after?.onboardingSession?.status !== OnboardingStatus.COMPLETED) {
+      return;
+    }
+
+    await this.notificationService.emitEvent({
+      key: `onboarding:completed:${userId}`,
+      eventType: 'ONBOARDING_COMPLETED',
+      sourceType: 'ONBOARDING_SESSION',
+      sourceId: after.onboardingSession.id,
+      userId,
+      category: NotificationCategory.ACCOUNT,
+      title: 'Onboarding completed',
+      message:
+        'Your onboarding is complete. Continue with verification, projects, and workforce opportunities.',
+      relatedEntityType: 'OnboardingSession',
+      relatedEntityId: after.onboardingSession.id,
+      metadata: {
+        completionPercent: after.completionPercent,
+      },
+    });
   }
 }

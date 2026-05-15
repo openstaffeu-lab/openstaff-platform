@@ -2,6 +2,7 @@ import {
   AccountSubscriptionStatus,
   BillingEventStatus,
   BillingEventType,
+  NotificationCategory,
   Role,
   SubscriptionPlanCode,
   SubscriptionPlanStatus,
@@ -14,6 +15,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { AuditService } from '../audit/audit.service';
 import { BillingService } from '../billing/billing.service';
+import { NotificationService } from '../notifications/notification.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApproveUpgradeRequestDto } from './dto/approve-upgrade-request.dto';
 import { ChangeUserSubscriptionDto } from './dto/change-user-subscription.dto';
@@ -35,6 +37,7 @@ export class SubscriptionsService {
     private readonly jwtService: JwtService,
     private readonly auditService: AuditService,
     private readonly billingService: BillingService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async listPlans() {
@@ -476,6 +479,26 @@ export class SubscriptionsService {
       },
       actorUserId,
     );
+
+    await this.notificationService.emitEvent({
+      key: `subscription-upgrade:approved:${upgradeRequest.id}`,
+      eventType: 'SUBSCRIPTION_UPGRADE_APPROVED',
+      sourceType: 'SUBSCRIPTION_UPGRADE_REQUEST',
+      sourceId: upgradeRequest.id,
+      userId: upgradeRequest.userId!,
+      category: NotificationCategory.BILLING,
+      title: 'Subscription upgraded',
+      message: `Your plan was upgraded to ${result.subscription.plan.name}.`,
+      relatedEntityType: 'SubscriptionUpgradeRequest',
+      relatedEntityId: upgradeRequest.id,
+      metadata: {
+        previousPlanCode: previousSubscription?.plan.code ?? null,
+        requestedPlanCode: result.subscription.plan.code,
+        billingEventId: result.billingEvent.id,
+        invoiceId: invoice.id,
+        approvedByUserId: actorUserId ?? null,
+      },
+    });
 
     return {
       request: this.toUpgradeRequestResponse(result.request),

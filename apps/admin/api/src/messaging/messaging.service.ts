@@ -9,6 +9,7 @@ import {
   ConversationType,
   MessageStatus,
   MessageType,
+  NotificationCategory,
   NotificationSeverity,
   Prisma,
   ProjectInvitationStatus,
@@ -1556,30 +1557,42 @@ export class MessagingService {
     );
 
     for (const recipient of recipients) {
-      await this.notificationService.createInAppNotification({
+      await this.notificationService.emitEvent({
         key: `message:${message.id}:${recipient.userId}`,
+        eventType: 'NEW_MESSAGE',
+        sourceType: 'MESSAGE',
+        sourceId: message.id,
         userId: recipient.userId,
-        type: 'MESSAGE_RECEIVED',
-        severity: NotificationSeverity.INFO,
+        category: NotificationCategory.MESSAGING,
         title: 'New message received',
         message: `You have a new ${conversation.type.toLowerCase()} conversation message.`,
         relatedEntityType: 'Conversation',
         relatedEntityId: conversation.id,
-        scheduledFor: new Date(),
+        severity: NotificationSeverity.INFO,
+        metadata: {
+          conversationType: conversation.type,
+          senderId: actorUserId,
+        },
       });
     }
 
     for (const mentionedUserId of mentionedUserIds.filter((item) => item !== actorUserId)) {
-      await this.notificationService.createInAppNotification({
+      await this.notificationService.emitEvent({
         key: `message-mention:${message.id}:${mentionedUserId}`,
+        eventType: 'MESSAGE_MENTION',
+        sourceType: 'MESSAGE',
+        sourceId: message.id,
         userId: mentionedUserId,
-        type: 'MESSAGE_MENTION',
-        severity: NotificationSeverity.INFO,
+        category: NotificationCategory.MESSAGING,
         title: 'You were mentioned',
         message: `A participant mentioned you in a ${conversation.type.toLowerCase()} conversation.`,
         relatedEntityType: 'Conversation',
         relatedEntityId: conversation.id,
-        scheduledFor: new Date(),
+        severity: NotificationSeverity.INFO,
+        metadata: {
+          conversationType: conversation.type,
+          senderId: actorUserId,
+        },
       });
     }
   }

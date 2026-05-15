@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module';
 import { AuthModule } from '../auth/auth.module';
+import { NotificationModule } from '../notifications/notification.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import {
   OnboardingAdminController,
@@ -10,7 +11,7 @@ import {
 import { OnboardingService } from './onboarding.service';
 
 @Module({
-  imports: [PrismaModule, AuditModule, AuthModule],
+  imports: [PrismaModule, AuditModule, AuthModule, NotificationModule],
   controllers: [
     OnboardingController,
     OnboardingPublicProfilesController,

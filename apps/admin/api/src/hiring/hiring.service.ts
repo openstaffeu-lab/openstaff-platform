@@ -9,10 +9,12 @@ import {
   ApplicationStage,
   AppStatus,
   HiringPipelineStatus,
+  NotificationCategory,
   Prisma,
   Role,
 } from '@prisma/client';
 import { MessagingService } from '../messaging/messaging.service';
+import { NotificationService } from '../notifications/notification.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApproveApplicationDto } from './dto/approve-application.dto';
 import { MoveApplicationStageDto } from './dto/move-application-stage.dto';
@@ -39,6 +41,7 @@ export class HiringService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly messagingService: MessagingService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async listPipelines(
@@ -261,6 +264,23 @@ export class HiringService {
     });
 
     if (updated.candidateUserId) {
+      await this.notificationService.emitEvent({
+        key: `hiring:stage:${updated.id}:${updated.currentStage}`,
+        eventType: 'HIRING_STAGE_CHANGED',
+        sourceType: 'APPLICATION',
+        sourceId: updated.id,
+        userId: updated.candidateUserId,
+        category: NotificationCategory.PROJECTS,
+        title: 'Application stage updated',
+        message: `Your application for ${updated.job.title} moved to ${updated.currentStage}.`,
+        relatedEntityType: 'Application',
+        relatedEntityId: updated.id,
+        metadata: {
+          stage: updated.currentStage,
+          jobId: updated.jobId,
+        },
+      });
+
       const recruiterUser = await this.findUserByActor(updated.job.actor);
       if (recruiterUser?.id && recruiterUser.id !== updated.candidateUserId) {
         await this.messagingService.createDirectConversation(
@@ -303,6 +323,25 @@ export class HiringService {
       });
     });
 
+    if (updated.candidateUserId) {
+      await this.notificationService.emitEvent({
+        key: `hiring:stage:${updated.id}:${updated.currentStage}`,
+        eventType: 'HIRING_STAGE_CHANGED',
+        sourceType: 'APPLICATION',
+        sourceId: updated.id,
+        userId: updated.candidateUserId,
+        category: NotificationCategory.PROJECTS,
+        title: 'Application shortlisted',
+        message: `Your application for ${updated.job.title} was shortlisted.`,
+        relatedEntityType: 'Application',
+        relatedEntityId: updated.id,
+        metadata: {
+          stage: updated.currentStage,
+          jobId: updated.jobId,
+        },
+      });
+    }
+
     return this.toManagedApplicationResponse(updated);
   }
 
@@ -338,6 +377,26 @@ export class HiringService {
         include: this.applicationInclude,
       });
     });
+
+    if (updated.candidateUserId) {
+      await this.notificationService.emitEvent({
+        key: `hiring:decision:${updated.id}:APPROVED`,
+        eventType: 'HIRING_STAGE_CHANGED',
+        sourceType: 'APPLICATION',
+        sourceId: updated.id,
+        userId: updated.candidateUserId,
+        category: NotificationCategory.PROJECTS,
+        title: 'Application approved',
+        message: `You were hired for ${updated.job.title}.`,
+        relatedEntityType: 'Application',
+        relatedEntityId: updated.id,
+        metadata: {
+          stage: updated.currentStage,
+          decision: ApplicationDecision.APPROVED,
+          jobId: updated.jobId,
+        },
+      });
+    }
 
     return this.toManagedApplicationResponse(updated);
   }
@@ -378,6 +437,26 @@ export class HiringService {
         include: this.applicationInclude,
       });
     });
+
+    if (updated.candidateUserId) {
+      await this.notificationService.emitEvent({
+        key: `hiring:decision:${updated.id}:REJECTED`,
+        eventType: 'HIRING_STAGE_CHANGED',
+        sourceType: 'APPLICATION',
+        sourceId: updated.id,
+        userId: updated.candidateUserId,
+        category: NotificationCategory.PROJECTS,
+        title: 'Application updated',
+        message: `Your application for ${updated.job.title} was rejected.`,
+        relatedEntityType: 'Application',
+        relatedEntityId: updated.id,
+        metadata: {
+          stage: updated.currentStage,
+          decision: ApplicationDecision.REJECTED,
+          jobId: updated.jobId,
+        },
+      });
+    }
 
     return this.toManagedApplicationResponse(updated);
   }
