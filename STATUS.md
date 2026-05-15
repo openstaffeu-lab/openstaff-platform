@@ -809,6 +809,64 @@ Verdict: `PASS - deployment contract, Cloud Build hardening, production migratio
 | release check result | ✅ | `powershell -ExecutionPolicy Bypass -File scripts/release/exec-13-release-check.ps1` trece pe branch-ul curat dupa commit |
 | Blockers | ✅ | pasii manuali ramasi sunt exclusiv GCP: creare Cloud SQL, creare secrete in Secret Manager, rulare `prisma migrate deploy`, deploy Cloud Run si domain mapping |
 
+## EXEC-14 Security, Audit, Compliance & Access Hardening
+
+Verdict: `PASS - persistent audit/security telemetry, session tracking, compliance request foundations, RBAC hardening, throttling, and admin security visibility validated locally`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| security audit completed | âœ… | audit local pe `JwtGuard`, `PermissionsGuard`, auth, billing, payroll, messaging, moderation, Relu, notifications si runtime flags |
+| audit findings documented in implementation | âœ… | acoperire lipsa identificata pentru audit persistent, security telemetry, sesiuni active, compliance queue si throttling pe rutele sensibile |
+| `AuditLog` extended safely | âœ… | Prisma schema include `targetUserId`, `category`, `ipAddress`, `userAgent`, `requestId` si indexuri suplimentare |
+| `SecurityEvent` model | âœ… | Prisma schema include `type`, `status`, `severity`, `metadata`, actor/reviewer si indexuri pe `userId`, `type`, `status`, `createdAt` |
+| `UserSession` model | âœ… | Prisma schema persista sesiuni active cu `sessionToken`, `refreshTokenHash`, `ipAddress`, `userAgent`, `lastActivityAt`, `revokedAt` |
+| `UserDeviceFingerprint` model | âœ… | Prisma schema persista fingerprint per user/device/browser/IP pentru review de securitate |
+| `ComplianceRequest` model | âœ… | Prisma schema adauga request-uri `EXPORT_DATA` si `DELETE_ACCOUNT` cu status si review admin |
+| audit module backend | âœ… | `apps/admin/api/src/audit/` extins cu `AuditService` global, endpoint-uri admin si helperi reutilizabili |
+| automatic request tracking | âœ… | `HttpExceptionFilter` si flow-urile auth/access-control propaga `requestId` si persista evenimente de securitate relevante |
+| auth security events | âœ… | `AuthService` logheaza `LOGIN_SUCCESS`, `LOGIN_FAILED`, `TOKEN_REFRESH` si activitate suspecta |
+| permission denied telemetry | âœ… | `PermissionsGuard` persista `SecurityEvent.PERMISSION_DENIED` pentru roluri/permisii insuficiente |
+| invalid token telemetry | âœ… | `JwtGuard` persista evenimente pentru token lipsa, header invalid, user suspendat si JWT invalid |
+| admin security endpoints | âœ… | `GET /admin/security/audit-logs`, `GET /admin/security/events`, `PATCH /admin/security/events/:id/status`, `GET /admin/security/sessions` |
+| session endpoints | âœ… | `GET /auth/sessions` si `DELETE /auth/sessions/:id` expun si revoca sesiuni persistente |
+| compliance request endpoints | âœ… | `POST /compliance/export-request`, `POST /compliance/delete-request`, `GET /admin/compliance/requests` |
+| RBAC hardening applied | âœ… | rutele admin noi folosesc `JwtGuard + PermissionsGuard + RequirePermissions`, iar `RolesGuard`/`JwtGuard` normalizeaza corect `401` vs `403` |
+| deny-by-default behavior preserved | âœ… | non-admin pe rute securizate primeste `401` fara token si `403` cu token fara permisiuni |
+| ownership/session revoke validation | âœ… | revocarea sesiunii verifica owner-ul sau dreptul admin `MANAGE_USERS` |
+| rate limiting added | âœ… | `RateLimitGuard` si decoratorul `@RateLimit(...)` protejeaza auth, messaging, public publish/upload si notification send |
+| rate limit env contract | âœ… | `apps/admin/api/.env.example` include `RATE_LIMIT_WINDOW_MS` si `RATE_LIMIT_MAX_REQUESTS` |
+| rate limit security events | âœ… | depasirea pragului returneaza `429` cu envelope normalizat si persista `RATE_LIMIT_TRIGGERED` |
+| status security summary | âœ… | `/status` include sumar pentru evenimente deschise, severitate critica, sesiuni active si compliance requests |
+| admin security dashboard | âœ… | `apps/admin/app/admin/security/page.tsx` compileaza si afiseaza audit logs, security events, active sessions si compliance queue |
+| admin nav wiring | âœ… | `apps/admin/components/AdminLayoutShell.tsx` include intrarea `Security` |
+| admin API helpers | âœ… | `apps/admin/lib/api.ts` include helperi pentru audit logs, security events, sessions si compliance requests |
+| audit log persistence | âœ… | `cd apps/admin/api && node scripts/exec-14-runtime-check.js` confirma persistenta logurilor dupa approve de `PublicPost` si request-uri de compliance |
+| security event creation | âœ… | runtime local confirma evenimente pentru login esuat, acces interzis si throttling |
+| requestId propagation | âœ… | runtime local confirma header `x-request-id` si envelope cu `requestId`/`code` pe `401`, `403`, `429` |
+| session creation/revoke | âœ… | runtime local confirma `GET /auth/sessions` si `DELETE /auth/sessions/:id` |
+| permission denied logging | âœ… | runtime local confirma `GET /admin/security/events` contine `PERMISSION_DENIED` dupa acces blocat |
+| rate limit trigger | âœ… | runtime local confirma pragul pe login esuat si persistenta `RATE_LIMIT_TRIGGERED` |
+| GDPR/compliance requests | âœ… | runtime local confirma creare `EXPORT_DATA` si `DELETE_ACCOUNT` si vizibilitate in queue admin |
+| admin security endpoints validated | âœ… | scriptul confirma listarea audit logs, security events, sessions si compliance requests, plus update status event |
+| auth remains stable | âœ… | runtime local confirma `GET /auth/me = 200` dupa hardening |
+| onboarding remains stable | âœ… | runtime local confirma `GET /onboarding/me = 200` dupa hardening |
+| subscriptions remain stable | âœ… | runtime local confirma `GET /subscriptions/me = 200` dupa hardening |
+| billing remains stable | âœ… | runtime local confirma `GET /billing/profile/me = 200` dupa hardening |
+| workforce remains stable | âœ… | runtime local confirma `GET /workforce/me = 200` dupa hardening |
+| payroll remains stable | âœ… | runtime local confirma `GET /payroll/me = 200` dupa hardening |
+| messaging remains stable | âœ… | runtime local confirma `GET /messages/conversations = 200` dupa hardening |
+| notifications remain stable | âœ… | runtime local confirma `GET /notifications = 200` dupa hardening |
+| Relu remains stable | âœ… | runtime local confirma `GET /admin/relu/runs = 200` dupa hardening |
+| public feed remains stable | âœ… | runtime local confirma creare, aprobare si listare `PublicPost` fara regresii |
+| `prisma validate` | âœ… | `cd apps/admin/api && npx.cmd prisma validate` |
+| `prisma generate` | âœ… | `cd apps/admin/api && npx.cmd prisma generate` |
+| `prisma db push` | âœ… | `cd apps/admin/api && npx.cmd prisma db push` |
+| API build | âœ… | `cd apps/admin/api && npm.cmd run build` |
+| web build | âœ… | `cd apps/admin/web && npm.cmd run build` |
+| admin build | âœ… | `cd apps/admin && npm.cmd run build` |
+| runtime validation | âœ… | `cd apps/admin/api && node scripts/exec-14-runtime-check.js` |
+| Blockers | âœ… | niciun blocker deschis; audit, access hardening si compliance foundations validate local |
+
 ## Prompt 8 Video Audit Snapshot
 
 Surse analizate:

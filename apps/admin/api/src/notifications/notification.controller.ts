@@ -16,6 +16,8 @@ import {
   logEndpointError,
 } from '../common/api-response';
 import { JwtGuard } from '../auth/jwt.guard';
+import { RateLimit } from '../common/rate-limit.decorator';
+import { RateLimitGuard } from '../common/rate-limit.guard';
 import { RequirePermissions } from '../access-control/permissions.decorator';
 import { PermissionsGuard } from '../access-control/permissions.guard';
 import { NotificationService } from './notification.service';
@@ -167,6 +169,8 @@ export class NotificationController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'notification-manual-send', maxRequests: 10 })
   @RequirePermissions(Permission.MANAGE_USERS)
   @Post('notifications/send')
   async sendManual(@Body() body: any) {

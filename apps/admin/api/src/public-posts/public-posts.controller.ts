@@ -22,6 +22,8 @@ import { Permission } from '@prisma/client';
 import { RequirePermissions } from '../access-control/permissions.decorator';
 import { PermissionsGuard } from '../access-control/permissions.guard';
 import { JwtGuard } from '../auth/jwt.guard';
+import { RateLimit } from '../common/rate-limit.decorator';
+import { RateLimitGuard } from '../common/rate-limit.guard';
 import {
   buildInternalErrorResponse,
   logEndpointError,
@@ -147,6 +149,8 @@ export class PublicPostsController {
   }
 
   @UseGuards(JwtGuard)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'public-post-create', maxRequests: 10 })
   @Post('public-posts')
   async create(@Body() body: Record<string, unknown>, @Req() req: any) {
     if (!req.user?.sub) {
@@ -195,6 +199,8 @@ export class PublicPostsController {
   }
 
   @UseGuards(JwtGuard)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'public-post-upload', maxRequests: 15 })
   @Post('public-posts/:id/media')
   @UseInterceptors(FileInterceptor('file'))
   async addMedia(
@@ -217,6 +223,8 @@ export class PublicPostsController {
   }
 
   @UseGuards(JwtGuard)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'public-post-upload', maxRequests: 15 })
   @Post('public-posts/:id/documents')
   @UseInterceptors(FileInterceptor('file'))
   async addDocument(
@@ -239,6 +247,8 @@ export class PublicPostsController {
   }
 
   @UseGuards(JwtGuard)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'public-post-link', maxRequests: 20 })
   @Post('public-posts/:id/external-links')
   async addExternalLink(
     @Param('id') id: string,

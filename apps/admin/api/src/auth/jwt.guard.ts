@@ -8,6 +8,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { AccountLifecycleStatus } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
+import { AuditService } from '../audit/audit.service';
 import { RuntimeConfigService } from '../config/runtime-config.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { IS_PUBLIC_KEY } from './public.decorator';
@@ -19,6 +20,7 @@ export class JwtGuard implements CanActivate {
     private readonly prisma: PrismaService,
     private readonly reflector: Reflector,
     private readonly runtimeConfig: RuntimeConfigService,
+    private readonly auditService: AuditService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -48,12 +50,28 @@ export class JwtGuard implements CanActivate {
     const authHeader = request.headers.authorization;
 
     if (!authHeader) {
+      await this.auditService.logSecurityEvent({
+        type: 'PERMISSION_DENIED' as any,
+        category: 'AUTH',
+        sourceType: 'HTTP_ROUTE',
+        sourceId: `${request?.method ?? 'GET'} ${request?.url ?? ''}`,
+        message: 'Missing bearer token',
+        request,
+      });
       throw new UnauthorizedException('No token provided');
     }
 
     const [type, token] = authHeader.split(' ');
 
     if (type !== 'Bearer' || !token) {
+      await this.auditService.logSecurityEvent({
+        type: 'PERMISSION_DENIED' as any,
+        category: 'AUTH',
+        sourceType: 'HTTP_ROUTE',
+        sourceId: `${request?.method ?? 'GET'} ${request?.url ?? ''}`,
+        message: 'Invalid authorization header format',
+        request,
+      });
       throw new UnauthorizedException('Invalid token format');
     }
 
@@ -78,10 +96,27 @@ export class JwtGuard implements CanActivate {
       });
 
       if (!user) {
+        await this.auditService.logSecurityEvent({
+          type: 'PERMISSION_DENIED' as any,
+          category: 'AUTH',
+          sourceType: 'USER',
+          sourceId: payload.sub,
+          message: 'JWT resolved to a missing user',
+          request,
+        });
         throw new UnauthorizedException('User not found');
       }
 
       if (user.accountStatus === AccountLifecycleStatus.SUSPENDED) {
+        await this.auditService.logSecurityEvent({
+          userId: user.id,
+          type: 'PERMISSION_DENIED' as any,
+          category: 'AUTH',
+          sourceType: 'USER',
+          sourceId: user.id,
+          message: 'Suspended account attempted guarded route access',
+          request,
+        });
         throw new ForbiddenException('Your account is suspended');
       }
 
@@ -97,6 +132,15 @@ export class JwtGuard implements CanActivate {
       if (error instanceof ForbiddenException || error instanceof UnauthorizedException) {
         throw error;
       }
+
+      await this.auditService.logSecurityEvent({
+        type: 'PERMISSION_DENIED' as any,
+        category: 'AUTH',
+        sourceType: 'HTTP_ROUTE',
+        sourceId: `${request?.method ?? 'GET'} ${request?.url ?? ''}`,
+        message: 'JWT validation failed',
+        request,
+      });
 
       throw new UnauthorizedException('Invalid token');
     }

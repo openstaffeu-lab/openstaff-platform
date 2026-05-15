@@ -36,6 +36,7 @@ export class AppService {
     let notificationQueue = { pending: 0, failed: 0 };
     let reluQueue = { pending: 0, failed: 0 };
     let workflowRuns = { total: 0, failed: 0 };
+    let securitySummary = { openEvents: 0, criticalEvents: 0, activeSessions: 0, complianceRequests: 0 };
 
     try {
       await this.prisma.$queryRaw`SELECT 1`;
@@ -44,7 +45,18 @@ export class AppService {
     }
 
     try {
-      const [pending, failed, reluPending, reluFailed, workflowTotal, workflowFailed] =
+      const [
+        pending,
+        failed,
+        reluPending,
+        reluFailed,
+        workflowTotal,
+        workflowFailed,
+        openEvents,
+        criticalEvents,
+        activeSessions,
+        complianceRequests,
+      ] =
         await Promise.all([
           this.prisma.notificationDelivery.count({
             where: { status: 'PENDING' as any },
@@ -62,11 +74,24 @@ export class AppService {
           this.prisma.workflowAutomationRun.count({
             where: { status: 'FAILED' as any },
           }),
+          this.prisma.securityEvent.count({
+            where: { status: 'PENDING' as any },
+          }),
+          this.prisma.securityEvent.count({
+            where: { severity: 'CRITICAL' as any },
+          }),
+          this.prisma.userSession.count({
+            where: { revokedAt: null },
+          }),
+          this.prisma.complianceRequest.count({
+            where: { status: 'PENDING' as any },
+          }),
         ]);
 
       notificationQueue = { pending, failed };
       reluQueue = { pending: reluPending, failed: reluFailed };
       workflowRuns = { total: workflowTotal, failed: workflowFailed };
+      securitySummary = { openEvents, criticalEvents, activeSessions, complianceRequests };
     } catch {
       // Status should still render even if some optional tables are unavailable.
     }
@@ -89,6 +114,8 @@ export class AppService {
         databaseConfigured: Boolean(process.env.DATABASE_URL),
         jwtSecretConfigured: Boolean(process.env.JWT_SECRET),
         storageBucketConfigured: Boolean(process.env.STORAGE_BUCKET),
+        rateLimitWindowMs: Number(process.env.RATE_LIMIT_WINDOW_MS ?? 60000),
+        rateLimitMaxRequests: Number(process.env.RATE_LIMIT_MAX_REQUESTS ?? 20),
       },
       featureFlags: runtimeSummary.featureFlags,
       readiness: {
@@ -125,6 +152,7 @@ export class AppService {
         relu: reluQueue,
         workflowAutomation: workflowRuns,
       },
+      security: securitySummary,
       components: [
         this.component('auth', 'implemented', '/auth'),
         this.component('projects', 'implemented', '/projects'),

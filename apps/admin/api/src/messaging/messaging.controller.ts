@@ -27,6 +27,8 @@ import {
   buildSuccessResponse,
   logEndpointError,
 } from '../common/api-response';
+import { RateLimit } from '../common/rate-limit.decorator';
+import { RateLimitGuard } from '../common/rate-limit.guard';
 import { AddConversationParticipantDto } from './dto/add-conversation-participant.dto';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
@@ -157,6 +159,8 @@ export class MessagingController {
   }
 
   @UseGuards(JwtGuard)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'messaging-send', maxRequests: 30 })
   @Post('messages/conversations/:conversationId/messages')
   async sendMessage(
     @Param('conversationId') conversationId: string,
@@ -177,6 +181,8 @@ export class MessagingController {
   }
 
   @UseGuards(JwtGuard)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'messaging-upload', maxRequests: 20 })
   @Post('messages/conversations/:conversationId/attachments')
   @UseInterceptors(FileInterceptor('file'))
   async uploadAttachment(

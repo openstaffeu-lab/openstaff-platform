@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   Req,
   Res,
@@ -11,6 +13,8 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
+import { RateLimit } from '../common/rate-limit.decorator';
+import { RateLimitGuard } from '../common/rate-limit.guard';
 import { FirebaseExchangeDto } from './dto/firebase-exchange.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
@@ -23,16 +27,20 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'auth-register', maxRequests: 10 })
   @Post('register')
-  async register(@Body() body: RegisterDto) {
-    return this.authService.register(body);
+  async register(@Body() body: RegisterDto, @Req() req: any) {
+    return this.authService.register(body, req);
   }
 
   @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'auth-login', maxRequests: 10 })
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() body: LoginDto) {
-    return this.authService.login(body);
+  async login(@Body() body: LoginDto, @Req() req: any) {
+    return this.authService.login(body, req);
   }
 
   @UseGuards(JwtGuard)
@@ -42,24 +50,38 @@ export class AuthController {
   }
 
   @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'auth-refresh', maxRequests: 20 })
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  async refresh(@Body() body: RefreshDto) {
-    return this.authService.refresh(body.refreshToken);
+  async refresh(@Body() body: RefreshDto, @Req() req: any) {
+    return this.authService.refresh(body.refreshToken, req);
   }
 
   @UseGuards(JwtGuard)
   @Post('logout')
   @HttpCode(204)
   async logout(@Req() req: any, @Res({ passthrough: true }) response: Response) {
-    await this.authService.logout(req.user.sub);
+    await this.authService.logout(req.user.sub, req);
     response.status(204);
   }
 
   @Public()
   @Post('firebase-exchange')
   @HttpCode(HttpStatus.OK)
-  async firebaseExchange(@Body() body: FirebaseExchangeDto) {
-    return this.authService.firebaseExchange(body.idToken);
+  async firebaseExchange(@Body() body: FirebaseExchangeDto, @Req() req: any) {
+    return this.authService.firebaseExchange(body.idToken, req);
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('sessions')
+  async sessions(@Req() req: any) {
+    return this.authService.listSessions(req.user.sub);
+  }
+
+  @UseGuards(JwtGuard)
+  @Delete('sessions/:id')
+  async deleteSession(@Param('id') id: string, @Req() req: any) {
+    return this.authService.revokeSession(id, req.user);
   }
 }

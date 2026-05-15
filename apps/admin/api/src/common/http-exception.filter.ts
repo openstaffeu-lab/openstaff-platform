@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { AuditService } from '../audit/audit.service';
 
 function defaultErrorCode(status: number) {
   switch (status) {
@@ -27,6 +28,8 @@ function defaultErrorCode(status: number) {
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  constructor(private readonly auditService?: AuditService) {}
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
@@ -71,6 +74,49 @@ export class HttpExceptionFilter implements ExceptionFilter {
             details,
           }
         : {}),
+    });
+
+    this.persistSecurityTelemetry({
+      status,
+      message,
+      code,
+      request,
+    });
+  }
+
+  private persistSecurityTelemetry(input: {
+    status: number;
+    message: string;
+    code: string;
+    request: any;
+  }) {
+    if (!this.auditService) {
+      return;
+    }
+
+    if (![HttpStatus.UNAUTHORIZED, HttpStatus.FORBIDDEN, HttpStatus.TOO_MANY_REQUESTS].includes(input.status)) {
+      return;
+    }
+
+    const type =
+      input.status === HttpStatus.TOO_MANY_REQUESTS
+        ? ('RATE_LIMIT_TRIGGERED' as const)
+        : ('PERMISSION_DENIED' as const);
+    const category =
+      input.status === HttpStatus.TOO_MANY_REQUESTS ? 'RATE_LIMIT' : 'ACCESS';
+
+    void this.auditService.logSecurityEvent({
+      userId: input.request?.user?.sub ?? null,
+      type: type as any,
+      category,
+      sourceType: 'HTTP_ROUTE',
+      sourceId: `${input.request?.method ?? 'GET'} ${input.request?.url ?? ''}`,
+      message: input.message,
+      metadata: {
+        code: input.code,
+        status: input.status,
+      },
+      request: input.request,
     });
   }
 }

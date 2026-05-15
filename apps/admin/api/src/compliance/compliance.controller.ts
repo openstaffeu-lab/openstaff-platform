@@ -11,7 +11,11 @@ import {
 } from '@nestjs/common';
 import { JwtGuard } from '../auth/jwt.guard';
 import { RolesGuard } from '../auth/roles.guard';
+import { Permission } from '@prisma/client';
+import { RequirePermissions } from '../access-control/permissions.decorator';
+import { PermissionsGuard } from '../access-control/permissions.guard';
 import { ComplianceEligibilityService } from './compliance-eligibility.service';
+import { ComplianceRequestsService } from './compliance-requests.service';
 import { ComplianceService } from './compliance.service';
 import { CreateActorCertificationDto } from './dto/create-actor-certification.dto';
 import { CreateActorDocumentDto } from './dto/create-actor-document.dto';
@@ -26,6 +30,7 @@ export class ComplianceController {
   constructor(
     private readonly complianceService: ComplianceService,
     private readonly complianceEligibilityService: ComplianceEligibilityService,
+    private readonly complianceRequestsService: ComplianceRequestsService,
   ) {}
 
   @UseGuards(JwtGuard)
@@ -211,5 +216,24 @@ export class ComplianceController {
       jobRequestId,
       req.user,
     );
+  }
+
+  @UseGuards(JwtGuard)
+  @Post('compliance/export-request')
+  async createExportRequest(@Req() req: any) {
+    return this.complianceRequestsService.createExportRequest(req.user, req);
+  }
+
+  @UseGuards(JwtGuard)
+  @Post('compliance/delete-request')
+  async createDeleteRequest(@Req() req: any) {
+    return this.complianceRequestsService.createDeleteRequest(req.user, req);
+  }
+
+  @RequirePermissions(Permission.MANAGE_USERS)
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @Get('admin/compliance/requests')
+  async listAdminComplianceRequests(@Req() req: any) {
+    return this.complianceRequestsService.listAdminRequests(req.user);
   }
 }

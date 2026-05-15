@@ -2374,6 +2374,107 @@ export type WorkflowAutomationRun = {
   } | null;
 };
 
+export type AdminAuditLog = {
+  id: string;
+  actorUserId: string | null;
+  targetUserId: string | null;
+  projectId: string | null;
+  entityType: string;
+  entityId: string;
+  action: string;
+  category: string | null;
+  beforeJson: unknown;
+  afterJson: unknown;
+  metadataJson: unknown;
+  ipAddress: string | null;
+  userAgent: string | null;
+  requestId: string | null;
+  createdAt: string;
+  actorUser: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+  targetUser: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+};
+
+export type AdminSecurityEvent = {
+  id: string;
+  userId: string | null;
+  type: string;
+  category: string | null;
+  sourceType: string | null;
+  sourceId: string | null;
+  status: string;
+  severity: string;
+  message: string;
+  metadata: unknown;
+  ipAddress: string | null;
+  userAgent: string | null;
+  requestId: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+  reviewedByUser: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+};
+
+export type AdminUserSession = {
+  id: string;
+  userId: string;
+  deviceFingerprintId: string | null;
+  deviceLabel: string | null;
+  browser: string | null;
+  os: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  lastActivityAt: string;
+  revokedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+};
+
+export type AdminComplianceRequest = {
+  id: string;
+  userId: string;
+  type: string;
+  status: string;
+  requestedAt: string;
+  reviewedAt: string | null;
+  secureDownloadToken: string | null;
+  exportData: unknown;
+  metadata: unknown;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+  };
+  reviewedByUser: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+};
+
 export async function createCompensationAgreement(input: {
   workforceAssignmentId: string;
   compensationType: CompensationType;
@@ -2557,4 +2658,52 @@ export async function retryAdminNotificationDelivery(id: string) {
 
 export async function getWorkflowAutomationRuns() {
   return adminFetch<WorkflowAutomationRun[]>("/admin/workflow-automation/runs");
+}
+
+export async function getAdminSecurityAuditLogs(filters?: {
+  q?: string;
+  category?: string;
+  entityType?: string;
+}) {
+  const query = new URLSearchParams();
+
+  if (filters?.q) query.set("q", filters.q);
+  if (filters?.category) query.set("category", filters.category);
+  if (filters?.entityType) query.set("entityType", filters.entityType);
+
+  return adminFetch<AdminAuditLog[]>(
+    `/admin/security/audit-logs${query.toString() ? `?${query.toString()}` : ""}`,
+  );
+}
+
+export async function getAdminSecurityEvents(filters?: {
+  type?: string;
+  status?: string;
+}) {
+  const query = new URLSearchParams();
+
+  if (filters?.type) query.set("type", filters.type);
+  if (filters?.status) query.set("status", filters.status);
+
+  return adminFetch<AdminSecurityEvent[]>(
+    `/admin/security/events${query.toString() ? `?${query.toString()}` : ""}`,
+  );
+}
+
+export async function updateAdminSecurityEventStatus(id: string, status: string) {
+  return adminFetch<AdminSecurityEvent>(`/admin/security/events/${id}/status?status=${encodeURIComponent(status)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({}),
+  });
+}
+
+export async function getAdminSecuritySessions() {
+  return adminFetch<AdminUserSession[]>("/admin/security/sessions");
+}
+
+export async function getAdminComplianceRequests() {
+  return adminFetch<AdminComplianceRequest[]>("/admin/compliance/requests");
 }

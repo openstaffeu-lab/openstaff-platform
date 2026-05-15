@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { API_CORS_ORIGINS, loadSecrets } from './app.config';
 import { AppModule } from './app.module';
+import { AuditService } from './audit/audit.service';
 import { HttpExceptionFilter } from './common/http-exception.filter';
 import { StructuredLoggingInterceptor } from './common/structured-logging.interceptor';
 import {
@@ -45,7 +46,7 @@ async function bootstrap() {
     res.setHeader('x-request-id', requestId);
     next();
   });
-  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalFilters(new HttpExceptionFilter(app.get(AuditService)));
   app.useGlobalInterceptors(new StructuredLoggingInterceptor(runtimeConfig));
   app.use('/dev-files', express.static(join(process.cwd(), 'uploads', 'actors')));
 

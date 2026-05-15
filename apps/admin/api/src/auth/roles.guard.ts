@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 
 @Injectable()
@@ -14,7 +15,7 @@ export class RolesGuard implements CanActivate {
     const user = request.user;
 
     if (!user) {
-      throw new ForbiddenException('No user found');
+      throw new UnauthorizedException('No user found');
     }
 
     if (user.role === 'SUPERADMIN') {

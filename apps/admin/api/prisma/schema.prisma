@@ -131,6 +131,13 @@ model User {
   complianceAlerts                   ComplianceAlert[]
   assignedTasks                      UserTask[]                   @relation("UserTaskAssignedTo")
   auditLogs                          AuditLog[]                   @relation("AuditLogActorUser")
+  targetedAuditLogs                  AuditLog[]                   @relation("AuditLogTargetUser")
+  securityEvents                     SecurityEvent[]              @relation("SecurityEventUser")
+  reviewedSecurityEvents             SecurityEvent[]              @relation("SecurityEventReviewedBy")
+  userSessions                       UserSession[]
+  userDeviceFingerprints             UserDeviceFingerprint[]
+  complianceRequests                 ComplianceRequest[]          @relation("ComplianceRequestUser")
+  reviewedComplianceRequests         ComplianceRequest[]          @relation("ComplianceRequestReviewedBy")
   notifications                      Notification[]
   notificationEvents                 NotificationEvent[]          @relation("NotificationEventUser")
   notificationDeliveries             NotificationDelivery[]       @relation("NotificationDeliveryUser")
@@ -1710,21 +1717,123 @@ model UserTask {
 model AuditLog {
   id           String   @id @default(uuid())
   actorUserId  String?
+  targetUserId String?
   projectId    String?
   entityType   String
   entityId     String
   action       String
+  category     String?
   beforeJson   String?
   afterJson    String?
   metadataJson String?
+  ipAddress    String?
+  userAgent    String?
+  requestId    String?
   createdAt    DateTime @default(now())
 
-  actorUser User?    @relation("AuditLogActorUser", fields: [actorUserId], references: [id], onDelete: Cascade)
-  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  actorUser  User?    @relation("AuditLogActorUser", fields: [actorUserId], references: [id], onDelete: Cascade)
+  targetUser User?    @relation("AuditLogTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+  project    Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([actorUserId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([category, createdAt])
+  @@index([requestId, createdAt])
   @@index([projectId, createdAt])
   @@index([entityType, entityId, createdAt])
+}
+
+model SecurityEvent {
+  id               String              @id @default(uuid())
+  userId           String?
+  reviewedByUserId String?
+  type             SecurityEventType
+  category         String?
+  sourceType       String?
+  sourceId         String?
+  status           SecurityEventStatus @default(PENDING)
+  severity         SecurityEventSeverity @default(INFO)
+  message          String
+  metadata         Json?
+  ipAddress        String?
+  userAgent        String?
+  requestId        String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  reviewedAt       DateTime?
+
+  user           User? @relation("SecurityEventUser", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedByUser User? @relation("SecurityEventReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([category, createdAt])
+  @@index([type, createdAt])
+  @@index([status, createdAt])
+}
+
+model UserDeviceFingerprint {
+  id              String   @id @default(uuid())
+  userId          String
+  fingerprintHash String
+  deviceLabel     String?
+  browser         String?
+  os              String?
+  ipAddress       String?
+  userAgent       String?
+  firstSeenAt     DateTime @default(now())
+  lastSeenAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions UserSession[]
+
+  @@unique([userId, fingerprintHash])
+  @@index([userId, lastSeenAt])
+}
+
+model UserSession {
+  id                  String        @id @default(uuid())
+  userId              String
+  userDeviceFingerprintId String?
+  refreshTokenHash    String?
+  refreshTokenFamily  String?
+  ipAddress           String?
+  userAgent           String?
+  deviceLabel         String?
+  lastActivityAt      DateTime      @default(now())
+  revokedAt           DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceFingerprint UserDeviceFingerprint? @relation(fields: [userDeviceFingerprintId], references: [id], onDelete: SetNull)
+
+  @@index([userId, lastActivityAt])
+  @@index([userDeviceFingerprintId, lastActivityAt])
+  @@index([revokedAt, lastActivityAt])
+}
+
+model ComplianceRequest {
+  id                  String                  @id @default(uuid())
+  userId              String
+  reviewedByUserId    String?
+  type                ComplianceRequestType
+  status              ComplianceRequestStatus @default(PENDING)
+  requestedAt         DateTime                @default(now())
+  reviewedAt          DateTime?
+  secureDownloadToken String?
+  exportData          Json?
+  metadata            Json?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  user           User  @relation("ComplianceRequestUser", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedByUser User? @relation("ComplianceRequestReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([type, createdAt])
 }
 
 model Notification {
@@ -3918,4 +4027,42 @@ enum PublicReviewStatus {
   PENDING_REVIEW
   REJECTED
   FLAGGED
+}
+
+enum SecurityEventType {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  TOKEN_REFRESH
+  PASSWORD_RESET
+  MFA_EVENT
+  PERMISSION_DENIED
+  RATE_LIMIT_TRIGGERED
+  SUSPICIOUS_ACTIVITY
+  ADMIN_OVERRIDE
+  DATA_EXPORT
+  ACCOUNT_DELETE_REQUEST
+}
+
+enum SecurityEventStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+enum SecurityEventSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum ComplianceRequestType {
+  DATA_EXPORT
+  ACCOUNT_DELETE
+}
+
+enum ComplianceRequestStatus {
+  PENDING
+  REVIEWED
+  COMPLETED
+  REJECTED
 }

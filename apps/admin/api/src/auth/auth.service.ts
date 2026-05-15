@@ -22,6 +22,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { NotificationCategory } from '@prisma/client';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationService } from '../notifications/notification.service';
 import { getFirebaseAdminAuth } from './firebase-admin';
@@ -76,10 +77,11 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly auditService: AuditService,
     private readonly notificationService: NotificationService,
   ) {}
 
-  async register(data: RegisterPayload) {
+  async register(data: RegisterPayload, request?: any) {
     const normalizedEmail = data.email.trim().toLowerCase();
     const existingUser = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -160,10 +162,20 @@ export class AuthService {
       },
     });
 
-    return this.buildAuthResponse(user.id);
+    await this.auditService.logSecurityEvent({
+      userId: user.id,
+      type: 'LOGIN_SUCCESS' as any,
+      category: 'ACCOUNT',
+      sourceType: 'USER',
+      sourceId: user.id,
+      message: 'Account registered and initial session issued',
+      request,
+    });
+
+    return this.buildAuthResponse(user.id, request);
   }
 
-  async login(data: LoginPayload) {
+  async login(data: LoginPayload, request?: any) {
     const normalizedEmail = data.email.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -171,20 +183,56 @@ export class AuthService {
     });
 
     if (!user) {
+      await this.auditService.logSecurityEvent({
+        type: 'LOGIN_FAILED' as any,
+        category: 'AUTH',
+        sourceType: 'USER',
+        sourceId: normalizedEmail,
+        message: 'Login failed for unknown user',
+        metadata: { email: normalizedEmail },
+        request,
+      });
       throw new UnauthorizedException('Invalid credentials');
     }
 
     if (user.approvalStatus === AccountApprovalStatus.REJECTED) {
+      await this.auditService.logSecurityEvent({
+        userId: user.id,
+        type: 'SUSPICIOUS_ACTIVITY' as any,
+        category: 'AUTH',
+        sourceType: 'USER',
+        sourceId: user.id,
+        message: 'Rejected account attempted login',
+        request,
+      });
       throw new ForbiddenException('Your account has been rejected');
     }
 
     if (user.accountStatus === AccountLifecycleStatus.SUSPENDED) {
+      await this.auditService.logSecurityEvent({
+        userId: user.id,
+        type: 'SUSPICIOUS_ACTIVITY' as any,
+        category: 'AUTH',
+        sourceType: 'USER',
+        sourceId: user.id,
+        message: 'Suspended account attempted login',
+        request,
+      });
       throw new ForbiddenException('Your account is suspended');
     }
 
     const isMatch = await bcrypt.compare(data.password, user.password);
 
     if (!isMatch) {
+      await this.auditService.logSecurityEvent({
+        userId: user.id,
+        type: 'LOGIN_FAILED' as any,
+        category: 'AUTH',
+        sourceType: 'USER',
+        sourceId: user.id,
+        message: 'Login failed because password did not match',
+        request,
+      });
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -198,14 +246,24 @@ export class AuthService {
 
     await this.ensureDefaultSubscriptionForUser(user.id);
 
-    return this.buildAuthResponse(user.id);
+    await this.auditService.logSecurityEvent({
+      userId: user.id,
+      type: 'LOGIN_SUCCESS' as any,
+      category: 'AUTH',
+      sourceType: 'USER',
+      sourceId: user.id,
+      message: 'User logged in successfully',
+      request,
+    });
+
+    return this.buildAuthResponse(user.id, request);
   }
 
   async getCurrentUser(userId: string) {
     return this.buildUserSummary(userId);
   }
 
-  async refresh(refreshToken: string) {
+  async refresh(refreshToken: string, request?: any) {
     const payload = await this.verifyRefreshToken(refreshToken);
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -217,32 +275,83 @@ export class AuthService {
     });
 
     if (!user || !user.refreshTokenHash) {
+      await this.auditService.logSecurityEvent({
+        userId: payload.sub,
+        type: 'TOKEN_REFRESH' as any,
+        category: 'AUTH',
+        sourceType: 'USER',
+        sourceId: payload.sub,
+        message: 'Refresh token rejected because session is not active',
+        severity: 'WARNING' as any,
+        request,
+      });
       throw new UnauthorizedException('Refresh token is not active');
     }
 
     if (user.accountStatus === AccountLifecycleStatus.SUSPENDED) {
+      await this.auditService.logSecurityEvent({
+        userId: user.id,
+        type: 'SUSPICIOUS_ACTIVITY' as any,
+        category: 'AUTH',
+        sourceType: 'USER',
+        sourceId: user.id,
+        message: 'Suspended account attempted token refresh',
+        request,
+      });
       throw new ForbiddenException('Your account is suspended');
     }
 
     const matches = await bcrypt.compare(refreshToken, user.refreshTokenHash);
 
     if (!matches) {
+      await this.auditService.logSecurityEvent({
+        userId: user.id,
+        type: 'TOKEN_REFRESH' as any,
+        category: 'AUTH',
+        sourceType: 'USER',
+        sourceId: user.id,
+        message: 'Refresh token did not match active session hash',
+        severity: 'WARNING' as any,
+        request,
+      });
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    return this.buildAuthResponse(user.id);
+    await this.auditService.logSecurityEvent({
+      userId: user.id,
+      type: 'TOKEN_REFRESH' as any,
+      category: 'AUTH',
+      sourceType: 'USER',
+      sourceId: user.id,
+      message: 'Refresh token rotated successfully',
+      request,
+    });
+
+    return this.buildAuthResponse(user.id, request);
   }
 
-  async logout(userId: string) {
+  async logout(userId: string, request?: any) {
     await this.prisma.user.update({
       where: { id: userId },
       data: {
         refreshTokenHash: null,
       },
     });
+
+    await this.auditService.revokeAllSessionsForUser(userId);
+    await this.auditService.log({
+      actorUserId: userId,
+      targetUserId: userId,
+      entityType: 'USER_SESSION',
+      entityId: userId,
+      action: 'AUTH_LOGOUT',
+      category: 'AUTH',
+      metadata: { action: 'logout' },
+      request,
+    });
   }
 
-  async firebaseExchange(idToken: string) {
+  async firebaseExchange(idToken: string, request?: any) {
     const decoded = await getFirebaseAdminAuth().verifyIdToken(idToken);
     const normalizedEmail = decoded.email?.trim().toLowerCase();
 
@@ -324,22 +433,49 @@ export class AuthService {
 
     await this.ensureDefaultSubscriptionForUser(user.id);
 
-    return this.buildAuthResponse(user.id);
+    await this.auditService.logSecurityEvent({
+      userId: user.id,
+      type: 'LOGIN_SUCCESS' as any,
+      category: 'AUTH',
+      sourceType: 'USER',
+      sourceId: user.id,
+      message: 'Firebase exchange issued application session',
+      request,
+    });
+
+    return this.buildAuthResponse(user.id, request);
   }
 
-  private async buildAuthResponse(userId: string) {
+  async listSessions(userId: string) {
+    return this.auditService.listUserSessions(userId);
+  }
+
+  async revokeSession(sessionId: string, actor: { sub: string; role: string }) {
+    return this.auditService.revokeSession(sessionId, actor);
+  }
+
+  private async buildAuthResponse(userId: string, request?: any) {
     const user = await this.buildUserSummary(userId);
     const [accessToken, refreshToken] = await Promise.all([
       this.signAccessToken(user),
       this.signRefreshToken(user),
     ]);
+    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
 
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
-        refreshTokenHash: await bcrypt.hash(refreshToken, 10),
+        refreshTokenHash,
       },
     });
+
+    if (request) {
+      await this.auditService.createOrUpdateSession({
+        userId: user.id,
+        refreshTokenHash,
+        request,
+      });
+    }
 
     return {
       user,

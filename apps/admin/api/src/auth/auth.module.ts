@@ -1,4 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common';
+import { AuditModule } from '../audit/audit.module';
+import { RateLimitGuard } from '../common/rate-limit.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { NotificationModule } from '../notifications/notification.module';
 import { PrismaModule } from '../prisma/prisma.module';
@@ -11,6 +13,7 @@ import { PlatformRolesGuard } from './platform-roles.guard';
 @Module({
   imports: [
     PrismaModule,
+    forwardRef(() => AuditModule),
     forwardRef(() => NotificationModule),
     JwtModule.register({
       secret: process.env.JWT_SECRET ?? 'SUPER_SECRET_KEY',
@@ -20,7 +23,7 @@ import { PlatformRolesGuard } from './platform-roles.guard';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtGuard, FirebaseAuthGuard, PlatformRolesGuard],
+  providers: [AuthService, JwtGuard, FirebaseAuthGuard, PlatformRolesGuard, RateLimitGuard],
   exports: [JwtModule, JwtGuard, FirebaseAuthGuard, PlatformRolesGuard, AuthService],
 })
 export class AuthModule {}
