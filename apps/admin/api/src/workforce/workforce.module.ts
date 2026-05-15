@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
+import { MessagingModule } from '../messaging/messaging.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import {
   WorkforceAdminController,
@@ -8,7 +9,7 @@ import {
 import { WorkforceService } from './workforce.service';
 
 @Module({
-  imports: [PrismaModule, AuthModule],
+  imports: [PrismaModule, AuthModule, MessagingModule],
   controllers: [WorkforceAdminController, WorkforceWorkerController],
   providers: [WorkforceService],
   exports: [WorkforceService],

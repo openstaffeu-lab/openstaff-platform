@@ -215,14 +215,26 @@ export type EligibilityStatus =
 export type NotificationChannel = "IN_APP" | "EMAIL" | "SMS" | "PUSH";
 export type NotificationSeverity = "INFO" | "WARNING" | "CRITICAL";
 export type NotificationStatus = "PENDING" | "SENT" | "FAILED" | "READ";
-export type ConversationType = "PROJECT" | "CONTRACT" | "DISPUTE" | "DIRECT";
+export type ConversationType =
+  | "PROJECT"
+  | "CONTRACT"
+  | "DISPUTE"
+  | "DIRECT"
+  | "WORKFORCE"
+  | "PAYROLL"
+  | "RELU"
+  | "SUPPORT";
 export type ConversationParticipantRole =
   | "OWNER"
   | "CONTRACTOR"
   | "WORKER"
   | "ADMIN"
-  | "SUPERVISOR";
+  | "SUPERVISOR"
+  | "MEMBER"
+  | "OBSERVER";
 export type MessageType = "TEXT" | "SYSTEM" | "FILE";
+export type MessageStatus = "SENT" | "DELIVERED" | "READ" | "ARCHIVED" | "DELETED";
+export type PublicModerationStatus = "PENDING" | "APPROVED" | "REJECTED" | "FLAGGED";
 export type WorkerEmploymentType = "EMPLOYEE" | "FREELANCER" | "SUBCONTRACTED" | "TEMPORARY";
 export type WorkerStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 export type WorkerDocumentType =
@@ -973,17 +985,43 @@ export type ConversationMessage = {
   conversationId: string;
   senderId: string;
   type: MessageType;
+  status: MessageStatus;
   content: string;
   metadataJson: Record<string, unknown> | string | null;
+  editedAt?: string | null;
+  deletedAt?: string | null;
+  moderationStatus?: PublicModerationStatus;
+  moderatedAt?: string | null;
+  moderationNotes?: string | null;
+  isFlagged?: boolean;
   createdAt: string;
+  updatedAt?: string;
   sender: ProjectOwner | null;
   reads: ConversationMessageRead[];
+  attachments?: Array<{
+    id: string;
+    conversationId: string;
+    fileName: string;
+    mimeType: string;
+    sizeBytes: number;
+    canPreview: boolean;
+    status: PublicModerationStatus;
+    moderatedAt?: string | null;
+    moderationNotes?: string | null;
+    createdAt: string;
+  }>;
 };
 
 export type ConversationParticipant = {
   id: string;
   userId: string;
   role: ConversationParticipantRole;
+  unreadCount?: number;
+  lastReadAt?: string | null;
+  lastSeenAt?: string | null;
+  isMuted?: boolean;
+  isArchived?: boolean;
+  typingStartedAt?: string | null;
   joinedAt: string;
   user: ProjectOwner | null;
 };
@@ -991,15 +1029,30 @@ export type ConversationParticipant = {
 export type ConversationItem = {
   id: string;
   projectId: string | null;
+  publicPostId?: string | null;
   contractId: string | null;
   disputeId: string | null;
+  workforceAssignmentId?: string | null;
+  payrollCycleId?: string | null;
+  payrollSettlementId?: string | null;
+  reluRecommendationId?: string | null;
   type: ConversationType;
+  title?: string | null;
   createdAt: string;
+  updatedAt?: string;
+  lastMessageAt?: string | null;
+  lastMessagePreview?: string | null;
   project: {
     id: string;
     slug: string;
     name: string;
     status: ProjectStatus;
+  } | null;
+  publicPost?: {
+    id: string;
+    slug: string;
+    title: string;
+    moderationStatus: PublicModerationStatus;
   } | null;
   contract: {
     id: string;

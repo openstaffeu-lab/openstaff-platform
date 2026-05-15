@@ -922,10 +922,12 @@ export async function createPrivateConversation(
   token: string | null,
 ): Promise<StructuredResult<PrivateConversation>> {
   if (!token) {
-    return fallbackResult(
-      fallbackConversation(input.postId, input.ownerName, input.requesterName),
-      "Private chat requires an approved OpenStaff account.",
-    );
+    return {
+      ok: false,
+      data: fallbackConversation(input.postId, input.ownerName, input.requesterName),
+      source: "api",
+      message: "Private chat requires an approved OpenStaff account.",
+    };
   }
 
   try {
@@ -945,10 +947,12 @@ export async function createPrivateConversation(
       source: "api",
     };
   } catch (error) {
-    return fallbackResult(
-      fallbackConversation(input.postId, input.ownerName, input.requesterName),
-      getErrorMessage(error, "Private conversation API unavailable."),
-    );
+    return {
+      ok: false,
+      data: fallbackConversation(input.postId, input.ownerName, input.requesterName),
+      source: "api",
+      message: getErrorMessage(error, "Private conversation API unavailable."),
+    };
   }
 }
 
@@ -957,10 +961,12 @@ export async function getPrivateConversationMessages(
   token: string | null,
 ): Promise<StructuredResult<PrivateMessage[]>> {
   if (!token) {
-    return fallbackResult(
-      fallbackMessages(conversationId),
-      "Private messages require an approved OpenStaff account.",
-    );
+    return {
+      ok: false,
+      data: [],
+      source: "api",
+      message: "Private messages require an approved OpenStaff account.",
+    };
   }
 
   try {
@@ -975,10 +981,12 @@ export async function getPrivateConversationMessages(
       source: "api",
     };
   } catch (error) {
-    return fallbackResult(
-      fallbackMessages(conversationId),
-      getErrorMessage(error, "Private messages API unavailable."),
-    );
+    return {
+      ok: false,
+      data: [],
+      source: "api",
+      message: getErrorMessage(error, "Private messages API unavailable."),
+    };
   }
 }
 
@@ -998,10 +1006,12 @@ export async function sendPrivateMessage(
   };
 
   if (!token) {
-    return fallbackResult(
-      fallbackMessage,
-      "Private messages require an approved OpenStaff account.",
-    );
+    return {
+      ok: false,
+      data: fallbackMessage,
+      source: "api",
+      message: "Private messages require an approved OpenStaff account.",
+    };
   }
 
   try {
@@ -1020,10 +1030,12 @@ export async function sendPrivateMessage(
       source: "api",
     };
   } catch (error) {
-    return fallbackResult(
-      fallbackMessage,
-      getErrorMessage(error, "Private message API unavailable."),
-    );
+    return {
+      ok: false,
+      data: fallbackMessage,
+      source: "api",
+      message: getErrorMessage(error, "Private message API unavailable."),
+    };
   }
 }
 

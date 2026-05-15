@@ -25,6 +25,7 @@ import {
 } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
 import { GeminiService } from '../gemini/gemini.service';
+import { MessagingService } from '../messaging/messaging.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 type AuthenticatedUser = {
@@ -125,6 +126,7 @@ export class ReluService {
     private readonly prisma: PrismaService,
     private readonly gemini: GeminiService,
     private readonly audit: AuditService,
+    private readonly messagingService: MessagingService,
   ) {}
 
   async listConfig() {
@@ -442,7 +444,7 @@ export class ReluService {
     });
 
     if (match.recommendedNextAction) {
-      await this.prisma.reluRecommendation.create({
+      const recommendation = await this.prisma.reluRecommendation.create({
         data: {
           runId: run.id,
           sourceType: ReluSourceType.PUBLIC_POST,
@@ -467,6 +469,12 @@ export class ReluService {
           targetSourceId: profile.id,
         },
       });
+
+      await this.messagingService.createReluConversationForRecommendation(
+        recommendation.id,
+        actor.sub,
+        `Relu follow-up: ${post.title}`,
+      );
     }
 
     return persisted;

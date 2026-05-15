@@ -3,13 +3,8 @@ import { AccountSubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   buildSuccessResponse,
-  isPrismaConnectionOrSchemaError,
   logEndpointError,
 } from '../common/api-response';
-import {
-  cloneDemoPrivateConversations,
-  demoPrivateMessages,
-} from '../common/public-interaction-demo';
 
 @Injectable()
 export class PrivateMessagingService {
@@ -34,11 +29,6 @@ export class PrivateMessagingService {
       return buildSuccessResponse(conversations);
     } catch (error) {
       logEndpointError('PrivateMessagingService.listConversations', error);
-
-      if (isPrismaConnectionOrSchemaError(error)) {
-        return buildSuccessResponse(cloneDemoPrivateConversations(), 'placeholder');
-      }
-
       throw error;
     }
   }
@@ -80,20 +70,6 @@ export class PrivateMessagingService {
       return buildSuccessResponse(conversation);
     } catch (error) {
       logEndpointError('PrivateMessagingService.createConversation', error);
-
-      if (isPrismaConnectionOrSchemaError(error)) {
-        return buildSuccessResponse(
-          {
-            id: `placeholder-private-conversation-${Date.now()}`,
-            ...data,
-            messages: [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          'placeholder',
-        );
-      }
-
       throw error;
     }
   }
@@ -110,14 +86,6 @@ export class PrivateMessagingService {
       return buildSuccessResponse(messages);
     } catch (error) {
       logEndpointError('PrivateMessagingService.listMessages', error);
-
-      if (isPrismaConnectionOrSchemaError(error)) {
-        const messages = demoPrivateMessages.filter(
-          (item: any) => item.conversationId === conversationId,
-        );
-        return buildSuccessResponse(messages, 'placeholder');
-      }
-
       throw error;
     }
   }
@@ -145,19 +113,6 @@ export class PrivateMessagingService {
       return buildSuccessResponse(message);
     } catch (error) {
       logEndpointError('PrivateMessagingService.createMessage', error);
-
-      if (isPrismaConnectionOrSchemaError(error)) {
-        return buildSuccessResponse(
-          {
-            id: `placeholder-private-message-${Date.now()}`,
-            ...data,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          'placeholder',
-        );
-      }
-
       throw error;
     }
   }
@@ -182,26 +137,6 @@ export class PrivateMessagingService {
       return buildSuccessResponse(conversation);
     } catch (error) {
       logEndpointError('PrivateMessagingService.updateConversationStatus', error);
-
-      if (isPrismaConnectionOrSchemaError(error)) {
-        const conversation = cloneDemoPrivateConversations().find(
-          (item: any) => item.id === id,
-        );
-
-        if (!conversation) {
-          throw new NotFoundException('Private conversation not found');
-        }
-
-        return buildSuccessResponse(
-          {
-            ...conversation,
-            status,
-            updatedAt: new Date().toISOString(),
-          },
-          'placeholder',
-        );
-      }
-
       throw error;
     }
   }
@@ -218,24 +153,6 @@ export class PrivateMessagingService {
       return buildSuccessResponse(message);
     } catch (error) {
       logEndpointError('PrivateMessagingService.updateMessageStatus', error);
-
-      if (isPrismaConnectionOrSchemaError(error)) {
-        const message = demoPrivateMessages.find((item: any) => item.id === id);
-
-        if (!message) {
-          throw new NotFoundException('Private message not found');
-        }
-
-        return buildSuccessResponse(
-          {
-            ...message,
-            status,
-            updatedAt: new Date().toISOString(),
-          },
-          'placeholder',
-        );
-      }
-
       throw error;
     }
   }

@@ -1076,6 +1076,37 @@ export const adminApi = {
         body: JSON.stringify(payload),
       },
     ),
+  getAdminMessageConversations: (filters?: { type?: string; moderationStatus?: string; q?: string }) => {
+    const search = new URLSearchParams();
+    if (filters?.type) search.set("type", filters.type);
+    if (filters?.moderationStatus) search.set("moderationStatus", filters.moderationStatus);
+    if (filters?.q) search.set("q", filters.q);
+    return adminFetch<AdminMessageConversation[]>(
+      `/admin/messages/conversations${search.toString() ? `?${search.toString()}` : ""}`,
+    );
+  },
+  getAdminMessageModeration: (filters?: { status?: string; q?: string }) => {
+    const search = new URLSearchParams();
+    if (filters?.status) search.set("status", filters.status);
+    if (filters?.q) search.set("q", filters.q);
+    return adminFetch<AdminMessageItem[]>(
+      `/admin/messages/moderation${search.toString() ? `?${search.toString()}` : ""}`,
+    );
+  },
+  moderateAdminMessage: (
+    messageId: string,
+    input: {
+      moderationStatus: "PENDING" | "APPROVED" | "REJECTED" | "FLAGGED";
+      moderationNotes?: string;
+      isFlagged?: boolean;
+      applyToAttachments?: boolean;
+    },
+  ) =>
+    adminFetch<AdminMessageItem>(`/admin/messages/${messageId}/moderate`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }),
 };
 
 export async function createUpgradeRequest(
@@ -2132,6 +2163,92 @@ export type AdminPayrollCycle = {
   pendingSettlementCount: number;
   readyForPaymentCount: number;
   settlements: AdminPayrollSettlement[];
+};
+
+export type AdminMessageParticipant = {
+  id: string;
+  userId: string;
+  role: string;
+  unreadCount: number;
+  lastReadAt: string | null;
+  lastSeenAt: string | null;
+  isMuted: boolean;
+  isArchived: boolean;
+  typingStartedAt: string | null;
+  joinedAt: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+};
+
+export type AdminMessageAttachment = {
+  id: string;
+  conversationId: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  canPreview: boolean;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "FLAGGED";
+  moderatedAt: string | null;
+  moderationNotes: string | null;
+  createdAt: string;
+};
+
+export type AdminMessageItem = {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  type: "TEXT" | "SYSTEM" | "FILE";
+  status: "SENT" | "DELIVERED" | "READ" | "ARCHIVED" | "DELETED";
+  content: string;
+  metadataJson: Record<string, unknown> | string | null;
+  editedAt: string | null;
+  deletedAt: string | null;
+  moderationStatus: "PENDING" | "APPROVED" | "REJECTED" | "FLAGGED";
+  moderatedAt: string | null;
+  moderationNotes: string | null;
+  isFlagged: boolean;
+  createdAt: string;
+  updatedAt: string;
+  sender: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
+  reads: Array<{
+    id: string;
+    messageId: string;
+    userId: string;
+    readAt: string;
+  }>;
+  attachments: AdminMessageAttachment[];
+};
+
+export type AdminMessageConversation = {
+  id: string;
+  projectId: string | null;
+  publicPostId: string | null;
+  contractId: string | null;
+  disputeId: string | null;
+  workforceAssignmentId: string | null;
+  payrollCycleId: string | null;
+  payrollSettlementId: string | null;
+  reluRecommendationId: string | null;
+  type: string;
+  title: string | null;
+  createdAt: string;
+  updatedAt: string;
+  lastMessageAt: string | null;
+  lastMessagePreview: string | null;
+  project: { id: string; slug: string; name: string; status: string } | null;
+  publicPost: { id: string; slug: string; title: string; moderationStatus: string } | null;
+  contract: { id: string; title: string; status: string } | null;
+  dispute: { id: string; title: string; status: string; severity: string } | null;
+  participants: AdminMessageParticipant[];
+  latestMessage: AdminMessageItem | null;
+  unreadCount: number;
 };
 
 export async function createCompensationAgreement(input: {

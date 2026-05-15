@@ -18,6 +18,7 @@ const menu = [
   { name: "Posts", path: "/admin/posts" },
   { name: "Media", path: "/admin/media" },
   { name: "External Links", path: "/admin/external-links" },
+  { name: "Messages", path: "/admin/messages" },
   { name: "Private Messages", path: "/admin/private-messages" },
   { name: "Comments & Reviews", path: "/admin/comments-reviews" },
   { name: "Subscriptions", path: "/admin/subscriptions" },

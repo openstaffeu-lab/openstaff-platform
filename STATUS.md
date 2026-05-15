@@ -583,6 +583,69 @@ Verdict: `PASS - persistent Relu runs, taxonomy classification, deterministic fa
 | admin build | ✅ | `cd apps/admin && npm.cmd run build` |
 | Blockers | ✅ | niciun blocker deschis pentru aceasta faza; au ramas doar warning-uri Next non-blocante despre `images.domains` si `turbopack.root` |
 
+## EXEC-10 Messaging, Collaboration & Real-Time Workspace
+
+Verdict: `PASS - direct/project/workforce/payroll/relu conversations, attachments, moderation, unread state, and operational notification hooks validated locally`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| `ConversationType` extended | ✅ | Prisma schema include `DIRECT`, `PROJECT`, `WORKFORCE`, `PAYROLL`, `RELU`, `SUPPORT` fara a elimina tipurile existente |
+| `ConversationParticipantRole` extended | ✅ | Prisma schema include `OWNER`, `ADMIN`, `MEMBER`, `OBSERVER` |
+| `MessageStatus` enum | ✅ | Prisma schema include `SENT`, `DELIVERED`, `READ`, `ARCHIVED`, `DELETED` |
+| conversation schema extensions | ✅ | `Conversation` include `publicPostId`, `workforceAssignmentId`, `payrollCycleId`, `payrollSettlementId`, `reluRecommendationId`, `lastMessageAt`, `lastMessagePreview`, `updatedAt` |
+| participant unread/read state | ✅ | `ConversationParticipant` persista `unreadCount`, `lastReadAt`, `lastSeenAt`, mute/archive state, typing placeholder si remove audit fields |
+| message moderation + soft delete | ✅ | `Message` persista `editedAt`, `deletedAt`, `deletedByUserId`, `moderationStatus`, `moderatedAt`, `moderatedByUserId`, `isFlagged`, `moderationNotes` |
+| `MessageAttachment` model | ✅ | Prisma schema adauga upload metadata, preview flags, moderation state si uploader linkage |
+| backend messaging engine | ✅ | `MessagingService` implementeaza create direct/project/workforce/relu/payroll conversations, send/edit/delete message, mark read, add/remove participant si attachment upload |
+| direct conversation dedupe | ✅ | perechile `DIRECT` sunt unice per participant pair; a doua create returneaza aceeasi conversatie |
+| project workspace conversations | ✅ | conversatiile `PROJECT` se leaga de `PublicPost`, dedupe pe `publicPostId` si accepta mesaje + attachments reale |
+| workforce conversations | ✅ | `WorkforceService` creeaza automat conversatia dupa assignment si publica system messages la create/activate/suspend/terminate |
+| payroll issue conversations | ✅ | `PayrollService.rejectSettlement(...)` creeaza thread `PAYROLL` pentru follow-up operational |
+| Relu follow-up conversations | ✅ | `ReluService.matchPublicPost(...)` creeaza thread `RELU` pentru `ReluRecommendation` persistenta |
+| hiring/workforce/project integrations | ✅ | `HiringService`, `WorkforceService`, `PayrollService`, `ProjectInvitationsService`, `ReluService` folosesc `MessagingService` fara a rupe fluxurile existente |
+| attachments support | ✅ | `POST /messages/conversations/:id/attachments` foloseste upload local existent si expune `GET /messages/attachments/:id` doar participantilor |
+| moderation route | ✅ | `PATCH /admin/messages/:id/moderate` persista moderation status, notes si optional attachment moderation |
+| unread/read receipts | ✅ | `POST /messages/conversations/:id/read` persista `MessageRead` si reseteaza `unreadCount` la refresh/reload |
+| deleted message hidden | ✅ | `listMessages(...)` exclude mesajele cu `deletedAt` din feed-ul normal, pastrand soft-delete auditabil in DB |
+| fake/demo messaging removed from active routes | ✅ | `private-messaging.service.ts` si helper-ele publice nu mai injecteaza feed-uri demo in rutele active |
+| `GET /messages/conversations` | ✅ | runtime local returneaza inbox real pentru participanti autentificati |
+| `POST /messages/conversations/direct` | ✅ | runtime local creeaza conversatie directa reala si dedupe pe al doilea request |
+| `POST /messages/conversations/project` | ✅ | runtime local creeaza workspace de proiect legat de `PublicPost` aprobat |
+| `POST /messages/conversations/workforce` | ✅ | runtime local returneaza conversatia operationala pentru assignment existent |
+| `GET /messages/conversations/:id/messages` | ✅ | runtime local returneaza istoricul real al conversatiei pentru participanti |
+| `POST /messages/conversations/:id/messages` | ✅ | runtime local persista mesaj nou si actualizeaza unread state |
+| `PATCH /messages/messages/:id` | ✅ | runtime local permite edit doar sender-ului |
+| `DELETE /messages/messages/:id` | ✅ | runtime local aplica soft-delete si ascunde mesajul din listarea normala |
+| `POST /messages/conversations/:id/read` | ✅ | runtime local confirma read receipts si `unreadCount -> 0` |
+| `POST /messages/conversations/:id/participants` | ✅ | endpoint expus in controller pentru management de participanti pe conversatii reale |
+| `GET /admin/messages/conversations` | ✅ | runtime local returneaza vizibilitate admin pentru toate thread-urile operationale, inclusiv `RELU` |
+| `GET /admin/messages/moderation` | ✅ | runtime local listeaza mesajele/atasamentele care necesita review |
+| `PATCH /admin/messages/:id/moderate` | ✅ | runtime local confirma moderation persistence pe mesaj si attachment |
+| worker inbox UI | ✅ | `apps/admin/web/app/messages` si `apps/admin/web/app/messages/[id]` compileaza pe date reale fara mock/demo feed |
+| admin messages UI | ✅ | `apps/admin/app/admin/messages/page.tsx` compileaza cu conversations overview si moderation queue |
+| admin nav wiring | ✅ | `apps/admin/components/AdminLayoutShell.tsx` include intrarea `Messages` |
+| direct lifecycle runtime | ✅ | `node scripts/exec-10-runtime-check.js` confirma create, dedupe, send, edit, soft delete, read receipts si unread counters |
+| project runtime | ✅ | runtime local confirma create/dedupe project conversation, participant access si attachment upload |
+| workforce runtime | ✅ | runtime local confirma auto-create dupa assignment si restrictionare pe participanti |
+| payroll runtime | ✅ | runtime local confirma settlement rejection -> payroll notification thread cu mesaje persistate |
+| Relu runtime | ✅ | runtime local confirma `ReluRecommendation` -> follow-up thread si vizibilitate admin |
+| moderation runtime | ✅ | runtime local confirma moderation route, persistence si attachment moderation |
+| security runtime | ✅ | runtime local confirma `401` fara token, `403` pentru non-admin moderation si `404` pentru non-participant |
+| auth remains stable | ✅ | runtime local confirma `GET /auth/me = 200` dupa flow-ul EXEC-10 |
+| onboarding remains stable | ✅ | runtime local confirma `GET /onboarding/me = 200` dupa flow-ul EXEC-10 |
+| subscriptions remain stable | ✅ | runtime local confirma `GET /subscriptions/me = 200` dupa flow-ul EXEC-10 |
+| billing remains stable | ✅ | runtime local confirma `GET /billing/profile/me = 200` dupa flow-ul EXEC-10 |
+| public feed remains stable | ✅ | runtime local confirma `GET /public-posts = 200` dupa flow-ul EXEC-10 |
+| Relu remains stable | ✅ | runtime local confirma `GET /admin/relu/runs = 200` dupa flow-ul EXEC-10 |
+| runtime validation | ✅ | `cd apps/admin/api && node scripts/exec-10-runtime-check.js` |
+| `prisma validate` | ✅ | `cd apps/admin/api && npx.cmd prisma validate` |
+| `prisma generate` | ✅ | `cd apps/admin/api && npx.cmd prisma generate` |
+| `prisma db push` | ✅ | `cd apps/admin/api && npx.cmd prisma db push` |
+| API build | ✅ | `cd apps/admin/api && npm.cmd run build` |
+| web build | ✅ | `cd apps/admin/web && npm.cmd run build` |
+| admin build | ✅ | `cd apps/admin && npm.cmd run build` |
+| Blockers | ✅ | niciun blocker deschis pentru aceasta faza; EXEC-10 este inchis oficial cu PASS |
+
 ## Prompt 8 Video Audit Snapshot
 
 Surse analizate:

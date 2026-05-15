@@ -171,8 +171,13 @@ model User {
   reluRecommendations                ReluRecommendation[]         @relation("ReluRecommendationUser")
   reluReviewedRecommendations        ReluRecommendation[]         @relation("ReluRecommendationReviewedBy")
   conversationParticipants           ConversationParticipant[]
+  removedConversationParticipants    ConversationParticipant[]    @relation("ConversationParticipantRemovedBy")
   sentMessages                       Message[]                    @relation("MessageSender")
+  deletedMessages                    Message[]                    @relation("MessageDeletedBy")
+  moderatedMessages                  Message[]                    @relation("MessageModeratedBy")
   messageReads                       MessageRead[]
+  uploadedMessageAttachments         MessageAttachment[]          @relation("MessageAttachmentUploadedBy")
+  moderatedMessageAttachments        MessageAttachment[]          @relation("MessageAttachmentModeratedBy")
 }
 
 model IdentityProfile {
@@ -748,6 +753,7 @@ model PublicPost {
   documents            PublicPostDocument[]
   externalLinks        ExternalLinkSubmission[]
   privateConversations PrivateConversation[]
+  conversations        Conversation[]
   comments             PublicComment[]
   reviews              PublicReview[]
 
@@ -1747,22 +1753,43 @@ model Notification {
 }
 
 model Conversation {
-  id         String           @id @default(uuid())
-  projectId  String?
-  contractId String?
-  disputeId  String?
-  type       ConversationType
-  createdAt  DateTime         @default(now())
+  id                   String           @id @default(uuid())
+  projectId            String?
+  publicPostId         String?
+  contractId           String?
+  disputeId            String?
+  workforceAssignmentId String?
+  payrollCycleId       String?
+  payrollSettlementId  String?
+  reluRecommendationId String?
+  type                 ConversationType
+  title                String?
+  lastMessageAt        DateTime?
+  lastMessagePreview   String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 
-  project      Project?                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  contract     ProjectContract?          @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  dispute      ProjectDispute?           @relation(fields: [disputeId], references: [id], onDelete: Cascade)
-  participants ConversationParticipant[]
-  messages     Message[]
+  project            Project?                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  publicPost         PublicPost?               @relation(fields: [publicPostId], references: [id], onDelete: Cascade)
+  contract           ProjectContract?          @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  dispute            ProjectDispute?           @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  workforceAssignment WorkforceAssignment?     @relation(fields: [workforceAssignmentId], references: [id], onDelete: Cascade)
+  payrollCycle       PayrollCycle?             @relation(fields: [payrollCycleId], references: [id], onDelete: Cascade)
+  payrollSettlement  PayrollSettlement?        @relation(fields: [payrollSettlementId], references: [id], onDelete: Cascade)
+  reluRecommendation ReluRecommendation?       @relation(fields: [reluRecommendationId], references: [id], onDelete: SetNull)
+  participants       ConversationParticipant[]
+  messages           Message[]
+  attachments        MessageAttachment[]
 
   @@index([projectId, type, createdAt])
+  @@index([publicPostId, type, createdAt])
   @@index([contractId, type, createdAt])
   @@index([disputeId, type, createdAt])
+  @@index([workforceAssignmentId, type, createdAt])
+  @@index([payrollCycleId, type, createdAt])
+  @@index([payrollSettlementId, type, createdAt])
+  @@index([reluRecommendationId, type, createdAt])
+  @@index([type, lastMessageAt, createdAt])
 }
 
 model ConversationParticipant {
@@ -1770,13 +1797,26 @@ model ConversationParticipant {
   conversationId String
   userId         String
   role           ConversationParticipantRole
+  unreadCount    Int                         @default(0)
+  lastReadAt     DateTime?
+  lastSeenAt     DateTime?
+  isMuted        Boolean                     @default(false)
+  mutedAt        DateTime?
+  isArchived     Boolean                     @default(false)
+  archivedAt     DateTime?
+  typingStartedAt DateTime?
+  removedAt      DateTime?
+  removedByUserId String?
   joinedAt       DateTime                    @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  removedBy    User?        @relation("ConversationParticipantRemovedBy", fields: [removedByUserId], references: [id], onDelete: SetNull)
 
   @@unique([conversationId, userId])
   @@index([userId, joinedAt])
+  @@index([conversationId, unreadCount, lastReadAt])
+  @@index([removedByUserId, removedAt])
 }
 
 model Message {
@@ -1784,16 +1824,33 @@ model Message {
   conversationId String
   senderId       String
   type           MessageType
+  status         MessageStatus @default(SENT)
   content        String
   metadataJson   String?
+  editedAt       DateTime?
+  deletedAt      DateTime?
+  deletedByUserId String?
+  moderationStatus PublicModerationStatus @default(APPROVED)
+  moderatedAt    DateTime?
+  moderatedByUserId String?
+  moderationNotes String?
+  isFlagged      Boolean     @default(false)
   createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
-  conversation Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender       User          @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User              @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  deletedBy    User?             @relation("MessageDeletedBy", fields: [deletedByUserId], references: [id], onDelete: SetNull)
+  moderatedBy  User?             @relation("MessageModeratedBy", fields: [moderatedByUserId], references: [id], onDelete: SetNull)
   reads        MessageRead[]
+  attachments  MessageAttachment[]
 
   @@index([conversationId, createdAt])
   @@index([senderId, createdAt])
+  @@index([status, createdAt])
+  @@index([moderationStatus, createdAt])
+  @@index([deletedByUserId, deletedAt])
+  @@index([moderatedByUserId, moderatedAt])
 }
 
 model MessageRead {
@@ -1807,6 +1864,36 @@ model MessageRead {
 
   @@unique([messageId, userId])
   @@index([userId, readAt])
+}
+
+model MessageAttachment {
+  id                String                 @id @default(uuid())
+  messageId         String
+  conversationId    String
+  uploaderId        String
+  fileName          String
+  mimeType          String
+  sizeBytes         Int
+  storageProvider   String
+  storageBucket     String?
+  storageKey        String
+  canPreview        Boolean                @default(false)
+  status            PublicModerationStatus @default(PENDING)
+  moderationNotes   String?
+  moderatedAt       DateTime?
+  moderatedByUserId String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  message      Message       @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  conversation Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  uploader     User          @relation("MessageAttachmentUploadedBy", fields: [uploaderId], references: [id], onDelete: Cascade)
+  moderatedBy  User?         @relation("MessageAttachmentModeratedBy", fields: [moderatedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, createdAt])
+  @@index([messageId, createdAt])
+  @@index([uploaderId, createdAt])
+  @@index([status, createdAt])
 }
 
 model Actor {
@@ -2044,6 +2131,7 @@ model WorkforceAssignment {
   attendanceRecords AttendanceRecord[]
   compensationAgreements CompensationAgreement[]
   payrollSettlements PayrollSettlement[]
+  conversations Conversation[]
 
   @@index([userId, status, assignedAt])
   @@index([projectId, status, assignedAt])
@@ -2147,6 +2235,7 @@ model PayrollCycle {
   updatedAt        DateTime           @updatedAt
 
   settlements PayrollSettlement[]
+  conversations Conversation[]
 
   @@unique([periodStart, periodEnd])
   @@index([status, periodStart, periodEnd])
@@ -2178,6 +2267,7 @@ model PayrollSettlement {
   approvedByUser      User?               @relation("PayrollSettlementApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
   lines               PayrollSettlementLine[]
   billingLink         WorkforceBillingLink?
+  conversations       Conversation[]
 
   @@index([payrollCycleId, status, createdAt])
   @@index([workforceAssignmentId, createdAt])
@@ -2458,6 +2548,7 @@ model ReluRecommendation {
   run        ReluProcessingRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
   user       User?              @relation("ReluRecommendationUser", fields: [userId], references: [id], onDelete: SetNull)
   reviewedBy User?              @relation("ReluRecommendationReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  conversations Conversation[]
 
   @@index([sourceType, sourceId, createdAt])
   @@index([targetSourceType, targetSourceId, createdAt])
@@ -3559,6 +3650,10 @@ enum ConversationType {
   CONTRACT
   DISPUTE
   DIRECT
+  WORKFORCE
+  PAYROLL
+  RELU
+  SUPPORT
 }
 
 enum ConversationParticipantRole {
@@ -3567,12 +3662,22 @@ enum ConversationParticipantRole {
   WORKER
   ADMIN
   SUPERVISOR
+  MEMBER
+  OBSERVER
 }
 
 enum MessageType {
   TEXT
   SYSTEM
   FILE
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  ARCHIVED
+  DELETED
 }
 
 enum WorkerEmploymentType {

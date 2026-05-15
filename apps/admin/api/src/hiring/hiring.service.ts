@@ -12,6 +12,7 @@ import {
   Prisma,
   Role,
 } from '@prisma/client';
+import { MessagingService } from '../messaging/messaging.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApproveApplicationDto } from './dto/approve-application.dto';
 import { MoveApplicationStageDto } from './dto/move-application-stage.dto';
@@ -35,7 +36,10 @@ export class HiringService {
 
   private static readonly ADMIN_ROLES = new Set<Role>([Role.ADMIN, Role.SUPERADMIN]);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly messagingService: MessagingService,
+  ) {}
 
   async listPipelines(
     user: { sub: string; email: string; role: Role },
@@ -255,6 +259,23 @@ export class HiringService {
         include: this.applicationInclude,
       });
     });
+
+    if (updated.candidateUserId) {
+      const recruiterUser = await this.findUserByActor(updated.job.actor);
+      if (recruiterUser?.id && recruiterUser.id !== updated.candidateUserId) {
+        await this.messagingService.createDirectConversation(
+          {
+            participantUserIds: [updated.candidateUserId],
+            title: `Hiring follow-up: ${updated.job.title}`,
+          },
+          {
+            sub: recruiterUser.id,
+            email: recruiterUser.email,
+            role: recruiterUser.role,
+          },
+        );
+      }
+    }
 
     return this.toManagedApplicationResponse(updated);
   }

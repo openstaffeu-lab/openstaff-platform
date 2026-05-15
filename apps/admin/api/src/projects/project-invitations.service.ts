@@ -7,6 +7,7 @@ import {
 import { ProjectInvitationStatus } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { ComplianceEligibilityService } from '../compliance/compliance-eligibility.service';
+import { MessagingService } from '../messaging/messaging.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProjectInvitationDto } from './dto/create-project-invitation.dto';
 import { UpdateProjectInvitationStatusDto } from './dto/update-project-invitation-status.dto';
@@ -24,6 +25,7 @@ export class ProjectInvitationsService {
     private readonly accessPolicy: ProjectAccessPolicy,
     private readonly complianceEligibilityService: ComplianceEligibilityService,
     private readonly auditService: AuditService,
+    private readonly messagingService: MessagingService,
   ) {}
 
   async list(projectId: string, user: AuthenticatedUser) {
@@ -98,6 +100,16 @@ export class ProjectInvitationsService {
         profileId: invitation.profileId,
       },
     });
+
+    if (invitation.profile.userId && invitation.profile.userId !== user.sub) {
+      await this.messagingService.createDirectConversation(
+        {
+          participantUserIds: [invitation.profile.userId],
+          title: `Project invite: ${invitation.project.name}`,
+        },
+        user,
+      );
+    }
 
     return this.toInvitationResponse(
       invitation,

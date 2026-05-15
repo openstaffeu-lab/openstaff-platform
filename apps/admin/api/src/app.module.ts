@@ -14,6 +14,7 @@ import { GeminiModule } from './gemini/gemini.module';
 import { HiringModule } from './hiring/hiring.module';
 import { JobsModule } from './jobs/jobs.module';
 import { NaceModule } from './nace/nace.module';
+import { MessagingModule } from './messaging/messaging.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { PayrollModule } from './payroll/payroll.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -50,6 +51,7 @@ import { WorkforceModule } from './workforce/workforce.module';
     CountriesModule,
     EscoModule,
     NaceModule,
+    MessagingModule,
     OnboardingModule,
     UniclassModule,
     UiConfigModule,

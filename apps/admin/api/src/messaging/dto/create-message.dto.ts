@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsArray, IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 export class CreateMessageDto {
   @IsOptional()
@@ -11,4 +11,9 @@ export class CreateMessageDto {
 
   @IsOptional()
   metadataJson?: unknown;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  attachmentIds?: string[];
 }

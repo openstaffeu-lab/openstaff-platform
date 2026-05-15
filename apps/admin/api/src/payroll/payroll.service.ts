@@ -17,6 +17,7 @@ import {
   TimesheetStatus,
 } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { MessagingService } from '../messaging/messaging.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApprovePayrollSettlementDto } from './dto/approve-payroll-settlement.dto';
 import { CreateCompensationAgreementDto } from './dto/create-compensation-agreement.dto';
@@ -37,6 +38,7 @@ export class PayrollService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
+    private readonly messagingService: MessagingService,
   ) {}
 
   async createCompensationAgreement(body: CreateCompensationAgreementDto, user: AuthUser) {
@@ -626,6 +628,12 @@ export class PayrollService {
         reason: body.reason.trim(),
       },
     });
+
+    await this.messagingService.createPayrollIssueNotification(
+      updated.id,
+      user.sub,
+      body.reason,
+    );
 
     return this.toPayrollSettlementResponse(updated);
   }

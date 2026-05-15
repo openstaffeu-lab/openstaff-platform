@@ -14,6 +14,7 @@ import {
   Role,
   VerificationStatus,
 } from '@prisma/client';
+import { MessagingService } from '../messaging/messaging.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ActivateContractDto } from './dto/activate-contract.dto';
 import { CreateWorkforceAssignmentDto } from './dto/create-workforce-assignment.dto';
@@ -35,7 +36,10 @@ export class WorkforceService {
     Role.SUPERADMIN,
   ]);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly messagingService: MessagingService,
+  ) {}
 
   async createAssignment(body: CreateWorkforceAssignmentDto, user: AuthUser) {
     const application = await this.prisma.application.findUnique({
@@ -125,6 +129,22 @@ export class WorkforceService {
 
       return assignment;
     });
+
+    await this.messagingService.createWorkforceConversation(
+      created.id,
+      user.sub,
+      `${created.job.title} workspace`,
+    );
+    await this.messagingService.createWorkforceUpdateNotification(
+      created.id,
+      user.sub,
+      'Workforce assignment created. Collaboration workspace is ready.',
+      {
+        trigger: 'workforce.assignment.created',
+        applicationId: created.applicationId,
+        contractId: created.contractId,
+      },
+    );
 
     return this.toAssignmentResponse(created);
   }
@@ -235,6 +255,18 @@ export class WorkforceService {
       });
     });
 
+    for (const assignment of updated.workforceAssignments) {
+      await this.messagingService.createWorkforceUpdateNotification(
+        assignment.id,
+        user.sub,
+        'Contract activated. Workforce collaboration is now live.',
+        {
+          trigger: 'workforce.contract.activated',
+          contractId: updated.id,
+        },
+      );
+    }
+
     return this.toContractLifecycleResponse(updated);
   }
 
@@ -300,6 +332,18 @@ export class WorkforceService {
       });
     });
 
+    for (const assignment of updated.workforceAssignments) {
+      await this.messagingService.createWorkforceUpdateNotification(
+        assignment.id,
+        user.sub,
+        'Contract activated. Workforce collaboration is now live.',
+        {
+          trigger: 'workforce.contract.activated',
+          contractId: updated.id,
+        },
+      );
+    }
+
     return this.toContractLifecycleResponse(updated);
   }
 
@@ -341,6 +385,19 @@ export class WorkforceService {
         include: this.contractInclude,
       });
     });
+
+    for (const assignment of updated.workforceAssignments) {
+      await this.messagingService.createWorkforceUpdateNotification(
+        assignment.id,
+        user.sub,
+        'Contract terminated. This workspace remains available for historical follow-up only.',
+        {
+          trigger: 'workforce.contract.terminated',
+          contractId: updated.id,
+          reason: this.normalizeNullableString(body.reason),
+        },
+      );
+    }
 
     return this.toContractLifecycleResponse(updated);
   }
@@ -384,6 +441,19 @@ export class WorkforceService {
         include: this.contractInclude,
       });
     });
+
+    for (const assignment of updated.workforceAssignments) {
+      await this.messagingService.createWorkforceUpdateNotification(
+        assignment.id,
+        user.sub,
+        'Contract suspended. Please review workforce activity before resuming work.',
+        {
+          trigger: 'workforce.contract.suspended',
+          contractId: updated.id,
+          reason: this.normalizeNullableString(body.reason),
+        },
+      );
+    }
 
     return this.toContractLifecycleResponse(updated);
   }
