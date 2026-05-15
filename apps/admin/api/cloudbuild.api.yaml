@@ -3,9 +3,11 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api:$BUILD_ID'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_API_SERVICE}:$BUILD_ID'
       - '-t'
-      - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api:latest'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_API_SERVICE}:$COMMIT_SHA'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_API_SERVICE}:latest'
       - '-f'
       - 'apps/admin/api/Dockerfile'
       - 'apps/admin/api'
@@ -15,7 +17,7 @@ steps:
     args:
       - 'push'
       - '--all-tags'
-      - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_API_SERVICE}'
     id: 'push-api'
     waitFor: ['build-api']
 
@@ -24,24 +26,42 @@ steps:
     args:
       - 'run'
       - 'deploy'
-      - 'openstaff-api'
-      - '--image=europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api:$BUILD_ID'
-      - '--region=europe-west1'
+      - '${_API_SERVICE}'
+      - '--image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_API_SERVICE}:$COMMIT_SHA'
+      - '--region=${_REGION}'
       - '--platform=managed'
       - '--allow-unauthenticated'
       - '--port=8080'
-      - '--memory=512Mi'
+      - '--memory=1Gi'
       - '--cpu=1'
       - '--min-instances=0'
       - '--max-instances=10'
-      - '--set-env-vars=NODE_ENV=production,GCP_PROJECT_ID=openstaff-platform,SKIP_FIREBASE_AUTH=false'
+      - '--set-env-vars=NODE_ENV=production,GCP_PROJECT_ID=${PROJECT_ID},CORS_ORIGIN=${_CORS_ORIGIN},PUBLIC_WEB_URL=${_PUBLIC_WEB_URL},ADMIN_WEB_URL=${_ADMIN_WEB_URL},ENABLE_DEV_AUTH_BYPASS=false,DEMO_MODE=false,ENABLE_DEMO_PUBLIC_FEED=false,ENABLE_DEMO_MESSAGING=false,ENABLE_AI_FALLBACK=${_ENABLE_AI_FALLBACK},ENABLE_BILLING_PLACEHOLDERS=${_ENABLE_BILLING_PLACEHOLDERS},ENABLE_WEBHOOK_PLACEHOLDER=${_ENABLE_WEBHOOK_PLACEHOLDER},ENABLE_SMS_PLACEHOLDER=${_ENABLE_SMS_PLACEHOLDER},ENABLE_DEBUG_LOGS=false,SKIP_FIREBASE_AUTH=false,SKIP_JWT_AUTH=false'
+      - '--set-secrets=DATABASE_URL=${_DATABASE_URL_SECRET}:latest,JWT_SECRET=${_JWT_SECRET_NAME}:latest,JWT_REFRESH_SECRET=${_JWT_REFRESH_SECRET_NAME}:latest,STRIPE_WEBHOOK_SECRET=${_STRIPE_WEBHOOK_SECRET_NAME}:latest'
     id: 'deploy-api'
     waitFor: ['push-api']
 
 images:
-  - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api:$BUILD_ID'
-  - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api:latest'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_API_SERVICE}:$BUILD_ID'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_API_SERVICE}:$COMMIT_SHA'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_API_SERVICE}:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: E2_MEDIUM
+
+substitutions:
+  _REGION: europe-west1
+  _REPOSITORY: openstaff-repo
+  _API_SERVICE: openstaff-api
+  _PUBLIC_WEB_URL: https://openstaff.eu
+  _ADMIN_WEB_URL: https://backoffice.openstaff.eu
+  _CORS_ORIGIN: https://openstaff.eu,https://backoffice.openstaff.eu,https://api.openstaff.eu
+  _DATABASE_URL_SECRET: DATABASE_URL
+  _JWT_SECRET_NAME: JWT_SECRET
+  _JWT_REFRESH_SECRET_NAME: JWT_REFRESH_SECRET
+  _STRIPE_WEBHOOK_SECRET_NAME: WEBHOOK_SECRET
+  _ENABLE_AI_FALLBACK: 'false'
+  _ENABLE_BILLING_PLACEHOLDERS: 'false'
+  _ENABLE_WEBHOOK_PLACEHOLDER: 'false'
+  _ENABLE_SMS_PLACEHOLDER: 'false'

@@ -1,7 +1,11 @@
 node_modules
 dist
-uploads
-*.log
 .env
 .env.local
-npm-debug.log
+.env.production
+coverage
+uploads
+*.log
+*.bak
+*.tmp
+.DS_Store

@@ -8,7 +8,7 @@ This folder contains the active OpenStaff backend service.
 - Active backoffice frontend client: `apps/admin`
 - Public OpenStaff frontend candidate: `apps/admin/web`
 - Cloud Run service name: `openstaff-api`
-- GCP project: `openstaff-prod`
+- GCP project: `openstaff-platform`
 - Region: `europe-west1`
 
 The previous Cloud Run failure happened because `apps/openstaff/api` does not exist in the current repository.
@@ -53,12 +53,8 @@ Runtime expectations already aligned in code:
 - `GET /health` exposes runtime health metadata
 - `GET /status` exposes API module and runtime status metadata
 
-## Cloud Run deployment
+## Deployment guidance
 
-Do not deploy manually outside the Codex-managed workflow.
-
-When deployment is approved, use:
-
-```bash
-gcloud run deploy openstaff-api --source apps/admin/api --region europe-west1 --project openstaff-prod
-```
+- Use Cloud Build config: `apps/admin/api/cloudbuild.api.yaml`
+- Use Secret Manager references for runtime secrets
+- Use `docs/DEPLOYMENT_RUNBOOK.md` for Cloud SQL, migrations, Cloud Run deploy, validation, and rollback

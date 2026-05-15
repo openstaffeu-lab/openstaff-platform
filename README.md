@@ -47,4 +47,6 @@ npm.cmd run build
 - `apps/admin/api` is the active backend API.
 - `apps/admin/web` is the active public OpenStaff frontend.
 - Docker, Cloud Build, Artifact Registry, and Cloud Run are already part of the deployment workflow.
-- Production configuration still depends on GCP secrets, Firebase admin claims, and Cloud SQL finalization.
+- Production configuration is documented in `docs/DEPLOYMENT_RUNBOOK.md`.
+- Secret values must be injected from Secret Manager only.
+- Production releases must run `scripts/release/exec-13-release-check.ps1` before push/deploy.

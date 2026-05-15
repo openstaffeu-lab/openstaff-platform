@@ -3,11 +3,17 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-web:$BUILD_ID'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_WEB_SERVICE}:$BUILD_ID'
       - '-t'
-      - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-web:latest'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_WEB_SERVICE}:$COMMIT_SHA'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_WEB_SERVICE}:latest'
       - '--build-arg'
-      - 'NEXT_PUBLIC_API_URL=https://api.openstaff.eu'
+      - 'NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_WEB_URL=${_NEXT_PUBLIC_WEB_URL}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_DEMO_MODE=false'
       - '-f'
       - 'apps/admin/web/Dockerfile'
       - 'apps/admin/web'
@@ -17,7 +23,7 @@ steps:
     args:
       - 'push'
       - '--all-tags'
-      - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-web'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_WEB_SERVICE}'
     id: 'push-web'
     waitFor: ['build-web']
 
@@ -26,9 +32,9 @@ steps:
     args:
       - 'run'
       - 'deploy'
-      - 'openstaff-web'
-      - '--image=europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-web:$BUILD_ID'
-      - '--region=europe-west1'
+      - '${_WEB_SERVICE}'
+      - '--image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_WEB_SERVICE}:$COMMIT_SHA'
+      - '--region=${_REGION}'
       - '--platform=managed'
       - '--allow-unauthenticated'
       - '--port=3000'
@@ -36,14 +42,22 @@ steps:
       - '--cpu=1'
       - '--min-instances=0'
       - '--max-instances=10'
-      - '--set-env-vars=NODE_ENV=production,NEXT_PUBLIC_API_URL=https://api.openstaff.eu'
+      - '--set-env-vars=NODE_ENV=production,NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL},NEXT_PUBLIC_WEB_URL=${_NEXT_PUBLIC_WEB_URL},NEXT_PUBLIC_DEMO_MODE=false'
     id: 'deploy-web'
     waitFor: ['push-web']
 
 images:
-  - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-web:$BUILD_ID'
-  - 'europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-web:latest'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_WEB_SERVICE}:$BUILD_ID'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_WEB_SERVICE}:$COMMIT_SHA'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_WEB_SERVICE}:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: E2_MEDIUM
+
+substitutions:
+  _REGION: europe-west1
+  _REPOSITORY: openstaff-repo
+  _WEB_SERVICE: openstaff-web
+  _NEXT_PUBLIC_API_URL: https://api.openstaff.eu
+  _NEXT_PUBLIC_WEB_URL: https://openstaff.eu

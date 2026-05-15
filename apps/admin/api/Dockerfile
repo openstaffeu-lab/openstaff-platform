@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 FROM base AS deps
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --no-audit --no-fund
 
 FROM deps AS build
 COPY . .
@@ -14,7 +14,7 @@ RUN npm run build
 FROM base AS production-deps
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --no-audit --no-fund
 RUN npx prisma generate
 
 FROM base AS runner

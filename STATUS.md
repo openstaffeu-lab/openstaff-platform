@@ -766,6 +766,49 @@ Verdict: `PASS - runtime hardening, explicit demo/live controls, observability s
 | admin build | ✅ | `cd apps/admin && npm.cmd run build` |
 | Blockers | ✅ | niciun blocker deschis; demo/live separation, observability si readiness gates validate local |
 
+## EXEC-13 Cloud Production Deployment & Release Pipeline
+
+Verdict: `PASS - deployment contract, Cloud Build hardening, production migration guidance, release validation gates, and domain readiness documentation completed locally`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| deployment audit completed | ✅ | audit local pentru `Dockerfile`, `cloudbuild*.yaml`, `.gcloudignore`, `README`, `.env.example`, scripturi si contractul Secret Manager |
+| audit: what already works | ✅ | exista Dockerfiles pentru `apps/admin/api`, `apps/admin/web`, `apps/admin`; exista Cloud Build YAML-uri si `.gcloudignore`; `loadSecrets()` si runtime validation sunt deja integrate in API |
+| audit: what was incomplete | ✅ | env contract de productie incomplet, documentatie GCP inconsistente, lipsa runbook formal, lipsa script secret setup, lipsa release gate script |
+| audit: what was unsafe | ✅ | hardcoded project/image assumptions in Cloud Build, lipsa tag `COMMIT_SHA`, lipsa `.dockerignore` per app, lipsa contract explicit pentru flag-uri demo/live si strategia de migrare productie |
+| production env contract defined | ✅ | `.env.example` actualizate pentru API, web si admin cu variabilele cerute pentru productie si dezvoltare |
+| API env example updated | ✅ | `apps/admin/api/.env.example` include `NODE_ENV`, `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `CORS_ORIGIN`, `PUBLIC_WEB_URL`, `ADMIN_WEB_URL` si flag-urile runtime |
+| public web env example updated | ✅ | `apps/admin/web/.env.example` include `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_DEMO_MODE` |
+| admin env example updated | ✅ | `apps/admin/.env.example` include `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_ADMIN_URL`, `NEXT_PUBLIC_DEMO_MODE` |
+| no real secrets committed | ✅ | env examples folosesc doar placeholder values; `scripts/gcp/secret-manager-setup.ps1` documenteaza doar comenzi cu valori fictive |
+| app-level `.dockerignore` added | ✅ | `apps/admin/api/.dockerignore`, `apps/admin/web/.dockerignore`, `apps/admin/.dockerignore` exclud `.env`, `node_modules`, build output si backup files |
+| deterministic installs hardened | ✅ | toate Dockerfile-urile folosesc `npm ci --no-audit --no-fund` |
+| Prisma generate in API image build | ✅ | `apps/admin/api/Dockerfile` ruleaza `npx prisma generate` in etapele `build` si `production-deps` |
+| no local `.env` copied into images | ✅ | `.dockerignore` pe fiecare app exclude `.env`, `.env.local`, `.env.production` |
+| Cloud Build image tags include commit SHA | ✅ | `cloudbuild.api.yaml`, `cloudbuild.web.yaml`, `cloudbuild.admin.yaml` publica imagini cu `:$BUILD_ID`, `:$COMMIT_SHA` si `:latest` |
+| Cloud Build region/project/repository parameterized | ✅ | YAML-urile folosesc `${PROJECT_ID}`, `${_REGION}`, `${_REPOSITORY}` si nume de servicii prin substitutions |
+| API Cloud Build secret wiring | ✅ | `apps/admin/api/cloudbuild.api.yaml` foloseste `--set-secrets` pentru `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `STRIPE_WEBHOOK_SECRET` |
+| production-safe runtime flags in deploy | ✅ | deploy API seteaza `ENABLE_DEV_AUTH_BYPASS=false`, `DEMO_MODE=false`, `ENABLE_DEMO_PUBLIC_FEED=false`, `ENABLE_DEMO_MESSAGING=false`, `ENABLE_BILLING_PLACEHOLDERS=false`, `ENABLE_WEBHOOK_PLACEHOLDER=false`, `ENABLE_SMS_PLACEHOLDER=false` |
+| web deploy contract hardened | ✅ | `apps/admin/web/cloudbuild.web.yaml` seteaza `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_DEMO_MODE=false` |
+| admin deploy contract hardened | ✅ | `apps/admin/cloudbuild.admin.yaml` seteaza `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_ADMIN_URL`, `NEXT_PUBLIC_DEMO_MODE=false` si pastreaza build args Firebase publice |
+| production DB strategy documented | ✅ | `docs/DEPLOYMENT_RUNBOOK.md` cere `prisma generate`/`validate` in build si `prisma migrate deploy` in fereastra controlata |
+| destructive `db push` excluded from production | ✅ | runbook-ul interzice explicit `prisma db push` si `prisma migrate dev` pe productie |
+| production migration check script added | ✅ | `scripts/gcp/prisma-production-migration-check.ps1` ruleaza `prisma validate`, `prisma generate`, `prisma migrate status` |
+| deployment runbook added | ✅ | `docs/DEPLOYMENT_RUNBOOK.md` acopera Cloud SQL, DB/user, Secret Manager, migrare, deploy API/web/admin, validare si rollback |
+| secret manager setup script added | ✅ | `scripts/gcp/secret-manager-setup.ps1` listeaza comenzile placeholder pentru secretele obligatorii si optionale |
+| Cloud Run service config documented | ✅ | runbook-ul si Cloud Build YAML-urile acopera `openstaff-api`, `openstaff-web`, `openstaff-admin`, resursele si expunerea publica |
+| domain readiness checklist added | ✅ | runbook-ul documenteaza `openstaff.eu`, `api.openstaff.eu`, `backoffice.openstaff.eu`, DNS, mapping, TLS si CORS |
+| release validation script added | ✅ | `scripts/release/exec-13-release-check.ps1` valideaza branch, clean tree, latest commit, fisierele cerute, env examples, lipsa `.env` tracked, lipsa `.bak`, scan minim de secrete si build-urile |
+| release script validates optional live URLs | ✅ | `scripts/release/exec-13-release-check.ps1` verifica optional `OPENSTAFF_API_RELEASE_URL`, `OPENSTAFF_WEB_RELEASE_URL`, `OPENSTAFF_ADMIN_RELEASE_URL` daca sunt furnizate |
+| release audit docs aligned | ✅ | `README.md` si `apps/admin/api/README.md` actualizate catre runbook-ul nou si proiectul `openstaff-platform` |
+| `prisma validate` | ✅ | `cd apps/admin/api && npx.cmd prisma validate` |
+| `prisma generate` | ✅ | `cd apps/admin/api && npx.cmd prisma generate` |
+| API build | ✅ | `cd apps/admin/api && npm.cmd run build` |
+| web build | ✅ | `cd apps/admin/web && npm.cmd run build` |
+| admin build | ✅ | `cd apps/admin && npm.cmd run build` |
+| release check result | ✅ | `powershell -ExecutionPolicy Bypass -File scripts/release/exec-13-release-check.ps1` trece pe branch-ul curat dupa commit |
+| Blockers | ✅ | pasii manuali ramasi sunt exclusiv GCP: creare Cloud SQL, creare secrete in Secret Manager, rulare `prisma migrate deploy`, deploy Cloud Run si domain mapping |
+
 ## Prompt 8 Video Audit Snapshot
 
 Surse analizate:

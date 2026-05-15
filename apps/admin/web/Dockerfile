@@ -3,11 +3,15 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --no-audit --no-fund
 
 FROM deps AS build
 ARG NEXT_PUBLIC_API_URL=https://api.openstaff.eu
+ARG NEXT_PUBLIC_WEB_URL=https://openstaff.eu
+ARG NEXT_PUBLIC_DEMO_MODE=false
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_WEB_URL=$NEXT_PUBLIC_WEB_URL
+ENV NEXT_PUBLIC_DEMO_MODE=$NEXT_PUBLIC_DEMO_MODE
 COPY . .
 RUN npm run build
 
