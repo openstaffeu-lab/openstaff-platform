@@ -30,6 +30,11 @@ Note de disciplina migrare:
 | PostgreSQL baseline active | ✅ | lantul activ din `apps/admin/api/prisma/migrations/` contine `20260516090000_exec15c_production_baseline` |
 | legacy migrations archived | ✅ | `apps/admin/api/prisma/migrations_legacy_exec01_exec14/` pastreaza istoria veche separata de baseline-ul PostgreSQL live |
 | production migration strategy closed | ✅ | documentatia activa foloseste doar `prisma migrate deploy`; `apps/admin/api/prisma/MIGRATION_RUNBOOK_PUBLIC_INTERACTIONS.md` si `docs/DEPLOYMENT_RUNBOOK.md` au fost aliniate la baseline-ul EXEC-15 |
+| `www.openstaff.eu` mapping ready | ✅ | `gcloud beta run domain-mappings describe --domain=www.openstaff.eu --platform=managed --region=europe-west1 --project=openstaff-platform` returneaza `Ready = True`, `CertificateProvisioned = True`, `DomainRoutable = True` |
+| canonical `www -> apex` redirect | ✅ | `curl.exe -I https://www.openstaff.eu` returneaza `HTTP/1.1 308 Permanent Redirect` cu `location: https://openstaff.eu/` |
+| apex public domain still healthy | ✅ | `curl.exe -I https://openstaff.eu` returneaza `HTTP/1.1 200 OK` dupa fixul de canonicalizare |
+| final public web release proof | ✅ | Cloud Build `a29f4562-a3b8-4576-b40d-eb80fea2cf6b` = `SUCCESS`; latest ready revision `openstaff-web-00008-c4r` |
+| domain canonicalization verdict | ✅ | `PASS - www.openstaff.eu` nu mai serveste ca origine separata si redirectioneaza permanent catre `https://openstaff.eu/` |
 | zero critical fallback | ✅ | `/status.readiness.warnings = []`, `/status.readiness.errors = []`, `ENABLE_*` demo/fallback sunt `false` in productie |
 | release branch ready | ✅ | branch activ `feature/work-in-progress`; tree-ul era curat inainte de update-urile finale EXEC-15D |
 | Blockers | ✅ | none |

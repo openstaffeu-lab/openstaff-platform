@@ -8,9 +8,7 @@ export function proxy(request: NextRequest) {
   const host = request.headers.get("host")?.toLowerCase();
 
   if (host === WWW_HOST) {
-    const target = request.nextUrl.clone();
-    target.host = CANONICAL_HOST;
-    target.protocol = "https";
+    const target = new URL(request.nextUrl.pathname + request.nextUrl.search, `https://${CANONICAL_HOST}`);
     return NextResponse.redirect(target, 308);
   }
 
