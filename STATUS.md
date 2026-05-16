@@ -2,6 +2,61 @@
 
 Last updated: 2026-05-16
 
+## EXEC-16 Post-Launch QA, Public UX Audit & Production Regression Sweep
+
+Verdict: `IN PROGRESS - live production smoke passed for core domains/auth, but public UX regression fixes are prepared locally and still need deploy + final browser verification`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| apex public domain live | ✅ | `curl -I https://openstaff.eu` returneaza `HTTP/1.1 200 OK` |
+| canonical `www` redirect live | ✅ | `curl -I https://www.openstaff.eu` returneaza `HTTP/1.1 308 Permanent Redirect` cu `Location: https://openstaff.eu/` |
+| API health live | ✅ | `curl -I https://api.openstaff.eu/health` returneaza `HTTP/1.1 200 OK` |
+| admin shell live | ✅ | `curl -I https://backoffice.openstaff.eu` returneaza `HTTP/1.1 200 OK` |
+| public pricing route live | ✅ | `curl -I https://openstaff.eu/pricing` returneaza `HTTP/1.1 200 OK` |
+| public publish route live | ✅ | `curl -I https://openstaff.eu/publish` returneaza `HTTP/1.1 200 OK` |
+| public jobs route live | ✅ | `curl -I https://openstaff.eu/jobs` returneaza `HTTP/1.1 200 OK` |
+| public professionals route live | ✅ | `curl -I https://openstaff.eu/professionals` returneaza `HTTP/1.1 200 OK` |
+| onboarding route live | ✅ | `curl -I https://openstaff.eu/onboarding` returneaza `HTTP/1.1 307` spre `/onboarding/welcome` |
+| public auth flow live | ✅ | script PowerShell live confirma `REGISTER=OK`, `LOGIN=OK`, `ME=OK`, `REFRESH=OK`, `LOGOUT=204`, `REFRESH_AFTER_LOGOUT=401` |
+| admin protected routes live | ✅ | scriptul live confirma `ADMIN_NO_TOKEN=401`, `ADMIN_USER=403`, `ADMIN_ROLE=SUPERADMIN`, `ADMIN_POSTS_STATUS=ok` |
+| visible public 404 regressions identified | ✅ | audit cod + HTML live: linkuri vizibile catre `/pools`, `/compliance`, `/logistics`, `/tests`, `/terms`, `/privacy`, `/cookies`, `/anpc`, iar `Navbar` trimitea catre `/categories/construction` |
+| `robots.txt` live missing | ❌ | `curl -I https://openstaff.eu/robots.txt` returneaza `HTTP/1.1 404 Not Found` |
+| `sitemap.xml` live missing | ❌ | `curl -I https://openstaff.eu/sitemap.xml` returneaza `HTTP/1.1 404 Not Found` |
+| public route remediation prepared | ✅ | adaugate pagini statice pentru `/ai`, `/pools`, `/compliance`, `/logistics`, `/tests`, `/terms`, `/privacy`, `/cookies`, `/anpc` |
+| category CTA aligned to real route | ✅ | `apps/admin/web/components/Navbar.tsx` actualizat la `/jobs?category=CONSTRUCTION` |
+| SEO basics prepared | ✅ | adaugate `apps/admin/web/app/robots.ts`, `apps/admin/web/app/sitemap.ts`, plus `metadataBase` si social metadata in `apps/admin/web/app/layout.tsx` |
+| public web build after QA fixes | ✅ | `cd apps/admin/web && npm.cmd run build` genereaza cu succes noile rute statice si `robots.txt` + `sitemap.xml` |
+| browser QA full proof | 🚧 | verificarea manuala Chrome/Edge/mobile, hydration warnings si console errors nu a fost executata complet din CLI |
+| storage moderation QA live | 🚧 | necesita flux browser/API dedicat cu upload real si reverificare publica dupa deploy |
+| final production proof for fixed public routes | 🚧 | necesita deploy pentru patch-ul EXEC-16 si recurl pe rutele noi/SEO |
+
+### EXEC-16 Browser Findings
+
+- Smoke-ul HTTP live pentru domeniile publice, API si backoffice este stabil.
+- Redirectul canonic `www -> apex` este corect si nu mai scurge `:3000`.
+- Din repo si din HTML-ul live rezulta o regresie reala de UX public: exista linkuri vizibile catre rute care nu sunt inca deployate.
+- Verificarea manuala completa in Chrome, Edge si viewport mobil ramane deschisa pana la redeploy-ul patch-ului public.
+
+### EXEC-16 Fixes Prepared
+
+- rute publice statice noi: `/ai`, `/pools`, `/compliance`, `/logistics`, `/tests`, `/terms`, `/privacy`, `/cookies`, `/anpc`
+- `robots.txt` si `sitemap.xml` generate de Next
+- metadata publice de baza consolidate
+- linkul de categorie din navbar aliniat la filtrarea reala din `/jobs`
+
+### EXEC-16 Blockers
+
+1. Patch-ul public EXEC-16 trebuie deployat pe `openstaff-web` ca rutele si fisierele SEO sa devina live.
+2. Dupa deploy, trebuie rerulate curl-urile pentru `/robots.txt`, `/sitemap.xml`, `/logistics`, `/pools`, `/privacy` si restul rutelor noi.
+3. QA manual in browser pentru Chrome, Edge si mobil ramane obligatoriu pentru a inchide legitim faza cu `PASS`.
+
+### EXEC-16 Recommended Next Steps
+
+1. Commit + push patch-ul public EXEC-16 pe `feature/work-in-progress`.
+2. Deploy public web din `apps/admin/web`.
+3. Revalideaza live rutele reparate si fisierele SEO.
+4. Ruleaza un sweep manual in browser pentru console errors, hydration issues, CORS si responsive behavior.
+
 ## EXEC-15 Production Data Layer, Live Infrastructure & Release Closure
 
 Verdict: `PASS`

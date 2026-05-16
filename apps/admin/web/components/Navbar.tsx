@@ -10,7 +10,7 @@ const links = [
   { href: "/professionals", label: "Professionals" },
   { href: "/notifications", label: "Notifications" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/categories/construction", label: "Categories" },
+  { href: "/jobs?category=CONSTRUCTION", label: "Categories" },
   { href: "/status", label: "Status" },
 ];
 

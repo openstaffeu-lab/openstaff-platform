@@ -8,8 +8,21 @@ import { AppShell } from "../components/layout/AppShell";
 import { StatusConsoleReporter } from "../components/StatusConsoleReporter";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://openstaff.eu"),
   title: "OpenStaff",
   description: "The Structure for Global Work.",
+  openGraph: {
+    title: "OpenStaff",
+    description: "The Structure for Global Work.",
+    url: "https://openstaff.eu",
+    siteName: "OpenStaff",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "OpenStaff",
+    description: "The Structure for Global Work.",
+  },
 };
 
 export default function RootLayout({
