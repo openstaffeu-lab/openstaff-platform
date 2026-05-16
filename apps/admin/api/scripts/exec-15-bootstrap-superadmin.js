@@ -4,7 +4,10 @@ const bcrypt = require('bcrypt');
 async function main() {
   const prisma = new PrismaClient();
   const email = process.env.EXEC15_SUPERADMIN_EMAIL || 'exec15-backoffice@openstaff.eu';
-  const password = process.env.EXEC15_SUPERADMIN_PASSWORD || 'Exec15!Backoffice2026';
+  const password = process.env.EXEC15_SUPERADMIN_PASSWORD;
+  if (!password) {
+    throw new Error('EXEC15_SUPERADMIN_PASSWORD is required');
+  }
   const passwordHash = bcrypt.hashSync(password, 10);
 
   await prisma.user.upsert({

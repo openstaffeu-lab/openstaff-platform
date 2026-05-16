@@ -1,100 +1,53 @@
-# OpenStaff Public Interactions Migration Runbook
+# OpenStaff Prisma Migration Discipline
 
-## Current blocker
+## Current production rule
 
-The attempted migration command did not create a migration because Prisma is configured for a PostgreSQL datasource in `schema.prisma`, but the current local `DATABASE_URL` is still set to a SQLite-style value:
+OpenStaff production uses a single reviewed PostgreSQL baseline plus forward-only reviewed migrations.
 
-```text
-Environment variables loaded from .env
-Prisma schema loaded from prisma\schema.prisma
-Error: Prisma schema validation - (get-config wasm)
-Error code: P1012
-error: Error validating datasource `db`: the URL must start with the protocol `postgresql://` or `postgres://`.
-  --> prisma\schema.prisma:7
-  6 |   provider = "postgresql"
-  7 |   url      = env("DATABASE_URL")
+Use only:
+
+```powershell
+npx.cmd prisma migrate deploy
 ```
 
-Because of that blocker, no migration folder was created by `prisma migrate dev --name add_public_interactions`.
+Do not use as production strategy:
 
-## Required DATABASE_URL format
+- `npx.cmd prisma db push`
+- `npx.cmd prisma migrate dev`
 
-The datasource now expects PostgreSQL. Use one of these formats:
+## EXEC-15 baseline
 
-```env
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?schema=public"
-```
+The active production migration chain is:
 
-or
+- `prisma/migrations/20260516090000_exec15c_production_baseline`
 
-```env
-DATABASE_URL="postgres://USER:PASSWORD@HOST:5432/DATABASE?schema=public"
-```
+Legacy pre-baseline migration folders were archived to:
 
-## Local PostgreSQL option
+- `prisma/migrations_legacy_exec01_exec14/`
 
-For local migration work, point `DATABASE_URL` to a local PostgreSQL instance. Example:
+That archive is retained only as historical proof. It is not the active production chain.
 
-```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/openstaff_platform?schema=public"
-```
+## Operator flow
 
-Suggested local flow:
-
-1. Start a local PostgreSQL server.
-2. Create an empty database such as `openstaff_platform`.
-3. Update `apps/admin/api/.env` with the PostgreSQL connection string.
-4. Validate the schema and generate the Prisma client.
-5. Run the migration command.
-
-## Production / Cloud SQL warning
-
-Do not run `prisma migrate dev` directly against production Cloud SQL without a reviewed migration window, a verified backup, and the correct connection target.
-
-For production:
-
-1. Review the generated SQL and migration contents first.
-2. Confirm the target database and environment variables.
-3. Take or verify a recent backup or snapshot.
-4. Run the migration through the approved release process only.
-
-## Commands to run later
-
-After `DATABASE_URL` points to PostgreSQL, run:
+1. Confirm the target database is the live PostgreSQL database.
+2. Confirm the latest reviewed migration folder is present in `prisma/migrations/`.
+3. Run:
 
 ```powershell
 cd C:\Users\admin\Desktop\openstaff-platform\apps\admin\api
-npx.cmd prisma migrate dev --name add_public_interactions
+npx.cmd prisma migrate deploy
 ```
 
-Then regenerate Prisma client:
+4. Regenerate Prisma client when needed for local build validation:
 
 ```powershell
 cd C:\Users\admin\Desktop\openstaff-platform\apps\admin\api
 npx.cmd prisma generate
 ```
 
-## Rollback considerations
+## Safety notes
 
-Prisma migrations are forward-oriented, so rollback needs to be planned before production use.
-
-Recommended precautions:
-
-1. Keep the generated migration folder in version control.
-2. Capture a database backup before applying the migration outside local development.
-3. Review whether rollback should be handled by:
-   - restoring from backup, or
-   - shipping a compensating migration.
-4. If production data already exists, validate new table creation and relations in a staging environment first.
-
-## Models covered by this migration
-
-The pending migration is intended to create the interaction layer tables for:
-
-- `PublicPost`
-- `PublicPostMedia`
-- `ExternalLinkSubmission`
-- `PrivateConversation`
-- `PrivateMessage`
-- `PublicComment`
-- `PublicReview`
+- Migration application is forward-only.
+- Rollback is handled by restore-from-backup or a compensating reviewed migration.
+- Production migration windows must include a verified backup and a confirmed target database.
+- Local development databases may legitimately show the production baseline as unapplied; that does not change the production rule.

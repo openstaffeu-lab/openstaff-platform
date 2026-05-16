@@ -1,6 +1,38 @@
 # OpenStaff Platform Status
 
-Last updated: 2026-05-15
+Last updated: 2026-05-16
+
+## EXEC-15 Production Data Layer, Live Infrastructure & Release Closure
+
+Verdict: `PASS`
+
+Note de disciplina migrare:
+- strategia activa pentru productie este exclusiv `prisma migrate deploy`
+- referintele mai vechi la `prisma db push` sau `prisma migrate dev` din fazele istorice raman doar ca proof trail local anterior EXEC-15 si sunt inlocuite operational de baseline-ul PostgreSQL din EXEC-15
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| Cloud SQL live | ✅ | `gcloud sql instances list --project=openstaff-platform` afiseaza `openstaff-db`, `POSTGRES_16`, `RUNNABLE`, `europe-west1-d` |
+| production database ready | ✅ | `gcloud sql databases list --instance=openstaff-db --project=openstaff-platform` include `openstaff_prod` |
+| Secret Manager populated | ✅ | `gcloud secrets list --project=openstaff-platform` include `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `FIREBASE_SERVICE_ACCOUNT_KEY`, `GEMINI_API_KEY`, `STRIPE_WEBHOOK_SECRET` |
+| live `/health` | ✅ | `curl.exe -sS https://api.openstaff.eu/health` returneaza `status = ok`, `environment = production` |
+| live `/status` | ✅ | `curl.exe -sS https://api.openstaff.eu/status` returneaza `db = healthy`, `databaseConfigured = true`, `jwtSecretConfigured = true`, `storageBucketConfigured = true`, `firebaseAuth = configured`, `cloudStorage = configured`, `secretManager = ready`, `firestore = not_required`, `warnings = []`, `errors = []` |
+| production CORS cleaned | ✅ | `/status.cors.allowedOrigins` expune doar `https://openstaff.eu`, `https://backoffice.openstaff.eu`, `https://api.openstaff.eu` |
+| custom domains live | ✅ | `curl.exe -I https://openstaff.eu` si `curl.exe -I https://backoffice.openstaff.eu` returneaza `HTTP/1.1 200 OK` |
+| local build validation | ✅ | `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` |
+| production storage configured | ✅ | `/status.integrations.cloudStorage = configured`; `runtime.storageBucketConfigured = true` |
+| live media upload on GCS | ✅ | smoke live EXEC-15D a creat asset cu URL `gcs://openstaff-platform-production/public-posts/media/...png` si `GET /public-posts/media/:id` returneaza `HTTP/1.1 200 OK` |
+| live document upload on GCS | ✅ | smoke live EXEC-15D a creat document cu `storageProvider = gcs`, `storageBucket = openstaff-platform-production` si `GET /public-posts/documents/:id` returneaza `HTTP/1.1 200 OK` |
+| moderation + public delivery live | ✅ | postare live aprobata `status = LIVE`, `moderationStatus = APPROVED`, `publicMediaCount = 1`, `publicDocumentCount = 1` |
+| SUPERADMIN auth live | ✅ | `POST /auth/login` pentru `exec15-backoffice@openstaff.eu` returneaza user cu `role = SUPERADMIN`, `approvalStatus = APPROVED`, `accountStatus = LIVE` |
+| admin secured routes live | ✅ | cu tokenul `SUPERADMIN`, `GET /admin/public-posts` si `GET /admin/security/events` returneaza `200` |
+| Firebase admin production wired | ✅ | `/status.integrations.firebaseAuth = configured`; claim-urile admin sunt propagate in auth live si permit accesul admin securizat |
+| PostgreSQL baseline active | ✅ | lantul activ din `apps/admin/api/prisma/migrations/` contine `20260516090000_exec15c_production_baseline` |
+| legacy migrations archived | ✅ | `apps/admin/api/prisma/migrations_legacy_exec01_exec14/` pastreaza istoria veche separata de baseline-ul PostgreSQL live |
+| production migration strategy closed | ✅ | documentatia activa foloseste doar `prisma migrate deploy`; `apps/admin/api/prisma/MIGRATION_RUNBOOK_PUBLIC_INTERACTIONS.md` si `docs/DEPLOYMENT_RUNBOOK.md` au fost aliniate la baseline-ul EXEC-15 |
+| zero critical fallback | ✅ | `/status.readiness.warnings = []`, `/status.readiness.errors = []`, `ENABLE_*` demo/fallback sunt `false` in productie |
+| release branch ready | ✅ | branch activ `feature/work-in-progress`; tree-ul era curat inainte de update-urile finale EXEC-15D |
+| Blockers | ✅ | none |
 
 ## EXEC-02 Sprint 1A Auth Consolidation
 

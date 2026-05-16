@@ -24,6 +24,7 @@ Target defaults:
 - Use Secret Manager references only.
 - Use reviewed Prisma migrations in production.
 - Do not run `prisma db push` against production Cloud SQL.
+- Do not use `prisma migrate dev` as a production migration strategy.
 
 ## 1. Create Cloud SQL
 
@@ -116,6 +117,7 @@ Production strategy:
 2. Validate migration status before deploy
 3. Apply reviewed migrations during a controlled release window
 4. Deploy the new API revision only after migration success
+5. Keep the active production chain in `prisma/migrations/` and archive superseded legacy folders outside the active chain
 
 Pre-check:
 
@@ -129,6 +131,11 @@ Apply migrations from a controlled operator workstation or CI job:
 cd apps/admin/api
 npx.cmd prisma migrate deploy
 ```
+
+EXEC-15 production baseline:
+
+- Active baseline: `prisma/migrations/20260516090000_exec15c_production_baseline`
+- Historical archive: `prisma/migrations_legacy_exec01_exec14/`
 
 Do not use:
 
