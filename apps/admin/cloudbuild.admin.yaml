@@ -5,8 +5,6 @@ steps:
       - '-t'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_ADMIN_SERVICE}:$BUILD_ID'
       - '-t'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_ADMIN_SERVICE}:$COMMIT_SHA'
-      - '-t'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_ADMIN_SERVICE}:latest'
       - '--build-arg'
       - 'NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}'
@@ -45,7 +43,7 @@ steps:
       - 'run'
       - 'deploy'
       - '${_ADMIN_SERVICE}'
-      - '--image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_ADMIN_SERVICE}:$COMMIT_SHA'
+      - '--image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_ADMIN_SERVICE}:$BUILD_ID'
       - '--region=${_REGION}'
       - '--platform=managed'
       - '--allow-unauthenticated'
@@ -60,7 +58,6 @@ steps:
 
 images:
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_ADMIN_SERVICE}:$BUILD_ID'
-  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_ADMIN_SERVICE}:$COMMIT_SHA'
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_ADMIN_SERVICE}:latest'
 
 options:

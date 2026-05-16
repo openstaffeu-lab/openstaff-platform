@@ -32,10 +32,13 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --no-audit --no-fund
+
+COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
-COPY --from=build /app/.next/standalone ./
-COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/next.config.ts ./next.config.ts
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
