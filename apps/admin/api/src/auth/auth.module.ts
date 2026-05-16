@@ -10,13 +10,27 @@ import { FirebaseAuthGuard } from './firebase-auth.guard';
 import { JwtGuard } from './jwt.guard';
 import { PlatformRolesGuard } from './platform-roles.guard';
 
+function resolveJwtSecret() {
+  const secret = process.env.JWT_SECRET?.trim();
+
+  if (secret) {
+    return secret;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET must be configured in production.');
+  }
+
+  return 'SUPER_SECRET_KEY';
+}
+
 @Module({
   imports: [
     PrismaModule,
     forwardRef(() => AuditModule),
     forwardRef(() => NotificationModule),
     JwtModule.register({
-      secret: process.env.JWT_SECRET ?? 'SUPER_SECRET_KEY',
+      secret: resolveJwtSecret(),
       signOptions: {
         expiresIn: (process.env.JWT_EXPIRES_IN ?? '15m') as any,
       },

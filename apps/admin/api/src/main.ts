@@ -4,7 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import express from 'express';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
-import { API_CORS_ORIGINS, loadSecrets } from './app.config';
+import { getApiCorsOrigins, loadSecrets } from './app.config';
 import { AppModule } from './app.module';
 import { AuditService } from './audit/audit.service';
 import { HttpExceptionFilter } from './common/http-exception.filter';
@@ -23,7 +23,7 @@ async function bootstrap() {
   runtimeConfig.logValidationWarnings();
 
   app.enableCors({
-    origin: API_CORS_ORIGINS,
+    origin: getApiCorsOrigins(),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

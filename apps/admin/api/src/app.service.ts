@@ -1,9 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { API_CORS_ORIGINS } from './app.config';
+import { getApiCorsOrigins, PRODUCTION_SECRETS } from './app.config';
 import { RuntimeConfigService } from './config/runtime-config.service';
 import { PrismaService } from './prisma/prisma.service';
 
-type ComponentStatus = 'implemented' | 'in_progress' | 'missing';
+type ComponentStatus =
+  | 'implemented'
+  | 'configured'
+  | 'ready'
+  | 'in_progress'
+  | 'not_required'
+  | 'missing';
+type ReadinessStatus =
+  | 'healthy'
+  | 'ready'
+  | 'configured'
+  | 'in_progress'
+  | 'not_required'
+  | 'missing'
+  | 'error';
 
 @Injectable()
 export class AppService {
@@ -32,7 +46,7 @@ export class AppService {
   }
 
   async getStatus() {
-    let db: 'ok' | 'error' = 'ok';
+    let db: 'healthy' | 'error' = 'healthy';
     let notificationQueue = { pending: 0, failed: 0 };
     let reluQueue = { pending: 0, failed: 0 };
     let workflowRuns = { total: 0, failed: 0 };
@@ -99,7 +113,7 @@ export class AppService {
     const runtimeSummary = this.runtimeConfig.getPublicSummary();
 
     return {
-      status: db === 'ok' ? 'ok' : 'error',
+      status: db === 'healthy' ? 'ok' : 'error',
       api: 'ok',
       db,
       service: 'openstaff-api',
@@ -123,15 +137,13 @@ export class AppService {
         errors: runtimeSummary.errors,
       },
       cors: {
-        allowedOrigins: API_CORS_ORIGINS,
+        allowedOrigins: getApiCorsOrigins(),
       },
       integrations: {
-        firebaseAuth: this.getComponentStatus(false),
-        firestore: this.getComponentStatus(false),
-        cloudStorage: this.getComponentStatus(Boolean(process.env.STORAGE_BUCKET)),
-        secretManager: this.getComponentStatus(
-          Boolean(process.env.K_SERVICE || process.env.GOOGLE_CLOUD_PROJECT),
-        ),
+        firebaseAuth: this.getFirebaseAuthStatus(),
+        firestore: 'not_required',
+        cloudStorage: this.getCloudStorageStatus(),
+        secretManager: this.getSecretManagerStatus(),
         gemini: {
           apiKeyConfigured: Boolean(process.env.GEMINI_API_KEY),
           fallbackEnabled: this.runtimeConfig.isAiFallbackEnabled(),
@@ -170,7 +182,37 @@ export class AppService {
     return { name, status, route };
   }
 
-  private getComponentStatus(isConfigured: boolean): ComponentStatus {
-    return isConfigured ? 'in_progress' : 'missing';
+  private getCloudStorageStatus(): ReadinessStatus {
+    return process.env.STORAGE_BUCKET?.trim() ? 'configured' : 'missing';
+  }
+
+  private getFirebaseAuthStatus(): ReadinessStatus {
+    const hasInlineServiceAccount = Boolean(
+      process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.trim(),
+    );
+    const hasServiceAccountPath = Boolean(
+      process.env.FIREBASE_SERVICE_ACCOUNT_PATH?.trim(),
+    );
+    const hasGoogleCredentials = Boolean(
+      process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim(),
+    );
+
+    return hasInlineServiceAccount || hasServiceAccountPath || hasGoogleCredentials
+      ? 'configured'
+      : 'missing';
+  }
+
+  private getSecretManagerStatus(): ReadinessStatus {
+    const runningOnGcp = Boolean(process.env.K_SERVICE || process.env.GOOGLE_CLOUD_PROJECT);
+
+    if (!runningOnGcp) {
+      return 'missing';
+    }
+
+    const missingSecrets = PRODUCTION_SECRETS.filter(
+      (secretName) => !process.env[secretName]?.trim(),
+    );
+
+    return missingSecrets.length === 0 ? 'ready' : 'in_progress';
   }
 }

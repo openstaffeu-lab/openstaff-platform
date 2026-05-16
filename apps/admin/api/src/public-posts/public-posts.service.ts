@@ -13,6 +13,7 @@ import {
   ReluAccessMode,
   ReluTaskStatus,
 } from '@prisma/client';
+import { Storage } from '@google-cloud/storage';
 import { randomUUID } from 'crypto';
 import { createReadStream } from 'fs';
 import { mkdir, rm, writeFile } from 'fs/promises';
@@ -48,6 +49,9 @@ type NormalizedPublicPostPayload = Prisma.PublicPostUncheckedCreateInput & {
 
 @Injectable()
 export class PublicPostsService {
+  private readonly storageBucket = process.env.STORAGE_BUCKET?.trim() ?? '';
+  private readonly storage = this.storageBucket ? new Storage() : null;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
@@ -228,11 +232,13 @@ export class PublicPostsService {
     });
 
     for (const media of existing.media) {
-      await rm(this.resolveStoragePath(media.url), { force: true }).catch(() => undefined);
+      await this.deleteStoredAssetReference(media.url).catch(() => undefined);
     }
 
     for (const document of existing.documents) {
-      await rm(this.resolveStoragePath(document.storageKey), { force: true }).catch(() => undefined);
+      await this.deleteStoredDocument(document.storageProvider, document.storageBucket, document.storageKey).catch(
+        () => undefined,
+      );
     }
 
     return buildSuccessResponse({ success: true });
@@ -259,13 +265,16 @@ export class PublicPostsService {
     }
 
     const storageKey = await this.persistUploadedFile(postId, 'media', file);
+    const storageReference = this.storageBucket
+      ? this.buildGcsReference(storageKey, this.storageBucket)
+      : storageKey;
     const role = typeof body.role === 'string' && body.role.trim() ? body.role.trim() : 'GALLERY';
     const type = file.mimetype.startsWith('video/') ? 'VIDEO' : 'IMAGE';
 
     const created = await this.prisma.publicPostMedia.create({
       data: {
         postId,
-        url: storageKey,
+        url: storageReference,
         type: type as never,
         role,
         alt: typeof body.alt === 'string' ? body.alt.trim() : null,
@@ -277,7 +286,7 @@ export class PublicPostsService {
       await this.prisma.publicPost.update({
         where: { id: postId },
         data: {
-          bannerUrl: storageKey,
+          bannerUrl: `/public-posts/media/${created.id}`,
         },
       });
     }
@@ -286,7 +295,7 @@ export class PublicPostsService {
       postId,
       role,
       type,
-      url: storageKey,
+      url: storageReference,
     });
 
     return buildSuccessResponse(created);
@@ -328,7 +337,8 @@ export class PublicPostsService {
         fileName: file.originalname,
         mimeType: file.mimetype || 'application/octet-stream',
         sizeBytes: file.size,
-        storageProvider: 'local',
+        storageProvider: this.storageBucket ? 'gcs' : 'local',
+        storageBucket: this.storageBucket || null,
         storageKey,
         status: PublicModerationStatus.PENDING,
       },
@@ -396,10 +406,10 @@ export class PublicPostsService {
     }
 
     return {
-      fileName: media.url.split('/').pop() ?? 'media-file',
+      fileName: this.resolveStoredFileName(media.url, 'media-file'),
       mimeType: media.type === 'VIDEO' ? 'video/mp4' : 'image/jpeg',
       canPreview: true,
-      stream: createReadStream(this.resolveStoragePath(media.url)),
+      stream: this.createAssetReadStream(media.url),
     };
   }
 
@@ -431,7 +441,11 @@ export class PublicPostsService {
       mimeType: document.mimeType,
       canPreview:
         document.mimeType === 'application/pdf' || document.mimeType.startsWith('image/'),
-      stream: createReadStream(this.resolveStoragePath(document.storageKey)),
+      stream: this.createDocumentReadStream(
+        document.storageProvider,
+        document.storageBucket,
+        document.storageKey,
+      ),
     };
   }
 
@@ -1083,11 +1097,23 @@ export class PublicPostsService {
     folder: 'media' | 'documents',
     file: UploadedMarketplaceFile,
   ) {
-    const targetFolder = join(this.getUploadsRoot(), folder, postId);
     const extension = extname(file.originalname) || this.extensionFromMime(file.mimetype);
     const uniqueFileName = `${randomUUID()}${extension}`;
     const relativeStorageKey = `public-posts/${folder}/${postId}/${uniqueFileName}`;
 
+    if (this.storageBucket && this.storage) {
+      const bucket = this.storage.bucket(this.storageBucket);
+      await bucket.file(relativeStorageKey).save(file.buffer, {
+        metadata: {
+          contentType: file.mimetype || 'application/octet-stream',
+        },
+        resumable: false,
+      });
+
+      return relativeStorageKey;
+    }
+
+    const targetFolder = join(this.getUploadsRoot(), folder, postId);
     await mkdir(targetFolder, { recursive: true });
     await writeFile(join(this.getBaseUploadsPath(), relativeStorageKey), file.buffer);
 
@@ -1104,6 +1130,102 @@ export class PublicPostsService {
 
   private resolveStoragePath(storageKey: string) {
     return join(this.getBaseUploadsPath(), storageKey);
+  }
+
+  private buildGcsReference(storageKey: string, bucketName: string) {
+    return `gcs://${bucketName}/${storageKey}`;
+  }
+
+  private parseStoredAssetReference(reference: string) {
+    if (reference.startsWith('gcs://')) {
+      const normalized = reference.replace('gcs://', '');
+      const separatorIndex = normalized.indexOf('/');
+
+      if (separatorIndex > 0) {
+        return {
+          provider: 'gcs' as const,
+          bucketName: normalized.slice(0, separatorIndex),
+          storageKey: normalized.slice(separatorIndex + 1),
+        };
+      }
+    }
+
+    return {
+      provider: 'local' as const,
+      bucketName: null,
+      storageKey: reference,
+    };
+  }
+
+  private resolveStoredFileName(reference: string, fallback: string) {
+    const { storageKey } = this.parseStoredAssetReference(reference);
+    return storageKey.split('/').pop() ?? fallback;
+  }
+
+  private createAssetReadStream(reference: string) {
+    const { provider, bucketName, storageKey } = this.parseStoredAssetReference(reference);
+
+    if (provider === 'gcs') {
+      if (!this.storage || !bucketName) {
+        throw new NotFoundException('Cloud Storage is not configured for this asset');
+      }
+
+      return this.storage.bucket(bucketName).file(storageKey).createReadStream();
+    }
+
+    return createReadStream(this.resolveStoragePath(storageKey));
+  }
+
+  private createDocumentReadStream(
+    storageProvider: string,
+    storageBucket: string | null,
+    storageKey: string,
+  ) {
+    if (storageProvider.toLowerCase() === 'gcs') {
+      if (!this.storage || !storageBucket) {
+        throw new NotFoundException('Cloud Storage is not configured for this document');
+      }
+
+      return this.storage.bucket(storageBucket).file(storageKey).createReadStream();
+    }
+
+    return createReadStream(this.resolveStoragePath(storageKey));
+  }
+
+  private async deleteStoredAssetReference(reference: string) {
+    const { provider, bucketName, storageKey } = this.parseStoredAssetReference(reference);
+
+    if (provider === 'gcs') {
+      if (!this.storage || !bucketName) {
+        return;
+      }
+
+      await this.storage.bucket(bucketName).file(storageKey).delete({
+        ignoreNotFound: true,
+      });
+      return;
+    }
+
+    await rm(this.resolveStoragePath(storageKey), { force: true });
+  }
+
+  private async deleteStoredDocument(
+    storageProvider: string,
+    storageBucket: string | null,
+    storageKey: string,
+  ) {
+    if (storageProvider.toLowerCase() === 'gcs') {
+      if (!this.storage || !storageBucket) {
+        return;
+      }
+
+      await this.storage.bucket(storageBucket).file(storageKey).delete({
+        ignoreNotFound: true,
+      });
+      return;
+    }
+
+    await rm(this.resolveStoragePath(storageKey), { force: true });
   }
 
   private extensionFromMime(mimeType: string) {

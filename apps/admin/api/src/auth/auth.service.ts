@@ -354,6 +354,7 @@ export class AuthService {
   async firebaseExchange(idToken: string, request?: any) {
     const decoded = await getFirebaseAdminAuth().verifyIdToken(idToken);
     const normalizedEmail = decoded.email?.trim().toLowerCase();
+    const claimedRole = this.resolveFirebaseRole(decoded);
 
     if (!normalizedEmail) {
       throw new UnauthorizedException('Firebase account does not provide an email');
@@ -380,7 +381,7 @@ export class AuthService {
             email: normalizedEmail,
             firebaseUid: decoded.uid,
             password: generatedPassword,
-            role: Role.PROFESSIONAL,
+            role: claimedRole ?? Role.PROFESSIONAL,
             approvalStatus: AccountApprovalStatus.PENDING,
             accountStatus: AccountLifecycleStatus.OFFLINE,
           },
@@ -427,6 +428,7 @@ export class AuthService {
         data: {
           firebaseUid: decoded.uid,
           lastLoginAt: new Date(),
+          ...(claimedRole ? { role: claimedRole } : {}),
         },
       });
     }
@@ -687,11 +689,31 @@ export class AuthService {
   }
 
   private getJwtSecret() {
-    return process.env.JWT_SECRET ?? 'SUPER_SECRET_KEY';
+    const secret = process.env.JWT_SECRET?.trim();
+
+    if (secret) {
+      return secret;
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET must be configured in production.');
+    }
+
+    return 'SUPER_SECRET_KEY';
   }
 
   private getRefreshSecret() {
-    return process.env.JWT_REFRESH_SECRET ?? this.getJwtSecret();
+    const secret = process.env.JWT_REFRESH_SECRET?.trim();
+
+    if (secret) {
+      return secret;
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_REFRESH_SECRET must be configured in production.');
+    }
+
+    return this.getJwtSecret();
   }
 
   private async generateUniqueProfileSlug(value: string) {
@@ -773,5 +795,27 @@ export class AuthService {
     }
 
     return ActorType.INDIVIDUAL;
+  }
+
+  private resolveFirebaseRole(decoded: { [key: string]: unknown }) {
+    if (decoded.admin === true) {
+      return Role.SUPERADMIN;
+    }
+
+    if (typeof decoded.role !== 'string') {
+      return null;
+    }
+
+    const normalizedRole = decoded.role.trim().toUpperCase();
+
+    if (normalizedRole === Role.SUPERADMIN) {
+      return Role.SUPERADMIN;
+    }
+
+    if (normalizedRole === Role.ADMIN) {
+      return Role.ADMIN;
+    }
+
+    return null;
   }
 }
