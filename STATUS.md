@@ -33,17 +33,20 @@ Verdict: `IN PROGRESS - public UX fixes are now deployed live and validated by H
 | robots content valid | ✅ | `curl -sS https://openstaff.eu/robots.txt` returneaza `User-Agent: *`, `Allow: /`, `Sitemap: https://openstaff.eu/sitemap.xml` |
 | sitemap content valid | ✅ | `curl -sS https://openstaff.eu/sitemap.xml` listeaza rutele publice, inclusiv `/pools`, `/compliance`, `/logistics`, `/tests`, `/terms`, `/privacy`, `/cookies`, `/anpc`, `/ai` |
 | API production readiness still healthy after deploy | ✅ | `curl -sS https://api.openstaff.eu/status` returneaza `db = healthy`, `secretManager = ready`, `cloudStorage = configured`, `warnings = []`, `errors = []` |
-| browser QA full proof | 🚧 | verificarea manuala Chrome/Edge/mobile, hydration warnings si console errors nu a fost executata complet din CLI |
+| browser QA full proof | 🚧 | browser-ele locale exista (`Chrome`, `Edge`), dar in aceasta iteratie nu a fost executat un sweep manual/automa­tizat suficient pentru a proba console errors, hydration warnings si UX interactiva |
 | storage upload live on GCS | ✅ | smoke API live EXEC-16B: `register = 201`, `createPost = 201`, `addMedia = 201`, `addDocument = 201`, media URL `gcs://openstaff-platform-production/public-posts/media/...`, document `storageProvider = gcs`, `storageBucket = openstaff-platform-production` |
 | pending post hidden publicly | ✅ | smoke API live EXEC-16B: `publicListContainsPendingPost = false`, `publicDetailStatus = 403`, owner vede `status = PENDING_MODERATION`, `moderationStatus = PENDING` |
-| admin asset moderation end-to-end proof | 🚧 | aprobarea live pentru media/documente prin backoffice/API admin nu a fost rerulata in aceasta iteratie |
+| unauthorized moderation blocked | ✅ | smoke API live EXEC-16C: `PATCH /admin/public-post-media/:id/status` cu token de user normal returneaza `403` |
+| pending assets hidden publicly | ✅ | smoke API live EXEC-16C: `GET /public-posts/media/:id` si `GET /public-posts/documents/:id` pentru asset-uri pending returneaza `403` |
+| auth regression still healthy after EXEC-16B | ✅ | smoke API live EXEC-16C: `register = 201`, `refresh = 200`, `logout = 204`, `refreshAfterLogout = 401` |
+| admin asset moderation end-to-end proof | 🚧 | SUPERADMIN de test creat prin DB local accesibila din `.env` nu se poate autentifica pe `https://api.openstaff.eu`; verificarea a demonstrat ca DB-ul accesibil local nu este aceeasi sursa folosita de login-ul API live |
 
 ### EXEC-16 Browser Findings
 
 - Smoke-ul HTTP live pentru domeniile publice, API si backoffice este stabil.
 - Redirectul canonic `www -> apex` este corect si nu mai scurge `:3000`.
 - Rutele publice vizibile reparate in EXEC-16B sunt acum live si raspund cu `200`.
-- Verificarea manuala completa in Chrome, Edge si viewport mobil ramane deschisa; din CLI nu pot confirma console errors, hydration warnings sau UX regressions strict browser-side.
+- Browser-ele `Chrome` si `Edge` exista local, dar sweep-ul manual complet ramane deschis; din CLI nu pot confirma console errors, hydration warnings sau UX regressions strict browser-side.
 
 ### EXEC-16 Fixes Prepared
 
@@ -56,13 +59,14 @@ Verdict: `IN PROGRESS - public UX fixes are now deployed live and validated by H
 ### EXEC-16 Blockers
 
 1. QA manual in browser pentru Chrome, Edge si mobil ramane obligatoriu pentru a inchide legitim faza cu `PASS`.
-2. Fluxul live complet de aprobare admin pentru media/documente si reverificarea livrarii publice dupa approve/reject nu a fost rerulat in aceasta iteratie.
+2. Fluxul live complet de aprobare admin pentru media/documente si reverificarea livrarii publice dupa approve/reject nu poate fi inchis din contextul actual fara credențiale live reale de SUPERADMIN sau acces la exact acelasi runtime DB/secret folosit de `openstaff-api`.
 
 ### EXEC-16 Recommended Next Steps
 
 1. Ruleaza un sweep manual in browser pentru Chrome, Edge si viewport mobil pe homepage, navbar, footer si rutele noi.
-2. Reexecuta live fluxul admin de approve/reject pentru media si documente, apoi verifica endpointurile publice de asset delivery.
-3. Daca rezultatele manuale sunt curate, actualizeaza verdictul EXEC-16 la `PASS`.
+2. Foloseste un cont SUPERADMIN live autentic sau aliniaza secretul/DB-ul operational local cu exact backendul live, apoi reexecuta approve/reject pentru media si documente.
+3. Dupa approve/reject live, verifica endpointurile publice de asset delivery pentru asset-urile aprobate si respinse.
+4. Daca rezultatele manuale sunt curate, actualizeaza verdictul EXEC-16 la `PASS`.
 
 ## EXEC-15 Production Data Layer, Live Infrastructure & Release Closure
 
