@@ -26,6 +26,24 @@ Target defaults:
 - Do not run `prisma db push` against production Cloud SQL.
 - Do not use `prisma migrate dev` as a production migration strategy.
 
+## Live topology
+
+Current production topology:
+
+- Public web: `https://openstaff.eu` -> Cloud Run `openstaff-web`
+- Canonical redirect: `https://www.openstaff.eu` -> `308` -> `https://openstaff.eu/`
+- API: `https://api.openstaff.eu` -> Cloud Run `openstaff-api`
+- Admin: `https://backoffice.openstaff.eu` -> Cloud Run `openstaff-admin`
+- Cloud SQL primary: `openstaff-db`
+- Production database: `openstaff_prod`
+- Production storage bucket: `gs://openstaff-platform-production`
+
+Current healthy production revisions validated during EXEC-17:
+
+- API: `openstaff-api-00007-4bj`
+- Public web: `openstaff-web-00009-q46`
+- Admin: `openstaff-admin-00010-t76`
+
 ## 1. Create Cloud SQL
 
 Example placeholders:
@@ -56,12 +74,16 @@ Required secrets:
 - `DATABASE_URL`
 - `JWT_SECRET`
 - `JWT_REFRESH_SECRET`
-- `WEBHOOK_SECRET`
+- `STRIPE_WEBHOOK_SECRET`
 
 Optional secrets:
 
 - `GEMINI_API_KEY`
 - `FIREBASE_SERVICE_ACCOUNT_KEY`
+
+Legacy note:
+
+- `WEBHOOK_SECRET` may still exist as a historical placeholder, but the active production API contract uses `STRIPE_WEBHOOK_SECRET`.
 
 Use the companion script:
 
@@ -205,7 +227,35 @@ Checklist:
 - `CORS_ORIGIN` updated to final mapped domains
 - `/health` and `/status` validated on mapped API domain
 
-## 9. Rollback notes
+## 9. Backups and recovery baseline
+
+Minimum production expectations:
+
+- Cloud SQL automated backups enabled
+- transaction log retention configured
+- Cloud SQL deletion protection enabled before final operational sign-off
+- Cloud SQL SSL mode hardened to the approved production setting before final operational sign-off
+- GCS uniform bucket-level access enabled
+- GCS soft delete or lifecycle retention configured
+
+Current validated baseline during EXEC-17:
+
+- Cloud SQL automated backups: enabled
+- Cloud SQL retained backups: `7`
+- Cloud SQL transaction log retention: `7` days
+- GCS bucket: `gs://openstaff-platform-production`
+- GCS uniform bucket-level access: enabled
+- GCS soft delete retention: `7` days
+
+Restore order:
+
+1. Confirm current Cloud Run revisions and freeze deploy activity.
+2. Restore Cloud SQL from the latest backup or PITR target.
+3. Re-apply reviewed forward migrations only if the restore point predates the active baseline.
+4. Re-deploy API, then public web, then admin.
+5. Re-run `/health`, `/status`, auth smoke, and a moderation smoke flow.
+
+## 10. Rollback notes
 
 Preferred rollback order:
 
@@ -223,7 +273,21 @@ gcloud run services update-traffic openstaff-api `
   --to-revisions=REVISION_NAME=100
 ```
 
-## 10. Release checklist
+Apply the same pattern for:
+
+- `openstaff-web`
+- `openstaff-admin`
+
+## 11. Known operational limitations
+
+As of EXEC-17 audit, review these before declaring full operational hardening complete:
+
+- ensure Cloud SQL deletion protection is enabled
+- ensure Cloud SQL SSL mode is hardened to the approved production policy
+- ensure PITR state is explicitly confirmed in operator evidence
+- keep only the active production secret contract in docs and scripts
+
+## 12. Release checklist
 
 - Working tree clean
 - Branch correct: `feature/work-in-progress`

@@ -26,6 +26,7 @@ Legacy pre-baseline migration folders were archived to:
 - `prisma/migrations_legacy_exec01_exec14/`
 
 That archive is retained only as historical proof. It is not the active production chain.
+Do not move archived folders back into the active chain and do not apply the archive to production.
 
 ## Operator flow
 
@@ -51,3 +52,4 @@ npx.cmd prisma generate
 - Rollback is handled by restore-from-backup or a compensating reviewed migration.
 - Production migration windows must include a verified backup and a confirmed target database.
 - Local development databases may legitimately show the production baseline as unapplied; that does not change the production rule.
+- Production operators should treat the baseline folder plus subsequent reviewed migrations as the only authoritative schema history for `openstaff_prod`.

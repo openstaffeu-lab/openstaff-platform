@@ -1,6 +1,49 @@
 # OpenStaff Platform Status
 
-Last updated: 2026-05-16
+Last updated: 2026-05-17
+
+## EXEC-17 Production Hardening, Observability & Operational Readiness
+
+Verdict: `IN PROGRESS - production runtime, storage, moderation, and admin deployment reliability are healthy, but Cloud SQL hardening still needs final operator changes before honest operational sign-off`
+
+| Task | Status | Confirmat prin |
+|---|---|---|
+| active public domains healthy | ✅ | `curl -I https://openstaff.eu`, `curl -I https://www.openstaff.eu`, `curl -I https://backoffice.openstaff.eu` confirma `200/308/200` |
+| active production revisions recorded | ✅ | `gcloud run services describe` confirma `openstaff-api-00007-4bj`, `openstaff-web-00009-q46`, `openstaff-admin-00010-t76` |
+| admin deploy reliability restored | ✅ | build `5a8001b7-c0d1-4dd4-8fbb-1fb82b1af51e` = `SUCCESS`; `openstaff-admin-00010-t76` este `latestReadyRevisionName` si primeste `100%` trafic |
+| admin deployment root cause identified | ✅ | logurile Cloud Run pentru `openstaff-admin-00008-zzv` / `00009-whp` aratau `MODULE_NOT_FOUND` pentru `server.js`; fix aplicat in `apps/admin/Dockerfile` prin runtime bazat pe `next start` |
+| Secret Manager only in production runtime | ✅ | `gcloud run services describe openstaff-api --format=json` arata `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `STRIPE_WEBHOOK_SECRET`, `FIREBASE_SERVICE_ACCOUNT_KEY`, `GEMINI_API_KEY` venind din Secret Manager |
+| no canonical-prod CORS leakage | ✅ | `/status.cors.allowedOrigins` expune doar `https://openstaff.eu`, `https://backoffice.openstaff.eu`, `https://api.openstaff.eu` |
+| unauthenticated exposure limited to intended services | ✅ | Cloud Run `openstaff-web` si `openstaff-api` sunt publice intentional; backoffice shell este public doar pentru login, iar rutele admin raman protejate prin auth/RBAC live |
+| structured request tracing visible | ✅ | raspunsurile live includ `x-cloud-trace-context`, iar `/status` si logurile Cloud Run confirma request tracing activ |
+| auth / moderation / upload proof still healthy | ✅ | EXEC-16 live proof ramane valid: auth smoke, GCS persistence, approve/reject moderation si SUPERADMIN flow confirmate pe runtime-ul actual |
+| `/health` contract lightweight | ✅ | `curl -sS https://api.openstaff.eu/health` returneaza doar status operational minim (`status`, `timestamp`, `environment`, `uptimeSeconds`) |
+| `/status` contract operational | ✅ | `curl -sS https://api.openstaff.eu/status` returneaza readiness, queues, storage, security summary si feature flags fara a expune valori de secrete |
+| Cloud SQL backups enabled | ✅ | `gcloud sql instances describe openstaff-db` confirma `backupConfiguration.enabled = true`, `retainedBackups = 7`, `transactionLogRetentionDays = 7` |
+| GCS retention baseline enabled | ✅ | `gcloud storage buckets describe gs://openstaff-platform-production` confirma `uniform_bucket_level_access = true` si `soft_delete_policy.retentionDurationSeconds = 604800` |
+| Cloud Build manual deploys stable | ✅ | buildurile live recente pentru web si admin (`8ff6062c-...`, `5a8001b7-...`) sunt `SUCCESS`; API ruleaza pe revizia healthy `openstaff-api-00007-4bj` |
+| production migration discipline enforced in docs | ✅ | `docs/DEPLOYMENT_RUNBOOK.md` si `apps/admin/api/prisma/MIGRATION_RUNBOOK_PUBLIC_INTERACTIONS.md` pastreaza doar `prisma migrate deploy` ca strategie de productie |
+| production secret contract docs aligned | ✅ | runbook-ul EXEC-17 aliniaza secretul activ la `STRIPE_WEBHOOK_SECRET`; `WEBHOOK_SECRET` ramane doar nota legacy |
+| SEO/canonical baseline stable | ✅ | `robots.txt`, `sitemap.xml`, metadata publice si redirectul `www -> apex` raman live dupa EXEC-16 |
+| performance baseline captured | 🚧 | nu exista inca un baseline Lighthouse sau Web Vitals operator-side arhivat pentru homepage, jobs si publish |
+| Cloud SQL deletion protection | 🚧 | `gcloud sql instances describe openstaff-db` arata `settings.deletionProtectionEnabled = false` |
+| Cloud SQL SSL enforcement | 🚧 | `gcloud sql instances describe openstaff-db` arata `ipConfiguration.requireSsl = false` si `sslMode = ALLOW_UNENCRYPTED_AND_ENCRYPTED` |
+| PITR explicit proof | 🚧 | `transactionalLogStorageState = TRANSACTIONAL_LOG_STORAGE_STATE_UNSPECIFIED`; retentionul logurilor exista, dar dovada operator-side PITR trebuie inchisa explicit |
+| Blockers | 🚧 | hardening-ul Cloud SQL nu este complet pana la activarea `deletionProtection` si a politicii finale SSL/PITR, iar un baseline formal de performanta nu este inca arhivat |
+
+### EXEC-17 Operational Notes
+
+- Runtime-ul productiei este stabil pe reviziile active `openstaff-api-00007-4bj`, `openstaff-web-00009-q46`, `openstaff-admin-00010-t76`.
+- Backoffice-ul a avut un gap real de fiabilitate: reviziile noi `openstaff-admin-00008-zzv` si `openstaff-admin-00009-whp` au esuat cu `MODULE_NOT_FOUND` pentru `server.js`; cauza a fost inchisa prin schimbarea strategiei de runtime din `apps/admin/Dockerfile`.
+- Observabilitatea de baza este buna pentru smoke operational: Cloud Run request logs, trace headers, `/status` cu security/queues si guard rails de auth/moderation deja validate in EXEC-16.
+- Pentru un `PASS` operational complet, trebuie inchise explicit hardening-ul Cloud SQL si dovada de performanta de baza.
+
+### EXEC-17 Recommended Next Steps
+
+1. Activeaza `deletionProtection` pe `openstaff-db`.
+2. Decide si aplica politica finala pentru SSL / encrypted-only Cloud SQL connections, apoi valideaza bootstrap-ul API dupa schimbare.
+3. Confirma si arhiveaza dovada operator-side pentru PITR.
+4. Ruleaza un baseline Lighthouse/Web Vitals pentru homepage, jobs si publish si salveaza rezultatele in proof trail.
 
 ## EXEC-16 Post-Launch QA, Public UX Audit & Production Regression Sweep
 
