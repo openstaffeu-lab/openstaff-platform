@@ -78,19 +78,42 @@ export default function ProductionReadinessPage() {
         commercial?: {
           launchMode?: string;
           publicUpgradeFlow?: string;
+          operatorReviewRequired?: boolean;
+          billingMode?: string;
           emailDelivery?: string;
           smsDelivery?: string;
         };
         billingWebhook?: {
           mode?: string;
         };
+        billingPayments?: {
+          mode?: string;
+        };
       }
     | undefined;
+  const commercialLaunchMode = integrations?.commercial?.launchMode ?? "Unknown";
+  const billingMode =
+    integrations?.commercial?.billingMode ??
+    integrations?.billingPayments?.mode ??
+    commercialLaunchMode;
+  const missingCommercialContract =
+    !integrations?.commercial?.launchMode || !integrations?.billingWebhook?.mode;
   const blockers = [
     ...errors,
     ...(status?.db === "error" ? ["Database connectivity is failing."] : []),
     ...(status?.runtime?.jwtSecretConfigured === false
       ? ["JWT secrets are not fully configured."]
+      : []),
+    ...(missingCommercialContract
+      ? [
+          "Commercial launch contract is not exposed by the active API /status payload yet. Deploy the EXEC-19 readiness contract before calling rollout fully live.",
+        ]
+      : []),
+    ...(integrations?.commercial?.launchMode === "manual_only" &&
+    integrations?.commercial?.operatorReviewRequired !== true
+      ? [
+          "Manual commercial operations are not explicitly marked as operator-reviewed in the active readiness payload.",
+        ]
       : []),
   ];
 
@@ -132,10 +155,14 @@ export default function ProductionReadinessPage() {
           <MetricCard label="Auth Mode" value={status?.runtime?.authMode ?? "Unknown"} />
         </section>
 
-        <section className="grid gap-4 md:grid-cols-4">
+        <section className="grid gap-4 md:grid-cols-4 xl:grid-cols-5">
           <MetricCard
             label="Commercial Mode"
-            value={integrations?.commercial?.launchMode ?? "Unknown"}
+            value={commercialLaunchMode}
+          />
+          <MetricCard
+            label="Billing Mode"
+            value={billingMode}
           />
           <MetricCard
             label="Upgrade Flow"
