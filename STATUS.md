@@ -4,7 +4,7 @@ Last updated: 2026-05-17
 
 ## EXEC-17 Production Hardening, Observability & Operational Readiness
 
-Verdict: `IN PROGRESS - production runtime, storage, moderation, and admin deployment reliability are healthy, but Cloud SQL hardening still needs final operator changes before honest operational sign-off`
+Verdict: `PASS - Cloud SQL hardening is live, PITR and encrypted-only connector policy are operator-validated, Lighthouse proof is archived in-repo, and post-change smoke remained healthy on the active production revisions`
 
 | Task | Status | Confirmat prin |
 |---|---|---|
@@ -25,25 +25,27 @@ Verdict: `IN PROGRESS - production runtime, storage, moderation, and admin deplo
 | production migration discipline enforced in docs | ✅ | `docs/DEPLOYMENT_RUNBOOK.md` si `apps/admin/api/prisma/MIGRATION_RUNBOOK_PUBLIC_INTERACTIONS.md` pastreaza doar `prisma migrate deploy` ca strategie de productie |
 | production secret contract docs aligned | ✅ | runbook-ul EXEC-17 aliniaza secretul activ la `STRIPE_WEBHOOK_SECRET`; `WEBHOOK_SECRET` ramane doar nota legacy |
 | SEO/canonical baseline stable | ✅ | `robots.txt`, `sitemap.xml`, metadata publice si redirectul `www -> apex` raman live dupa EXEC-16 |
-| performance baseline captured | 🚧 | nu exista inca un baseline Lighthouse sau Web Vitals operator-side arhivat pentru homepage, jobs si publish |
-| Cloud SQL deletion protection | 🚧 | `gcloud sql instances describe openstaff-db` arata `settings.deletionProtectionEnabled = false` |
-| Cloud SQL SSL enforcement | 🚧 | `gcloud sql instances describe openstaff-db` arata `ipConfiguration.requireSsl = false` si `sslMode = ALLOW_UNENCRYPTED_AND_ENCRYPTED` |
-| PITR explicit proof | 🚧 | `transactionalLogStorageState = TRANSACTIONAL_LOG_STORAGE_STATE_UNSPECIFIED`; retentionul logurilor exista, dar dovada operator-side PITR trebuie inchisa explicit |
-| Blockers | 🚧 | hardening-ul Cloud SQL nu este complet pana la activarea `deletionProtection` si a politicii finale SSL/PITR, iar un baseline formal de performanta nu este inca arhivat |
+| performance baseline captured | ✅ | Lighthouse operator-side arhivat in `docs/proof/exec17/`: homepage `performance=94 accessibility=77 bestPractices=100 seo=100`, jobs `performance=78 accessibility=92 bestPractices=100 seo=100`, publish `performance=90 accessibility=89 bestPractices=100 seo=100` |
+| Cloud SQL deletion protection | ✅ | `gcloud sql instances patch openstaff-db --deletion-protection` urmat de `gcloud sql instances describe openstaff-db` confirma `settings.deletionProtectionEnabled = true` |
+| Cloud SQL SSL enforcement | ✅ | `gcloud sql instances patch openstaff-db --connector-enforcement=REQUIRED --ssl-mode=ENCRYPTED_ONLY` confirma `connectorEnforcement = REQUIRED` si `ipConfiguration.sslMode = ENCRYPTED_ONLY`; dupa schimbare, `https://api.openstaff.eu/health`, `https://api.openstaff.eu/status`, auth smoke si admin route smoke au ramas verzi |
+| PITR explicit proof | ✅ | `gcloud sql instances describe openstaff-db` confirma `pointInTimeRecoveryEnabled = true`, `transactionalLogStorageState = CLOUD_STORAGE`, `transactionLogRetentionDays = 7`, `replicationLogArchivingEnabled = true` |
+| post-change smoke stable | ✅ | reviziile au ramas `openstaff-api-00007-4bj`, `openstaff-web-00009-q46`, `openstaff-admin-00010-t76`; `/health` si `/status` au ramas healthy, auth smoke a confirmat `LOGIN_ROLE = PROFESSIONAL`, `ME_ROLE = PROFESSIONAL`, `REFRESH_OK = True`, iar admin route no-token a ramas `401` |
+| Blockers | ✅ | none |
 
 ### EXEC-17 Operational Notes
 
-- Runtime-ul productiei este stabil pe reviziile active `openstaff-api-00007-4bj`, `openstaff-web-00009-q46`, `openstaff-admin-00010-t76`.
-- Backoffice-ul a avut un gap real de fiabilitate: reviziile noi `openstaff-admin-00008-zzv` si `openstaff-admin-00009-whp` au esuat cu `MODULE_NOT_FOUND` pentru `server.js`; cauza a fost inchisa prin schimbarea strategiei de runtime din `apps/admin/Dockerfile`.
-- Observabilitatea de baza este buna pentru smoke operational: Cloud Run request logs, trace headers, `/status` cu security/queues si guard rails de auth/moderation deja validate in EXEC-16.
-- Pentru un `PASS` operational complet, trebuie inchise explicit hardening-ul Cloud SQL si dovada de performanta de baza.
+- Runtime-ul productiei a ramas stabil pe reviziile active `openstaff-api-00007-4bj`, `openstaff-web-00009-q46`, `openstaff-admin-00010-t76` in timpul hardening-ului Cloud SQL; nu a fost necesar un rebuild sau un redeploy de aplicatie.
+- Cloud SQL `openstaff-db` este acum protejat operator-side cu `deletionProtectionEnabled = true`, `connectorEnforcement = REQUIRED`, `sslMode = ENCRYPTED_ONLY`, `pointInTimeRecoveryEnabled = true` si `transactionalLogStorageState = CLOUD_STORAGE`.
+- `ipConfiguration.requireSsl` ramane `false`, dar pentru acest runtime PostgreSQL politica finala de criptare este aplicata prin `sslMode = ENCRYPTED_ONLY` si Cloud SQL connectors/socket, compatibila cu Cloud Run + `/cloudsql/...`.
+- Observabilitatea de baza ramane buna pentru smoke operational: Cloud Run request logs, trace headers, `/status` cu security/queues si guard rails de auth/moderation deja validate in EXEC-16.
+- Baseline-ul Lighthouse este arhivat in `docs/proof/exec17/`; singurele follow-up-uri non-blocante observate acum sunt `CLS = 0.524` pe `/jobs`, `TBT = 378 ms` pe `/publish` si scorul de accesibilitate `77` pe homepage.
 
 ### EXEC-17 Recommended Next Steps
 
-1. Activeaza `deletionProtection` pe `openstaff-db`.
-2. Decide si aplica politica finala pentru SSL / encrypted-only Cloud SQL connections, apoi valideaza bootstrap-ul API dupa schimbare.
-3. Confirma si arhiveaza dovada operator-side pentru PITR.
-4. Ruleaza un baseline Lighthouse/Web Vitals pentru homepage, jobs si publish si salveaza rezultatele in proof trail.
+1. Optimizeaza stabilitatea vizuala pe `/jobs`; baseline-ul EXEC-17 a raportat `CLS = 0.524`.
+2. Revizuieste costul de scripting pe `/publish`; baseline-ul EXEC-17 a raportat `TBT = 378 ms`.
+3. Ruleaza un accessibility pass targetat pe homepage pentru a ridica scorul de la `77`.
+4. Pastreaza proof trail-ul din `docs/proof/exec17/` ca baseline de comparatie pentru release-urile urmatoare.
 
 ## EXEC-16 Post-Launch QA, Public UX Audit & Production Regression Sweep
 

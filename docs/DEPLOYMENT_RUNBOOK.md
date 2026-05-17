@@ -243,9 +243,18 @@ Current validated baseline during EXEC-17:
 - Cloud SQL automated backups: enabled
 - Cloud SQL retained backups: `7`
 - Cloud SQL transaction log retention: `7` days
+- Cloud SQL deletion protection: enabled
+- Cloud SQL connector enforcement: `REQUIRED`
+- Cloud SQL SSL mode: `ENCRYPTED_ONLY`
+- Cloud SQL PITR: enabled
+- Cloud SQL transactional log storage state: `CLOUD_STORAGE`
 - GCS bucket: `gs://openstaff-platform-production`
 - GCS uniform bucket-level access: enabled
 - GCS soft delete retention: `7` days
+
+Operational note:
+
+- For the live PostgreSQL setup, `ipConfiguration.requireSsl` may still appear `false`, but the enforced production transport policy is `sslMode = ENCRYPTED_ONLY` together with `connectorEnforcement = REQUIRED`, which is compatible with Cloud Run through the Cloud SQL connector and `/cloudsql/...` socket path.
 
 Restore order:
 
@@ -278,14 +287,17 @@ Apply the same pattern for:
 - `openstaff-web`
 - `openstaff-admin`
 
-## 11. Known operational limitations
+## 11. Known operational notes
 
-As of EXEC-17 audit, review these before declaring full operational hardening complete:
+As of the final EXEC-17 audit:
 
-- ensure Cloud SQL deletion protection is enabled
-- ensure Cloud SQL SSL mode is hardened to the approved production policy
-- ensure PITR state is explicitly confirmed in operator evidence
+- the Cloud SQL hardening baseline is now explicitly confirmed operator-side
 - keep only the active production secret contract in docs and scripts
+- performance proof is archived in `docs/proof/exec17/`
+- the next non-blocking frontend follow-ups are:
+  - reduce `CLS` on `https://openstaff.eu/jobs`
+  - improve homepage accessibility from the current Lighthouse baseline
+  - revisit `/publish` scripting cost if interaction latency becomes a product concern
 
 ## 12. Release checklist
 
@@ -295,6 +307,9 @@ As of EXEC-17 audit, review these before declaring full operational hardening co
 - Release check script passes
 - Required Secret Manager secrets created
 - Cloud SQL reachable
+- Cloud SQL deletion protection enabled
+- Cloud SQL SSL mode verified against the approved production policy
+- Cloud SQL PITR state explicitly confirmed in operator evidence
 - Production migration reviewed and applied
 - API `/health` and `/status` return success on live domain
 - Demo flags confirmed `false`
