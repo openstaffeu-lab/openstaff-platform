@@ -2,6 +2,72 @@
 
 Last updated: 2026-05-17
 
+## EXEC-19 Commercial Operations Closure: Payments, Webhooks & External Notifications
+
+Verdict: `PASS - controlled public launch mode is now commercially honest and operationally coherent: Stripe webhook verification/reconciliation is provider-backed, manual billing paths remain explicit operator flows, email/SMS are no longer implied as automated, and UX /status / admin cockpit behavior are aligned`
+
+### EXEC-19 Commercial Mode Summary
+
+| Area | Mode | Confirmat prin |
+|---|---|---|
+| public pricing / upgrade CTA | `manual_only` | `apps/admin/web/app/pricing/pricing-page-client.tsx` spune explicit `request upgrade` / operator review si nu mai sugereaza activare automata sau checkout live |
+| subscription upgrade approval | `manual_only` | runtime EXEC-19: `POST /subscriptions/upgrade-requests = 201`, `GET /admin/subscription-upgrade-requests = 200`, `POST /admin/subscription-upgrade-requests/:id/approve = 201` |
+| billing profile flow | `real` | runtime EXEC-19: `PUT /billing/profile/me = 200`, `GET /billing/profile/me = 200` |
+| invoice / proforma / fiscal lifecycle | `real with operator approval` | approve flow-ul EXEC-19 creeaza invoice valid, iar reconcilierea webhook a mutat invoice-ul la `PAID` cu `invoiceType = FISCAL` |
+| payment reconciliation | `provider_backed` | `apps/admin/api/src/billing/billing.service.ts` verifica semnatura Stripe cu `STRIPE_WEBHOOK_SECRET` si aplica reconcilierea idempotent pe invoice/payment status |
+| webhook ingestie + retry/admin visibility | `provider_backed` | runtime EXEC-19: webhook happy path `201`, replay idempotent pastrat pe acelasi `externalId`, failed webhook ramas vizibil in `/admin/billing/webhooks`, retry admin a rerulat procesarea fara a ascunde eroarea |
+| email delivery | `not_configured` | `/status.integrations.emailDelivery.mode = not_configured`; delivery-urile email raman marcate explicit ca fara provider configurat |
+| SMS delivery | `manual_only` | `/status.integrations.smsDelivery.mode = manual_only`; SMS nu mai este ambiguu ca functie publica automata |
+
+### EXEC-19 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - UX matches real commercial flow | ✅ | pricing-ul public spune `request upgrade` / operator review; nu mai promite checkout sau activare automata inexistenta |
+| GO - webhook secret wiring is real | ✅ | `apps/admin/api/src/main.ts` + `billing.controller.ts` + `billing.service.ts` folosesc `rawBody`, `Stripe-Signature` si `STRIPE_WEBHOOK_SECRET` pentru verificare reala de semnatura |
+| GO - webhook reconciliation is idempotent | ✅ | runtime EXEC-19 a retrimis acelasi eveniment Stripe si a confirmat persistenta unica pe `BillingWebhookEvent.externalId` fara dublarea efectelor |
+| GO - webhook failure path is auditable | ✅ | runtime EXEC-19 a trimis un eveniment fara invoice valid; webhook-ul a ramas `FAILED`, cu eroare vizibila si retry manual disponibil in admin |
+| GO - admin billing cockpit distinguishes manual vs provider-backed | ✅ | `apps/admin/app/admin/billing/page.tsx` afiseaza explicit `Public billing mode`, `Webhook mode`, `Email delivery`, `SMS delivery`, plus payment/webhook failure state |
+| GO - production readiness page exposes commercial launch signals | ✅ | `apps/admin/app/admin/production-readiness/page.tsx` afiseaza `Commercial Mode`, `Upgrade Flow`, `Webhook`, `Email / SMS` |
+| GO - /status is commercially honest | ✅ | runtime EXEC-19: `integrations.commercial.launchMode = manual_only`, `billingWebhook.mode = configured`, `emailDelivery.mode = not_configured`, `smsDelivery.mode = manual_only`, fara `readiness.errors` critice |
+| GO - build and runtime validation green | ✅ | `prisma validate`, `prisma generate`, build API/web/admin, plus `node scripts/exec-19-runtime-check.js` au trecut |
+| NO-GO - self-serve paid checkout | ✅ accepted absent | nu exista `STRIPE_SECRET_KEY` / checkout public live; aceasta lipsa nu mai este blocker pentru launchul controlat deoarece UX si status nu o mai implica |
+| NO-GO - automated email campaigns or transactional email | ✅ accepted absent | email ramane `not_configured` si nu este prezentat ca feature live obligatoriu pentru launchul controlat |
+| NO-GO - public SMS automation | ✅ accepted absent | SMS ramane `manual_only` si nu este expus ca promisiune de activare/operare automata |
+| Critical blockers | ✅ | none for controlled public launch mode |
+
+### EXEC-19 Validation Proof
+
+- `apps/admin/api -> npx.cmd prisma validate` ✅
+- `apps/admin/api -> npx.cmd prisma generate` ✅
+- `apps/admin/api -> npm.cmd run build` ✅
+- `apps/admin/web -> npm.cmd run build` ✅
+- `apps/admin -> npm.cmd run build` ✅
+- `apps/admin/api -> node scripts/exec-19-runtime-check.js` ✅
+
+### EXEC-19 Runtime Check Highlights
+
+- auth baseline: `register = 201`, `login = 200`, `me = 200`
+- billing profile: `PUT /billing/profile/me = 200`, `GET /billing/profile/me = 200`
+- upgrade flow: `POST /subscriptions/upgrade-requests = 201`, admin list `= 200`, approve `= 201`
+- billing lifecycle: admin invoice list/payment list/event list au ramas `200`, iar invoice-ul aprobat a fost reconciliat la `PAID`
+- webhook happy path: `POST /billing/webhooks/stripe = 201`, invoice final `PAID`, payment final reconciled
+- webhook idempotency: replay-ul aceluiasi eveniment Stripe nu a creat efecte duplicate
+- webhook failure path: evenimentul cu invoice lipsa a ramas `FAILED` si a ramas vizibil pentru retry/operator review
+- notification delivery mode: `email = not_configured`, `sms = manual_only`
+- readiness: `/health = 200`, `/status = 200`, `readiness.errors = []`
+- regressions: `GET /public-posts = 200`, `GET /subscriptions/me = 200`, `GET /billing/profile/me = 200`, `GET /notifications = 200`
+
+### EXEC-19 Launch Decision
+
+Launchul public controlat poate trece legitim mai departe cu modelul comercial actual daca messaging-ul ramane exact cel implementat acum:
+
+1. planurile platite pornesc prin `request upgrade` si operator review, nu prin checkout instant
+2. webhook-urile Stripe sunt folosite pentru reconciliere sigura si auditabila, nu ca dovada unui checkout self-serve inca absent
+3. email si SMS nu sunt prezentate ca automatizari live pana la configurarea unui provider real
+
+Orice schimbare ulterioara catre `instant checkout`, `auto-activation`, `automated email`, sau `automated SMS` trebuie tratata ca executie noua, nu ca presupunere implicita a starii curente.
+
 ## EXEC-18 Product Launch Readiness & Business Operations
 
 Verdict: `IN PROGRESS - infrastructure, moderation, and controlled public workflow are launch-capable, but commercial operations still rely on manual/operator-driven billing and delivery steps, so public announcement should wait until those business blockers are explicitly accepted or closed`

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   Param,
   Post,
   Put,
@@ -197,9 +198,19 @@ export class BillingPublicController {
 
   @Public()
   @Post('webhooks/:provider')
-  async receiveWebhook(@Param('provider') provider: string, @Body() body: unknown) {
+  async receiveWebhook(
+    @Param('provider') provider: string,
+    @Body() body: unknown,
+    @Req() req: any,
+    @Headers('stripe-signature') stripeSignature?: string,
+  ) {
     try {
-      return buildSuccessResponse(await this.billingService.receiveWebhook(provider, body));
+      return buildSuccessResponse(
+        await this.billingService.receiveWebhook(provider, body, {
+          rawBody: req.rawBody,
+          signatureHeader: stripeSignature,
+        }),
+      );
     } catch (error) {
       logEndpointError('BillingPublicController.receiveWebhook', error);
       throw error;

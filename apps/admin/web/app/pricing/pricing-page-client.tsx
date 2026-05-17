@@ -177,7 +177,8 @@ export function PricingPageClient() {
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
                 Compare plan limits and request an upgrade directly from the pricing page. OpenStaff
-                will review the request and contact you manually.
+                will review the request, issue the commercial paperwork manually, and contact you
+                before any activation.
               </p>
               {reason === "private-contact-limit" ? (
                 <div className="mt-5 rounded-[1.4rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
@@ -358,7 +359,8 @@ export function PricingPageClient() {
               </h2>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
                 Submit a manual upgrade request. This does not activate the plan automatically and
-                does not create a payment.
+                does not create an automatic checkout. Billing stays operator-reviewed until
+                approval and invoice issuance.
               </p>
             </div>
             {subscription?.planCode ? (

@@ -73,6 +73,19 @@ export default function ProductionReadinessPage() {
 
   const warnings = status?.readiness?.warnings ?? [];
   const errors = status?.readiness?.errors ?? [];
+  const integrations = status?.integrations as
+    | {
+        commercial?: {
+          launchMode?: string;
+          publicUpgradeFlow?: string;
+          emailDelivery?: string;
+          smsDelivery?: string;
+        };
+        billingWebhook?: {
+          mode?: string;
+        };
+      }
+    | undefined;
   const blockers = [
     ...errors,
     ...(status?.db === "error" ? ["Database connectivity is failing."] : []),
@@ -95,7 +108,8 @@ export default function ProductionReadinessPage() {
               </h1>
               <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-300">
                 This view separates explicit demo behavior from live behavior and surfaces launch
-                blockers, runtime flags, queue status, and integration readiness from the active API.
+                blockers, runtime flags, queue status, integration readiness, and commercial launch
+                mode from the active API.
               </p>
             </div>
 
@@ -116,6 +130,25 @@ export default function ProductionReadinessPage() {
           <MetricCard label="API" value={loading ? "Checking..." : status?.api ?? "Unknown"} />
           <MetricCard label="Database" value={loading ? "Checking..." : status?.db ?? "Unknown"} />
           <MetricCard label="Auth Mode" value={status?.runtime?.authMode ?? "Unknown"} />
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-4">
+          <MetricCard
+            label="Commercial Mode"
+            value={integrations?.commercial?.launchMode ?? "Unknown"}
+          />
+          <MetricCard
+            label="Upgrade Flow"
+            value={integrations?.commercial?.publicUpgradeFlow ?? "Unknown"}
+          />
+          <MetricCard
+            label="Webhook"
+            value={integrations?.billingWebhook?.mode ?? "Unknown"}
+          />
+          <MetricCard
+            label="Email / SMS"
+            value={`${integrations?.commercial?.emailDelivery ?? "Unknown"} / ${integrations?.commercial?.smsDelivery ?? "Unknown"}`}
+          />
         </section>
 
         {error ? (

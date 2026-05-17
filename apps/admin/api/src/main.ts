@@ -17,7 +17,9 @@ import {
 async function bootstrap() {
   await loadSecrets();
   assertRuntimeEnvironment(process.env);
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+  });
   const runtimeConfig = app.get(RuntimeConfigService);
 
   runtimeConfig.logValidationWarnings();
@@ -26,7 +28,7 @@ async function bootstrap() {
     origin: getApiCorsOrigins(),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Stripe-Signature', 'X-Request-Id'],
   });
   app.useGlobalPipes(
     new ValidationPipe({

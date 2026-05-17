@@ -19,6 +19,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { AuditService } from '../audit/audit.service';
 import { NotificationService } from '../notifications/notification.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -66,6 +67,14 @@ type BillingProfileLike = {
   isCompany: boolean;
   isVatPayer: boolean;
   vatMode?: BillingVatMode | null;
+};
+
+type StripeWebhookEventEnvelope = {
+  id: string;
+  type: string;
+  data?: {
+    object?: Record<string, unknown>;
+  };
 };
 
 const EU_COUNTRIES = new Set([
@@ -678,27 +687,55 @@ export class BillingService {
     });
   }
 
-  async receiveWebhook(provider: string, payload: unknown) {
-    const eventType =
-      typeof payload === 'object' && payload !== null && 'eventType' in payload
-        ? String((payload as Record<string, unknown>).eventType)
-        : typeof payload === 'object' && payload !== null && 'type' in payload
-          ? String((payload as Record<string, unknown>).type)
-          : 'UNKNOWN';
-    const externalId =
-      typeof payload === 'object' && payload !== null && 'id' in payload
-        ? String((payload as Record<string, unknown>).id)
+  async receiveWebhook(
+    provider: string,
+    payload: unknown,
+    options?: {
+      rawBody?: Buffer | string | null;
+      signatureHeader?: string;
+      actorUserId?: string | null;
+    },
+  ) {
+    const normalizedProvider = provider.trim().toLowerCase();
+
+    if (normalizedProvider !== 'stripe') {
+      throw new BadRequestException('Unsupported billing webhook provider.');
+    }
+
+    const rawPayload = this.resolveWebhookPayloadString(payload, options?.rawBody);
+    this.assertStripeWebhookSignature(rawPayload, options?.signatureHeader);
+
+    const stripeEvent = this.parseStripeWebhookPayload(payload);
+    const existing =
+      stripeEvent.id.length > 0
+        ? await this.prisma.billingWebhookEvent.findFirst({
+            where: {
+              provider: normalizedProvider,
+              externalId: stripeEvent.id,
+            },
+            orderBy: [{ createdAt: 'desc' }],
+          })
         : null;
 
-    return this.prisma.billingWebhookEvent.create({
+    if (existing?.status === BillingWebhookStatus.PROCESSED) {
+      return existing;
+    }
+
+    if (existing) {
+      return this.processStoredWebhook(existing, options?.actorUserId ?? null);
+    }
+
+    const created = await this.prisma.billingWebhookEvent.create({
       data: {
-        provider,
-        eventType,
-        externalId,
+        provider: normalizedProvider,
+        eventType: stripeEvent.type,
+        externalId: stripeEvent.id,
         status: BillingWebhookStatus.RECEIVED,
         payload: (payload ?? {}) as object,
       },
     });
+
+    return this.processStoredWebhook(created, options?.actorUserId ?? null);
   }
 
   async listWebhooks() {
@@ -725,15 +762,20 @@ export class BillingService {
         ? BillingWebhookStatus.FAILED
         : BillingWebhookStatus.PROCESSED;
 
+    if (nextStatus === BillingWebhookStatus.PROCESSED) {
+      if (existing.status === BillingWebhookStatus.PROCESSED) {
+        return existing;
+      }
+
+      return this.processStoredWebhook(existing, actorUserId);
+    }
+
     const updated = await this.prisma.billingWebhookEvent.update({
       where: { id },
       data: {
         status: nextStatus,
-        processedAt: nextStatus === BillingWebhookStatus.PROCESSED ? new Date() : null,
-        error:
-          nextStatus === BillingWebhookStatus.FAILED
-            ? input.note ?? 'Processing failed'
-            : null,
+        processedAt: null,
+        error: input.note ?? 'Processing failed',
       },
     });
 
@@ -741,7 +783,7 @@ export class BillingService {
       actorUserId,
       entityType: 'BillingWebhookEvent',
       entityId: id,
-      action: nextStatus === BillingWebhookStatus.PROCESSED ? 'PROCESS' : 'FAIL',
+      action: 'FAIL',
       before: {
         status: existing.status,
       },
@@ -755,6 +797,80 @@ export class BillingService {
     });
 
     return updated;
+  }
+
+  private async processStoredWebhook(
+    event: {
+      id: string;
+      provider: string;
+      eventType: string;
+      externalId: string | null;
+      payload: Prisma.JsonValue;
+      status: BillingWebhookStatus;
+    },
+    actorUserId?: string | null,
+  ) {
+    try {
+      const outcome = await this.applyWebhookEvent(event, actorUserId);
+      const updated = await this.prisma.billingWebhookEvent.update({
+        where: { id: event.id },
+        data: {
+          status: BillingWebhookStatus.PROCESSED,
+          processedAt: new Date(),
+          error: null,
+        },
+      });
+
+      await this.auditService.log({
+        actorUserId,
+        entityType: 'BillingWebhookEvent',
+        entityId: event.id,
+        action: 'PROCESS',
+        before: {
+          status: event.status,
+        },
+        after: {
+          status: updated.status,
+          processedAt: updated.processedAt,
+        },
+        metadata: outcome,
+      });
+
+      return updated;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Webhook processing failed.';
+      const updated = await this.prisma.billingWebhookEvent.update({
+        where: { id: event.id },
+        data: {
+          status: BillingWebhookStatus.FAILED,
+          processedAt: null,
+          error: message,
+        },
+      });
+
+      await this.auditService.log({
+        actorUserId,
+        entityType: 'BillingWebhookEvent',
+        entityId: event.id,
+        action: 'FAIL',
+        before: {
+          status: event.status,
+        },
+        after: {
+          status: updated.status,
+          processedAt: updated.processedAt,
+          error: updated.error,
+        },
+        metadata: {
+          provider: event.provider,
+          eventType: event.eventType,
+          externalId: event.externalId,
+        },
+      });
+
+      throw error;
+    }
   }
 
   async listRenewals() {
@@ -1197,6 +1313,355 @@ export class BillingService {
     });
 
     return invoice;
+  }
+
+  private async applyWebhookEvent(
+    event: {
+      id: string;
+      provider: string;
+      eventType: string;
+      externalId: string | null;
+      payload: Prisma.JsonValue;
+    },
+    actorUserId?: string | null,
+  ) {
+    if (event.provider !== 'stripe') {
+      throw new BadRequestException('Unsupported billing webhook provider.');
+    }
+
+    const payload = this.parseStripeWebhookPayload(event.payload);
+    const supportedSuccessEvents = new Set([
+      'checkout.session.completed',
+      'invoice.payment_succeeded',
+      'payment_intent.succeeded',
+      'charge.succeeded',
+    ]);
+    const supportedFailureEvents = new Set([
+      'invoice.payment_failed',
+      'payment_intent.payment_failed',
+      'charge.failed',
+    ]);
+
+    if (!supportedSuccessEvents.has(payload.type) && !supportedFailureEvents.has(payload.type)) {
+      return {
+        provider: event.provider,
+        eventType: payload.type,
+        action: 'ignored',
+        reason: 'unsupported_event_type',
+      };
+    }
+
+    const reference = this.extractStripeInvoiceReference(payload);
+    if (!reference.invoiceId && !reference.invoiceNumber) {
+      throw new BadRequestException(
+        'Stripe webhook payload is missing billing invoice metadata.',
+      );
+    }
+
+    const invoice = await this.findInvoiceByStripeReference(reference);
+    if (!invoice) {
+      throw new NotFoundException('Billing invoice referenced by webhook was not found.');
+    }
+
+    const providerPaymentId =
+      this.extractStripeProviderPaymentId(payload) ?? event.externalId ?? undefined;
+
+    if (supportedSuccessEvents.has(payload.type)) {
+      if (invoice.status === BillingInvoiceStatus.PAID) {
+        return {
+          provider: event.provider,
+          eventType: payload.type,
+          action: 'already_paid',
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+        };
+      }
+
+      await this.markInvoicePaid(
+        invoice.id,
+        {
+          provider: 'MANUAL',
+          providerPaymentId,
+          note: `Auto-reconciled from Stripe webhook ${payload.type}.`,
+        },
+        actorUserId,
+      );
+
+      return {
+        provider: event.provider,
+        eventType: payload.type,
+        action: 'invoice_paid',
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        providerPaymentId: providerPaymentId ?? null,
+      };
+    }
+
+    await this.markInvoicePaymentFailed({
+      invoiceId: invoice.id,
+      providerPaymentId,
+      eventType: payload.type,
+      externalId: event.externalId,
+      actorUserId,
+    });
+
+    return {
+      provider: event.provider,
+      eventType: payload.type,
+      action: 'payment_failed',
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      providerPaymentId: providerPaymentId ?? null,
+    };
+  }
+
+  private parseStripeWebhookPayload(payload: unknown): StripeWebhookEventEnvelope {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      throw new BadRequestException('Stripe webhook payload must be a JSON object.');
+    }
+
+    const envelope = payload as Record<string, unknown>;
+    const id = typeof envelope.id === 'string' ? envelope.id.trim() : '';
+    const type = typeof envelope.type === 'string' ? envelope.type.trim() : '';
+
+    if (!id || !type) {
+      throw new BadRequestException('Stripe webhook payload must include id and type.');
+    }
+
+    const data =
+      envelope.data && typeof envelope.data === 'object' && !Array.isArray(envelope.data)
+        ? (envelope.data as { object?: Record<string, unknown> })
+        : undefined;
+
+    return {
+      id,
+      type,
+      data,
+    };
+  }
+
+  private resolveWebhookPayloadString(
+    payload: unknown,
+    rawBody?: Buffer | string | null,
+  ) {
+    if (Buffer.isBuffer(rawBody)) {
+      return rawBody.toString('utf8');
+    }
+
+    if (typeof rawBody === 'string') {
+      return rawBody;
+    }
+
+    return JSON.stringify(payload ?? {});
+  }
+
+  private assertStripeWebhookSignature(payload: string, signatureHeader?: string) {
+    const secret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
+    if (!secret) {
+      throw new BadRequestException('STRIPE_WEBHOOK_SECRET is not configured.');
+    }
+
+    if (!signatureHeader?.trim()) {
+      throw new BadRequestException('Missing Stripe-Signature header.');
+    }
+
+    const signatureParts = Object.fromEntries(
+      signatureHeader.split(',').map((entry) => {
+        const [key, value] = entry.split('=');
+        return [key?.trim(), value?.trim()];
+      }),
+    );
+
+    const timestamp = signatureParts.t;
+    const signature = signatureParts.v1;
+
+    if (!timestamp || !signature) {
+      throw new BadRequestException('Stripe-Signature header is malformed.');
+    }
+
+    const timestampSeconds = Number(timestamp);
+    if (!Number.isFinite(timestampSeconds)) {
+      throw new BadRequestException('Stripe-Signature timestamp is invalid.');
+    }
+
+    const ageSeconds = Math.abs(Math.floor(Date.now() / 1000) - timestampSeconds);
+    if (ageSeconds > 300) {
+      throw new BadRequestException('Stripe webhook signature timestamp expired.');
+    }
+
+    const expectedSignature = createHmac('sha256', secret)
+      .update(`${timestamp}.${payload}`, 'utf8')
+      .digest('hex');
+
+    const expectedBuffer = Buffer.from(expectedSignature, 'utf8');
+    const receivedBuffer = Buffer.from(signature, 'utf8');
+
+    if (
+      expectedBuffer.length !== receivedBuffer.length ||
+      !timingSafeEqual(expectedBuffer, receivedBuffer)
+    ) {
+      throw new BadRequestException('Stripe webhook signature verification failed.');
+    }
+  }
+
+  private extractStripeInvoiceReference(payload: StripeWebhookEventEnvelope) {
+    const stripeObject = payload.data?.object ?? {};
+    const metadata =
+      stripeObject.metadata &&
+      typeof stripeObject.metadata === 'object' &&
+      !Array.isArray(stripeObject.metadata)
+        ? (stripeObject.metadata as Record<string, unknown>)
+        : {};
+
+    const invoiceIdCandidates = [
+      metadata.invoiceId,
+      metadata.billingInvoiceId,
+      metadata.invoice_id,
+    ];
+    const invoiceNumberCandidates = [
+      metadata.invoiceNumber,
+      metadata.invoice_number,
+    ];
+
+    return {
+      invoiceId: this.pickStringValue(invoiceIdCandidates),
+      invoiceNumber: this.pickStringValue(invoiceNumberCandidates),
+    };
+  }
+
+  private extractStripeProviderPaymentId(payload: StripeWebhookEventEnvelope) {
+    const stripeObject = payload.data?.object ?? {};
+    const candidates = [
+      stripeObject.payment_intent,
+      stripeObject.paymentIntent,
+      stripeObject.charge,
+      stripeObject.id,
+    ];
+
+    return this.pickStringValue(candidates);
+  }
+
+  private async findInvoiceByStripeReference(reference: {
+    invoiceId: string | null;
+    invoiceNumber: string | null;
+  }) {
+    if (reference.invoiceId) {
+      const invoice = await this.prisma.billingInvoice.findUnique({
+        where: { id: reference.invoiceId },
+        select: {
+          id: true,
+          invoiceNumber: true,
+          status: true,
+        },
+      });
+
+      if (invoice) {
+        return invoice;
+      }
+    }
+
+    if (reference.invoiceNumber) {
+      return this.prisma.billingInvoice.findUnique({
+        where: { invoiceNumber: reference.invoiceNumber },
+        select: {
+          id: true,
+          invoiceNumber: true,
+          status: true,
+        },
+      });
+    }
+
+    return null;
+  }
+
+  private async markInvoicePaymentFailed(input: {
+    invoiceId: string;
+    providerPaymentId?: string;
+    eventType: string;
+    externalId?: string | null;
+    actorUserId?: string | null;
+  }) {
+    const invoice = await this.prisma.billingInvoice.findUnique({
+      where: { id: input.invoiceId },
+      include: {
+        payments: {
+          orderBy: [{ createdAt: 'desc' }],
+        },
+      },
+    });
+
+    if (!invoice) {
+      throw new NotFoundException('Billing invoice not found.');
+    }
+
+    const failureMetadata = {
+      source: 'stripe_webhook',
+      eventType: input.eventType,
+      externalId: input.externalId ?? null,
+      providerPaymentId: input.providerPaymentId ?? null,
+    };
+
+    const pendingPayment = invoice.payments.find(
+      (payment) => payment.status === PaymentRecordStatus.PENDING,
+    );
+
+    const failedPayment = pendingPayment
+      ? await this.prisma.paymentRecord.update({
+          where: { id: pendingPayment.id },
+          data: {
+            status: PaymentRecordStatus.FAILED,
+            providerPaymentId: input.providerPaymentId ?? pendingPayment.providerPaymentId,
+            metadata: {
+              ...(pendingPayment.metadata &&
+              typeof pendingPayment.metadata === 'object'
+                ? (pendingPayment.metadata as Record<string, unknown>)
+                : {}),
+              ...failureMetadata,
+            },
+          },
+        })
+      : await this.prisma.paymentRecord.create({
+          data: {
+            userId: invoice.userId,
+            invoiceId: invoice.id,
+            provider: PaymentProvider.MANUAL,
+            providerPaymentId: input.providerPaymentId ?? null,
+            status: PaymentRecordStatus.FAILED,
+            amount: invoice.total,
+            currency: invoice.currency,
+            metadata: failureMetadata,
+          },
+        });
+
+    await this.auditService.log({
+      actorUserId: input.actorUserId ?? null,
+      entityType: 'PaymentRecord',
+      entityId: failedPayment.id,
+      action: 'MARK_FAILED_FROM_WEBHOOK',
+      before: pendingPayment
+        ? {
+            status: pendingPayment.status,
+            providerPaymentId: pendingPayment.providerPaymentId,
+          }
+        : null,
+      after: {
+        status: failedPayment.status,
+        providerPaymentId: failedPayment.providerPaymentId,
+      },
+      metadata: failureMetadata,
+    });
+
+    return failedPayment;
+  }
+
+  private pickStringValue(values: unknown[]) {
+    for (const value of values) {
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value.trim();
+      }
+    }
+
+    return null;
   }
 
   private async ensureBillingProfile(userId: string, currency: string) {

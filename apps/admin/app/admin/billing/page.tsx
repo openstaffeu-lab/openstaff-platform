@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { buildApiUrl } from "@/lib/api";
 import {
-  getBillingEvents,
   generateRenewals,
-  type BillingEventSummary,
+  getBillingEvents,
   getBillingInvoices,
   getBillingPayments,
   getBillingRenewals,
@@ -12,11 +12,49 @@ import {
   markInvoicePaid,
   processBillingWebhook,
   processRenewal,
+  type BillingEventSummary,
   type BillingInvoice,
   type BillingWebhookEvent,
   type PaymentRecord,
   type SubscriptionRenewal,
 } from "@/lib/api";
+
+type StatusPayload = {
+  integrations?: {
+    commercial?: {
+      launchMode?: string;
+      publicUpgradeFlow?: string;
+      operatorReviewRequired?: boolean;
+      webhookProvider?: string;
+      emailDelivery?: string;
+      smsDelivery?: string;
+    };
+    billingWebhook?: {
+      mode?: string;
+      provider?: string;
+      signatureVerification?: string;
+      autoProcessing?: string;
+    };
+    emailDelivery?: {
+      mode?: string;
+      provider?: string;
+    };
+    smsDelivery?: {
+      mode?: string;
+      provider?: string;
+      publicEnabled?: boolean;
+    };
+    billingPayments?: {
+      mode?: string;
+      providerBackedCheckout?: boolean;
+      operatorOverrideEnabled?: boolean;
+    };
+  };
+  readiness?: {
+    warnings?: string[];
+    errors?: string[];
+  };
+};
 
 function formatDate(value: string | null) {
   if (!value) {
@@ -30,6 +68,13 @@ function formatDate(value: string | null) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+function formatMoney(value: number, currency: string) {
+  return `${value.toLocaleString("ro-RO", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} ${currency}`;
 }
 
 function currentMonthWindow() {
@@ -48,6 +93,7 @@ export default function AdminBillingPage() {
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [webhooks, setWebhooks] = useState<BillingWebhookEvent[]>([]);
   const [renewals, setRenewals] = useState<SubscriptionRenewal[]>([]);
+  const [statusSummary, setStatusSummary] = useState<StatusPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,14 +106,22 @@ export default function AdminBillingPage() {
       try {
         setLoading(true);
         setError(null);
-        const [nextEvents, nextInvoices, nextPayments, nextWebhooks, nextRenewals] =
+        const [nextEvents, nextInvoices, nextPayments, nextWebhooks, nextRenewals, statusResponse] =
           await Promise.all([
             getBillingEvents(),
-          getBillingInvoices(),
-          getBillingPayments(),
-          getBillingWebhooks(),
-          getBillingRenewals(),
+            getBillingInvoices(),
+            getBillingPayments(),
+            getBillingWebhooks(),
+            getBillingRenewals(),
+            fetch(buildApiUrl("/status"), {
+              method: "GET",
+              cache: "no-store",
+            }),
           ]);
+
+        const statusPayload = statusResponse.ok
+          ? ((await statusResponse.json()) as StatusPayload)
+          : null;
 
         if (!cancelled) {
           setEvents(nextEvents);
@@ -75,6 +129,7 @@ export default function AdminBillingPage() {
           setPayments(nextPayments);
           setWebhooks(nextWebhooks);
           setRenewals(nextRenewals);
+          setStatusSummary(statusPayload);
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -136,7 +191,7 @@ export default function AdminBillingPage() {
       setError(
         actionError instanceof Error
           ? actionError.message
-          : "Nu am putut procesa webhook-ul.",
+          : "Nu am putut reprocesa webhook-ul.",
       );
     } finally {
       setBusyKey(null);
@@ -191,17 +246,69 @@ export default function AdminBillingPage() {
     }
   }
 
+  const commercial = statusSummary?.integrations?.commercial;
+  const webhookMode = statusSummary?.integrations?.billingWebhook;
+  const emailMode = statusSummary?.integrations?.emailDelivery;
+  const smsMode = statusSummary?.integrations?.smsDelivery;
+  const paymentMode = statusSummary?.integrations?.billingPayments;
+  const failedWebhooks = webhooks.filter((webhook) => webhook.status === "FAILED").length;
+  const pendingManualPayments = payments.filter((payment) => payment.status === "PENDING").length;
+
   return (
     <div className="space-y-6 px-6 py-8 md:px-8">
       <section className="rounded-[2rem] border border-slate-800 bg-slate-950/70 p-6">
         <div className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-400">
-          Billing Engine Foundation
+          Commercial operations
         </div>
-        <h1 className="mt-3 text-3xl font-semibold text-white">Invoices, webhooks, renewals</h1>
+        <h1 className="mt-3 text-3xl font-semibold text-white">
+          Billing, webhook health, reconciliation
+        </h1>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
-          EXEC-04B ofera stratul minim de agregare comerciala: facturi, reconciliere
-          manuala, ingestie webhook placeholder si recurring renewals administrabile.
+          Public launch remains manual-first for upgrades and invoice activation. This cockpit makes
+          the mode explicit: operator-reviewed billing, Stripe webhook health for reconciliation,
+          and external notification readiness without promising unattended checkout.
         </p>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="Public billing mode"
+          value={commercial?.launchMode ?? paymentMode?.mode ?? "unknown"}
+          hint={commercial?.publicUpgradeFlow ?? "unknown"}
+        />
+        <MetricCard
+          label="Webhook mode"
+          value={webhookMode?.mode ?? "unknown"}
+          hint={`${webhookMode?.provider ?? "provider"} / ${webhookMode?.signatureVerification ?? "signature"}`}
+        />
+        <MetricCard
+          label="Email delivery"
+          value={emailMode?.mode ?? "unknown"}
+          hint={emailMode?.provider ?? "n/a"}
+        />
+        <MetricCard
+          label="SMS delivery"
+          value={smsMode?.mode ?? "unknown"}
+          hint={smsMode?.publicEnabled ? "publicly enabled" : "not public"}
+        />
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-3">
+        <MetricCard
+          label="Manual payments pending"
+          value={String(pendingManualPayments)}
+          hint={paymentMode?.operatorOverrideEnabled ? "operator override enabled" : "override unavailable"}
+        />
+        <MetricCard
+          label="Webhook failures"
+          value={String(failedWebhooks)}
+          hint={webhookMode?.autoProcessing ?? "unknown"}
+        />
+        <MetricCard
+          label="Readiness warnings"
+          value={String(statusSummary?.readiness?.warnings?.length ?? 0)}
+          hint={`${statusSummary?.readiness?.errors?.length ?? 0} errors`}
+        />
       </section>
 
       {error ? (
@@ -221,6 +328,9 @@ export default function AdminBillingPage() {
           <div>
             <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Renewals</div>
             <div className="mt-2 text-lg font-semibold text-white">Recurring renewal scheduler</div>
+            <div className="mt-2 text-sm text-slate-400">
+              Renewals remain operator-driven until checkout becomes provider-backed.
+            </div>
           </div>
           <button
             type="button"
@@ -260,15 +370,13 @@ export default function AdminBillingPage() {
                 events.map((event) => (
                   <tr key={event.id}>
                     <td className="px-4 py-4 font-medium text-white">{event.type}</td>
-                    <td className="px-4 py-4 text-slate-300">
-                      {event.user.email}
-                    </td>
+                    <td className="px-4 py-4 text-slate-300">{event.user.email}</td>
                     <td className="px-4 py-4 text-slate-300">
                       {event.status}
                       {event.billingLink ? ` / ${event.billingLink.status}` : ""}
                     </td>
                     <td className="px-4 py-4 text-slate-300">
-                      {event.amount} {event.currency}
+                      {formatMoney(event.amount, event.currency)}
                     </td>
                     <td className="px-4 py-4 text-slate-300">
                       {event.billingLink?.payrollSettlementId ?? "-"}
@@ -326,7 +434,7 @@ export default function AdminBillingPage() {
                     <td className="px-4 py-4 text-slate-300">{invoice.user.email}</td>
                     <td className="px-4 py-4 text-slate-300">{invoice.status}</td>
                     <td className="px-4 py-4 text-slate-300">
-                      {(invoice.total / 100).toFixed(2)} {invoice.currency}
+                      {formatMoney(invoice.total, invoice.currency)}
                     </td>
                     <td className="px-4 py-4 text-slate-300">{formatDate(invoice.dueAt)}</td>
                     <td className="px-4 py-4 text-slate-300">{invoice.lineCount ?? "-"}</td>
@@ -367,11 +475,16 @@ export default function AdminBillingPage() {
                   className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-sm"
                 >
                   <div className="font-medium text-white">
-                    {(payment.amount / 100).toFixed(2)} {payment.currency}
+                    {formatMoney(payment.amount, payment.currency)}
                   </div>
                   <div className="mt-1 text-slate-400">
                     {payment.provider} | {payment.status} |{" "}
                     {payment.invoice?.invoiceNumber ?? "No invoice"}
+                  </div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    {payment.provider === "MANUAL"
+                      ? "Manual or operator-reconciled payment record"
+                      : "Provider-originated payment record"}
                   </div>
                   <div className="mt-1 text-slate-500">{formatDate(payment.paidAt)}</div>
                 </div>
@@ -399,6 +512,12 @@ export default function AdminBillingPage() {
                         {webhook.provider} / {webhook.eventType}
                       </div>
                       <div className="mt-1 text-slate-400">{webhook.status}</div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {webhook.externalId ?? "No external event id"}
+                      </div>
+                      {webhook.error ? (
+                        <div className="mt-2 text-xs text-rose-300">{webhook.error}</div>
+                      ) : null}
                     </div>
                     <button
                       type="button"
@@ -408,7 +527,7 @@ export default function AdminBillingPage() {
                       onClick={() => void handleProcessWebhook(webhook.id)}
                       className="rounded-full bg-cyan-400 px-4 py-2 text-xs font-semibold text-slate-950 disabled:opacity-50"
                     >
-                      Process
+                      Retry
                     </button>
                   </div>
                   <div className="mt-2 text-slate-500">{formatDate(webhook.createdAt)}</div>
@@ -475,6 +594,24 @@ export default function AdminBillingPage() {
           </table>
         </div>
       </section>
+    </div>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+}) {
+  return (
+    <div className="rounded-[2rem] border border-slate-800 bg-slate-950/70 p-5">
+      <div className="text-xs uppercase tracking-[0.24em] text-slate-400">{label}</div>
+      <div className="mt-3 text-xl font-semibold text-white">{value}</div>
+      <div className="mt-2 text-sm text-slate-400">{hint}</div>
     </div>
   );
 }
