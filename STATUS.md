@@ -4,22 +4,25 @@ Last updated: 2026-05-17
 
 ## EXEC-20 Controlled Public Rollout Readiness
 
-Verdict: `IN PROGRESS - EXEC-19 is now remote-synced and the controlled launch mode is documented in-repo, but the live production /status contract still exposes the pre-EXEC-19 readiness shape, so public rollout cannot be marked PASS until the active runtime proves the same commercial launch signals that the repo and admin UI now describe`
+Verdict: `IN PROGRESS - EXEC-20 is now remote-synced and the live rollout contract has been deployed to API/web/admin, but operator-side HTTP validation remains intermittent from this environment, so final PASS is held until the updated backoffice readiness surface and public pricing body are re-confirmed live without transport ambiguity`
 
 ### EXEC-20 Controlled Rollout Summary
 
 | Area | Status | Confirmat prin |
 |---|---|---|
 | EXEC-19 remote sync closed | ✅ | `git rev-parse HEAD` = `git rev-parse origin/feature/work-in-progress` = `51522163e579f3245b1fb4adeb82f8e730396f05`; branch tracking: `feature/work-in-progress [origin/feature/work-in-progress]` |
+| EXEC-20 remote sync closed | ✅ | `git rev-parse HEAD` = `git rev-parse origin/feature/work-in-progress` = `bb5b3cf898668bdcc86da381bf686a0b52b9c7a8`; branch tracking is aligned after push |
 | live health stable | ✅ | `curl -sS https://api.openstaff.eu/health` returneaza `status = ok`, `environment = production` |
 | live readiness stable | ✅ | `curl -sS https://api.openstaff.eu/status` returneaza `status = ok`, `db = healthy`, `warnings = []`, `errors = []` |
+| live commercial rollout contract deployed | ✅ | `/status.integrations` expune acum `commercial.launchMode = manual_only`, `publicUpgradeFlow = request_upgrade`, `operatorReviewRequired = true`, `billingWebhook.mode = configured`, `billingPayments.mode = manual_only`, `emailDelivery.mode = not_configured`, `smsDelivery.mode = not_required` |
 | public domains healthy | ✅ | `curl -I https://openstaff.eu = 200`, `curl -I https://www.openstaff.eu = 308 -> https://openstaff.eu/`, `curl -I https://backoffice.openstaff.eu = 200` |
 | pricing copy aligned to manual commercial ops in repo | ✅ | `apps/admin/web/app/pricing/pricing-page-client.tsx` spune explicit `request upgrade`, `does not activate the plan automatically`, `does not create an automatic checkout` |
 | launch checklist documented in repo | ✅ | `docs/LAUNCH_CHECKLIST.md` acopera GO/NO-GO, manual billing SOP, moderation SOP, rollback SOP si support SOP |
 | production readiness UI updated in repo | ✅ | `apps/admin/app/admin/production-readiness/page.tsx` afiseaza `Commercial Mode`, `Billing Mode`, `Upgrade Flow`, `Webhook`, `Email / SMS` si trateaza lipsa contractului comercial live ca blocker |
 | launch proof script added | ✅ | `apps/admin/api/scripts/exec-20-launch-check.js` valideaza live `/health`, `/status`, domenii, pricing wording, admin route protection si consistenta rollout-ului controlat |
-| blocker - live /status lacks EXEC-19 commercial contract | 🚧 | runtime-ul live inca expune doar forma veche `integrations.billingWebhook.placeholderEnabled/...` si nu publica `integrations.commercial`, `billingPayments`, `emailDelivery.mode`, `smsDelivery.mode` |
-| blocker - repo/UI is ahead of active runtime | 🚧 | repo-ul si paginile admin stiu despre `controlled/manual commercial ops`, dar dovada live publica nu a fost redeployata pe runtime-ul activ |
+| live revisions redeployed for rollout contract | ✅ | Cloud Build `SUCCESS` pentru buildurile `ac58df2c-d960-4476-a621-f141994e4d89` (API), `72c65590-7496-4b3a-af22-5398b64efeb5` (admin), `3d703735-c5d5-4951-8790-343975f9c942` (web); revizii active: `openstaff-api-00008-nql`, `openstaff-web-00010-pgt`, `openstaff-admin-00011-dqr`, fiecare cu `100%` trafic |
+| blocker - operator-side HTTP transport remains intermittent | 🚧 | in acelasi mediu, unele probe live pe `api.openstaff.eu` / `backoffice.openstaff.eu` si body fetch pentru `pricing` / `admin/production-readiness` alterneaza intre succes si `curl: (7) Could not connect to server`, deci proof-ul HTML final nu este inca stabil |
+| blocker - final body-level copy confirmation on live pages remains incomplete | 🚧 | ruta `https://openstaff.eu/pricing` raspunde `200`, iar deploy-ul web este pe revizia noua, dar extragerea body-ului live pentru textul exact si pentru pagina `backoffice.../admin/production-readiness` nu a ramas stabila din acest mediu |
 
 ### EXEC-20 GO / NO-GO Matrix
 
@@ -29,8 +32,8 @@ Verdict: `IN PROGRESS - EXEC-19 is now remote-synced and the controlled launch m
 | GO - pricing does not promise automatic payment | ✅ | copy-ul public cere `request upgrade` / `contact sales` / manual approval |
 | GO - admin protected access remains intact | ✅ | `GET https://api.openstaff.eu/admin/billing/invoices` fara token ramane protejat; `apps/admin/api/scripts/exec-20-launch-check.js` verifica acest guard rail |
 | GO - technical production baseline remains healthy | ✅ | EXEC-17 ramane valid pentru Cloud SQL, backups, PITR, deletion protection, storage, revisions si rollback notes |
-| NO-GO - live /status still contradicts repo-level launch mode detail by omission | 🚧 | in productie lipsesc inca campurile comerciale noi, deci runtime-ul public nu poate dovedi singur `manual_only / configured / not_configured` |
-| NO-GO - EXEC-20 PASS without live proof redeploy | 🚧 | verdictul PASS ar cere dovada activa in runtime, nu doar repo/documentatie |
+| GO - live /status no longer contradicts rollout mode | ✅ | contractul comercial nou este live in `/status` si se aliniaza cu EXEC-19/EXEC-20 |
+| NO-GO - EXEC-20 PASS without stable operator-side page proof | 🚧 | verdictul PASS cere confirmare live stabila pentru `pricing` body si `admin/production-readiness`, nu doar revizii noi + `/status` |
 
 ### EXEC-20 Validation Proof
 
@@ -39,17 +42,20 @@ Verdict: `IN PROGRESS - EXEC-19 is now remote-synced and the controlled launch m
 - `apps/admin/api -> npm.cmd run build` ✅
 - `apps/admin/web -> npm.cmd run build` ✅
 - `apps/admin -> npm.cmd run build` ✅
-- `apps/admin/api -> node scripts/exec-20-launch-check.js` 🚧 a rulat si a returnat `status = in_progress`; din acest mediu child-process network probe-urile au raportat `Could not connect to server`, in timp ce operator-side `curl.exe` separat a confirmat live `200/308/200` si `/status = ok` |
+- `apps/admin/api -> node scripts/exec-20-launch-check.js` 🚧 ruleaza, dar din acest mediu child-process network probe-urile raman intermitente si pot raporta `Could not connect to server` chiar cand probe manuale separate confirma succes live pentru unele suprafete |
+- deploy API EXEC-20B ✅: build `ac58df2c-d960-4476-a621-f141994e4d89 = SUCCESS`, revizie activa `openstaff-api-00008-nql`
+- deploy web EXEC-20B ✅: build `3d703735-c5d5-4951-8790-343975f9c942 = SUCCESS`, revizie activa `openstaff-web-00010-pgt`
+- deploy admin EXEC-20B ✅: build `72c65590-7496-4b3a-af22-5398b64efeb5 = SUCCESS`, revizie activa `openstaff-admin-00011-dqr`
 
 ### EXEC-20 Launch Decision
 
-Launchul controlat este aproape coerent end-to-end, dar in acest moment verdictul ramane `IN PROGRESS` dintr-un singur motiv important: runtime-ul live nu publica inca aceeasi semnalizare comerciala pe care repo-ul o documenteaza dupa EXEC-19.
+Launchul controlat este acum coerent la nivel de repo, remote sync, deploy si contract API live, iar blockerul anterior legat de `/status` a fost inchis prin revizia `openstaff-api-00008-nql`.
 
 EXEC-20 poate deveni `PASS` doar daca:
 
-1. runtime-ul activ expune in `/status` contractul comercial nou (`manual_only`, `configured`, `not_configured`, `manual_only/not_required`)
-2. proof script-ul EXEC-20 este verde pe live + repo
-3. documentatia, UI-ul si runtime-ul spun aceeasi poveste despre controlled/manual commercial ops
+1. pagina publica `pricing` este reconfirmata live, dintr-un mediu stabil, cu copy-ul manual-only deployat
+2. pagina `backoffice.openstaff.eu/admin/production-readiness` este reconfirmata live, dintr-un mediu stabil, cu noile semnale comerciale afisate
+3. proof script-ul EXEC-20 este verde intr-un mediu fara blocajele intermitente de transport HTTP observate aici
 
 ## EXEC-19 Commercial Operations Closure: Payments, Webhooks & External Notifications
 
