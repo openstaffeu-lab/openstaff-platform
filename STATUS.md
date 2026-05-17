@@ -2,6 +2,56 @@
 
 Last updated: 2026-05-17
 
+## EXEC-18 Product Launch Readiness & Business Operations
+
+Verdict: `IN PROGRESS - infrastructure, moderation, and controlled public workflow are launch-capable, but commercial operations still rely on manual/operator-driven billing and delivery steps, so public announcement should wait until those business blockers are explicitly accepted or closed`
+
+### EXEC-18 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - core public domains healthy | ✅ | live smoke: `https://openstaff.eu = 200`, `https://www.openstaff.eu = 308 -> https://openstaff.eu/`, `https://api.openstaff.eu/health = 200`, `https://backoffice.openstaff.eu = 200` |
+| GO - launch content routes built and present | ✅ | `apps/admin/web -> npm.cmd run build` genereaza rutele publice `/, /pricing, /publish, /jobs, /professionals, /login, /register, /terms, /privacy, /cookies, /anpc, /robots.txt, /sitemap.xml` |
+| GO - legal and crawl assets live | ✅ | `curl -I https://openstaff.eu/terms`, `/privacy`, `/cookies`, `/anpc`, `/robots.txt`, `/sitemap.xml` returneaza `200`; `robots.txt` expune `Sitemap: https://openstaff.eu/sitemap.xml` |
+| GO - public content baseline stable | ✅ | homepage, pricing, publish, jobs si professionals sunt rute valide in buildul curent; `robots.txt` si `sitemap.xml` sunt live si contin rutele publice relevante |
+| GO - core auth/runtime health stable | ✅ | `curl -sS https://api.openstaff.eu/health` si `curl -sS https://api.openstaff.eu/status` raman healthy dupa EXEC-17; `warnings = []`, `errors = []` |
+| GO - controlled public journey already proven | ✅ | EXEC-16 live proof ramane valid pentru `register`, `login`, `onboarding`, `publish post`, `upload media/document`, `pending visibility guards`, `admin approve`, `public delivery after approve` |
+| GO - admin launch cockpit routes present | ✅ | `apps/admin -> npm.cmd run build` include `admin/users`, `admin/posts`, `admin/media`, `admin/billing`, `admin/notifications`, `admin/security`, `admin/production-readiness`; shell-ul live `https://backoffice.openstaff.eu` raspunde `200` |
+| GO - observability and rollback readiness | ✅ | EXEC-17 a validat reviziile active `openstaff-api-00007-4bj`, `openstaff-web-00009-q46`, `openstaff-admin-00010-t76`, Cloud SQL cu backup/PITR/deletion protection, Secret Manager contractul activ, GCS retention si rollback notes in `docs/DEPLOYMENT_RUNBOOK.md` |
+| NO-GO - pricing to paid activation is not self-serve | 🚧 | `apps/admin/web/app/pricing/pricing-page-client.tsx` spune explicit: `This does not activate the plan automatically and does not create a payment.` |
+| NO-GO - subscription upgrade remains manual | 🚧 | upgrade request-ul public creeaza cerere administrativa, nu activare automata; aprobarea are loc in `apps/admin/app/admin/subscriptions/page.tsx` prin `Manual upgrade pipeline` |
+| NO-GO - invoice/payment lifecycle is still operator-mediated | 🚧 | `apps/admin/api/src/billing/billing.service.ts` creeaza `PaymentProvider.MANUAL`, `status = PENDING`, `metadata.placeholder = true`, `reason = Awaiting manual/admin reconciliation` |
+| NO-GO - webhook ingestion is still placeholder-oriented | 🚧 | backoffice billing spune `Invoices, webhooks, renewals` cu `ingestie webhook placeholder`; controllerul admin proceseaza webhooks prin operatiuni manuale (`/admin/billing/webhooks/:id/process`) |
+| NO-GO - email delivery provider not configured | 🚧 | `apps/admin/api/src/notifications/notification.service.ts` marcheaza `NotificationChannel.EMAIL` ca `FAILED` cu `email_provider_not_configured` |
+| NO-GO - SMS delivery provider not configured | 🚧 | acelasi serviciu marcheaza `SMS_PLACEHOLDER` / `SMS` ca `FAILED` cu `sms_provider_placeholder_only`; `/status.integrations.smsDelivery.placeholderEnabled = false` inseamna fara bypass, nu provider real |
+| Launch blocker summary | 🚧 | partea de go-to-market comercial nu este inca inchisa pentru o lansare publica cu planuri platite si notificari externe reale |
+
+### EXEC-18 Launch Risks
+
+- Pricing-ul este public si bine prezentat, dar flow-ul real ramane un request manual de upgrade, nu checkout sau activare automata.
+- Invoicing-ul exista operational, dar plata si reconcilierea raman manuale/operator-side.
+- Webhook-urile exista ca suprafata si secretul Stripe este montat, dar procesarea ramane descrisa si modelata ca placeholder/operator workflow.
+- Notificarile in-app sunt reale, dar livrarea email/SMS nu este provider-backed in productia curenta.
+- Fresh live replay pentru `SUPERADMIN` login si pentru approve flow nu a fost rerulat in aceasta faza; auditul EXEC-18 mosteneste dovada live validata in EXEC-16 pe aceleasi revizii active, fara deploy ulterior.
+- Verificarea shell-side pentru `https://openstaff.eu/login` si `https://openstaff.eu/register` a fost intermitenta din acest mediu, dar buildul public actual contine ambele rute si API auth ramane healthy.
+
+### EXEC-18 Manual Tasks Before Public Announcement
+
+1. Decide explicit daca lansarea initiala accepta `manual upgrade + manual invoicing + manual reconciliation` ca proces comercial controlat.
+2. Daca nu, inchide un checkout/payment flow real si activare automata pentru subscription upgrades.
+3. Inlocuieste procesarea webhook placeholder cu un flux Stripe operational end-to-end sau elimina messaging-ul care sugereaza automatie incompleta.
+4. Configureaza un provider real pentru email notifications sau limiteaza comunicarea externa la SOP manual clar documentat.
+5. Configureaza un provider real pentru SMS sau scoate SMS din orice promisiune operationala/publica.
+6. Ruleaza un replay live scurt al cockpit-ului admin (`SUPERADMIN login`, `users`, `posts/media`, `billing`, `notifications`, `security`, `production readiness`) imediat inainte de anuntul public.
+
+### EXEC-18 Build Validation
+
+- `apps/admin/api -> npx.cmd prisma validate` ✅
+- `apps/admin/api -> npx.cmd prisma generate` ✅
+- `apps/admin/api -> npm.cmd run build` ✅
+- `apps/admin/web -> npm.cmd run build` ✅
+- `apps/admin -> npm.cmd run build` ✅
+
 ## EXEC-17 Production Hardening, Observability & Operational Readiness
 
 Verdict: `PASS - Cloud SQL hardening is live, PITR and encrypted-only connector policy are operator-validated, Lighthouse proof is archived in-repo, and post-change smoke remained healthy on the active production revisions`
