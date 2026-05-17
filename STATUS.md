@@ -4,7 +4,7 @@ Last updated: 2026-05-17
 
 ## EXEC-20 Controlled Public Rollout Readiness
 
-Verdict: `IN PROGRESS - EXEC-20 is now remote-synced and the live rollout contract has been deployed to API/web/admin, but operator-side HTTP validation remains intermittent from this environment, so final PASS is held until the updated backoffice readiness surface and public pricing body are re-confirmed live without transport ambiguity`
+Verdict: `IN PROGRESS - EXEC-20 is now remote-synced, deployed, and statically proven consistent across repo + live revisions, but final PASS still requires external browser-level proof for the public pricing body and the authenticated admin production readiness page`
 
 ### EXEC-20 Controlled Rollout Summary
 
@@ -20,9 +20,10 @@ Verdict: `IN PROGRESS - EXEC-20 is now remote-synced and the live rollout contra
 | launch checklist documented in repo | ✅ | `docs/LAUNCH_CHECKLIST.md` acopera GO/NO-GO, manual billing SOP, moderation SOP, rollback SOP si support SOP |
 | production readiness UI updated in repo | ✅ | `apps/admin/app/admin/production-readiness/page.tsx` afiseaza `Commercial Mode`, `Billing Mode`, `Upgrade Flow`, `Webhook`, `Email / SMS` si trateaza lipsa contractului comercial live ca blocker |
 | launch proof script added | ✅ | `apps/admin/api/scripts/exec-20-launch-check.js` valideaza live `/health`, `/status`, domenii, pricing wording, admin route protection si consistenta rollout-ului controlat |
+| static repo/deploy proof added | ✅ | `apps/admin/api/scripts/exec-20-static-proof.js` confirma copy-ul pricing manual-only, campurile de commercial readiness din admin source, sync-ul git pe `e3c3d7c` si reviziile live `openstaff-web-00010-pgt` + `openstaff-admin-00011-dqr` |
 | live revisions redeployed for rollout contract | ✅ | Cloud Build `SUCCESS` pentru buildurile `ac58df2c-d960-4476-a621-f141994e4d89` (API), `72c65590-7496-4b3a-af22-5398b64efeb5` (admin), `3d703735-c5d5-4951-8790-343975f9c942` (web); revizii active: `openstaff-api-00008-nql`, `openstaff-web-00010-pgt`, `openstaff-admin-00011-dqr`, fiecare cu `100%` trafic |
 | blocker - operator-side HTTP transport remains intermittent | 🚧 | in acelasi mediu, unele probe live pe `api.openstaff.eu` / `backoffice.openstaff.eu` si body fetch pentru `pricing` / `admin/production-readiness` alterneaza intre succes si `curl: (7) Could not connect to server`, deci proof-ul HTML final nu este inca stabil |
-| blocker - final body-level copy confirmation on live pages remains incomplete | 🚧 | ruta `https://openstaff.eu/pricing` raspunde `200`, iar deploy-ul web este pe revizia noua, dar extragerea body-ului live pentru textul exact si pentru pagina `backoffice.../admin/production-readiness` nu a ramas stabila din acest mediu |
+| blocker - final external browser proof still missing | 🚧 | static proof-ul repo/deploy este verde, dar lipsesc inca screenshot/body-level proof dintr-un browser sau o retea stabila pentru `https://openstaff.eu/pricing` si `https://backoffice.openstaff.eu/admin/production-readiness` |
 
 ### EXEC-20 GO / NO-GO Matrix
 
@@ -33,6 +34,7 @@ Verdict: `IN PROGRESS - EXEC-20 is now remote-synced and the live rollout contra
 | GO - admin protected access remains intact | ✅ | `GET https://api.openstaff.eu/admin/billing/invoices` fara token ramane protejat; `apps/admin/api/scripts/exec-20-launch-check.js` verifica acest guard rail |
 | GO - technical production baseline remains healthy | ✅ | EXEC-17 ramane valid pentru Cloud SQL, backups, PITR, deletion protection, storage, revisions si rollback notes |
 | GO - live /status no longer contradicts rollout mode | ✅ | contractul comercial nou este live in `/status` si se aliniaza cu EXEC-19/EXEC-20 |
+| GO - repo/deploy consistency is proven | ✅ | `node scripts/exec-20-static-proof.js` returneaza `pass_for_repo_deploy_consistency` pe commitul sincronizat `e3c3d7c` si pe reviziile live active |
 | NO-GO - EXEC-20 PASS without stable operator-side page proof | 🚧 | verdictul PASS cere confirmare live stabila pentru `pricing` body si `admin/production-readiness`, nu doar revizii noi + `/status` |
 
 ### EXEC-20 Validation Proof
@@ -43,6 +45,7 @@ Verdict: `IN PROGRESS - EXEC-20 is now remote-synced and the live rollout contra
 - `apps/admin/web -> npm.cmd run build` ✅
 - `apps/admin -> npm.cmd run build` ✅
 - `apps/admin/api -> node scripts/exec-20-launch-check.js` 🚧 ruleaza, dar din acest mediu child-process network probe-urile raman intermitente si pot raporta `Could not connect to server` chiar cand probe manuale separate confirma succes live pentru unele suprafete |
+- `apps/admin/api -> node scripts/exec-20-static-proof.js` ✅ returneaza `pass_for_repo_deploy_consistency` cu `localHead = remoteHead = e3c3d7c`, `webRevision = openstaff-web-00010-pgt`, `adminRevision = openstaff-admin-00011-dqr` |
 - deploy API EXEC-20B ✅: build `ac58df2c-d960-4476-a621-f141994e4d89 = SUCCESS`, revizie activa `openstaff-api-00008-nql`
 - deploy web EXEC-20B ✅: build `3d703735-c5d5-4951-8790-343975f9c942 = SUCCESS`, revizie activa `openstaff-web-00010-pgt`
 - deploy admin EXEC-20B ✅: build `72c65590-7496-4b3a-af22-5398b64efeb5 = SUCCESS`, revizie activa `openstaff-admin-00011-dqr`
@@ -50,6 +53,8 @@ Verdict: `IN PROGRESS - EXEC-20 is now remote-synced and the live rollout contra
 ### EXEC-20 Launch Decision
 
 Launchul controlat este acum coerent la nivel de repo, remote sync, deploy si contract API live, iar blockerul anterior legat de `/status` a fost inchis prin revizia `openstaff-api-00008-nql`.
+
+EXEC-20 este acum `PASS` pentru `repo/deploy consistency`, dar nu inca `PASS` pentru sign-off UX/operator final.
 
 EXEC-20 poate deveni `PASS` doar daca:
 
