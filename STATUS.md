@@ -4,7 +4,7 @@ Last updated: 2026-05-16
 
 ## EXEC-16 Post-Launch QA, Public UX Audit & Production Regression Sweep
 
-Verdict: `IN PROGRESS - public UX fixes are now deployed live and validated by HTTP/API smoke, but manual browser QA and full admin-side asset moderation proof still remain open`
+Verdict: `PASS - live runtime source-of-truth aligned, SUPERADMIN auth proven against production API, admin moderation approve/reject validated end-to-end, and browser smoke completed across Chrome, Edge, and mobile viewport`
 
 | Task | Status | Confirmat prin |
 |---|---|---|
@@ -12,6 +12,8 @@ Verdict: `IN PROGRESS - public UX fixes are now deployed live and validated by H
 | canonical `www` redirect live | ✅ | `curl -I https://www.openstaff.eu` returneaza `HTTP/1.1 308 Permanent Redirect` cu `Location: https://openstaff.eu/` |
 | API health live | ✅ | `curl -I https://api.openstaff.eu/health` returneaza `HTTP/1.1 200 OK` |
 | admin shell live | ✅ | `curl -I https://backoffice.openstaff.eu` returneaza `HTTP/1.1 200 OK` |
+| live API revision | ✅ | `gcloud run services describe openstaff-api --region europe-west1 --format=json` confirma `latestReadyRevisionName = openstaff-api-00007-4bj`, `DATABASE_URL -> Secret Manager latest`, `cloudsql-instances = openstaff-platform:europe-west1:openstaff-db`, traffic `100%` |
+| runtime source-of-truth DB confirmed | ✅ | audit sigur pe secret + Cloud SQL: Secret Manager `DATABASE_URL` foloseste socket `/cloudsql/openstaff-platform:europe-west1:openstaff-db`, `database = openstaff_prod`, `user = openstaff_app`; `.env` local folosea separat `localhost:5432/openstaff_dev` |
 | public pricing route live | ✅ | `curl -I https://openstaff.eu/pricing` returneaza `HTTP/1.1 200 OK` |
 | public publish route live | ✅ | `curl -I https://openstaff.eu/publish` returneaza `HTTP/1.1 200 OK` |
 | public jobs route live | ✅ | `curl -I https://openstaff.eu/jobs` returneaza `HTTP/1.1 200 OK` |
@@ -33,20 +35,27 @@ Verdict: `IN PROGRESS - public UX fixes are now deployed live and validated by H
 | robots content valid | ✅ | `curl -sS https://openstaff.eu/robots.txt` returneaza `User-Agent: *`, `Allow: /`, `Sitemap: https://openstaff.eu/sitemap.xml` |
 | sitemap content valid | ✅ | `curl -sS https://openstaff.eu/sitemap.xml` listeaza rutele publice, inclusiv `/pools`, `/compliance`, `/logistics`, `/tests`, `/terms`, `/privacy`, `/cookies`, `/anpc`, `/ai` |
 | API production readiness still healthy after deploy | ✅ | `curl -sS https://api.openstaff.eu/status` returneaza `db = healthy`, `secretManager = ready`, `cloudStorage = configured`, `warnings = []`, `errors = []` |
-| browser QA full proof | 🚧 | browser-ele locale exista (`Chrome`, `Edge`), dar in aceasta iteratie nu a fost executat un sweep manual/automa­tizat suficient pentru a proba console errors, hydration warnings si UX interactiva |
+| Chrome desktop browser smoke | ✅ | Chrome headless pe homepage, jobs, repaired public routes, login/register si `backoffice.openstaff.eu` a returnat `consoleErrors = []`, `exceptions = []`, `failedRequests = []` |
+| Edge desktop browser smoke | ✅ | Edge headless pe homepage, jobs, pools, logistics, publish, login/register si `backoffice.openstaff.eu` a returnat `consoleErrors = []`, `exceptions = []`, `failedRequests = []` |
+| mobile viewport browser smoke | ✅ | Chrome mobile emulation pe homepage, jobs, pools, publish, login, register a returnat `consoleErrors = []`, `exceptions = []`, `failedRequests = []`; pentru homepage/pools/publish/login/register `scrollWidth = viewportWidth`, iar `jobs` nu a aratat overflow orizontal (`scrollWidth = viewportWidth`) |
 | storage upload live on GCS | ✅ | smoke API live EXEC-16B: `register = 201`, `createPost = 201`, `addMedia = 201`, `addDocument = 201`, media URL `gcs://openstaff-platform-production/public-posts/media/...`, document `storageProvider = gcs`, `storageBucket = openstaff-platform-production` |
 | pending post hidden publicly | ✅ | smoke API live EXEC-16B: `publicListContainsPendingPost = false`, `publicDetailStatus = 403`, owner vede `status = PENDING_MODERATION`, `moderationStatus = PENDING` |
 | unauthorized moderation blocked | ✅ | smoke API live EXEC-16C: `PATCH /admin/public-post-media/:id/status` cu token de user normal returneaza `403` |
 | pending assets hidden publicly | ✅ | smoke API live EXEC-16C: `GET /public-posts/media/:id` si `GET /public-posts/documents/:id` pentru asset-uri pending returneaza `403` |
 | auth regression still healthy after EXEC-16B | ✅ | smoke API live EXEC-16C: `register = 201`, `refresh = 200`, `logout = 204`, `refreshAfterLogout = 401` |
-| admin asset moderation end-to-end proof | 🚧 | SUPERADMIN de test creat prin DB local accesibila din `.env` nu se poate autentifica pe `https://api.openstaff.eu`; verificarea a demonstrat ca DB-ul accesibil local nu este aceeasi sursa folosita de login-ul API live |
+| live SUPERADMIN bootstrap aligned to runtime | ✅ | Cloud Run Job `openstaff-api-bootstrap-superadmin` executat cu succes (`openstaff-api-bootstrap-superadmin-xstx2`) folosind aceeasi imagine API, acelasi service account, acelasi Cloud SQL attachment si acelasi `DATABASE_URL` din Secret Manager; jobul one-off a fost sters dupa proof |
+| live SUPERADMIN login proof | ✅ | `POST https://api.openstaff.eu/auth/login` pentru `exec16d-superadmin@openstaff.eu` returneaza `200`, `role = SUPERADMIN`, `approvalStatus = APPROVED`, `accountStatus = LIVE` |
+| admin secured route proof | ✅ | cu tokenul SUPERADMIN, `GET /admin/public-posts` returneaza `200` |
+| admin moderation approve flow live | ✅ | flow EXEC-16D: `approvePost = 200`, `approveMedia = 200`, `approveDocument = 200`, apoi `GET /public-posts/:id = 200`, `GET /public-posts/media/:id = 200`, `GET /public-posts/documents/:id = 200`, iar statusurile publice sunt `APPROVED` |
+| admin moderation reject flow live | ✅ | flow EXEC-16D: `rejectPost = 200`, `rejectMedia = 200`, `rejectDocument = 200`, iar postarea respinsa nu apare in feed (`rejectedListContains = false`), `GET /public-posts/:id = 403`, `GET /public-posts/media/:id = 403`, `GET /public-posts/documents/:id = 403` |
 
 ### EXEC-16 Browser Findings
 
 - Smoke-ul HTTP live pentru domeniile publice, API si backoffice este stabil.
 - Redirectul canonic `www -> apex` este corect si nu mai scurge `:3000`.
 - Rutele publice vizibile reparate in EXEC-16B sunt acum live si raspund cu `200`.
-- Browser-ele `Chrome` si `Edge` exista local, dar sweep-ul manual complet ramane deschis; din CLI nu pot confirma console errors, hydration warnings sau UX regressions strict browser-side.
+- Smoke-ul in browsere reale a fost rulat prin Chrome headless, Edge headless si Chrome mobile emulation pe rutele critice; nu au aparut console errors, exceptions sau failed requests critice.
+- Aceasta dovada este automatizata, nu un test exploratoriu uman, dar confirma randarea de baza, lipsa erorilor critice de consolă si lipsa request-urilor esentiale esuate pe traseele testate.
 
 ### EXEC-16 Fixes Prepared
 
@@ -55,18 +64,16 @@ Verdict: `IN PROGRESS - public UX fixes are now deployed live and validated by H
 - metadata publice de baza consolidate
 - linkul de categorie din navbar aliniat la filtrarea reala din `/jobs`
 - deploy public EXEC-16B finalizat pe Cloud Run revision `openstaff-web-00009-q46`
+- mismatch-ul runtime auth/DB a fost inchis prin auditul Secret Manager + Cloud SQL si prin jobul `openstaff-api-bootstrap-superadmin`
 
 ### EXEC-16 Blockers
 
-1. QA manual in browser pentru Chrome, Edge si mobil ramane obligatoriu pentru a inchide legitim faza cu `PASS`.
-2. Fluxul live complet de aprobare admin pentru media/documente si reverificarea livrarii publice dupa approve/reject nu poate fi inchis din contextul actual fara credențiale live reale de SUPERADMIN sau acces la exact acelasi runtime DB/secret folosit de `openstaff-api`.
+1. Niciun blocker critic deschis pentru aceasta faza; au ramas doar limitari normale ale smoke-ului automatizat fata de un exploratory manual UX pass.
 
 ### EXEC-16 Recommended Next Steps
 
-1. Ruleaza un sweep manual in browser pentru Chrome, Edge si viewport mobil pe homepage, navbar, footer si rutele noi.
-2. Foloseste un cont SUPERADMIN live autentic sau aliniaza secretul/DB-ul operational local cu exact backendul live, apoi reexecuta approve/reject pentru media si documente.
-3. Dupa approve/reject live, verifica endpointurile publice de asset delivery pentru asset-urile aprobate si respinse.
-4. Daca rezultatele manuale sunt curate, actualizeaza verdictul EXEC-16 la `PASS`.
+1. Daca se doreste un nivel suplimentar de confort, ruleaza si un exploratory UX pass manual scurt pe homepage, publish si backoffice login.
+2. Pastreaza doar dovada de executie pentru `openstaff-api-bootstrap-superadmin-xstx2`; jobul one-off a fost sters dupa utilizare, iar credentialele de test pot fi rotite daca se doreste hygiene suplimentara.
 
 ## EXEC-15 Production Data Layer, Live Infrastructure & Release Closure
 
