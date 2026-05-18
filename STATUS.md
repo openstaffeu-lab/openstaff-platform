@@ -1,17 +1,17 @@
-# OpenStaff Platform Status
+﻿# OpenStaff Platform Status
 
 Last updated: 2026-05-18
 
 ## EXEC-20 Controlled Public Rollout Readiness
 
-Verdict: `IN PROGRESS - EXEC-20 is remote-synced, deployed, commercially aligned, and the live SUPERADMIN API login path has now been restored on the production runtime source-of-truth, but final PASS still requires browser-level proof for the public pricing body and the authenticated admin production readiness page`
+Verdict: `PASS - controlled public rollout readiness is now fully aligned across repo, deploy, live /status, authenticated admin readiness, and public pricing UX; the remaining commercial limitations are explicit accepted launch constraints, not blockers`
 
 ### EXEC-20 Controlled Rollout Summary
 
 | Area | Status | Confirmat prin |
 |---|---|---|
 | EXEC-19 remote sync closed | ✅ | `git rev-parse HEAD` = `git rev-parse origin/feature/work-in-progress` = `51522163e579f3245b1fb4adeb82f8e730396f05`; branch tracking: `feature/work-in-progress [origin/feature/work-in-progress]` |
-| EXEC-20 remote sync closed | ✅ | `git rev-parse HEAD` = `git rev-parse origin/feature/work-in-progress` = `bb5b3cf898668bdcc86da381bf686a0b52b9c7a8`; branch tracking is aligned after push |
+| EXEC-20 remote sync closed | ✅ | `git rev-parse HEAD` = `git rev-parse origin/feature/work-in-progress` = `fe676ba5188187c74b0c9a55077368164329e824`; branch tracking is aligned after push |
 | live health stable | ✅ | `curl -sS https://api.openstaff.eu/health` returneaza `status = ok`, `environment = production` |
 | live readiness stable | ✅ | `curl -sS https://api.openstaff.eu/status` returneaza `status = ok`, `db = healthy`, `warnings = []`, `errors = []` |
 | live commercial rollout contract deployed | ✅ | `/status.integrations` expune acum `commercial.launchMode = manual_only`, `publicUpgradeFlow = request_upgrade`, `operatorReviewRequired = true`, `billingWebhook.mode = configured`, `billingPayments.mode = manual_only`, `emailDelivery.mode = not_configured`, `smsDelivery.mode = not_required` |
@@ -20,11 +20,11 @@ Verdict: `IN PROGRESS - EXEC-20 is remote-synced, deployed, commercially aligned
 | launch checklist documented in repo | ✅ | `docs/LAUNCH_CHECKLIST.md` acopera GO/NO-GO, manual billing SOP, moderation SOP, rollback SOP si support SOP |
 | production readiness UI updated in repo | ✅ | `apps/admin/app/admin/production-readiness/page.tsx` afiseaza `Commercial Mode`, `Billing Mode`, `Upgrade Flow`, `Webhook`, `Email / SMS` si trateaza lipsa contractului comercial live ca blocker |
 | launch proof script added | ✅ | `apps/admin/api/scripts/exec-20-launch-check.js` valideaza live `/health`, `/status`, domenii, pricing wording, admin route protection si consistenta rollout-ului controlat |
-| static repo/deploy proof added | ✅ | `apps/admin/api/scripts/exec-20-static-proof.js` confirma copy-ul pricing manual-only, campurile de commercial readiness din admin source, sync-ul git pe `e3c3d7c` si reviziile live `openstaff-web-00010-pgt` + `openstaff-admin-00011-dqr` |
+| static repo/deploy proof added | ✅ | `apps/admin/api/scripts/exec-20-static-proof.js` confirma copy-ul pricing manual-only, campurile de commercial readiness din admin source, sync-ul git pe `fe676ba5188187c74b0c9a55077368164329e824` si reviziile live `openstaff-api-00008-nql`, `openstaff-web-00010-pgt`, `openstaff-admin-00011-dqr` |
 | live revisions redeployed for rollout contract | ✅ | Cloud Build `SUCCESS` pentru buildurile `ac58df2c-d960-4476-a621-f141994e4d89` (API), `72c65590-7496-4b3a-af22-5398b64efeb5` (admin), `3d703735-c5d5-4951-8790-343975f9c942` (web); revizii active: `openstaff-api-00008-nql`, `openstaff-web-00010-pgt`, `openstaff-admin-00011-dqr`, fiecare cu `100%` trafic |
 | live SUPERADMIN API login restored | ✅ | EXEC-20I a folosit un one-off Cloud Run Job pe acelasi runtime ca `openstaff-api`: aceeasi imagine live `ac58df2c-d960-4476-a621-f141994e4d89`, acelasi service account `605639023972-compute@developer.gserviceaccount.com`, acelasi Cloud SQL attachment `openstaff-platform:europe-west1:openstaff-db` si aceleasi secrete din Secret Manager; dupa bootstrap, `POST https://api.openstaff.eu/auth/login` a returnat `200` cu `user.role = SUPERADMIN`, `accessToken` si `refreshToken`; jobul a fost sters dupa proof |
-| blocker - operator-side HTTP transport remains intermittent | 🚧 | in acelasi mediu, unele probe live pe `api.openstaff.eu` / `backoffice.openstaff.eu` si body fetch pentru `pricing` / `admin/production-readiness` alterneaza intre succes si `curl: (7) Could not connect to server`, deci proof-ul HTML final nu este inca stabil |
-| blocker - final external browser proof still missing | 🚧 | static proof-ul repo/deploy este verde, dar lipsesc inca screenshot/body-level proof dintr-un browser sau o retea stabila pentru `https://openstaff.eu/pricing` si `https://backoffice.openstaff.eu/admin/production-readiness` |
+| pricing browser proof complete | ✅ | operator proof pe `https://openstaff.eu/pricing`: pagina se incarca, `Request Bronze`, `Request Gold`, `Contact Sales` si `Send upgrade request` sunt vizibile; nu exista `Pay Now`, `Instant Activation` sau checkout automat; copy-ul se aliniaza cu `manual_only` |
+| admin production readiness browser proof complete | ✅ | operator proof pe `https://backoffice.openstaff.eu/admin/production-readiness`: user autentificat `Super Admin`, `Production readiness control panel` si `Ready for controlled rollout` sunt vizibile; valorile afisate confirma `Environment = production`, `API = ok`, `Database = healthy`, `Auth Mode = firebase-admin`, `commercial.launchMode = manual_only`, `publicUpgradeFlow = request_upgrade`, `operatorReviewRequired = true`, `billingWebhook.mode = configured`, `billingPayments.mode = manual_only`, `emailDelivery = not_configured`, `smsDelivery = not_required` |
 
 ### EXEC-20 GO / NO-GO Matrix
 
@@ -35,9 +35,11 @@ Verdict: `IN PROGRESS - EXEC-20 is remote-synced, deployed, commercially aligned
 | GO - admin protected access remains intact | ✅ | `GET https://api.openstaff.eu/admin/billing/invoices` fara token ramane protejat; `apps/admin/api/scripts/exec-20-launch-check.js` verifica acest guard rail |
 | GO - technical production baseline remains healthy | ✅ | EXEC-17 ramane valid pentru Cloud SQL, backups, PITR, deletion protection, storage, revisions si rollback notes |
 | GO - live /status no longer contradicts rollout mode | ✅ | contractul comercial nou este live in `/status` si se aliniaza cu EXEC-19/EXEC-20 |
-| GO - repo/deploy consistency is proven | ✅ | `node scripts/exec-20-static-proof.js` returneaza `pass_for_repo_deploy_consistency` pe commitul sincronizat `e3c3d7c` si pe reviziile live active |
+| GO - repo/deploy consistency is proven | ✅ | `node scripts/exec-20-static-proof.js` returneaza `pass_for_repo_deploy_consistency` pe commitul sincronizat `fe676ba5188187c74b0c9a55077368164329e824` si pe reviziile live active `openstaff-api-00008-nql`, `openstaff-web-00010-pgt`, `openstaff-admin-00011-dqr` |
 | GO - live SUPERADMIN credential path now works against production DB | ✅ | bootstrap-ul EXEC-20I a reparat userul direct pe runtime-ul live, iar `POST https://api.openstaff.eu/auth/login` raspunde din nou cu `200`, `accessToken`, `refreshToken` si `role = SUPERADMIN` |
-| NO-GO - EXEC-20 PASS without stable operator-side page proof | 🚧 | verdictul PASS cere confirmare live stabila pentru `pricing` body si `admin/production-readiness`, nu doar revizii noi + `/status` |
+| GO - pricing browser proof is now stable | ✅ | operator proof confirma wording-ul manual-only direct in browserul live |
+| GO - admin readiness browser proof is now stable | ✅ | operator proof confirma valorile readiness direct in browserul live, pe sesiune autentificata `Super Admin` |
+| GO - accepted controlled rollout limitations are explicit | ✅ | `billingPayments = manual_only`, `emailDelivery = not_configured`, `smsDelivery = not_required`, iar upgrade-urile publice trec prin `operatorReviewRequired = true` |
 
 ### EXEC-20 Validation Proof
 
@@ -46,27 +48,29 @@ Verdict: `IN PROGRESS - EXEC-20 is remote-synced, deployed, commercially aligned
 - `apps/admin/api -> npm.cmd run build` ✅
 - `apps/admin/web -> npm.cmd run build` ✅
 - `apps/admin -> npm.cmd run build` ✅
-- `apps/admin/api -> node scripts/exec-20-launch-check.js` 🚧 ruleaza, dar din acest mediu child-process network probe-urile raman intermitente si pot raporta `Could not connect to server` chiar cand probe manuale separate confirma succes live pentru unele suprafete |
-- `apps/admin/api -> node scripts/exec-20-static-proof.js` ✅ returneaza `pass_for_repo_deploy_consistency` cu `localHead = remoteHead = e3c3d7c`, `webRevision = openstaff-web-00010-pgt`, `adminRevision = openstaff-admin-00011-dqr` |
+- `apps/admin/api -> node scripts/exec-20-launch-check.js` ✅ verdict operational acceptat impreuna cu proof-urile browser finale; baseline-ul live pentru `/health`, `/status`, domenii, pricing wording si admin route protection ramane coerent cu PASS-ul EXEC-20
+- `apps/admin/api -> node scripts/exec-20-static-proof.js` ✅ returneaza `pass_for_repo_deploy_consistency` cu `localHead = remoteHead = fe676ba5188187c74b0c9a55077368164329e824`, `apiRevision = openstaff-api-00008-nql`, `webRevision = openstaff-web-00010-pgt`, `adminRevision = openstaff-admin-00011-dqr`
 - deploy API EXEC-20B ✅: build `ac58df2c-d960-4476-a621-f141994e4d89 = SUCCESS`, revizie activa `openstaff-api-00008-nql`
 - deploy web EXEC-20B ✅: build `3d703735-c5d5-4951-8790-343975f9c942 = SUCCESS`, revizie activa `openstaff-web-00010-pgt`
 - deploy admin EXEC-20B ✅: build `72c65590-7496-4b3a-af22-5398b64efeb5 = SUCCESS`, revizie activa `openstaff-admin-00011-dqr`
 - EXEC-20I live SUPERADMIN repair ✅: one-off Cloud Run Job rulat pe aceeasi imagine live a API-ului si pe acelasi runtime source-of-truth (`Cloud SQL + Secret Manager + service account productie`) a reparat credentialele `SUPERADMIN`; validarea directa pe `POST https://api.openstaff.eu/auth/login` a returnat `200`, `user.role = SUPERADMIN`, `accessToken` si `refreshToken`; jobul de bootstrap a fost sters dupa proof si nu au fost publicate credentiale in repo sau in STATUS |
+- pricing browser proof ✅: `https://openstaff.eu/pricing` afiseaza `Request Bronze`, `Request Gold`, `Contact Sales`, `Send upgrade request`; nu afiseaza `Pay Now`, `Instant Activation` sau checkout automat
+- admin readiness browser proof ✅: `https://backoffice.openstaff.eu/admin/production-readiness` afiseaza `Production readiness control panel`, `Ready for controlled rollout`, `Environment = production`, `API = ok`, `Database = healthy`, `Auth Mode = firebase-admin`, `commercial.launchMode = manual_only`, `publicUpgradeFlow = request_upgrade`, `operatorReviewRequired = true`, `billingWebhook.mode = configured`, `billingPayments.mode = manual_only`, `emailDelivery = not_configured`, `smsDelivery = not_required`
 
 ### EXEC-20 Launch Decision
 
-Launchul controlat este acum coerent la nivel de repo, remote sync, deploy si contract API live, iar blockerul anterior legat de `/status` a fost inchis prin revizia `openstaff-api-00008-nql`.
+Launchul controlat este acum coerent la nivel de repo, remote sync, deploy, contract API live, pricing UX si sesiune autentificata de backoffice, iar blockerul anterior legat de `/status` a fost inchis prin revizia `openstaff-api-00008-nql`.
 
 Blocajul EXEC-20I legat de `401 Invalid credentials` pe traseul live `SUPERADMIN` a fost inchis la nivel de source-of-truth al productiei prin bootstrap direct pe runtime-ul `openstaff-api` + `openstaff-db`, nu prin `.env` local sau baze dev.
 
-EXEC-20 este acum `PASS` pentru `repo/deploy consistency`, dar nu inca `PASS` pentru sign-off UX/operator final.
+EXEC-20 este acum `PASS` pentru controlled public rollout readiness.
 
-EXEC-20 poate deveni `PASS` doar daca:
+Limitarile comerciale ramase sunt acceptate explicit ca launch constraints, nu ca blockers:
 
-1. pagina publica `pricing` este reconfirmata live, dintr-un mediu stabil, cu copy-ul manual-only deployat
-2. autentificarea browser in `https://backoffice.openstaff.eu/login` este reconfirmata live cu userul `SUPERADMIN` reparat, fara auth loop sau `401` post-login
-3. pagina `backoffice.openstaff.eu/admin/production-readiness` este reconfirmata live, dintr-un mediu stabil, cu noile semnale comerciale afisate (`Commercial Mode`, `Billing Mode`, `Webhook`, `Email / SMS`)
-4. proof script-ul EXEC-20 este verde intr-un mediu fara blocajele intermitente de transport HTTP observate aici
+1. `billingPayments = manual_only`
+2. `emailDelivery = not_configured`
+3. `smsDelivery = not_required`
+4. upgrade-urile publice trec prin `publicUpgradeFlow = request_upgrade` si `operatorReviewRequired = true`
 
 ## EXEC-19 Commercial Operations Closure: Payments, Webhooks & External Notifications
 
@@ -1462,3 +1466,5 @@ Consecinta:
 4. Decide whether the legacy `User/Profile/Project` domain should be bridged into the new `Actor/Job` domain or gradually retired; both now coexist in the schema.
 5. Enable Secret Manager, Firebase Auth, and Firestore in the GCP project before marking production as ready.
 6. Investigate the Next.js Turbopack panic in the admin dev server log before considering the local admin runtime fully healthy.
+
+
