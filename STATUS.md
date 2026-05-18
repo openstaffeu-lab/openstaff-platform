@@ -2,6 +2,84 @@
 
 Last updated: 2026-05-18
 
+## EXEC-23 Production Stabilization, Alerting & Operational Automation
+
+Verdict: `IN PROGRESS - production is operational and controlled-rollout proven, but the stabilized operational baseline is not yet closed because the live GCP project still has 0 alert policies, 0 notification channels, and 0 monitoring dashboards`
+
+### EXEC-23 Operational Stabilization Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| production services remain healthy | ✅ | active Cloud Run services `openstaff-api-00008-nql`, `openstaff-web-00010-pgt`, `openstaff-admin-00011-dqr` remain ready with `100%` traffic on latest revisions |
+| Cloud SQL hardening remains intact | ✅ | `openstaff-db` is `RUNNABLE` with backups enabled, `pointInTimeRecoveryEnabled = true`, `deletionProtectionEnabled = true`, `connectorEnforcement = REQUIRED`, `sslMode = ENCRYPTED_ONLY` |
+| first cohort proof remains valid | ✅ | EXEC-22 live proof stays aligned with current production contract and confirms real operator/client/professional flows |
+| alert policy baseline checked live | ❌ blocker | `gcloud monitoring policies list --project=openstaff-platform` returned `Listed 0 items.` |
+| notification channel baseline checked live | ❌ blocker | `gcloud beta monitoring channels list --project=openstaff-platform` returned `Listed 0 items.` |
+| monitoring dashboard baseline checked live | ❌ blocker | `gcloud monitoring dashboards list --project=openstaff-platform` returned `Listed 0 items.` |
+| Cloud Run error scan reviewed | ✅ | `gcloud logging read` for API/web/admin with `severity>=ERROR` over the last `24h` returned no fresh blocking errors on active revisions |
+| cleanup review documented | ✅ | `docs/PRODUCTION_STABILIZATION_BASELINE.md` captures stale revisions, legacy secret review, service accounts, jobs, artifacts and IAM observations |
+| bootstrap artifacts already cleaned | ✅ | only `openstaff-api-migrate` remains in `gcloud run jobs list`; the one-off bootstrap jobs from earlier executions are no longer present |
+| legacy secret candidate identified | ⚠️ open | `WEBHOOK_SECRET` still exists in Secret Manager, while active runtime uses `STRIPE_WEBHOOK_SECRET`; removal is documented but not executed yet |
+| IAM least-privilege gap identified | ⚠️ open | project IAM still grants `roles/editor` to `605639023972-compute@developer.gserviceaccount.com`; documented as a hardening follow-up, not removed yet |
+| restore readiness documented | ⚠️ partial | PITR restore flow, rollback order, storage recovery expectations and operator checklist are documented, but no timed rehearsal was executed in EXEC-23 |
+| production capacity review documented | ✅ | `docs/PRODUCTION_STABILIZATION_BASELINE.md` documents Cloud Run max scale, implicit min instances, DB tiering, manual ops limits and bottlenecks |
+| production readiness matrix added | ✅ | `docs/PRODUCTION_READINESS_MATRIX.md` now summarizes infrastructure, auth/security, moderation, billing, storage, monitoring, backups, UX, tooling and future automation gaps |
+| docs-only consistency validation complete | ✅ | EXEC-23 introduced documentation and evidence updates only; no application build or deploy was required |
+
+### EXEC-23 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - infrastructure baseline is stable | ✅ | Cloud Run, Cloud SQL and storage remain healthy on the current production contract |
+| GO - operator tooling is sufficient for controlled rollout | ✅ | admin moderation, billing, security and readiness routes remain usable from prior proofs and current checks |
+| GO - manual operational model is explicit | ✅ | rollout docs, SOPs and production readiness matrix keep manual billing and operator review assumptions visible |
+| GO - backup and PITR capability exist | ✅ | Cloud SQL backups + PITR + encrypted transport posture are active and documented |
+| NO-GO - alert fan-out baseline is absent | ❌ blocker | no monitoring channels and no alert policies are configured live |
+| NO-GO - dashboard baseline is absent | ❌ blocker | no Cloud Monitoring dashboards are configured live |
+| NO-GO - timed restore drill is unproven | ⚠️ blocker for full stabilization | restore flow is documented but not rehearsed against a recovery instance in this execution |
+| NO-GO - IAM least privilege is not yet closed | ⚠️ blocker for final hardening | compute service account still carries `roles/editor` |
+
+### EXEC-23 Validation Proof
+
+- `docs/PRODUCTION_STABILIZATION_BASELINE.md` ✅ created with alerting status, escalation model, dashboard expectations, cleanup review, restore drill plan and capacity baseline
+- `docs/PRODUCTION_READINESS_MATRIX.md` ✅ created with the operational readiness matrix across infrastructure, auth/security, moderation, billing, storage, monitoring, backups, operator tooling, support and automation gaps
+- live monitoring policy check ✅: `gcloud monitoring policies list --project=openstaff-platform` returned `0` policies
+- live monitoring channel check ✅: `gcloud beta monitoring channels list --project=openstaff-platform` returned `0` channels
+- live monitoring dashboard check ✅: `gcloud monitoring dashboards list --project=openstaff-platform` returned `0` dashboards
+- live Cloud Run config review ✅: API `maxScale = 10`, web `maxScale = 10`, admin `maxScale = 5`, with implicit `minScale = 0`
+- live Cloud Run job review ✅: only `openstaff-api-migrate` remains active in production
+- live Secret Manager review ✅: active secret contract includes `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `STRIPE_WEBHOOK_SECRET`, `FIREBASE_SERVICE_ACCOUNT_KEY`, `GEMINI_API_KEY`; legacy `WEBHOOK_SECRET` remains present as cleanup baggage
+- live IAM review ✅: project IAM still includes `roles/editor` for the default compute service account, documented as a hardening gap
+- builds aplicatie ✅ not required; executia este docs/ops proof only
+
+### EXEC-23 Remaining Operational Blockers
+
+1. there are no live Monitoring alert policies for Cloud Run, Cloud SQL, auth failures, billing webhook failures, moderation failures, storage delivery failures, or critical security events
+2. there are no live Monitoring notification channels for paging or operator fan-out
+3. there are no live Monitoring dashboards for API health, latency, auth, moderation, billing, storage, security, or Cloud SQL
+4. Cloud SQL restore readiness is documented and technically enabled, but not yet proven by a timed rehearsal
+5. runtime least privilege remains incomplete because the default compute service account still has `roles/editor`
+
+### EXEC-23 Launch Decision
+
+EXEC-23 improves production clarity and stabilization posture by turning alerting, dashboarding, cleanup, restore readiness and capacity review into an explicit operator baseline.
+
+However, the platform is not yet at a full `stable operational production baseline` because incident detection and fan-out are still human-driven rather than alert-driven at the GCP layer.
+
+EXEC-23 therefore remains `IN PROGRESS` until:
+
+1. at least one notification channel is configured
+2. alert policies are created for the critical failure domains
+3. baseline dashboards are created in Cloud Monitoring
+
+All other validated production constraints remain unchanged:
+
+1. `billingPayments = manual_only`
+2. `publicUpgradeFlow = request_upgrade`
+3. `operatorReviewRequired = true`
+4. `emailDelivery = not_configured`
+5. `smsDelivery = not_required`
+
 ## EXEC-22 First Production Cohort Execution & Evidence Capture
 
 Verdict: `PASS - the first controlled production cohort was executed successfully on 2026-05-18 with live pre-flight checks, real company/worker accounts, moderated publishing, manual commercial approval, and an evidence trail captured in-repo`
