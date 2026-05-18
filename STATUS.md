@@ -2,6 +2,74 @@
 
 Last updated: 2026-05-18
 
+## EXEC-21 Controlled Rollout Operations, First Users & Live Monitoring
+
+Verdict: `PASS - controlled rollout operations are now documented for live production with explicit cohort entry criteria, first-user proof coverage, operator SOPs, a 24-48 hour monitoring checklist, and a launch risk register aligned to the accepted manual commercial model`
+
+### EXEC-21 Rollout Operations Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| controlled rollout cohort plan documented | ✅ | `docs/CONTROLLED_ROLLOUT_PLAN.md` defineste cohortele pentru operatori interni, companii/clienti, profesionisti/lucratori, prime postari publice, prime upgrade requests si prime actiuni de billing |
+| entry criteria documented | ✅ | planul EXEC-21 acopera criterii de intrare pentru fiecare cohorta, inclusiv `SUPERADMIN` live, `/admin/production-readiness`, operator ownership si acceptarea modelului `manual_only` |
+| operator responsibilities documented | ✅ | `docs/CONTROLLED_ROLLOUT_PLAN.md` si `docs/OPERATOR_SOP.md` definesc ownerii pentru moderare, billing, suport, technical ops si security/compliance |
+| support escalation model documented | ✅ | `docs/CONTROLLED_ROLLOUT_PLAN.md` separa L1 support/operations, L2 business ops, L3 technical ops si L4 security/compliance |
+| rollback criteria documented | ✅ | planul EXEC-21 defineste praguri de pauza/rollback pentru `/health`, `/status`, auth admin, moderare/public visibility, upload si billing consistency |
+| daily monitoring cadence documented | ✅ | `docs/CONTROLLED_ROLLOUT_PLAN.md` si `docs/LAUNCH_MONITORING_CHECKLIST.md` definesc verificari `start of day`, `midday` si `end-of-day handoff` |
+| 24-48 hour monitoring checklist added | ✅ | `docs/LAUNCH_MONITORING_CHECKLIST.md` acopera `/health`, `/status`, Cloud Run, Cloud SQL, GCS, auth failures, moderation, billing, notifications si security/audit |
+| first user journey proof checklist documented | ✅ | `docs/OPERATOR_SOP.md` si checklist-ul de monitoring cer proof pentru registration, login, onboarding, profile, publish, uploads, moderation, visibility, upgrade request si billing follow-up |
+| admin operator SOP added | ✅ | `docs/OPERATOR_SOP.md` documenteaza approve/reject pentru posts, review pentru media/documents, upgrade requests, invoice/manual mark-paid, security/compliance triage si support triage |
+| launch risk register documented | ✅ | EXEC-21 listeaza si accepta riscurile pentru `manual_only` billing, lipsa email automation, `smsDelivery = not_required`, suport first-user, regresii Cloud Run/DNS si dependenta de backup/restore Cloud SQL |
+| docs-only validation complete | ✅ | nu au fost schimbari de cod aplicatie; consistenta repo este documentata prin noile fisiere din `docs/` si actualizarea EXEC-21 din `STATUS.md`; nu este necesar deploy |
+
+### EXEC-21 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - rollout ops ownership is explicit | ✅ | ownerii pentru support, moderation, billing, technical si security/compliance sunt documentati in `docs/OPERATOR_SOP.md` si `docs/CONTROLLED_ROLLOUT_PLAN.md` |
+| GO - first user cohorts are bounded and controlled | ✅ | planul EXEC-21 defineste cohortele initiale si criteriile de intrare pentru fiecare |
+| GO - monitoring window is operationally defined | ✅ | `docs/LAUNCH_MONITORING_CHECKLIST.md` stabileste fereastra de `24-48 ore`, cadenta si trigger-ele de escalare |
+| GO - first user proof expectations are documented | ✅ | registration, login, onboarding, profile, publish, uploads, moderation, visibility, upgrade request si billing follow-up sunt cerute explicit in documentatie |
+| GO - accepted commercial limitations remain explicit | ✅ | `billingPayments = manual_only`, `publicUpgradeFlow = request_upgrade`, `operatorReviewRequired = true`, `emailDelivery = not_configured`, `smsDelivery = not_required` raman asumari operationale vizibile |
+| GO - no deploy is required for EXEC-21 | ✅ | executia este documentatie-only; nu exista schimbari backend/web/admin care sa ceara build sau Cloud Run release nou |
+| NO-GO - unattended queues during first-user window | ✅ mitigated | documentatia cere owner de moderare, owner de billing si handoff zilnic pentru queue backlog |
+| NO-GO - operators promise unavailable automation | ✅ mitigated | `docs/OPERATOR_SOP.md` interzice explicit promisiuni de `automatic checkout`, `instant activation`, `automated email` sau `automated SMS` |
+
+### EXEC-21 Validation Proof
+
+- `docs/CONTROLLED_ROLLOUT_PLAN.md` ✅ creat cu cohort plan, entry criteria, escalation, rollback criteria si daily monitoring cadence
+- `docs/LAUNCH_MONITORING_CHECKLIST.md` ✅ creat cu checklist de productie pentru primele `24-48 ore`
+- `docs/OPERATOR_SOP.md` ✅ creat cu SOP pentru moderare, media/documents, upgrade requests, billing manual, security/compliance si support triage
+- `docs/LAUNCH_CHECKLIST.md` ✅ ramas consistent cu launch mode-ul `controlled rollout`
+- `STATUS.md` ✅ actualizat cu EXEC-21 si verdict operational
+- builds aplicatie ✅ not required; executia este documentatie-only
+
+### EXEC-21 Launch Risk Register
+
+| Risk | Status | Mitigare |
+|---|---|---|
+| manual billing workload | ✅ accepted risk | owner dedicat de billing, queue review zilnic, upgrade request triage si invoice follow-up documentate |
+| no automated email delivery | ✅ accepted risk | `emailDelivery = not_configured` ramane explicit; comunicarea operator-side nu promite email automation |
+| SMS not required | ✅ accepted risk | `smsDelivery = not_required`; SOP-ul interzice asumari despre SMS automat |
+| limited external payment automation | ✅ accepted risk | modelul comercial ramane `manual_only`; webhook-ul este folosit pentru audit/reconciliation unde este aplicabil |
+| first-user support load | ✅ accepted risk | L1/L2/L3/L4 escalation model + cadence de handoff zilnic |
+| DNS / Cloud Run regressions | ✅ monitored risk | checklist-ul EXEC-21 cere verificare `/health`, `/status`, Cloud Run errors si rollback trigger clar |
+| database backup / restore reliance | ✅ monitored risk | rollback criteria si referinta la `docs/DEPLOYMENT_RUNBOOK.md` mentin PITR/restore ca instrument operator-side controlat |
+
+### EXEC-21 Launch Decision
+
+EXEC-21 inchide pachetul operational necesar pentru pornirea controlata a productiei dupa PASS-ul EXEC-20.
+
+Platforma ramane in `production`, cu `controlled rollout`, iar documentatia operationala acopera acum:
+
+1. cohortele initiale si criteriile lor de intrare
+2. fereastra de monitorizare `24-48 ore`
+3. first-user proof coverage
+4. SOP-ul operatorilor pentru moderare, billing, security si support
+5. riscurile acceptate ale modelului comercial `manual_only`
+
+EXEC-21 este `PASS` atata timp cat aceasta documentatie ramane sursa activa pentru ownerii din launch window si nu apar noi contradictii intre `STATUS.md`, `/status` si operarea reala din productie.
+
 ## EXEC-20 Controlled Public Rollout Readiness
 
 Verdict: `PASS - controlled public rollout readiness is now fully aligned across repo, deploy, live /status, authenticated admin readiness, and public pricing UX; the remaining commercial limitations are explicit accepted launch constraints, not blockers`
