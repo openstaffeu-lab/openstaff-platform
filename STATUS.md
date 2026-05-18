@@ -2,6 +2,68 @@
 
 Last updated: 2026-05-18
 
+## EXEC-22 First Production Cohort Execution & Evidence Capture
+
+Verdict: `PASS - the first controlled production cohort was executed successfully on 2026-05-18 with live pre-flight checks, real company/worker accounts, moderated publishing, manual commercial approval, and an evidence trail captured in-repo`
+
+### EXEC-22 Cohort Execution Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| live pre-flight completed | ✅ | `https://openstaff.eu = 200`, `https://backoffice.openstaff.eu = 200`, `GET https://api.openstaff.eu/health = 200`, `GET https://api.openstaff.eu/status = 200` |
+| live readiness remained healthy | ✅ | `/status` a confirmat `status = ok`, `db = healthy`, `warnings = []`, `errors = []`, `authMode = firebase-admin` |
+| SUPERADMIN login worked live | ✅ | `POST https://api.openstaff.eu/auth/login = 200`, `role = SUPERADMIN` in cohort run `exec22-1779102803899` |
+| admin moderation and billing access worked | ✅ | admin posts/media/documents/billing invoices au returnat `200` in pre-flight |
+| first cohort accounts created live | ✅ | `COMPANY = exec22-1779102803899-company@openstaff.eu`, `PROFESSIONAL = exec22-1779102803899-worker@openstaff.eu`, operator intern `SUPERADMIN = openstaff.eu@gmail.com` |
+| onboarding start validated live | ✅ | `GET /onboarding/me = 200` pentru company si worker; identity/company profile updates au returnat `200` |
+| first test public post created live | ✅ | `POST /public-posts = 201`, post `a3f29f0e-49e4-4a0e-a955-5d84ce24606a`, `status = PENDING_MODERATION`, `moderationStatus = PENDING` |
+| media and document upload worked live | ✅ | `POST /public-posts/:id/media = 201` pentru `fe41754e-3947-4470-bd7c-8e7ac8a2c3ed`; `POST /public-posts/:id/documents = 201` pentru `4c58ab28-e6e9-4661-80ae-200bab10a841` |
+| pending state stayed hidden publicly | ✅ | `GET /public-posts = 200` fara postarea pending; `GET /public-posts/:id = 403` inainte de aprobare |
+| owner state remained visible | ✅ | `GET /public-posts/me = 200`, owner-ul vede postarea pending |
+| admin moderation flow validated live | ✅ | media approved `200`, document rejected `200`, post approved `200`, apoi public detail `200`, approved media `200`, rejected document `403` |
+| first upgrade request validated live | ✅ | `POST /subscriptions/upgrade-requests = 201`, request `a4c8a109-8544-4f1a-82d8-b50df614c1b4`, admin queue `200`, approve `201`, plan `BRONZE` |
+| billing visibility remained explicit | ✅ | invoice `846f3b75-a1b7-4bbd-99d8-b69ba4199817` vizibil cu `status = ISSUED`, `invoiceType = PROFORMA`; billing events/payments au ramas accesibile in admin |
+| no accidental auto-checkout promise observed | ✅ | `/status.integrations` a ramas aliniat la `manual_only`, `request_upgrade`, `operatorReviewRequired = true`, fara checkout self-serve |
+| monitoring pass captured | ✅ | `/health`, `/status`, Cloud Run errors, Cloud SQL health, GCS asset delivery, security/audit, billing si notification events sunt documentate in `docs/proof/exec22/README.md` |
+| evidence trail captured in repo | ✅ | `docs/proof/exec22/README.md` pastreaza conturile, timestamp-urile, rutele, expected vs actual, object IDs si safety notes |
+| docs-only execution complete | ✅ | nu au fost schimbari de cod aplicatie; nu este necesar build sau deploy pentru EXEC-22 |
+
+### EXEC-22 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - first bounded cohort can complete core public flow | ✅ | register, login, onboarding, publish, upload si owner visibility au fost executate live cu succes |
+| GO - moderation controls work on production data | ✅ | pending content a ramas ascuns public pana la aprobare; assetul respins a ramas ascuns dupa moderare |
+| GO - operator backoffice remains usable | ✅ | `SUPERADMIN` a accesat queue-urile de posts/media/documents si billing/admin route-urile critice |
+| GO - manual commercial model works as documented | ✅ | upgrade request-ul a fost creat si aprobat live, iar invoice-ul a ramas explicit `ISSUED/PROFORMA` |
+| GO - production monitoring has real first-cohort proof | ✅ | proof-ul EXEC-22 include un pass real pentru health/status/logging/Cloud SQL/GCS/security/billing/notifications |
+| GO - accepted rollout limitations remain explicit | ✅ | `billingPayments = manual_only`, `emailDelivery = not_configured`, `smsDelivery = not_required`, `publicUpgradeFlow = request_upgrade` |
+| NO-GO - public exposure of pending/rejected assets | ✅ prevented | pending post detail a returnat `403` public, iar documentul respins a ramas `403` dupa moderare |
+| NO-GO - operators imply instant payment/activation | ✅ prevented | flow-ul comercial live a ramas aliniat la request + operator review + invoice visibility, fara checkout automat |
+
+### EXEC-22 Validation Proof
+
+- `docs/proof/exec22/README.md` ✅ creat cu proof trail pentru run-ul `exec22-1779102803899`, inclusiv conturi/roluri fara parole, timestamp-uri, rute testate, expected vs actual, object IDs si production safety notes
+- live pre-flight ✅: `GET /health = 200`, `GET /status = 200`, `openstaff.eu = 200`, `backoffice.openstaff.eu = 200`, `SUPERADMIN login = 200`
+- public flow ✅: company + worker register/login, onboarding start, identity/company profile entry, publish post, media upload, document upload, pending hidden publicly, owner visibility
+- admin flow ✅: moderation queues accesibile, media approve, document reject, post approve, public visibility dupa approve, rejected asset hidden, security/audit logs accesibile
+- commercial flow ✅: upgrade request creat live, admin queue accesibil, approve live, invoice `ISSUED/PROFORMA`, billing profile/events/payments vizibile
+- monitoring pass ✅: `/health`, `/status`, Cloud Run errors review, Cloud SQL `RUNNABLE` cu backups/PITR/`ENCRYPTED_ONLY`, GCS asset delivery `200`, security/audit/billing/notification events vizibile
+- builds aplicatie ✅ not required; executia este proof/documentation-only
+
+### EXEC-22 Launch Decision
+
+EXEC-22 confirma ca primul cohort controlat din productie poate rula cap-coada pe date reale si pe obiecte reale fara contradictii fata de contractul operational inchis in EXEC-20 si documentat in EXEC-21.
+
+Pe `2026-05-18`, productia a demonstrat simultan:
+
+1. public onboarding si public posting moderat
+2. control operator-side pentru approve/reject si vizibilitate publica
+3. flux comercial manual coerent cu `request_upgrade` si `manual_only`
+4. vizibilitate operationala pe health, readiness, storage, security, billing si notifications
+
+EXEC-22 este `PASS` atata timp cat modelul comercial ramane explicit manual, iar cohortele urmatoare respecta aceleasi guard rails documentate in `docs/CONTROLLED_ROLLOUT_PLAN.md`, `docs/OPERATOR_SOP.md` si `docs/LAUNCH_MONITORING_CHECKLIST.md`.
+
 ## EXEC-21 Controlled Rollout Operations, First Users & Live Monitoring
 
 Verdict: `PASS - controlled rollout operations are now documented for live production with explicit cohort entry criteria, first-user proof coverage, operator SOPs, a 24-48 hour monitoring checklist, and a launch risk register aligned to the accepted manual commercial model`
