@@ -2,6 +2,85 @@
 
 Last updated: 2026-05-18
 
+## EXEC-25 Operational Excellence, Security Posture & Resilience Baseline
+
+Verdict: `PASS - production now has a documented security posture, live synthetic monitoring, hardened abuse controls on the most exposed routes, a separated build/deploy identity, resilience runbooks, and fresh post-deploy regression proof on the new API revision`
+
+### EXEC-25 Operational Resilience Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| production runtime remained healthy | ✅ | `GET https://api.openstaff.eu/health = 200`, `GET https://api.openstaff.eu/status = 200` on API revision `openstaff-api-00009-jmx` |
+| API deploy for abuse protections succeeded | ✅ | Cloud Build `b7e78555-6a7d-4cca-8037-7999fdd7fe92` deployed the live rate-limit changes to `openstaff-api-00009-jmx` |
+| security posture review completed | ✅ | `docs/SECURITY_POSTURE_REVIEW.md` now documents attack surface, ingress, CORS, secret access, admin exposure, webhook posture and Cloud SQL exposure model |
+| anonymous admin API access remained blocked | ✅ | `GET /admin/public-posts` without token returned `401` during EXEC-25 smoke |
+| authenticated SUPERADMIN path remained healthy | ✅ | temp `SUPERADMIN` login returned `200`; authenticated `GET /admin/public-posts = 200` |
+| abuse protection baseline improved live | ✅ | new throttles cover Firebase exchange, upgrade requests, public Stripe webhook ingress, admin webhook processing, and admin moderation mutations |
+| live rate-limit proof captured | ✅ | EXEC-25 validation captured `firebaseExchangeRateLimitStatus = 429`, `loginRateLimitStatus = 429`, `webhookRateLimitStatus = 429` |
+| guarded webhook behavior preserved after cooldown | ✅ | post-window unsigned `POST /billing/webhooks/stripe` returned controlled `400 BAD_REQUEST` with `Missing Stripe-Signature header.` |
+| synthetic monitoring baseline closed | ✅ | `7` Cloud Monitoring uptime checks now exist for homepage, login, API health, API status, asset delivery, billing webhook guard, and admin readiness |
+| alerting and dashboards remained operational | ✅ | EXEC-24 alert policies stayed enabled and both shared dashboards remained present after EXEC-25 |
+| deploy-path resilience improved | ✅ | dedicated build/deploy SA `openstaff-build@openstaff-platform.iam.gserviceaccount.com` now owns Artifact Registry + Cloud Run deploy path instead of relying on broad runtime IAM |
+| runtime least privilege remained intact | ✅ | runtime compute SA still retained only `roles/cloudsql.client` and `roles/secretmanager.secretAccessor` at project level |
+| temporary runtime source-bucket workaround removed | ✅ | temporary viewer access for the runtime SA on `gs://openstaff-platform_cloudbuild` was removed after dedicated build SA success |
+| secret rotation baseline documented | ✅ | `docs/SECRET_ROTATION_RUNBOOK.md` now documents DB, Stripe, Firebase/admin, JWT and Gemini rotation flow + rollback expectations |
+| disaster readiness baseline documented | ✅ | `docs/DISASTER_RECOVERY_PLAN.md` now documents regional assumptions, recovery ordering, DNS dependencies, RTO/RPO expectations and rollback criteria |
+| cost and capacity baseline documented | ✅ | `docs/COST_BASELINE.md` now documents idle cost shape, scaling ceilings, major cost drivers and cost anomaly triggers |
+| post-deploy uploads/moderation/public delivery remained healthy | ✅ | company auth `200`, post create `201`, media/document upload `201`, approve media/document/post `200`, public asset delivery `200` |
+| temporary bootstrap artifact cleaned | ✅ | one-off job `openstaff-api-exec25-promote-superadmin` was deleted after proof |
+| stale rollback assets retained intentionally | ✅ | historical Cloud Run revisions and rollback-safe artifacts were not pruned blindly |
+| documentation and proof trail captured | ✅ | `docs/proof/exec25/README.md`, `docs/SECURITY_POSTURE_REVIEW.md`, `docs/SECRET_ROTATION_RUNBOOK.md`, `docs/DISASTER_RECOVERY_PLAN.md`, and `docs/COST_BASELINE.md` now capture the EXEC-25 baseline |
+
+### EXEC-25 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - security posture is now explicit | ✅ | live attack surface, ingress model, CORS policy, secret access paths and admin exposure are documented against the current production shape |
+| GO - abuse controls cover key exposed paths | ✅ | login, Firebase exchange, webhook ingress, upgrade requests, and moderation/admin webhook mutations are now throttled |
+| GO - synthetic monitoring exists for critical journeys | ✅ | `7` uptime checks cover public, API, asset-delivery, webhook, and admin readiness regressions |
+| GO - deploy path is more resilient | ✅ | dedicated build SA restored a stable release path without re-broadening runtime IAM |
+| GO - rotation and disaster runbooks now exist | ✅ | secret rotation and disaster recovery expectations are documented operator-side |
+| GO - post-change runtime stayed healthy | ✅ | `/health`, `/status`, auth, admin, uploads, moderation, and public delivery remained healthy after deploy |
+| NO-GO - widening runtime IAM to restore deploys | ✅ prevented | deploy resilience was fixed by introducing a dedicated build identity, not by restoring `roles/editor` or similar broad runtime grants |
+| NO-GO - blind pruning of rollback history | ✅ prevented | stale revisions and rollback-safe artifacts were retained because safety outweighed small short-term cleanup gains |
+
+### EXEC-25 Validation Proof
+
+- `docs/proof/exec25/README.md` ✅ captures the security posture review, abuse protection inventory, synthetic monitoring inventory, deploy-path resilience proof, runtime validation, and accepted limitations
+- API deploy proof ✅: Cloud Build `b7e78555-6a7d-4cca-8037-7999fdd7fe92` succeeded and promoted `openstaff-api-00009-jmx`
+- live synthetic monitoring proof ✅: `7` uptime checks exist for homepage, login, API health, API status, asset delivery, billing webhook guard, and admin readiness
+- abuse protection proof ✅: repeated login, Firebase exchange, and webhook requests returned `429`
+- guarded webhook proof ✅: after cooldown, unsigned `POST /billing/webhooks/stripe` returned controlled `400 BAD_REQUEST` with `Missing Stripe-Signature header.`
+- admin exposure proof ✅: anonymous `GET /admin/public-posts = 401`, temp `SUPERADMIN` `GET /admin/public-posts = 200`
+- post-deploy runtime smoke ✅: `/health = 200`, `/status = 200`, temp `SUPERADMIN login = 200`, company login `200`, post create `201`, media/document upload `201`, moderation approve `200`, public asset delivery `200`
+- monitoring continuity proof ✅: EXEC-24 alert policies remained enabled and both shared dashboards remained live after the EXEC-25 API deploy
+- builds aplicatie ✅ required only for API; `apps/admin/api -> npm.cmd run build` passed locally before the live deployment
+
+### EXEC-25 Accepted Operational Limitations
+
+1. `billingPayments = manual_only`
+2. `publicUpgradeFlow = request_upgrade`
+3. `operatorReviewRequired = true`
+4. `emailDelivery = not_configured`
+5. `smsDelivery = not_required`
+6. critical security alerting still relies on Cloud Logging-visible proxy signals until richer native security metrics are exported
+7. Cloud Run ingress remains `all`, and public `run.app` URLs remain reachable in addition to the mapped domains
+
+### EXEC-25 Launch Decision
+
+EXEC-25 raises OpenStaff from a `stable production baseline` to an `operational resilience baseline` suitable for controlled real-user growth.
+
+As of `2026-05-18`, production now has:
+
+1. a documented live security posture
+2. stronger abuse controls on exposed runtime paths
+3. live synthetic monitoring for public, API, webhook, asset, and admin-readiness regressions
+4. a more durable deploy path based on a dedicated build/deploy identity
+5. explicit secret rotation, disaster recovery, and cost visibility runbooks
+6. fresh post-deploy production proof that auth, moderation, uploads, billing ingress guard rails, and public asset delivery remain healthy
+
+EXEC-25 is `PASS` while the accepted commercial and ingress limitations remain explicit in the runbooks and readiness matrix.
+
 ## EXEC-24 Production Observability, Alerting & Recovery Closure
 
 Verdict: `PASS - production observability and recovery maturity are now closed with live Monitoring alert policies, a live notification channel, shared dashboards, a timed Cloud SQL restore rehearsal, runtime least-privilege hardening, cleanup of confirmed-safe legacy assets, and post-change regression proof`

@@ -13,6 +13,8 @@ import { Role } from '@prisma/client';
 import { JwtGuard } from '../auth/jwt.guard';
 import { Public } from '../auth/public.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { RateLimit } from '../common/rate-limit.decorator';
+import { RateLimitGuard } from '../common/rate-limit.guard';
 import {
   buildInternalErrorResponse,
   buildSuccessResponse,
@@ -108,6 +110,8 @@ export class BillingAdminController {
     }
   }
 
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'admin-billing-process-webhook', maxRequests: 20 })
   @Post('webhooks/:id/process')
   async processWebhook(
     @Param('id') id: string,
@@ -197,6 +201,8 @@ export class BillingPublicController {
   constructor(private readonly billingService: BillingService) {}
 
   @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'billing-webhook-public', maxRequests: 60, windowMs: 60_000 })
   @Post('webhooks/:provider')
   async receiveWebhook(
     @Param('provider') provider: string,

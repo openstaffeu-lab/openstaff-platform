@@ -14,6 +14,8 @@ import { Role } from '@prisma/client';
 import { JwtGuard } from '../auth/jwt.guard';
 import { Public } from '../auth/public.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { RateLimit } from '../common/rate-limit.decorator';
+import { RateLimitGuard } from '../common/rate-limit.guard';
 import {
   buildInternalErrorResponse,
   buildSuccessResponse,
@@ -54,6 +56,8 @@ export class SubscriptionsController {
   }
 
   @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'public-upgrade-request', maxRequests: 10 })
   @Post('subscriptions/upgrade-requests')
   async createUpgradeRequest(
     @Body() body: CreateUpgradeRequestDto,

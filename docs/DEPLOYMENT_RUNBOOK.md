@@ -37,12 +37,29 @@ Current production topology:
 - Cloud SQL primary: `openstaff-db`
 - Production database: `openstaff_prod`
 - Production storage bucket: `gs://openstaff-platform-production`
+- Runtime service account: `605639023972-compute@developer.gserviceaccount.com`
+- Build/deploy service account: `openstaff-build@openstaff-platform.iam.gserviceaccount.com`
 
-Current healthy production revisions validated during EXEC-17:
+Current healthy production revisions validated during EXEC-25:
 
-- API: `openstaff-api-00007-4bj`
+- API: `openstaff-api-00009-jmx`
 - Public web: `openstaff-web-00009-q46`
 - Admin: `openstaff-admin-00010-t76`
+
+## Build and runtime identity split
+
+EXEC-25 established a dedicated build/deploy identity so production deploys no longer depend on broad runtime permissions.
+
+Current identities:
+
+- Runtime SA: `605639023972-compute@developer.gserviceaccount.com`
+- Build/deploy SA: `openstaff-build@openstaff-platform.iam.gserviceaccount.com`
+
+Build/deploy rationale:
+
+1. runtime keeps only the narrow permissions needed for app execution
+2. build/deploy keeps Artifact Registry push, Cloud Run deploy, logging, source-bucket access, and Secret Manager read rights
+3. `roles/iam.serviceAccountUser` is granted to the build identity on the runtime SA instead of being left on the runtime SA as a broad project capability
 
 ## 1. Create Cloud SQL
 
@@ -173,6 +190,7 @@ Cloud Build:
 ```powershell
 gcloud builds submit `
   --project=openstaff-platform `
+  --service-account=projects/openstaff-platform/serviceAccounts/openstaff-build@openstaff-platform.iam.gserviceaccount.com `
   --config=apps/admin/api/cloudbuild.api.yaml
 ```
 
@@ -188,6 +206,7 @@ curl https://api.openstaff.eu/status
 ```powershell
 gcloud builds submit `
   --project=openstaff-platform `
+  --service-account=projects/openstaff-platform/serviceAccounts/openstaff-build@openstaff-platform.iam.gserviceaccount.com `
   --config=apps/admin/web/cloudbuild.web.yaml
 ```
 
@@ -202,6 +221,7 @@ curl https://openstaff.eu
 ```powershell
 gcloud builds submit `
   --project=openstaff-platform `
+  --service-account=projects/openstaff-platform/serviceAccounts/openstaff-build@openstaff-platform.iam.gserviceaccount.com `
   --config=apps/admin/cloudbuild.admin.yaml
 ```
 
@@ -238,7 +258,7 @@ Minimum production expectations:
 - GCS uniform bucket-level access enabled
 - GCS soft delete or lifecycle retention configured
 
-Current validated baseline during EXEC-17:
+Current validated baseline during EXEC-25:
 
 - Cloud SQL automated backups: enabled
 - Cloud SQL retained backups: `7`
@@ -251,6 +271,7 @@ Current validated baseline during EXEC-17:
 - GCS bucket: `gs://openstaff-platform-production`
 - GCS uniform bucket-level access: enabled
 - GCS soft delete retention: `7` days
+- dedicated build/deploy SA: `openstaff-build@openstaff-platform.iam.gserviceaccount.com`
 
 Operational note:
 
@@ -289,11 +310,16 @@ Apply the same pattern for:
 
 ## 11. Known operational notes
 
-As of the final EXEC-17 audit:
+As of the final EXEC-25 audit:
 
 - the Cloud SQL hardening baseline is now explicitly confirmed operator-side
 - keep only the active production secret contract in docs and scripts
 - performance proof is archived in `docs/proof/exec17/`
+- resilience and security runbooks are now part of the baseline:
+  - `docs/SECURITY_POSTURE_REVIEW.md`
+  - `docs/SECRET_ROTATION_RUNBOOK.md`
+  - `docs/DISASTER_RECOVERY_PLAN.md`
+  - `docs/COST_BASELINE.md`
 - the next non-blocking frontend follow-ups are:
   - reduce `CLS` on `https://openstaff.eu/jobs`
   - improve homepage accessibility from the current Lighthouse baseline

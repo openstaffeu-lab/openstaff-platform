@@ -67,6 +67,8 @@ export class AuthController {
   }
 
   @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'auth-firebase-exchange', maxRequests: 10 })
   @Post('firebase-exchange')
   @HttpCode(HttpStatus.OK)
   async firebaseExchange(@Body() body: FirebaseExchangeDto, @Req() req: any) {

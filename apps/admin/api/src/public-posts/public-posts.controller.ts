@@ -270,6 +270,8 @@ export class PublicPostsController {
 
   @RequirePermissions(Permission.MANAGE_USERS)
   @UseGuards(JwtGuard, PermissionsGuard)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'admin-moderation-post', maxRequests: 60, windowMs: 60_000 })
   @Patch('admin/public-posts/:id/status')
   async updatePostStatus(@Param('id') id: string, @Body() body: ModeratePublicPostDto) {
     try {
@@ -313,6 +315,8 @@ export class PublicPostsController {
 
   @RequirePermissions(Permission.MANAGE_USERS)
   @UseGuards(JwtGuard, PermissionsGuard)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'admin-moderation-media', maxRequests: 60, windowMs: 60_000 })
   @Patch('admin/public-post-media/:id/status')
   async updateMediaStatus(@Param('id') id: string, @Body() body: ModeratePublicMediaDto) {
     try {
@@ -329,6 +333,8 @@ export class PublicPostsController {
 
   @RequirePermissions(Permission.MANAGE_USERS)
   @UseGuards(JwtGuard, PermissionsGuard)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'admin-moderation-document', maxRequests: 60, windowMs: 60_000 })
   @Patch('admin/public-post-documents/:id/status')
   async updateDocumentStatus(@Param('id') id: string, @Body() body: ModeratePublicMediaDto) {
     try {
