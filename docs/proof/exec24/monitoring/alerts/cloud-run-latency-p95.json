@@ -1,0 +1,36 @@
+{
+  "displayName": "OpenStaff Prod - Cloud Run Latency P95",
+  "combiner": "OR",
+  "enabled": true,
+  "notificationChannels": [
+    "projects/openstaff-platform/notificationChannels/16914670128256150084"
+  ],
+  "documentation": {
+    "mimeType": "text/markdown",
+    "content": "Severity: SEV-2\nOwner: Technical Ops\nThreshold: p95 request latency above 2000 ms for 10 minutes on any production Cloud Run service.\nExpected response: acknowledge within 15 minutes and inspect active revisions, request logs, Cloud SQL health, and cold-start pressure."
+  },
+  "conditions": [
+    {
+      "displayName": "p95 latency > 2000ms for 10m",
+      "conditionThreshold": {
+        "filter": "resource.type=\"cloud_run_revision\" AND metric.type=\"run.googleapis.com/request_latencies\" AND (resource.labels.service_name=\"openstaff-api\" OR resource.labels.service_name=\"openstaff-web\" OR resource.labels.service_name=\"openstaff-admin\")",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 2000,
+        "duration": "600s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "perSeriesAligner": "ALIGN_PERCENTILE_95",
+            "crossSeriesReducer": "REDUCE_MAX",
+            "groupByFields": [
+              "resource.labels.service_name"
+            ]
+          }
+        ],
+        "trigger": {
+          "count": 1
+        }
+      }
+    }
+  ]
+}

@@ -1,232 +1,178 @@
 # Production Stabilization Baseline
 
-Last updated: `2026-05-18`
-Scope: `EXEC-23`
+Last updated: `2026-05-18`  
+Scope: `EXEC-24`  
 Environment: `production`
 
 ## Executive Status
 
-OpenStaff production is operational and has passed controlled rollout validation through EXEC-22, but it is not yet at a fully stabilized operational baseline.
+OpenStaff production now has a real observability and recovery baseline in live GCP.
 
 Confirmed live on `2026-05-18`:
 
-- Cloud Run services are healthy on active revisions.
-- Cloud SQL is hardened with backups, PITR, deletion protection, connector enforcement, and `ENCRYPTED_ONLY`.
-- Public/auth/moderation/commercial first-cohort flows were executed successfully.
-- Audit and security surfaces are reachable in admin and `/status`.
+- Cloud Run production services are healthy on active revisions.
+- Cloud SQL remains hardened with backups, PITR, deletion protection, and `ENCRYPTED_ONLY`.
+- Cloud Monitoring now has a live email notification channel, active alert policies, and shared dashboards.
+- A controlled Cloud SQL restore rehearsal was executed to a separate recovery instance and validated with a SQL command before cleanup.
+- The default compute service account no longer carries `roles/editor` or `roles/iam.serviceAccountUser`.
+- The legacy `WEBHOOK_SECRET` secret has been removed.
 
-Confirmed missing on `2026-05-18`:
-
-- `0` Cloud Monitoring alert policies
-- `0` Monitoring notification channels
-- `0` Monitoring dashboards
-
-These three gaps are the primary reason EXEC-23 cannot be marked `PASS` yet.
+EXEC-24 closes the observability, alerting, restore rehearsal, and least-privilege blockers that kept EXEC-23 open.
 
 ## 1. Alerting And Incident Readiness
 
-### Live validation snapshot
+### Live channel baseline
 
-| Signal family | Expected stabilized state | Live status on 2026-05-18 |
+| Item | Live status | Proof |
 |---|---|---|
-| Cloud Run error spike alerts | active alert policy | missing |
-| elevated `5xx` rate alerts | active alert policy | missing |
-| auth/login failure alerts | active alert policy or log-based metric alert | missing |
-| Cloud SQL CPU/storage/connections alerts | active alert policy | missing |
-| failed billing webhook alerts | active alert policy or log-based metric alert | missing |
-| failed moderation job alerts | active alert policy or queue-depth alert | missing |
-| storage delivery failure alerts | active alert policy or log-based metric alert | missing |
-| security critical event alerts | active alert policy | missing |
-| notification channels | at least one email/pager/chat channel | missing |
+| primary email notification channel | active | `projects/openstaff-platform/notificationChannels/16914670128256150084` |
+| channel enabled | yes | `displayName = OpenStaff Ops Email`, `enabled = true` |
+| channel routing | operator email | `email_address = openstaff.eu@gmail.com` |
 
-Evidence:
+### Live alert inventory
 
-- `gcloud monitoring policies list --project=openstaff-platform` -> `Listed 0 items.`
-- `gcloud beta monitoring channels list --project=openstaff-platform` -> `Listed 0 items.`
-
-### Required alert ownership model
-
-| Alert domain | Primary owner | Secondary owner | Severity default | Expected response |
+| Alert policy | Severity | Threshold | Primary owner | Policy id |
 |---|---|---|---|---|
-| API availability / `5xx` | L3 Technical Ops | L1 Operations | `SEV-1` if public outage, else `SEV-2` | `15 min` for `SEV-1`, `30 min` for `SEV-2` |
-| Auth/login failures | L3 Technical Ops | L4 Security / Compliance | `SEV-2` | `30 min` |
-| Cloud SQL saturation / storage / connections | L3 Technical Ops | rollback owner | `SEV-1` if customer-facing impact, else `SEV-2` | `15-30 min` |
-| Failed billing webhooks | L2 Business Ops | L3 Technical Ops | `SEV-2` | `30 min` |
-| Failed moderation jobs / queue stalls | L1 Operations | L3 Technical Ops | `SEV-2` | `30 min` |
-| Storage delivery failures | L3 Technical Ops | L1 Operations | `SEV-2` | `30 min` |
-| Critical security events | L4 Security / Compliance | L3 Technical Ops | `SEV-1` | `15 min` |
+| Cloud Run 5xx Spike | `SEV-2` | `> 4` `5xx` responses in `5m` per service | L3 Technical Ops | `11524114636446058063` |
+| Cloud Run Latency P95 | `SEV-2` | p95 latency `> 2000 ms` for `10m` | L3 Technical Ops | `7482020349326638750` |
+| Auth Login Failure Spike | `SEV-2` | `> 4` failed logins in `5m` | L3 Technical Ops + L4 Security | `15391475502136670794` |
+| Cloud SQL CPU High | `SEV-2` | CPU utilization `> 80%` for `10m` | L3 Technical Ops | `4271658493465720175` |
+| Cloud SQL Connections High | `SEV-2` | PostgreSQL backends `> 40` for `10m` | L3 Technical Ops | `12480815822325776710` |
+| Cloud SQL Storage Utilization High | `SEV-2` | disk utilization `> 80%` for `15m` | L3 Technical Ops | `18326074938026175970` |
+| Stripe Webhook Failures | `SEV-2` | any failed webhook request in `5m` | L2 Billing Ops + L3 Technical Ops | `11142017728836420317` |
+| Moderation Failures | `SEV-2` | any failed moderation endpoint request in `5m` | L1 Operations + L3 Technical Ops | `9538430695422670622` |
+| Storage Delivery Failures | `SEV-2` | any failed asset delivery request in `5m` | L3 Technical Ops | `15815289231249814837` |
+| Security Critical Signals | `SEV-1` | any critical security proxy signal in `5m` | L4 Security / Compliance | `7385145099888946834` |
 
-### Severity classification
+### Supporting log-based metrics
 
-| Severity | Definition | Examples |
-|---|---|---|
-| `SEV-1` | public production outage, data integrity risk, or active security incident | `/health` failing, sustained `5xx`, broken auth for all users, DB exhaustion, critical security event |
-| `SEV-2` | degraded production behavior with workaround or bounded blast radius | rising auth failures, webhook failures, moderation queue stall, asset delivery failures |
-| `SEV-3` | non-blocking issue or hygiene gap | stale artifacts, dashboard drift, noise cleanup, non-urgent capacity tuning |
+| Metric | Purpose |
+|---|---|
+| `logging.googleapis.com/user/auth_login_failures_count` | auth/login failure spike alert + dashboard |
+| `logging.googleapis.com/user/billing_webhook_failures_count` | Stripe webhook failure alert + dashboard |
+| `logging.googleapis.com/user/moderation_failures_count` | moderation failure alert + dashboard |
+| `logging.googleapis.com/user/storage_delivery_failures_count` | public asset delivery failure alert + dashboard |
+| `logging.googleapis.com/user/security_critical_signals_count` | security proxy alert + dashboard |
 
-### Escalation path
+### Escalation model
 
-1. L1 Operations acknowledges the alert and confirms user-visible impact.
-2. L3 Technical Ops investigates runtime, Cloud Run, Cloud SQL, storage, and rollback options.
-3. L2 Business Ops joins when billing, moderation, or operator workflows are affected.
-4. L4 Security / Compliance joins immediately for critical security events or suspicious auth patterns.
-5. Rollback owner decides whether to shift traffic, pause rollout, or invoke DB recovery procedure.
-
-### Minimum implementation required to close EXEC-23
-
-1. Create at least one notification channel.
-2. Create alert policies for:
-   - Cloud Run error count / error ratio
-   - request latency / `5xx`
-   - auth/login failure spikes
-   - Cloud SQL CPU / connections / storage
-   - billing webhook failures
-   - moderation queue or Relu failed-job spikes
-   - storage delivery failures
-   - critical security event count
-3. Test delivery of at least one non-destructive alert.
+| Domain | Primary owner | Secondary owner | Expected response |
+|---|---|---|---|
+| Cloud Run availability / latency | L3 Technical Ops | L1 Operations | `15 min` |
+| Auth / login failures | L3 Technical Ops | L4 Security / Compliance | `15 min` |
+| Cloud SQL saturation | L3 Technical Ops | rollback owner | `15 min` |
+| Billing webhook failures | L2 Business Ops | L3 Technical Ops | `15 min` |
+| Moderation failures | L1 Operations | L3 Technical Ops | `15 min` |
+| Storage delivery failures | L3 Technical Ops | L1 Operations | `15 min` |
+| Security critical signals | L4 Security / Compliance | L3 Technical Ops | `10 min` |
 
 ## 2. Operational Dashboards
 
-### Live validation snapshot
+### Live dashboard inventory
 
-| View | Expected stabilized state | Live status on 2026-05-18 |
+| Dashboard | Dashboard id | Coverage |
 |---|---|---|
-| API health dashboard | active Monitoring dashboard | missing |
-| request latency dashboard | active Monitoring dashboard | missing |
-| auth activity dashboard | active Monitoring dashboard | missing |
-| moderation queue dashboard | active Monitoring dashboard or admin dashboard reference | missing in GCP, partial in app |
-| billing events dashboard | active Monitoring dashboard or admin dashboard reference | missing in GCP, partial in app |
-| upload/storage activity dashboard | active Monitoring dashboard | missing |
-| audit/security dashboard | active Monitoring dashboard or admin dashboard reference | missing in GCP, partial in app |
-| Cloud SQL health dashboard | active Monitoring dashboard | missing |
+| `OpenStaff Prod - Overview` | `03d08d77-9adb-41e6-bdc0-74c5b96e8307` | Cloud Run request rate, p95 latency, `5xx`, instance count, Cloud SQL CPU, backends, disk utilization |
+| `OpenStaff Prod - Operational Signals` | `5520ed58-22df-4769-828e-652ae71f6a40` | auth failures, Stripe webhook failures, moderation failures, storage delivery failures, security proxy signals |
 
-Evidence:
+### Area-to-dashboard mapping
 
-- `gcloud monitoring dashboards list --project=openstaff-platform` -> `Listed 0 items.`
-
-### Required dashboard set
-
-| Dashboard | Scope | Owner | Current source of truth |
-|---|---|---|---|
-| API Health | request count, `5xx`, latency, active revision | L3 Technical Ops | GCP Monitoring dashboard required |
-| Auth Activity | login success/failure trend, auth errors, security spikes | L4 Security / Compliance | admin security views + GCP dashboard required |
-| Moderation Ops | pending posts/media/documents, failed Relu/moderation jobs | L1 Operations | admin queues exist; consolidated dashboard missing |
-| Billing Ops | upgrade requests, invoices, webhook failures, payments | L2 Business Ops | admin billing pages exist; consolidated dashboard missing |
-| Storage Activity | upload success/failure, delivery failures, bucket growth | L3 Technical Ops | GCP dashboard required |
-| Cloud SQL Health | CPU, storage, memory proxy metrics, connections | L3 Technical Ops | GCP dashboard required |
-
-### Minimum implementation required to close EXEC-23
-
-1. Create shared dashboards in Cloud Monitoring for API, Cloud SQL, and error/latency.
-2. Document the admin URLs that remain the operational console for:
-   - moderation
-   - billing
-   - security/audit
-3. Add dashboard links to operator docs after they exist.
+| Operational view | Source of truth |
+|---|---|
+| API health | `OpenStaff Prod - Overview` |
+| request latency | `OpenStaff Prod - Overview` |
+| Cloud Run revision/runtime health | `OpenStaff Prod - Overview` |
+| Cloud SQL health | `OpenStaff Prod - Overview` |
+| auth activity | `OpenStaff Prod - Operational Signals` |
+| billing/webhooks | `OpenStaff Prod - Operational Signals` plus admin billing routes |
+| upload/storage traffic | `OpenStaff Prod - Operational Signals` plus GCS bucket metrics |
+| moderation queue/failures | `OpenStaff Prod - Operational Signals` plus admin moderation queues |
+| audit/security events | `OpenStaff Prod - Operational Signals` plus `/admin/security/events` |
 
 ## 3. Runtime Cleanup And Hardening Review
 
-### Live review findings
+### Completed in EXEC-24
 
-| Area | Observation on 2026-05-18 | Status | Action |
-|---|---|---|---|
-| active Cloud Run revisions | API `00008`, web `00010`, admin `00011` are live and healthy | healthy | keep |
-| stale Cloud Run revisions | multiple older revisions still retained | expected but stale | document retention policy; optional cleanup later |
-| Cloud Run jobs | only `openstaff-api-migrate` remains; bootstrap jobs are already deleted | healthy | keep migrate job |
-| Secret Manager | active services use `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `STRIPE_WEBHOOK_SECRET`, `FIREBASE_SERVICE_ACCOUNT_KEY`, `GEMINI_API_KEY` | healthy | keep |
-| legacy secret | `WEBHOOK_SECRET` still exists but active runtime uses `STRIPE_WEBHOOK_SECRET` | cleanup candidate | remove only after coordinated doc/script cleanup |
-| storage buckets | `openstaff-platform-production` is active; `openstaff-platform_cloudbuild` is default Cloud Build bucket | healthy | keep |
-| IAM bindings | compute service account still has `roles/editor` | hardening gap | reduce privileges after explicit role audit |
-| service accounts | compute SA and Firebase admin SA are active; no inactive SA confirmed | healthy with review gap | do not remove yet |
+| Area | Action | Result |
+|---|---|---|
+| notification channel | created | live email channel enabled |
+| alert policies | created | `10` live policies |
+| dashboards | created | `2` shared dashboards |
+| compute service account | removed `roles/editor` | closed |
+| compute service account | removed `roles/iam.serviceAccountUser` | closed |
+| storage access | granted bucket-level `roles/storage.objectAdmin` on `gs://openstaff-platform-production` | runtime-safe least privilege baseline |
+| legacy secret | deleted `WEBHOOK_SECRET` | closed |
+| restore rehearsal artifacts | deleted one-off job and deleted recovery instance after validation | closed |
 
-### Safe removals completed in prior executions
+### Retained intentionally
 
-- temporary bootstrap job for `SUPERADMIN` repair was already deleted before EXEC-22
-- no temporary cohort artifacts remain tracked in repo after EXEC-22 proof capture
+| Area | Status | Reason |
+|---|---|---|
+| Cloud Run stale revisions | retained | safe rollback history kept |
+| Artifact Registry historical images | retained | no retention policy was approved in EXEC-24 |
+| `openstaff-api-migrate` job | retained | still valid for controlled migration workflow |
+| default Cloud Build bucket | retained | platform-managed build dependency |
 
-### Cleanup actions explicitly not taken during EXEC-23
+### Final runtime role baseline for compute service account
 
-- no secrets were deleted
-- no revisions were deleted
-- no IAM bindings were removed
-- no buckets or Artifact Registry images were deleted
+`605639023972-compute@developer.gserviceaccount.com`
 
-Reason:
-
-- these actions require an explicit least-privilege and retention review to avoid accidental rollback loss or deploy breakage
+- `roles/cloudsql.client`
+- `roles/secretmanager.secretAccessor`
+- bucket-level `roles/storage.objectAdmin` on `gs://openstaff-platform-production`
 
 ## 4. Backup And Restore Drill
 
-### Live restore-readiness baseline
+### Source posture confirmed before rehearsal
 
-Confirmed from Cloud SQL on `2026-05-18`:
+- source instance: `openstaff-db`
+- state: `RUNNABLE`
+- backups: enabled
+- PITR: enabled
+- deletion protection: enabled
+- connector enforcement: `REQUIRED`
+- SSL mode: `ENCRYPTED_ONLY`
+- latest automated backup id used for rehearsal: `1779073200000`
 
-- backups enabled
-- retained backups: `7`
-- PITR enabled
-- transaction log retention: `7 days`
-- `transactionalLogStorageState = CLOUD_STORAGE`
-- deletion protection enabled
-- `sslMode = ENCRYPTED_ONLY`
+### Rehearsal execution
 
-### Drill status
-
-| Item | Status |
+| Step | Result |
 |---|---|
-| PITR capability documented | yes |
-| rollback sequence documented | yes |
-| operator recovery checklist documented | yes |
-| actual restore executed against a restored instance during EXEC-23 | no, not executed |
+| create isolated recovery instance | `openstaff-db-recovery-exec24` created successfully |
+| restore backup to recovery instance | operation `64b2eda1-378d-4137-81ed-bef200000024` completed `DONE` |
+| restored instance state | `RUNNABLE` |
+| restored databases visible | `postgres`, `openstaff`, `openstaff_prod` |
+| SQL validation | `SELECT 1;` via Prisma `db execute` succeeded against recovery instance |
+| cleanup | recovery instance deleted successfully via operation `48db977d-22ea-4078-9de0-acd600000024` |
 
-### Controlled restore flow
+### Timing
 
-1. Freeze deploys and incident-change activity.
-2. Record current healthy Cloud Run revisions.
-3. Select restore target timestamp or latest backup.
-4. Restore Cloud SQL into a separate recovery instance first.
-5. Validate schema level and critical tables on the recovery instance.
-6. Decide whether to cut over or continue recovery rehearsal only.
-7. Re-run:
-   - `/health`
-   - `/status`
-   - auth smoke
-   - moderation smoke
-   - billing smoke
-8. Only then consider traffic rollback or data cutover.
-
-### Storage recovery expectations
-
-- GCS bucket `openstaff-platform-production` has soft-delete retention of `7 days`.
-- Application metadata recovery depends on Cloud SQL restore point.
-- Asset object recovery and metadata recovery must be treated as a pair; recovering one without the other is not considered complete service restoration.
-
-### Operator recovery checklist
-
-1. confirm incident scope
-2. freeze deploys
-3. capture current revision names
-4. confirm restore target time
-5. restore into separate instance
-6. validate auth, moderation, billing, storage references
-7. decide cutover vs rehearsal closure
-8. update incident log and STATUS evidence
-
-### RTO / RPO expectations
-
-| Metric | Current baseline |
+| Metric | Value |
 |---|---|
-| target `RPO` | up to `7 days` worst-case by backup retention, materially lower when PITR target is usable |
-| target `RTO` | operator-managed; not yet proven by timed restore drill |
+| restore start | `2026-05-18T16:03:39.170Z` |
+| restore end | `2026-05-18T16:08:38.856Z` |
+| observed restore duration | `4m 59.686s` |
+| recovery delete duration | `1m 47.314s` |
 
-EXEC-23 conclusion:
+### RTO / RPO interpretation
 
-- restore readiness is documented and technically enabled
-- timed restoration remains unproven until a rehearsal is executed
+| Metric | Current estimate |
+|---|---|
+| rehearsal RTO to recovery instance | about `5 minutes` for restore, plus operator validation time |
+| practiced-path RPO | aligned to selected backup point `2026-05-18T04:35:24.939Z` |
+| PITR capability window | `earliestRecoveryTime = 2026-05-17T09:19:01.206Z`, `latestRecoveryTime = 2026-05-18T16:10:30.254751417Z` |
+| production cutover RTO | still operator-managed; not exercised as a traffic cutover in EXEC-24 |
+
+### Recovery conclusions
+
+- backup restore rehearsal is now proven on a separate instance
+- database accessibility was validated with a real SQL command
+- production traffic was not impacted
+- PITR remains available for finer-grained recovery, but EXEC-24 exercised backup restore rather than a PITR cutover
 
 ## 5. Production Capacity Review
 
-### Current live configuration
+### Current live runtime
 
 | Service | Max instances | Min instances | CPU | Memory | Concurrency |
 |---|---:|---:|---:|---:|---:|
@@ -241,46 +187,23 @@ Cloud SQL baseline:
 - storage auto-resize: enabled
 - availability: `ZONAL`
 
-### Traffic and growth assumptions
+### Operational bottlenecks that still remain accepted
 
-| Domain | Current assumption |
-|---|---|
-| rollout traffic | still controlled and bounded, not general-public at scale |
-| billing workload | operator-mediated and low throughput |
-| moderation workload | human-reviewed and bounded by cohort size |
-| storage growth | early-stage, mostly media/document uploads from controlled cohorts |
-| auth load | expected bursty around onboarding and operator sessions |
-
-### Operational bottlenecks
-
-1. manual billing does not scale linearly without more operators
+1. billing remains `manual_only`
 2. moderation remains human-gated
-3. no min instances means cold-start risk remains part of production behavior
-4. no alerting/dashboards means human monitoring remains reactive
-5. `roles/editor` on the compute service account is broader than ideal
+3. `emailDelivery = not_configured`
+4. `smsDelivery = not_required`
+5. dashboards and alerts are live, but security-event alerting still uses a Cloud Logging-visible proxy until DB-native security events are exported as metrics
 
-### Manual operations limits
+## Final Verdict
 
-| Function | Practical current limit |
-|---|---|
-| billing approvals | low-volume only |
-| invoice follow-up | low-volume only |
-| moderation turnaround | bounded by staffed shifts |
-| support triage | bounded by owner coverage in rollout docs |
+`EXEC-24 PASS`
 
-## 6. Known Limitations After EXEC-23
+Production now has:
 
-1. no live Monitoring alert policies
-2. no live Monitoring notification channels
-3. no live Monitoring dashboards
-4. no timed Cloud SQL restore rehearsal completed
-5. compute service account still carries `roles/editor`
-6. legacy `WEBHOOK_SECRET` still exists in Secret Manager as historical baggage
-
-## 7. Recommended Immediate Follow-Up
-
-1. create notification channels and alert policies
-2. create Monitoring dashboards and link them from operator docs
-3. execute a timed non-destructive Cloud SQL restore rehearsal
-4. reduce compute service account permissions from `roles/editor` to least privilege
-5. remove legacy `WEBHOOK_SECRET` only after docs/scripts and consumer audit are closed
+1. live Monitoring notification routing
+2. live Monitoring alert policies
+3. live Monitoring dashboards
+4. a proven restore rehearsal with timing evidence
+5. least-privilege closure for the default runtime service account
+6. cleanup of the legacy webhook secret and temporary recovery artifacts

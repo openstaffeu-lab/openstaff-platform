@@ -1,0 +1,36 @@
+{
+  "displayName": "OpenStaff Prod - Stripe Webhook Failures",
+  "combiner": "OR",
+  "enabled": true,
+  "notificationChannels": [
+    "projects/openstaff-platform/notificationChannels/16914670128256150084"
+  ],
+  "documentation": {
+    "mimeType": "text/markdown",
+    "content": "Severity: SEV-2\nOwner: Billing Operations with Technical Ops support.\nThreshold: any failed Stripe webhook request within 5 minutes.\nExpected response: acknowledge within 15 minutes and inspect webhook payload, signature verification, and admin billing webhooks queue."
+  },
+  "conditions": [
+    {
+      "displayName": "failed webhook count > 0 in 5m",
+      "conditionThreshold": {
+        "filter": "resource.type=\"cloud_run_revision\" AND metric.type=\"logging.googleapis.com/user/billing_webhook_failures_count\" AND resource.labels.service_name=\"openstaff-api\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0,
+        "duration": "0s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "perSeriesAligner": "ALIGN_DELTA",
+            "crossSeriesReducer": "REDUCE_SUM",
+            "groupByFields": [
+              "resource.labels.service_name"
+            ]
+          }
+        ],
+        "trigger": {
+          "count": 1
+        }
+      }
+    }
+  ]
+}

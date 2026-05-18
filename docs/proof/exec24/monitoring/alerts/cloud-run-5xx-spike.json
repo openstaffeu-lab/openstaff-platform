@@ -1,0 +1,36 @@
+{
+  "displayName": "OpenStaff Prod - Cloud Run 5xx Spike",
+  "combiner": "OR",
+  "enabled": true,
+  "notificationChannels": [
+    "projects/openstaff-platform/notificationChannels/16914670128256150084"
+  ],
+  "documentation": {
+    "mimeType": "text/markdown",
+    "content": "Severity: SEV-2\nOwner: Technical Ops\nThreshold: more than 4 Cloud Run 5xx responses in 5 minutes for any production service.\nExpected response: acknowledge within 15 minutes and review Cloud Run logs plus /health and /status."
+  },
+  "conditions": [
+    {
+      "displayName": "5xx requests > 4 in 5m",
+      "conditionThreshold": {
+        "filter": "resource.type=\"cloud_run_revision\" AND metric.type=\"run.googleapis.com/request_count\" AND metric.labels.response_code_class=\"5xx\" AND (resource.labels.service_name=\"openstaff-api\" OR resource.labels.service_name=\"openstaff-web\" OR resource.labels.service_name=\"openstaff-admin\")",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 4,
+        "duration": "0s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "perSeriesAligner": "ALIGN_DELTA",
+            "crossSeriesReducer": "REDUCE_SUM",
+            "groupByFields": [
+              "resource.labels.service_name"
+            ]
+          }
+        ],
+        "trigger": {
+          "count": 1
+        }
+      }
+    }
+  ]
+}

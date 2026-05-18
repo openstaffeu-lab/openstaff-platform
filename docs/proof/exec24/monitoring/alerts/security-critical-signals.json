@@ -1,0 +1,36 @@
+{
+  "displayName": "OpenStaff Prod - Security Critical Signals",
+  "combiner": "OR",
+  "enabled": true,
+  "notificationChannels": [
+    "projects/openstaff-platform/notificationChannels/16914670128256150084"
+  ],
+  "documentation": {
+    "mimeType": "text/markdown",
+    "content": "Severity: SEV-1\nOwner: Security/Compliance with Technical Ops support.\nThreshold: any critical security proxy signal within 5 minutes.\nExpected response: acknowledge within 10 minutes and inspect admin security events, auth logs, and rate-limit activity.\nNote: this alert currently proxies Cloud Logging-visible security failures until database-native security events are exported to Monitoring."
+  },
+  "conditions": [
+    {
+      "displayName": "security critical signal count > 0 in 5m",
+      "conditionThreshold": {
+        "filter": "resource.type=\"cloud_run_revision\" AND metric.type=\"logging.googleapis.com/user/security_critical_signals_count\" AND resource.labels.service_name=\"openstaff-api\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0,
+        "duration": "0s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "perSeriesAligner": "ALIGN_DELTA",
+            "crossSeriesReducer": "REDUCE_SUM",
+            "groupByFields": [
+              "resource.labels.service_name"
+            ]
+          }
+        ],
+        "trigger": {
+          "count": 1
+        }
+      }
+    }
+  ]
+}

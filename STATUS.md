@@ -2,6 +2,82 @@
 
 Last updated: 2026-05-18
 
+## EXEC-24 Production Observability, Alerting & Recovery Closure
+
+Verdict: `PASS - production observability and recovery maturity are now closed with live Monitoring alert policies, a live notification channel, shared dashboards, a timed Cloud SQL restore rehearsal, runtime least-privilege hardening, cleanup of confirmed-safe legacy assets, and post-change regression proof`
+
+### EXEC-24 Operational Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| production runtime remained healthy | ✅ | `GET https://api.openstaff.eu/health = 200`, `GET https://api.openstaff.eu/status = 200`, active Cloud Run revisions stayed healthy after EXEC-24 changes |
+| notification channel baseline closed | ✅ | Cloud Monitoring email channel `projects/openstaff-platform/notificationChannels/16914670128256150084` exists, is enabled, and routes to `openstaff.eu@gmail.com` |
+| alert policy baseline closed | ✅ | `10` live alert policies were created for Cloud Run `5xx`, latency, auth failures, Cloud SQL CPU/connections/storage, Stripe webhook failures, moderation failures, storage delivery failures, and security critical proxy signals |
+| dashboard baseline closed | ✅ | Cloud Monitoring dashboards `OpenStaff Prod - Overview` (`03d08d77-9adb-41e6-bdc0-74c5b96e8307`) and `OpenStaff Prod - Operational Signals` (`5520ed58-22df-4769-828e-652ae71f6a40`) now exist live |
+| alert routing attached live | ✅ | all EXEC-24 policies are enabled and attached to the live email channel `16914670128256150084` |
+| Cloud SQL restore rehearsal executed | ✅ | backup `1779073200000` was restored into isolated instance `openstaff-db-recovery-exec24`; restore operation `64b2eda1-378d-4137-81ed-bef200000024` completed in `4m 59.686s` |
+| restore validation proved | ✅ | recovery instance became `RUNNABLE`, databases were listed, and `SELECT 1;` succeeded via `npx prisma db execute` against the restored instance |
+| restore cleanup completed | ✅ | recovery instance delete operation `48db977d-22ea-4078-9de0-acd600000024` completed and production returned to single active instance `openstaff-db` |
+| runtime least privilege closed for compute SA blocker | ✅ | `roles/editor` and `roles/iam.serviceAccountUser` were removed from `605639023972-compute@developer.gserviceaccount.com`; runtime storage access moved to bucket-level `roles/storage.objectAdmin` on `gs://openstaff-platform-production` |
+| Cloud Build and runtime access preserved | ✅ | Cloud Build roles remained intact, runtime retained Cloud SQL + Secret Manager access, and post-change smoke still passed |
+| legacy secret cleanup completed | ✅ | `WEBHOOK_SECRET` was deleted; active runtime contract remains `STRIPE_WEBHOOK_SECRET` |
+| temporary bootstrap artifacts removed | ✅ | one-off job `openstaff-api-exec24-promote-superadmin` was deleted after proof; recovery instance was also deleted after rehearsal |
+| stale revision retention kept intentionally | ✅ | old Cloud Run revisions were retained as rollback history rather than pruned blindly |
+| post-change SUPERADMIN path still works | ✅ | temporary `SUPERADMIN` login returned `200`; `GET /admin/public-posts = 200` after IAM hardening |
+| post-change storage and moderation paths still work | ✅ | company post create `201`, media/document upload `201`, media/document/post approve `200`, public asset delivery `200` |
+| billing webhook path still controlled by app logic | ✅ | signed negative test on `POST /billing/webhooks/stripe` returned controlled `400 BAD_REQUEST` with `Stripe webhook signature verification failed.` |
+| documentation + proof trail captured | ✅ | `docs/PRODUCTION_STABILIZATION_BASELINE.md`, `docs/PRODUCTION_READINESS_MATRIX.md`, and `docs/proof/exec24/README.md` now capture the live baseline |
+
+### EXEC-24 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - alert fan-out is live | ✅ | live notification channel exists and all alert policies are attached + enabled |
+| GO - observability dashboards now exist | ✅ | shared Cloud Monitoring dashboards exist for runtime, DB, and operational signal views |
+| GO - restore readiness is proven | ✅ | isolated restore rehearsal completed with measured duration and SQL connectivity proof |
+| GO - runtime least privilege blocker is closed | ✅ | compute service account no longer carries `roles/editor` |
+| GO - runtime behavior stayed healthy after hardening | ✅ | `/health`, `/status`, `SUPERADMIN` login, moderation, uploads, and public asset delivery remained healthy |
+| GO - cleanup removed confirmed-safe legacy baggage | ✅ | `WEBHOOK_SECRET`, temp recovery instance, and one-off promotion job were removed |
+| NO-GO - production traffic impact during restore | ✅ prevented | restore drill was executed on isolated instance `openstaff-db-recovery-exec24`, not on the production instance |
+| NO-GO - blind pruning of rollback assets | ✅ prevented | stale revisions and historical artifacts were retained because safety/retention rules were not explicitly approved |
+
+### EXEC-24 Validation Proof
+
+- `docs/proof/exec24/README.md` ✅ captures alert inventory, dashboard inventory, restore rehearsal, IAM hardening proof, cleanup proof, and post-change runtime validation
+- Cloud Monitoring notification channel ✅: `projects/openstaff-platform/notificationChannels/16914670128256150084`, enabled, routing to `openstaff.eu@gmail.com`
+- live alert policy inventory ✅: `10` enabled policies attached to the live channel
+- live dashboard inventory ✅: `OpenStaff Prod - Overview` and `OpenStaff Prod - Operational Signals`
+- timed restore rehearsal ✅: backup `1779073200000` restored through operation `64b2eda1-378d-4137-81ed-bef200000024` in `4m 59.686s`; SQL validation passed on the recovery instance
+- recovery cleanup ✅: delete operation `48db977d-22ea-4078-9de0-acd600000024` removed the rehearsal instance after proof
+- IAM hardening ✅: compute service account retained only `roles/cloudsql.client` and `roles/secretmanager.secretAccessor` at project level, plus bucket-level object access on `gs://openstaff-platform-production`
+- cleanup proof ✅: `WEBHOOK_SECRET` deleted; one-off promotion job deleted; `openstaff-api-migrate` retained intentionally
+- post-change smoke ✅: `/health = 200`, `/status = 200`, temp `SUPERADMIN login = 200`, `GET /admin/public-posts = 200`, company publish/upload/moderation/public delivery path remained successful
+- billing webhook path validation ✅: controlled bad-signature request returned app-level `400 BAD_REQUEST`, confirming the route remained reachable and protected by signature verification
+- builds aplicatie ✅ not required; EXEC-24 was live ops + documentation work, not an application code deploy
+
+### EXEC-24 Accepted Operational Limitations
+
+1. `billingPayments = manual_only`
+2. `publicUpgradeFlow = request_upgrade`
+3. `operatorReviewRequired = true`
+4. `emailDelivery = not_configured`
+5. `smsDelivery = not_required`
+6. critical security alerting currently relies on Cloud Logging-visible proxy signals until database-native security events are exported as Monitoring metrics
+
+### EXEC-24 Launch Decision
+
+EXEC-24 closes the remaining production observability and recovery blockers left open by EXEC-23.
+
+As of `2026-05-18`, production now has:
+
+1. live Monitoring alert policies with live notification routing
+2. shared Monitoring dashboards for runtime, database, and operational signals
+3. a timed Cloud SQL restore rehearsal with isolated validation and cleanup
+4. runtime least-privilege hardening that removed the prior `roles/editor` exposure
+5. confirmed post-change runtime health across auth, moderation, uploads, and billing webhook entry
+
+EXEC-24 is `PASS` while the accepted commercial limitations remain explicit and the documented operator baseline in `docs/PRODUCTION_STABILIZATION_BASELINE.md`, `docs/PRODUCTION_READINESS_MATRIX.md`, `docs/CONTROLLED_ROLLOUT_PLAN.md`, and `docs/OPERATOR_SOP.md` remains the source of truth.
+
 ## EXEC-23 Production Stabilization, Alerting & Operational Automation
 
 Verdict: `IN PROGRESS - production is operational and controlled-rollout proven, but the stabilized operational baseline is not yet closed because the live GCP project still has 0 alert policies, 0 notification channels, and 0 monitoring dashboards`

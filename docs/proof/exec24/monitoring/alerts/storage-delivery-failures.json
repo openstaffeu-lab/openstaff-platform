@@ -1,0 +1,36 @@
+{
+  "displayName": "OpenStaff Prod - Storage Delivery Failures",
+  "combiner": "OR",
+  "enabled": true,
+  "notificationChannels": [
+    "projects/openstaff-platform/notificationChannels/16914670128256150084"
+  ],
+  "documentation": {
+    "mimeType": "text/markdown",
+    "content": "Severity: SEV-2\nOwner: Technical Ops\nThreshold: any public asset delivery failure within 5 minutes.\nExpected response: acknowledge within 15 minutes and inspect GCS delivery path, media/document endpoints, and storage health."
+  },
+  "conditions": [
+    {
+      "displayName": "storage delivery failure count > 0 in 5m",
+      "conditionThreshold": {
+        "filter": "resource.type=\"cloud_run_revision\" AND metric.type=\"logging.googleapis.com/user/storage_delivery_failures_count\" AND resource.labels.service_name=\"openstaff-api\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0,
+        "duration": "0s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "perSeriesAligner": "ALIGN_DELTA",
+            "crossSeriesReducer": "REDUCE_SUM",
+            "groupByFields": [
+              "resource.labels.service_name"
+            ]
+          }
+        ],
+        "trigger": {
+          "count": 1
+        }
+      }
+    }
+  ]
+}

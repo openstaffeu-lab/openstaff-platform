@@ -1,0 +1,32 @@
+{
+  "displayName": "OpenStaff Prod - Cloud SQL Storage Utilization High",
+  "combiner": "OR",
+  "enabled": true,
+  "notificationChannels": [
+    "projects/openstaff-platform/notificationChannels/16914670128256150084"
+  ],
+  "documentation": {
+    "mimeType": "text/markdown",
+    "content": "Severity: SEV-2\nOwner: Technical Ops\nThreshold: Cloud SQL disk utilization above 80% for 15 minutes.\nExpected response: acknowledge within 30 minutes and review storage growth, PITR volume, and cleanup options."
+  },
+  "conditions": [
+    {
+      "displayName": "disk utilization > 80% for 15m",
+      "conditionThreshold": {
+        "filter": "resource.type=\"cloudsql_database\" AND metric.type=\"cloudsql.googleapis.com/database/disk/utilization\" AND resource.labels.database_id=\"openstaff-platform:openstaff-db\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0.8,
+        "duration": "900s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "perSeriesAligner": "ALIGN_MEAN"
+          }
+        ],
+        "trigger": {
+          "count": 1
+        }
+      }
+    }
+  ]
+}

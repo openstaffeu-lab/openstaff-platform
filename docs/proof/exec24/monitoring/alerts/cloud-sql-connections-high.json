@@ -1,0 +1,32 @@
+{
+  "displayName": "OpenStaff Prod - Cloud SQL Connections High",
+  "combiner": "OR",
+  "enabled": true,
+  "notificationChannels": [
+    "projects/openstaff-platform/notificationChannels/16914670128256150084"
+  ],
+  "documentation": {
+    "mimeType": "text/markdown",
+    "content": "Severity: SEV-2\nOwner: Technical Ops\nThreshold: PostgreSQL backends above 40 for 10 minutes.\nExpected response: acknowledge within 15 minutes and inspect connection churn, Cloud Run instance expansion, and pool behavior."
+  },
+  "conditions": [
+    {
+      "displayName": "postgres backends > 40 for 10m",
+      "conditionThreshold": {
+        "filter": "resource.type=\"cloudsql_database\" AND metric.type=\"cloudsql.googleapis.com/database/postgresql/num_backends\" AND resource.labels.database_id=\"openstaff-platform:openstaff-db\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 40,
+        "duration": "600s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "perSeriesAligner": "ALIGN_MAX"
+          }
+        ],
+        "trigger": {
+          "count": 1
+        }
+      }
+    }
+  ]
+}

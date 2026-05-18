@@ -81,9 +81,9 @@ Optional secrets:
 - `GEMINI_API_KEY`
 - `FIREBASE_SERVICE_ACCOUNT_KEY`
 
-Legacy note:
+Secret note:
 
-- `WEBHOOK_SECRET` may still exist as a historical placeholder, but the active production API contract uses `STRIPE_WEBHOOK_SECRET`.
+- `STRIPE_WEBHOOK_SECRET` is the active and only supported webhook secret contract for production billing.
 
 Use the companion script:
 
