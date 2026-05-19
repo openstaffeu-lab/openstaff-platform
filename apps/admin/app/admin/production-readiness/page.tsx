@@ -28,12 +28,19 @@ type StatusPayload = {
   rolloutIntelligence?: {
     windowHours?: number;
     funnel?: Record<string, number>;
+    conversions?: Record<string, number>;
     operations?: {
       onboarding?: Record<string, number>;
       moderation?: Record<string, number>;
       upgrades?: Record<string, number>;
       failures?: Record<string, number>;
       feedback?: Record<string, number>;
+      support?: Record<string, number>;
+      aging?: Record<string, number | string | null>;
+      adoptionReadiness?: {
+        status?: string;
+        reasons?: string[];
+      };
       recentOperatorActions?: Array<{
         createdAt: string;
         action: string;
@@ -113,7 +120,9 @@ export default function ProductionReadinessPage() {
   const commercialLaunchMode = integrations?.commercial?.launchMode ?? "Unknown";
   const rolloutWindowHours = status?.rolloutIntelligence?.windowHours ?? 24;
   const funnel = status?.rolloutIntelligence?.funnel ?? {};
+  const conversions = status?.rolloutIntelligence?.conversions ?? {};
   const operations = status?.rolloutIntelligence?.operations;
+  const adoptionReadiness = operations?.adoptionReadiness;
   const billingMode =
     integrations?.commercial?.billingMode ??
     integrations?.billingPayments?.mode ??
@@ -227,6 +236,33 @@ export default function ProductionReadinessPage() {
           />
         </section>
 
+        <section className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
+          <MetricCard
+            label="Register Conv."
+            value={`${conversions.registerStartToCompletePct ?? 0}%`}
+          />
+          <MetricCard
+            label="Onboarding Conv."
+            value={`${conversions.registerCompleteToOnboardingPct ?? 0}%`}
+          />
+          <MetricCard
+            label="Publish Conv."
+            value={`${conversions.publishStartToSubmitPct ?? 0}%`}
+          />
+          <MetricCard
+            label="Feedback / 24h"
+            value={operations?.feedback?.total24h ?? 0}
+          />
+          <MetricCard
+            label="Support Pressure"
+            value={operations?.support?.backlogSignals24h ?? 0}
+          />
+          <MetricCard
+            label="Adoption Status"
+            value={formatReadinessStatus(adoptionReadiness?.status)}
+          />
+        </section>
+
         {error ? (
           <section className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-5 text-rose-100">
             <div className="text-sm uppercase tracking-[0.18em] text-rose-200">API status error</div>
@@ -259,6 +295,49 @@ export default function ProductionReadinessPage() {
 
           <Card title="Queue status">
             <JsonPreview value={status?.queues ?? { unavailable: loading }} />
+          </Card>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-2">
+          <Card title="Funnel conversion summary">
+            <JsonPreview value={conversions} />
+          </Card>
+
+          <Card title="Feedback category summary">
+            <JsonPreview value={operations?.feedback ?? { unavailable: true }} />
+          </Card>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-2">
+          <Card title="Backlog and aging">
+            <JsonPreview
+              value={{
+                support: operations?.support ?? {},
+                aging: operations?.aging ?? {},
+                moderation: {
+                  pendingTotal: operations?.moderation?.pendingTotal ?? 0,
+                  rejectedTotal: operations?.moderation?.rejectedTotal ?? 0,
+                },
+                upgrades: {
+                  pending: operations?.upgrades?.pending ?? 0,
+                  contacted: operations?.upgrades?.contacted ?? 0,
+                  approved: operations?.upgrades?.approved ?? 0,
+                },
+              }}
+            />
+          </Card>
+
+          <Card title="Adoption readiness status">
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100">
+                Status: <span className="font-semibold">{formatReadinessStatus(adoptionReadiness?.status)}</span>
+              </div>
+              {adoptionReadiness?.reasons?.length ? (
+                <SimpleList items={adoptionReadiness.reasons} tone="amber" />
+              ) : (
+                <EmptyState text="No current adoption blockers were derived from the active rollout snapshot." />
+              )}
+            </div>
           </Card>
         </section>
 
@@ -410,4 +489,15 @@ function JsonPreview({ value }: { value: unknown }) {
       {JSON.stringify(value, null, 2)}
     </pre>
   );
+}
+
+function formatReadinessStatus(status?: string) {
+  if (!status) {
+    return "Unknown";
+  }
+
+  return status
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }

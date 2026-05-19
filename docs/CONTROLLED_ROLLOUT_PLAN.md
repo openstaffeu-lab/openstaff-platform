@@ -1,6 +1,6 @@
 # OpenStaff Controlled Rollout Plan
 
-Last updated: 2026-05-18
+Last updated: 2026-05-19
 
 ## Rollout Mode
 
@@ -22,6 +22,24 @@ This plan must be used together with:
 - `docs/LAUNCH_MONITORING_CHECKLIST.md`
 - `docs/OPERATOR_SOP.md`
 - `docs/DEPLOYMENT_RUNBOOK.md`
+- `docs/COHORT_REVIEW_FRAMEWORK.md`
+- `docs/ADOPTION_READINESS_SCORECARD.md`
+- `docs/templates/COHORT_DECISION_REPORT.md`
+
+## Expansion Bands
+
+Rollout expansion now follows these review bands:
+
+1. first 10 users
+2. first 25 users
+3. first 50 users
+4. first 100 users
+
+No band may expand to the next one without:
+
+1. a completed cohort review
+2. a scorecard with no `red` category
+3. an explicit decision report ending in `expand`
 
 ## Rollout Cohorts
 
@@ -148,6 +166,16 @@ Operator responsibilities:
 - confirm invoice state, payment state, and subscription state are coherent
 - leave no failed billing events unresolved without owner assignment
 
+## Cohort Review Discipline
+
+At the end of each cohort window:
+
+1. review funnel outcomes
+2. review moderation, upgrade, and support burden
+3. review incidents and friction themes
+4. complete `docs/templates/COHORT_DECISION_REPORT.md`
+5. choose `expand`, `hold`, `fix-first`, or `rollback`
+
 ## Support Escalation Model
 
 ### L1 Support / Operations
@@ -238,3 +266,5 @@ EXEC-21 can remain `PASS` when:
 - monitoring cadence is active for the first 24-48 hours
 - rollback criteria are explicit
 - accepted commercial limitations remain visible and understood by operators
+
+EXEC-30 extends this by requiring expansion decisions to be cohort-reviewed, scorecard-backed, and documented rather than implied.

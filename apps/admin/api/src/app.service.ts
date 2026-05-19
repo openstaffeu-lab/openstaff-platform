@@ -103,6 +103,16 @@ export class AppService {
         operatorEscalations24h,
         repeatedConfusion24h,
         feedbackItems24h,
+        onboardingFriction24h,
+        moderationConfusion24h,
+        billingConfusion24h,
+        supportPainPoints24h,
+        failedFlows24h,
+        pendingPostOldest,
+        pendingMediaOldest,
+        pendingDocumentOldest,
+        pendingUpgradeOldest,
+        contactedUpgradeOldest,
         recentOperatorActions,
       ] =
         await Promise.all([
@@ -233,6 +243,61 @@ export class AppService {
               createdAt: { gte: last24Hours },
             },
           }),
+          this.prisma.notificationEvent.count({
+            where: {
+              eventType: 'OPERATIONAL_FEEDBACK_ONBOARDING_FRICTION',
+              createdAt: { gte: last24Hours },
+            },
+          }),
+          this.prisma.notificationEvent.count({
+            where: {
+              eventType: 'OPERATIONAL_FEEDBACK_MODERATION_CONFUSION',
+              createdAt: { gte: last24Hours },
+            },
+          }),
+          this.prisma.notificationEvent.count({
+            where: {
+              eventType: 'OPERATIONAL_FEEDBACK_BILLING_CONFUSION',
+              createdAt: { gte: last24Hours },
+            },
+          }),
+          this.prisma.notificationEvent.count({
+            where: {
+              eventType: 'OPERATIONAL_FEEDBACK_SUPPORT_PAIN_POINT',
+              createdAt: { gte: last24Hours },
+            },
+          }),
+          this.prisma.notificationEvent.count({
+            where: {
+              eventType: 'OPERATIONAL_FEEDBACK_FAILED_FLOW',
+              createdAt: { gte: last24Hours },
+            },
+          }),
+          this.prisma.publicPost.findFirst({
+            where: { moderationStatus: 'PENDING' as any },
+            orderBy: { createdAt: 'asc' },
+            select: { createdAt: true },
+          }),
+          this.prisma.publicPostMedia.findFirst({
+            where: { status: 'PENDING' as any },
+            orderBy: { createdAt: 'asc' },
+            select: { createdAt: true },
+          }),
+          this.prisma.publicPostDocument.findFirst({
+            where: { status: 'PENDING' as any },
+            orderBy: { createdAt: 'asc' },
+            select: { createdAt: true },
+          }),
+          this.prisma.subscriptionUpgradeRequest.findFirst({
+            where: { status: 'PENDING' as any },
+            orderBy: { createdAt: 'asc' },
+            select: { createdAt: true },
+          }),
+          this.prisma.subscriptionUpgradeRequest.findFirst({
+            where: { status: 'CONTACTED' as any },
+            orderBy: { createdAt: 'asc' },
+            select: { createdAt: true },
+          }),
           this.prisma.auditLog.findMany({
             orderBy: [{ createdAt: 'desc' }],
             take: 8,
@@ -260,6 +325,85 @@ export class AppService {
       reluQueue = { pending: reluPending, failed: reluFailed };
       workflowRuns = { total: workflowTotal, failed: workflowFailed };
       securitySummary = { openEvents, criticalEvents, activeSessions, complianceRequests };
+      const funnelConversions = {
+        landingToRegisterStartPct: this.percentage(registerStarted24h, landingPageVisits24h),
+        registerStartToCompletePct: this.percentage(
+          registerCompleted24h,
+          registerStarted24h,
+        ),
+        registerCompleteToOnboardingPct: this.percentage(
+          onboardingCompleted24h,
+          registerCompleted24h,
+        ),
+        publishStartToSubmitPct: this.percentage(
+          publishSubmitted24h,
+          publishStarted24h,
+        ),
+        publishSubmitToApprovePct: this.percentage(
+          publishApproved24h,
+          publishSubmitted24h,
+        ),
+        upgradeRequestToApprovePct: this.percentage(
+          upgradeApproved24h,
+          upgradeRequested24h,
+        ),
+      };
+      const moderationOldestCandidates = [
+        {
+          label: 'post',
+          minutes: this.ageInMinutes(pendingPostOldest?.createdAt),
+        },
+        {
+          label: 'media',
+          minutes: this.ageInMinutes(pendingMediaOldest?.createdAt),
+        },
+        {
+          label: 'document',
+          minutes: this.ageInMinutes(pendingDocumentOldest?.createdAt),
+        },
+      ].filter((item) => item.minutes !== null) as Array<{
+        label: string;
+        minutes: number;
+      }>;
+      const oldestModerationItem =
+        moderationOldestCandidates.sort((left, right) => right.minutes - left.minutes)[0] ??
+        null;
+      const upgradeOldestCandidates = [
+        {
+          label: 'pending',
+          minutes: this.ageInMinutes(pendingUpgradeOldest?.createdAt),
+        },
+        {
+          label: 'contacted',
+          minutes: this.ageInMinutes(contactedUpgradeOldest?.createdAt),
+        },
+      ].filter((item) => item.minutes !== null) as Array<{
+        label: string;
+        minutes: number;
+      }>;
+      const oldestUpgradeItem =
+        upgradeOldestCandidates.sort((left, right) => right.minutes - left.minutes)[0] ?? null;
+      const supportIndicators = {
+        backlogSignals24h:
+          supportPainPoints24h +
+          failedFlows24h +
+          operatorEscalations24h +
+          repeatedConfusion24h,
+        supportPainPoints24h,
+        failedFlows24h,
+        operatorEscalations24h,
+        repeatedConfusion24h,
+      };
+      const adoptionReadiness = this.buildAdoptionReadinessSummary({
+        loginFailures15m,
+        webhookFailures24h,
+        pendingModerationTotal: pendingPosts + pendingMedia + pendingDocuments,
+        oldestModerationMinutes: oldestModerationItem?.minutes ?? null,
+        pendingUpgradeRequests: upgradeRequestPending + upgradeRequestContacted,
+        oldestUpgradeMinutes: oldestUpgradeItem?.minutes ?? null,
+        supportIndicators,
+        funnelConversions,
+      });
       rolloutIntelligence = {
         windowHours: 24,
         funnel: {
@@ -276,6 +420,7 @@ export class AppService {
           loginFailures24h,
           uploadFailures24h,
         },
+        conversions: funnelConversions,
         operations: {
           onboarding: {
             notStarted: onboardingNotStarted,
@@ -291,11 +436,15 @@ export class AppService {
             rejectedDocuments,
             pendingTotal: pendingPosts + pendingMedia + pendingDocuments,
             rejectedTotal: rejectedPosts + rejectedMedia + rejectedDocuments,
+            oldestPendingMinutes: oldestModerationItem?.minutes ?? 0,
+            oldestPendingItemType: oldestModerationItem?.label ?? null,
           },
           upgrades: {
             pending: upgradeRequestPending,
             contacted: upgradeRequestContacted,
             approved: upgradeRequestApproved,
+            oldestOpenMinutes: oldestUpgradeItem?.minutes ?? 0,
+            oldestOpenStatus: oldestUpgradeItem?.label ?? null,
           },
           failures: {
             uploadFailures24h,
@@ -308,6 +457,19 @@ export class AppService {
             total24h: feedbackItems24h,
             operatorEscalations24h,
             repeatedConfusion24h,
+            onboardingFriction24h,
+            moderationConfusion24h,
+            billingConfusion24h,
+            supportPainPoints24h,
+            failedFlows24h,
+          },
+          support: supportIndicators,
+          adoptionReadiness,
+          aging: {
+            moderationOldestPendingMinutes: oldestModerationItem?.minutes ?? 0,
+            moderationOldestPendingType: oldestModerationItem?.label ?? null,
+            upgradeOldestOpenMinutes: oldestUpgradeItem?.minutes ?? 0,
+            upgradeOldestOpenStatus: oldestUpgradeItem?.label ?? null,
           },
           recentOperatorActions: recentOperatorActions.map((item) => ({
             createdAt: item.createdAt,
@@ -512,6 +674,113 @@ export class AppService {
     };
   }
 
+  private percentage(numerator: number, denominator: number) {
+    if (denominator <= 0) {
+      return 0;
+    }
+
+    return Math.round((numerator / denominator) * 1000) / 10;
+  }
+
+  private ageInMinutes(date?: Date | null) {
+    if (!date) {
+      return null;
+    }
+
+    return Math.max(0, Math.round((Date.now() - new Date(date).getTime()) / 60000));
+  }
+
+  private buildAdoptionReadinessSummary(input: {
+    loginFailures15m: number;
+    webhookFailures24h: number;
+    pendingModerationTotal: number;
+    oldestModerationMinutes: number | null;
+    pendingUpgradeRequests: number;
+    oldestUpgradeMinutes: number | null;
+    supportIndicators: {
+      backlogSignals24h: number;
+      supportPainPoints24h: number;
+      failedFlows24h: number;
+      operatorEscalations24h: number;
+      repeatedConfusion24h: number;
+    };
+    funnelConversions: {
+      registerStartToCompletePct: number;
+      publishStartToSubmitPct: number;
+      publishSubmitToApprovePct: number;
+    };
+  }) {
+    const reasons: string[] = [];
+
+    if (input.loginFailures15m >= 5) {
+      reasons.push('Auth failures are spiking in the last 15 minutes.');
+    }
+
+    if (input.webhookFailures24h >= 3) {
+      reasons.push('Webhook failures crossed the daily comfort threshold.');
+    }
+
+    if ((input.oldestModerationMinutes ?? 0) >= 1440) {
+      reasons.push('Moderation backlog contains items older than one business day.');
+    }
+
+    if ((input.oldestUpgradeMinutes ?? 0) >= 1440) {
+      reasons.push('Upgrade queue contains items older than one business day.');
+    }
+
+    if (input.supportIndicators.backlogSignals24h >= 8) {
+      reasons.push('Support and feedback pressure is elevated.');
+    }
+
+    if (
+      input.funnelConversions.registerStartToCompletePct > 0 &&
+      input.funnelConversions.registerStartToCompletePct < 60
+    ) {
+      reasons.push('Registration completion is below the current rollout confidence floor.');
+    }
+
+    if (
+      input.funnelConversions.publishStartToSubmitPct > 0 &&
+      input.funnelConversions.publishStartToSubmitPct < 50
+    ) {
+      reasons.push('Publish completion is below the current rollout confidence floor.');
+    }
+
+    if (
+      input.funnelConversions.publishSubmitToApprovePct > 0 &&
+      input.funnelConversions.publishSubmitToApprovePct < 60
+    ) {
+      reasons.push('Publish approvals are lagging behind submissions.');
+    }
+
+    let status: 'ready_to_expand' | 'hold' | 'fix_first' | 'pause_rollout' =
+      'ready_to_expand';
+
+    if (
+      input.loginFailures15m >= 10 ||
+      input.pendingModerationTotal >= 20 ||
+      input.pendingUpgradeRequests >= 10
+    ) {
+      status = 'pause_rollout';
+    } else if (
+      reasons.some((reason) =>
+        [
+          'Moderation backlog contains items older than one business day.',
+          'Upgrade queue contains items older than one business day.',
+          'Support and feedback pressure is elevated.',
+          'Registration completion is below the current rollout confidence floor.',
+          'Publish completion is below the current rollout confidence floor.',
+        ].includes(reason),
+      )
+    ) {
+      status = 'fix_first';
+    } else if (reasons.length > 0) {
+      status = 'hold';
+    }
+
+    return { status, reasons };
+  }
+
   private emptyRolloutIntelligence() {
     return {
       windowHours: 24,
@@ -529,6 +798,14 @@ export class AppService {
         loginFailures24h: 0,
         uploadFailures24h: 0,
       },
+      conversions: {
+        landingToRegisterStartPct: 0,
+        registerStartToCompletePct: 0,
+        registerCompleteToOnboardingPct: 0,
+        publishStartToSubmitPct: 0,
+        publishSubmitToApprovePct: 0,
+        upgradeRequestToApprovePct: 0,
+      },
       operations: {
         onboarding: {
           notStarted: 0,
@@ -544,11 +821,15 @@ export class AppService {
           rejectedDocuments: 0,
           pendingTotal: 0,
           rejectedTotal: 0,
+          oldestPendingMinutes: 0,
+          oldestPendingItemType: null as string | null,
         },
         upgrades: {
           pending: 0,
           contacted: 0,
           approved: 0,
+          oldestOpenMinutes: 0,
+          oldestOpenStatus: null as string | null,
         },
         failures: {
           uploadFailures24h: 0,
@@ -561,6 +842,28 @@ export class AppService {
           total24h: 0,
           operatorEscalations24h: 0,
           repeatedConfusion24h: 0,
+          onboardingFriction24h: 0,
+          moderationConfusion24h: 0,
+          billingConfusion24h: 0,
+          supportPainPoints24h: 0,
+          failedFlows24h: 0,
+        },
+        support: {
+          backlogSignals24h: 0,
+          supportPainPoints24h: 0,
+          failedFlows24h: 0,
+          operatorEscalations24h: 0,
+          repeatedConfusion24h: 0,
+        },
+        adoptionReadiness: {
+          status: 'ready_to_expand',
+          reasons: [] as string[],
+        },
+        aging: {
+          moderationOldestPendingMinutes: 0,
+          moderationOldestPendingType: null as string | null,
+          upgradeOldestOpenMinutes: 0,
+          upgradeOldestOpenStatus: null as string | null,
         },
         recentOperatorActions: [] as Array<{
           createdAt: Date;

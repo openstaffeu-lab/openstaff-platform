@@ -2,6 +2,77 @@
 
 Last updated: 2026-05-19
 
+## EXEC-30 Adoption Decisioning, Cohort Review & Product Iteration Loop
+
+Verdict: `PASS - production now has a closed adoption-decision loop with cohort review discipline, explicit product iteration rules, feedback triage workflow, adoption scorecard governance, stronger admin rollout summaries, formal expansion criteria, and fresh proof that local builds plus production governance tooling remain healthy`
+
+### EXEC-30 Adoption Decision Loop Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| production runtime remained healthy | ✅ | `scripts/release/exec-26-production-ops-check.ps1` returned `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy` on `2026-05-19` |
+| cohort review framework documented | ✅ | `docs/COHORT_REVIEW_FRAMEWORK.md` now defines cohort inputs, outcomes, support/operator burden review, and explicit `expand / hold / fix-first / rollback` outputs |
+| product iteration decision rules documented | ✅ | `docs/PRODUCT_ITERATION_DECISION_RULES.md` now defines when rollout data should trigger copy fixes, onboarding work, rollout pause, release freeze, automation prioritization, and billing-automation escalation |
+| feedback triage workflow documented | ✅ | `docs/FEEDBACK_TRIAGE_WORKFLOW.md` now defines the lifecycle from `received` through assignment, resolution, escalation, debt conversion, and product-backlog conversion |
+| adoption readiness scorecard documented | ✅ | `docs/ADOPTION_READINESS_SCORECARD.md` now defines cross-functional readiness categories for onboarding, publish, moderation, billing, support, trust, stability, security, and cohort satisfaction |
+| cohort decision template created | ✅ | `docs/templates/COHORT_DECISION_REPORT.md` now standardizes summary, metrics, incidents, feedback themes, support burden, decision, owner, and deadline |
+| admin rollout summaries improved | ✅ | `/status` and `apps/admin/app/admin/production-readiness/page.tsx` now expose funnel conversions, feedback category counts, support-pressure indicators, moderation aging, upgrade aging, and adoption-readiness status |
+| rollout expansion criteria strengthened | ✅ | `docs/SCALE_READINESS_BASELINE.md` and `docs/CONTROLLED_ROLLOUT_PLAN.md` now define first-10, first-25, first-50, and first-100 expansion criteria plus freeze and rollback thresholds |
+| operational metrics baseline aligned to decisions | ✅ | `docs/OPERATIONAL_METRICS_BASELINE.md` now ties KPI families to cohort review, scorecard, freeze, expand, and iteration decisions |
+| release governance gate strengthened again | ✅ | `scripts/release/exec-13-release-check.ps1` now requires the EXEC-30 cohort, iteration, triage, scorecard, and cohort-report template docs |
+| local build validation remained healthy | ✅ | `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19` |
+| monitoring and ops automation remained healthy | ✅ | fresh ops-check still confirmed `10` monitoring policies, `2` dashboards, `7` uptime checks, and `5` recent backups |
+| safe failure simulations remained healthy | ✅ | fresh simulation still returned the expected `429/400/429/401/404` guard-rail responses on `2026-05-19` |
+| documentation + proof trail captured | ✅ | `docs/proof/exec30/README.md` now captures cohort review, iteration rules, triage workflow, scorecard, admin visibility, expansion criteria, and validation proof |
+
+### EXEC-30 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - rollout evidence now drives explicit decisions | ✅ | cohort review, scorecard, and iteration rules now convert funnel and ops data into named actions |
+| GO - feedback now has a lifecycle, not only a capture endpoint | ✅ | triage rules now define classification, assignment, escalation, and conversion to debt or backlog |
+| GO - admin readiness now shows decision-level summaries | ✅ | conversion ratios, feedback categories, support pressure, backlog aging, and adoption-readiness status are visible together |
+| GO - scale expansion is now gated by review discipline | ✅ | first-10 / 25 / 50 / 100 expansion criteria are documented with freeze and rollback thresholds |
+| GO - release governance still enforces the decision-loop docs | ✅ | release check now fails if the EXEC-30 decision-loop docs are missing |
+| GO - privacy trust remained intact | ✅ | new summaries remain operational-only and do not expose raw user content, secrets, or credentials |
+| NO-GO - expanding cohorts on narrative confidence alone | ✅ prevented | expansion now requires cohort review, scorecard, and a decision report |
+| NO-GO - letting repeated feedback drift without ownership | ✅ prevented | the triage workflow now requires assignment, resolution, deferral, escalation, or tracked conversion |
+
+### EXEC-30 Validation Proof
+
+- `docs/proof/exec30/README.md` ✅ captures the cohort review summary, product iteration rules summary, feedback triage workflow summary, adoption scorecard summary, admin reporting summary, rollout expansion summary, and validation summary
+- local build proof ✅: `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19`
+- production ops-check proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-production-ops-check.ps1` returned `verdict = PASS`, `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy`, `monitoringPolicies = 10`, `dashboards = 2`, `uptimeChecks = 7`, `recentBackups = 5`
+- failure simulation proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-failure-simulations.ps1` returned `loginThrottleStatus = 429`, `webhookFailureStatus = 400`, `webhookThrottleStatus = 429`, `moderationUnauthorizedStatus = 401`, `storageMissingStatus = 404`
+- release gate hardening proof ✅: `scripts/release/exec-13-release-check.ps1` now requires `COHORT_REVIEW_FRAMEWORK`, `PRODUCT_ITERATION_DECISION_RULES`, `FEEDBACK_TRIAGE_WORKFLOW`, `ADOPTION_READINESS_SCORECARD`, and `docs/templates/COHORT_DECISION_REPORT.md`
+- adoption decisioning proof ✅: `/status.rolloutIntelligence` now exposes conversion summaries, feedback category summaries, support-pressure indicators, moderation aging, upgrade aging, and an adoption-readiness state; admin production readiness renders the same summaries without sensitive leakage
+
+### EXEC-30 Accepted Decision-Loop Limitations
+
+1. billing remains `manual_only`
+2. `publicUpgradeFlow = request_upgrade`
+3. `operatorReviewRequired = true`
+4. `emailDelivery = not_configured`
+5. `smsDelivery = not_required`
+6. adoption-readiness status is still rules-based summary logic, not a predictive scoring system
+7. cohort decision reports now have a formal template, but disciplined repeated use is still an operational habit to maintain
+
+### EXEC-30 Launch Decision
+
+EXEC-30 raises OpenStaff from a `measurable controlled adoption baseline` to a `decision-driven controlled adoption baseline` suitable for structured cohort expansion and evidence-based product iteration.
+
+As of `2026-05-19`, the platform now has:
+
+1. a cohort review framework for each rollout band
+2. explicit product iteration and rollout pause rules
+3. a full feedback triage lifecycle instead of raw signal capture only
+4. an adoption-readiness scorecard for cross-functional review
+5. stronger admin rollout summaries for conversions, backlog aging, support pressure, and readiness status
+6. rollout expansion criteria for first 10, 25, 50, and 100 users
+7. fresh validation proof that local builds and production governance tooling remain healthy after the decision-loop updates
+
+EXEC-30 is `PASS` while the accepted manual commercial limitations, rules-based readiness summary, and still-human reporting discipline remain explicit in the docs and proof trail.
+
 ## EXEC-29 Rollout Intelligence, Funnel Visibility & Operational Feedback Loops
 
 Verdict: `PASS - production now has a measurable rollout-intelligence baseline with privacy-respectful funnel visibility, lightweight operational feedback capture, stronger admin readiness summaries, explicit supportability and error-intelligence reviews, formal rollout reporting expectations, and fresh proof that local builds plus production governance tooling remain healthy`

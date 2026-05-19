@@ -1,11 +1,11 @@
 # Scale Readiness Baseline
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-28`
+Scope: `EXEC-30`
 
 ## Purpose
 
-This baseline defines what controlled scale looks like before full self-serve automation exists.
+This baseline defines when controlled rollout can expand and when it must hold, freeze, or roll back.
 
 ## First 10 Users
 
@@ -14,29 +14,62 @@ Operational expectation:
 1. support remains high-touch
 2. moderation remains manually triaged
 3. upgrade requests remain operator-reviewed
-4. unusual issues should be resolved with same-day human follow-up
+4. same-day human follow-up remains possible
 
-Known bottlenecks:
+Expansion criteria:
 
-1. moderation queue ownership
-2. billing clarification and invoice follow-up
-3. verification/rejection explanation
+1. no adoption-readiness category is `red`
+2. moderation oldest pending age stays under one business day
+3. upgrade oldest open age stays under one business day
+4. support pressure remains understandable and staffed
+
+## First 25 Users
+
+Operational expectation:
+
+1. support is still personal, but not fully improvised
+2. queue ownership is explicit every day
+3. repeated confusion is now logged and reviewed
+4. cohort review becomes mandatory before expansion
+
+Expansion criteria:
+
+1. cohort review ends in `expand`
+2. register and publish conversion remain explainable
+3. moderation and billing do not create hidden operator rescue work
+4. no recurring trust/copy contradiction remains open
+
+## First 50 Users
+
+Operational expectation:
+
+1. backlog metrics are actively watched
+2. support routing and escalation discipline are stable
+3. product iteration starts reducing repeated manual explanation
+4. automation candidates become visible
+
+Expansion criteria:
+
+1. onboarding and publish friction are understood, not only observed
+2. backlog aging does not trend upward cohort over cohort
+3. operational feedback is being triaged, not merely collected
+4. release freezes are used when product trust needs protection
 
 ## First 100 Users
 
 Operational expectation:
 
 1. support remains controlled, but no longer fully ad hoc
-2. queue ownership and handoff discipline become mandatory
-3. backlog metrics must be watched daily
-4. billing and moderation throughput become the leading constraints
+2. moderation and billing throughput become the main scaling constraints
+3. operator handoff discipline is routine
+4. adoption decisions rely on scorecard plus cohort report, not intuition
 
-Primary bottlenecks:
+Expansion criteria:
 
-1. moderation turnaround
-2. manual upgrade and invoice handling
-3. rejection-explanation workload
-4. support routing across ops, billing, and technical owners
+1. no unresolved `fix-first` items remain open from the previous cohort review
+2. billing/manual-commercial burden is still truthful and supportable
+3. technical and operator noise do not hide real adoption signals
+4. the next expansion does not depend on undisclosed operator heroics
 
 ## Bottleneck Matrix
 
@@ -44,43 +77,27 @@ Primary bottlenecks:
 |---|---|---|
 | moderation | manual queue review | backlog grows faster than daily clearance |
 | billing | manual approval and invoice follow-up | upgrade requests exceed same-day acknowledgement capacity |
-| support | operator handoff and explanation work | repeated first-user confusion or unresolved queue ownership |
-| technical ops | manual issue triage | recurring public unavailability or upload failures |
+| support | operator handoff and explanation work | repeated confusion or unresolved ownership keeps recurring |
+| technical ops | manual issue triage | recurring auth, upload, webhook, or visibility failures |
 
-## Escalation Triggers
-
-Escalate immediately when:
-
-1. moderation backlog exceeds agreed SLA
-2. billing request backlog loses ownership clarity
-3. public visibility contradicts moderation state
-4. temporary-unavailable public detail states become frequent
-5. support issues repeat with the same confusing wording or workflow contradiction
-
-## Freeze / Rollback Triggers
+## Freeze Thresholds
 
 Freeze controlled growth when:
 
 1. `/health` or `/status` degrade
-2. admin moderation or billing surfaces stop being usable
+2. moderation or billing surfaces stop being usable
 3. support cannot explain the real user state with confidence
-4. moderation or billing backlog exceeds operator capacity for the current cohort
+4. support or feedback pressure is rising faster than operators can absorb
 
-Rollback or pause growth when:
+## Rollback Thresholds
+
+Roll back or pause growth when:
 
 1. approved content is no longer reliably public
-2. pending/rejected content leaks publicly
+2. pending or rejected content leaks publicly
 3. commercial state becomes misleading or non-auditable
-
-## Overload Thresholds
-
-Use these as practical operator thresholds until richer automation exists:
-
-1. moderation queue not cleared within one business day
-2. upgrade requests not acknowledged within one business day
-3. repeated unresolved first-user support issues across the same flow
-4. public-detail temporary-unavailable states appearing often enough to affect user trust
+4. operational truth depends on unsupported manual improvisation
 
 ## Final Assessment
 
-OpenStaff is ready for controlled real-user growth, but only while moderation, billing, and support remain explicitly staffed and backlog-sensitive. The system can support the first 10 users comfortably and the first 100 users only with tighter queue discipline and escalation rigor.
+OpenStaff is now ready to scale through explicit cohort bands rather than only a generic first-user model. The system can continue controlled growth when cohort reviews, backlog aging, and trust signals all remain inside the documented thresholds.

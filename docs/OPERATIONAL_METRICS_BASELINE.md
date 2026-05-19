@@ -1,7 +1,7 @@
 # Operational Metrics Baseline
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-29`
+Scope: `EXEC-30`
 
 ## Purpose
 
@@ -42,6 +42,15 @@ These KPI families now have a first implementation path:
 3. moderation and upgrade backlog counts are visible in the same readiness surface
 4. support escalation and repeated confusion can now be logged through the operational feedback loop
 
+## EXEC-30 Decision Notes
+
+These KPI families now also support:
+
+1. cohort review decisions
+2. adoption-readiness scorecard inputs
+3. freeze or expand decisions
+4. product iteration prioritization for copy, onboarding, and automation
+
 ## Current Baseline Use
 
 Use these KPIs to answer:
@@ -68,4 +77,4 @@ Use these KPIs to answer:
 
 ## Final Assessment
 
-OpenStaff now has an explicit operational metrics baseline and a first rollout-intelligence implementation for controlled adoption. The next maturity step is turning these KPI definitions into routine operator reporting rather than relying only on episodic proof capture.
+OpenStaff now has an explicit operational metrics baseline, a first rollout-intelligence implementation, and a defined decision loop for using those metrics during controlled adoption.

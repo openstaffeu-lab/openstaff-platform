@@ -1,7 +1,7 @@
 # Production Readiness Matrix
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-29`
+Scope: `EXEC-30`
 
 ## Matrix
 
@@ -48,6 +48,10 @@ Scope: `EXEC-29`
 | supportability review | documented and usable | support load, moderation burden, billing burden, and escalation quality are now assessed explicitly | [SUPPORTABILITY_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/SUPPORTABILITY_REVIEW.md:1) |
 | error intelligence baseline | documented and usable | retryability, severity, wording expectations, and escalation triggers now exist for rollout-critical failures | [ERROR_INTELLIGENCE_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ERROR_INTELLIGENCE_BASELINE.md:1) |
 | rollout reporting baseline | documented and usable | daily rollout, moderation, onboarding, billing, incident, and support backlog reporting expectations are now explicit | [ROLLOUT_REPORTING_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ROLLOUT_REPORTING_BASELINE.md:1) |
+| cohort review framework | documented and usable | every bounded rollout cohort now has a required review structure and explicit decision output | [COHORT_REVIEW_FRAMEWORK.md](/C:/Users/admin/Desktop/openstaff-platform/docs/COHORT_REVIEW_FRAMEWORK.md:1) |
+| product iteration decision rules | documented and usable | rollout evidence now has explicit rules for copy fixes, onboarding work, pauses, freezes, expansion, and automation prioritization | [PRODUCT_ITERATION_DECISION_RULES.md](/C:/Users/admin/Desktop/openstaff-platform/docs/PRODUCT_ITERATION_DECISION_RULES.md:1) |
+| feedback triage workflow | documented and usable | rollout feedback now has a lifecycle from receipt through assignment, resolution, escalation, debt conversion, and backlog conversion | [FEEDBACK_TRIAGE_WORKFLOW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/FEEDBACK_TRIAGE_WORKFLOW.md:1) |
+| adoption readiness scorecard | documented and usable | onboarding, publish, moderation, billing, support, trust, stability, security, and cohort satisfaction now share one review model | [ADOPTION_READINESS_SCORECARD.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ADOPTION_READINESS_SCORECARD.md:1) |
 | IAM least privilege | stable and more durable | runtime SA stayed constrained; build/deploy identity remains separate | EXEC-25 identity split remains active |
 | deploy pipeline resilience | stable | deploy path no longer depends on broad runtime IAM | dedicated build SA remains baseline |
 | engineering quality baseline | documented and enforceable | PASS now requires builds, release checks, proof, and rollback expectations rather than narrative optimism | [RELEASE_LIFECYCLE_POLICY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELEASE_LIFECYCLE_POLICY.md:1) |
@@ -55,7 +59,7 @@ Scope: `EXEC-29`
 
 ## Governance Verdict
 
-`EXEC-29 PASS`
+`EXEC-30 PASS`
 
 The production baseline is now suitable for repeatable ongoing operations and controlled real-user onboarding because:
 
@@ -66,6 +70,7 @@ The production baseline is now suitable for repeatable ongoing operations and co
 5. ops automation exists for repeated checks and safe simulations
 6. an audit structure exists for deploys, restores, IAM, security, and future incidents
 7. first-user trust, support, scale, analytics, operational metrics, funnel visibility, feedback loops, error intelligence, and reporting baselines are now explicit
+8. cohort reviews, adoption scorecards, and product iteration decisions are now explicitly tied to rollout evidence
 
 ## Accepted Remaining Limitations
 
