@@ -1,7 +1,7 @@
 # Production Readiness Matrix
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-37`
+Scope: `EXEC-38`
 
 ## Matrix
 
@@ -96,6 +96,11 @@ Scope: `EXEC-37`
 | assistance noise validation | documented and live-validated | live production review now confirms the assistance layer is not obviously noisy, duplicated, stale, or overload-heavy in the current rollout state | [ASSISTANCE_NOISE_VALIDATION.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ASSISTANCE_NOISE_VALIDATION.md:1) |
 | assistance usability validation | documented and live-validated | authenticated Chrome and Edge proof now confirm the live assistance layer is visible, readable, and usable without false authority signals | [ASSISTANCE_USABILITY_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ASSISTANCE_USABILITY_REVIEW.md:1) |
 | admin deploy path for assistance rollout | stable with explicit build identity | live admin promotion for the assistance surface now succeeds when the dedicated build service account is used explicitly | EXEC-37 deploy proof on revision `openstaff-admin-00012-jj8` |
+| unified operational state model | documented and implemented at first level | global, queue, rollout, moderation, billing, escalation, incident, degraded-mode, and operator-availability state now share one governance model and one live orientation surface | [UNIFIED_OPERATIONAL_STATE_MODEL.md](/C:/Users/admin/Desktop/openstaff-platform/docs/UNIFIED_OPERATIONAL_STATE_MODEL.md:1) |
+| operational compression review | documented and implemented at first level | repeated queue scans, repeated escalation reconstruction, repeated rollout verification, and readiness-page fragmentation are now explicitly reviewed and partially compressed live | [OPERATIONAL_COMPRESSION_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_COMPRESSION_REVIEW.md:1) |
+| unified intelligence surface | documented and implemented at first level | the readiness page now contains a compressed operator orientation layer, grouped state summaries, and visible freshness handling ahead of detailed assistance cards | [UNIFIED_INTELLIGENCE_SURFACE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/UNIFIED_INTELLIGENCE_SURFACE.md:1) |
+| attention routing baseline | documented and implemented at first level | urgent vs important review order, stale-review visibility, and interruption-minimization rules are now governed explicitly without automatic escalation | [ATTENTION_ROUTING_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ATTENTION_ROUTING_BASELINE.md:1) |
+| operational compression metrics | documented and usable | time-to-orientation, context-switch count, repeated investigation count, repeated queue review count, dashboard navigation count, escalation reconstruction effort, and interruption frequency now have a baseline | [OPERATIONAL_COMPRESSION_METRICS.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_COMPRESSION_METRICS.md:1) |
 | IAM least privilege | stable and more durable | runtime SA stayed constrained; build/deploy identity remains separate | EXEC-25 identity split remains active |
 | deploy pipeline resilience | stable | deploy path no longer depends on broad runtime IAM | dedicated build SA remains baseline |
 | engineering quality baseline | documented and enforceable | PASS now requires builds, release checks, proof, and rollback expectations rather than narrative optimism | [RELEASE_LIFECYCLE_POLICY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELEASE_LIFECYCLE_POLICY.md:1) |
@@ -103,7 +108,7 @@ Scope: `EXEC-37`
 
 ## Governance Verdict
 
-`EXEC-37 PASS`
+`EXEC-38 PASS`
 
 The production baseline is now suitable for repeatable ongoing operations and controlled real-user onboarding because:
 
@@ -122,6 +127,7 @@ The production baseline is now suitable for repeatable ongoing operations and co
 13. a first operational assistance baseline now defines what the system may summarize, highlight, correlate, suggest, prioritize, and route without transferring moderation, billing, severity, escalation, rollback, or rollout authority away from humans
 14. a first live assistance surface now renders advisory queue, incident, digest, and correlation summaries directly in the admin readiness experience with visible source reasoning and timestamps
 15. live deployment, authenticated rendering, operator noise review, and operator usability review are now proven on the active production admin revision rather than inferred from local build output only
+16. a first operational compression layer now reduces repeated reasoning and local page fragmentation through grouped state, freshness, and attention-routing summaries without transferring operational authority
 
 ## Accepted Remaining Limitations
 

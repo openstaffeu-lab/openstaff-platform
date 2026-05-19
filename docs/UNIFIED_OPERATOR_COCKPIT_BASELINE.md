@@ -1,7 +1,7 @@
 # Unified Operator Cockpit Baseline
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-34`
+Scope: `EXEC-38`
 
 ## Purpose
 
@@ -17,7 +17,7 @@ OpenStaff already has:
 4. incident and alert governance
 5. handoff and continuity rules
 
-The remaining gap is that these truths still live across fragmented surfaces. The first cockpit baseline is therefore a coordination baseline, not a promise of full implementation.
+The remaining gap is that these truths still live across fragmented surfaces. EXEC-38 closes the first part of that gap by introducing a compressed orientation layer inside the live readiness page. The cockpit baseline is therefore no longer only a target model; it now also includes a first implemented intelligence slice.
 
 ## Target Cockpit Sections
 
@@ -30,6 +30,7 @@ The unified cockpit should present the following sections in one operator-facing
 5. queue aging and latency summary
 6. ownership and coordination summary
 7. action log and handoff summary
+8. compressed operator orientation layer
 
 ## Priority Ordering
 
@@ -42,6 +43,23 @@ The cockpit should order information by action urgency, not by system ownership.
 5. rollout and adoption pressure indicators
 6. production readiness and monitoring posture
 7. handoff and continuity notes
+8. freshness and stale-state visibility
+
+## Compression Layer
+
+The first live cockpit-aligned implementation is a compressed operator orientation layer on `/admin/production-readiness`.
+
+It must show:
+
+1. a priority stack
+2. a unified operational state block
+3. grouped operational summaries
+4. grouped queue summaries
+5. grouped rollout summaries
+6. grouped incident summaries
+7. freshness and stale-state handling
+
+It exists to reduce re-triage, not to replace deeper queue or incident review.
 
 ## Required Sections
 
@@ -172,7 +190,8 @@ The first baseline does not require a single implemented UI yet. It requires tha
 3. one shared incident timeline model
 4. one shared owner-and-backup model
 5. one shared handoff package model
+6. one shared freshness model for compressed operational summaries
 
 ## Final Assessment
 
-EXEC-34 defines the first unified operator cockpit baseline. The most important change is not cosmetic centralization. It is giving every operator the same operational picture, priority ordering, and coordination state fast enough to reduce re-triage and context switching without weakening review, trust, or rollback discipline.
+EXEC-34 and EXEC-38 together define the current unified operator cockpit baseline. The most important change is not cosmetic centralization. It is giving every operator the same operational picture, priority ordering, freshness state, and coordination state fast enough to reduce re-triage and context switching without weakening review, trust, or rollback discipline.

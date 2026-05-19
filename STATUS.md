@@ -2,6 +2,78 @@
 
 Last updated: 2026-05-19
 
+## EXEC-38 Operational Compression & Unified Intelligence Layer
+
+Verdict: `PASS - the first operational compression layer is now live on the admin readiness surface, grouped operator intelligence is deployed and browser-validated, and the unified state model reduces repeated reasoning without transferring moderation, billing, incident, escalation, rollback, or rollout authority away from humans`
+
+### EXEC-38 Operational Compression Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| unified operational state model documented | ✅ | `docs/UNIFIED_OPERATIONAL_STATE_MODEL.md` now defines global, queue, rollout, moderation, billing, escalation, incident, degraded-mode, and operator-availability state plus source-of-truth hierarchy, freshness, timestamp ownership, stale-state handling, and conflicting-state handling |
+| operational compression review documented | ✅ | `docs/OPERATIONAL_COMPRESSION_REVIEW.md` now captures repeated investigations, repeated queue scans, repeated escalation reconstruction, repeated rollout verification, repeated billing/moderation verification, and readiness-page fragmentation |
+| unified intelligence surface documented | ✅ | `docs/UNIFIED_INTELLIGENCE_SURFACE.md` now defines the single operator orientation surface, compressed digest, priority stack, queue aging stack, escalation stack, deployment stack, rollout pressure stack, and incident visibility stack |
+| attention routing baseline documented | ✅ | `docs/ATTENTION_ROUTING_BASELINE.md` now defines urgent vs important, routing heuristics, overload indicators, stale-review indicators, degraded-mode visibility, and interruption-minimization rules without automatic escalation |
+| operational compression metrics documented | ✅ | `docs/OPERATIONAL_COMPRESSION_METRICS.md` now tracks time-to-orientation, context-switch count, repeated investigation count, repeated queue review count, dashboard navigation count, escalation reconstruction effort, and operator interruption frequency |
+| live compression layer implemented | ✅ | `apps/admin/app/admin/production-readiness/page.tsx` now renders a compressed operator orientation section, unified operational state, grouped operational summaries, grouped queue summaries, grouped rollout summaries, grouped incident summaries, and freshness/stale-state handling ahead of the deeper assistance cards |
+| raw JSON overload reduced | ✅ | integration posture, compressed source metrics, and runtime capabilities now render grouped operator-readable summaries instead of raw JSON-heavy blocks |
+| authority boundary remained explicit live | ✅ | authenticated browser proof confirmed the live page remains advisory only and still prohibits approval, rejection, billing activation, automatic escalation, automatic incident declaration, automatic severity, rollout-state change, rollback, or operator override |
+| latest ready admin revision verified | ✅ | `gcloud run services describe openstaff-admin --region europe-west1` now reports `latestReadyRevisionName = openstaff-admin-00013-r79` with `100%` traffic on the same revision |
+| admin deploy promoted successfully | ✅ | `gcloud builds submit --config apps/admin/cloudbuild.admin.yaml --service-account=projects/openstaff-platform/serviceAccounts/openstaff-build@openstaff-platform.iam.gserviceaccount.com .` succeeded as build `254c35de-e994-4552-99ce-c2853bb5aa60` |
+| browser proof for unified intelligence completed | ✅ | authenticated Chrome, Edge, and mobile Chrome validation on `https://backoffice.openstaff.eu/admin/production-readiness` confirmed the EXEC-38 headings, timestamps, stale-state visibility, source reasoning, and clean console/request health |
+| moderation/admin smoke remained healthy | ✅ | authenticated smoke with the temporary proof operator returned `GET /admin/public-posts = 200` and `GET /admin/public-post-media = 200` |
+| proof trail captured | ✅ | `docs/proof/exec38/README.md` now captures deployment, unified state, attention routing, intelligence surface, runtime safety, browser proof, smoke, validation, and cleanup proof |
+
+### EXEC-38 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - a single operator orientation surface now exists | ✅ | the live readiness page now leads with compressed orientation, grouped state, freshness, and attention routing before deeper queue/digest/correlation detail |
+| GO - operational state is now shared and explicit | ✅ | global, queue, rollout, moderation, billing, escalation, incident, degraded-mode, and operator-availability state are now governed in one model |
+| GO - context switching is reduced without hiding source metrics | ✅ | grouped summaries compress the first-pass operator story, while the underlying assistance cards and visible metrics remain on the same page |
+| GO - stale-state and conflicting-state handling are now explicit | ✅ | the live page now renders freshness and stale-state handling, and the governance model now defines source-of-truth hierarchy and conflict handling |
+| GO - browser validation now covers desktop and mobile degradation risk | ✅ | Chrome, Edge, and mobile Chrome all rendered the new compression headings with `consoleErrors = []`, `pageErrors = []`, `failedRequests = []`, and no horizontal overflow in the validated mobile viewport |
+| NO-GO - hidden prioritization or opaque scoring | ✅ prevented | the compression layer uses visible counts, ages, readiness messages, timestamps, and explicit advisory wording rather than invisible scoring |
+| NO-GO - operational compression used as autonomous authority | ✅ prevented | the page still prohibits approval, rejection, billing activation, automatic escalation, automatic incident declaration, automatic severity assignment, rollout-state change, rollback, and operator override |
+
+### EXEC-38 Validation Proof
+
+- `docs/proof/exec38/README.md` ✅ captures the operational compression summary, unified state summary, attention routing summary, intelligence surface summary, runtime safety summary, browser validation summary, production smoke summary, validation summary, and cleanup proof
+- deploy proof ✅: admin build `254c35de-e994-4552-99ce-c2853bb5aa60` promoted `openstaff-admin-00013-r79`
+- latest admin revision proof ✅: `openstaff-admin-00013-r79`
+- browser proof ✅: authenticated Chrome, Edge, and mobile Chrome validation confirmed `Compressed operator orientation`, `Unified operational state`, grouped summaries, timestamps, stale visibility, reasoning visibility, and explicit authority boundaries with no console/request failures
+- moderation/admin smoke proof ✅: authenticated `GET /admin/public-posts = 200`, `GET /admin/public-post-media = 200`
+- production smoke proof ✅: `/health`, `/status`, and the authenticated readiness page remained healthy during proof; active readiness snapshot still showed `warnings = []` and `errors = []`
+- local/build validation proof ✅: `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19`
+- ops automation proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-production-ops-check.ps1` returned `verdict = PASS`, `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy`, `monitoringPolicies = 10`, `dashboards = 2`, `uptimeChecks = 7`, `recentBackups = 5`
+- failure simulation proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-failure-simulations.ps1` returned `loginThrottleStatus = 429`, `webhookFailureStatus = 400`, `webhookThrottleStatus = 429`, `moderationUnauthorizedStatus = 401`, `storageMissingStatus = 404`
+
+### EXEC-38 Accepted Compression Limitations
+
+1. billing remains `manual_only`
+2. `publicUpgradeFlow = request_upgrade`
+3. `operatorReviewRequired = true`
+4. `emailDelivery = not_configured`
+5. `smsDelivery = not_required`
+6. the unified intelligence layer still depends on the existing `/status` contract rather than a dedicated incident engine, routing engine, or staffing model
+7. the compression layer reduces repeated reasoning, but it does not eliminate the need for specialist queue review and operator judgment
+
+### EXEC-38 Launch Decision
+
+EXEC-38 closes the first operational compression layer honestly.
+
+As of `2026-05-19`, OpenStaff now has:
+
+1. a unified operational state model
+2. a documented operational compression review
+3. a documented unified intelligence surface
+4. a documented attention-routing baseline
+5. a live compressed operator orientation layer on the authenticated readiness page
+6. explicit stale-state and conflicting-state handling on the live orientation surface
+7. browser proof across Chrome, Edge, and mobile Chrome for the new grouped intelligence layer
+
+EXEC-38 is `PASS`.
+
 ## EXEC-37 Live Assistance Deployment & Operational Usability Validation
 
 Verdict: `PASS - the live operational assistance rollout is now deployed, authenticated production rendering is proven in Chrome and Edge, the advisory authority boundary remains explicit, and the current live assistance layer is usable without obvious noise or misleading automation signals`

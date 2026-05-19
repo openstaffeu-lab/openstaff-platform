@@ -50,6 +50,11 @@ This plan must be used together with:
 - `docs/ASSISTANCE_RUNTIME_REVIEW.md`
 - `docs/ASSISTANCE_NOISE_VALIDATION.md`
 - `docs/ASSISTANCE_USABILITY_REVIEW.md`
+- `docs/UNIFIED_OPERATIONAL_STATE_MODEL.md`
+- `docs/OPERATIONAL_COMPRESSION_REVIEW.md`
+- `docs/UNIFIED_INTELLIGENCE_SURFACE.md`
+- `docs/ATTENTION_ROUTING_BASELINE.md`
+- `docs/OPERATIONAL_COMPRESSION_METRICS.md`
 
 ## Expansion Bands
 
@@ -91,6 +96,8 @@ Operator responsibilities:
 - use assistance summaries as orientation support, not as authority-bearing outcomes
 - review live assistance cards together with their source metrics before escalating, pausing rollout, or changing queue priorities
 - confirm that assistance timestamps still match the current operational moment before treating a summary as active context
+- use the compressed operator orientation layer as the first review surface before opening deeper queue, digest, or correlation sections
+- treat grouped operational state as orientation support only and resolve conflicts against source metrics and specialist queue surfaces
 - clear moderation and upgrade queues within the agreed SLA
 - escalate runtime, billing, or security anomalies immediately
 - leave handoff-ready notes another operator can act on safely
@@ -210,6 +217,7 @@ At the end of each cohort window:
 8. note whether command-surface, queue-coordination, or alert-routing gaps slowed action materially
 9. note whether the live assistance surfaces reduced synthesis time or created noise, duplication, or stale-summary confusion
 10. note whether browser-visible wording, timestamps, and source reasoning remained trustworthy during the cohort window
+11. note whether the compressed orientation layer reduced context switching or hid any nuance that still mattered for safe human judgment
 
 ## Support Escalation Model
 

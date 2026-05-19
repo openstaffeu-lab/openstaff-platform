@@ -1,7 +1,7 @@
 # Automation Guardrails
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-37`
+Scope: `EXEC-38`
 
 ## Purpose
 
@@ -16,6 +16,8 @@ This policy defines what OpenStaff may automate safely, what must remain human-r
 5. assistance may accelerate operator understanding before it accelerates operator action
 6. live assistance surfaces must keep their threshold logic and source metrics visible to operators
 7. live assistance surfaces must show a visible snapshot time so operators can detect stale context
+8. operational compression must reduce repeated reasoning before it reduces visible nuance
+9. unified intelligence surfaces must keep grouped state explainable instead of collapsing it into opaque scoring
 
 ## Allowed Assistance Layer
 
@@ -51,6 +53,8 @@ The assistance layer may not:
 9. triage recommendations using clearly non-authoritative wording
 10. live readiness-page summaries that turn visible `/status` metrics into explainable operator context
 11. live browser validation and usability review of assistance surfaces before calling a new assistance rollout operationally closed
+12. compressed operator orientation surfaces that group visible queue, rollout, incident, and freshness state without changing production state
+13. stale-state indicators, grouped state summaries, and attention-routing cues that remain source-linked and advisory-only
 
 ## What Must Remain Human-Reviewed
 
@@ -66,6 +70,8 @@ The assistance layer may not:
 10. final escalation decision where operator confirmation is still required
 11. accepting or rejecting live assistance recommendations shown in admin surfaces
 12. deciding whether assistance wording is safe enough for operator use in production
+13. accepting or rejecting compressed priority ordering shown on an operational intelligence surface
+14. deciding whether a stale or conflicting summary still matches current live operator context
 
 ## What Requires Escalation
 
@@ -75,6 +81,7 @@ The assistance layer may not:
 4. alert patterns suggesting a cross-service incident
 5. overload thresholds reached in `docs/OPERATIONAL_CAPACITY_LIMITS.md`
 6. any assistance output that surfaces billing-state ambiguity, moderation/public-visibility disagreement, or likely rollback review
+7. any compressed intelligence summary that conflicts materially with specialist queue surfaces or current handoff notes
 
 ## What Requires Manual Approval Forever
 
@@ -99,6 +106,7 @@ The assistance layer may not:
 4. escalation authority remains human-owned
 5. rollback and recovery authority remain human-owned
 6. rollout pause, freeze, and expansion authority remain human-owned
+7. operational compression may route attention, but it may not route authority
 
 ## Final Assessment
 

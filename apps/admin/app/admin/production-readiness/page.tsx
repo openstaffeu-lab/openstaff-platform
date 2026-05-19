@@ -176,6 +176,61 @@ export default function ProductionReadinessPage() {
   const moderationConfusion24h = operations?.feedback?.moderationConfusion24h ?? 0;
   const onboardingFriction24h = operations?.feedback?.onboardingFriction24h ?? 0;
   const adoptionReasons = adoptionReadiness?.reasons ?? [];
+  const snapshotAgeMinutes = getSnapshotAgeMinutes(status?.timestamp);
+  const freshnessState =
+    snapshotAgeMinutes === null
+      ? "unknown"
+      : snapshotAgeMinutes <= 15
+        ? "fresh"
+        : snapshotAgeMinutes <= 60
+          ? "aging"
+          : "stale";
+  const freshnessSummary =
+    freshnessState === "fresh"
+      ? `Snapshot freshness is good. The active /status payload is ${formatMinutes(snapshotAgeMinutes)} old.`
+      : freshnessState === "aging"
+        ? `Snapshot freshness is aging. The active /status payload is ${formatMinutes(snapshotAgeMinutes)} old, so operators should confirm whether the latest queue and incident state still matches this page.`
+        : freshnessState === "stale"
+          ? `Snapshot freshness is stale. The active /status payload is ${formatMinutes(snapshotAgeMinutes)} old, so summaries should be treated as orientation-only until a newer source snapshot is confirmed.`
+          : "Snapshot freshness could not be derived because the active /status timestamp is unavailable.";
+  const globalOperationalState =
+    blockers.length > 0 || errors.length > 0
+      ? "degraded attention"
+      : warnings.length > 0 || adoptionReasons.length > 0
+        ? "watch closely"
+        : "steady";
+  const queueState =
+    moderationPendingTotal > 0 || upgradePendingTotal > 0 || supportSignals > 0
+      ? "active review"
+      : "quiet";
+  const rolloutState =
+    adoptionReasons.length > 0 || warnings.length > 0 || errors.length > 0
+      ? "hold and review"
+      : "controlled rollout ready";
+  const moderationState =
+    moderationPendingTotal > 0
+      ? `${moderationPendingTotal} pending`
+      : "clear";
+  const billingState =
+    upgradePendingTotal > 0 || webhookFailures24h > 0
+      ? "manual review pressure"
+      : "manual review quiet";
+  const escalationState =
+    supportSignals > 0 || operatorEscalations24h > 0
+      ? "attention routing needed"
+      : "quiet";
+  const incidentState =
+    errors.length > 0 ||
+    warnings.length > 0 ||
+    loginFailures15m > 0 ||
+    uploadFailures24h > 0 ||
+    webhookFailures24h > 0
+      ? "needs operator interpretation"
+      : "no clear active incident signal";
+  const degradedModeState =
+    blockers.length > 0 || errors.length > 0
+      ? "review degraded-mode posture"
+      : "not indicated";
   const unresolvedIncidentWarnings = [
     ...errors,
     ...warnings,
@@ -198,6 +253,10 @@ export default function ProductionReadinessPage() {
       ? `Billing review pressure is elevated because ${upgradePendingTotal} upgrade requests remain open and the oldest is ${formatMinutes(upgradeOldestMinutes)} old.`
       : null,
   ].filter(Boolean) as string[];
+  const operatorAvailabilityState =
+    operatorOverloadIndicators.length > 0
+      ? "coverage pressure visible"
+      : "no visible overload hint";
 
   const escalationPressureIndicators = [
     operatorEscalations24h > 0
@@ -262,6 +321,75 @@ export default function ProductionReadinessPage() {
     "This panel may suggest rollback review candidates, but it may not trigger rollback or set severity automatically.",
     "Any rollback discussion still requires operator review of `/health`, `/status`, current incidents, and active rollout state.",
     ...(errors.length > 0 ? ["Readiness errors are present, so rollback risk should be reviewed explicitly rather than inferred from one metric family."] : []),
+  ];
+  const staleStateIndicators = [
+    freshnessSummary,
+    freshnessState === "stale"
+      ? "Stale-state handling: confirm /health, /status, queue surfaces, and current owner notes before treating this page as current operational truth."
+      : "Stale-state handling: the current page remains advisory, but the snapshot age does not currently force a stale-state warning.",
+    missingCommercialContract
+      ? "Conflicting-state handling: the commercial readiness contract is incomplete in the active payload, so rollout state should be treated as partially unresolved."
+      : "Conflicting-state handling: no major readiness-contract mismatch is visible between commercial mode and webhook mode in the active payload.",
+  ];
+  const priorityStack = [
+    ...(blockers.length > 0 ? blockers.map((item) => `Immediate blocker: ${item}`) : []),
+    ...(errors.length > 0 ? errors.map((item) => `Readiness error: ${item}`) : []),
+    ...operatorOverloadIndicators,
+    ...(supportSignals > 0
+      ? [`Support attention: ${supportSignals} support backlog signals were logged in the last 24 hours.`]
+      : []),
+    ...(moderationPendingTotal > 0
+      ? [`Moderation attention: ${moderationPendingTotal} items remain pending and the oldest item is ${formatMinutes(moderationOldestMinutes)} old.`]
+      : []),
+    ...(upgradePendingTotal > 0 || webhookFailures24h > 0
+      ? [`Billing attention: ${upgradePendingTotal} open reviews and ${webhookFailures24h} webhook failures are visible in the active snapshot.`]
+      : []),
+    ...(loginFailures15m > 0 || uploadFailures24h > 0
+      ? [`Runtime attention: auth failures / 15m = ${loginFailures15m}, upload failures / 24h = ${uploadFailures24h}.`]
+      : []),
+  ];
+  const attentionRoutingSummary = [
+    blockers.length > 0 || errors.length > 0
+      ? "Urgent: confirm runtime health, incident state, and current owner coverage before continuing routine queue work."
+      : "Urgent: no blocker currently forces automatic interruption of routine queue review.",
+    supportSignals > 0 || operatorEscalations24h > 0
+      ? "Important: route attention toward support and escalation ownership before creating more parallel investigations."
+      : "Important: support and escalation pressure is currently low enough to remain in normal review order.",
+    moderationPendingTotal > 0 || upgradePendingTotal > 0
+      ? "Queue routing: review the oldest moderation and billing items first so operators do not rebuild the same queue story repeatedly."
+      : "Queue routing: no backlog currently suggests special rerouting beyond normal review cadence.",
+    freshnessState !== "fresh"
+      ? "Freshness routing: verify whether this snapshot still matches live operator context before using it to justify escalation or rollout-state discussion."
+      : "Freshness routing: the current snapshot is recent enough to support orientation, but it remains advisory rather than authoritative.",
+  ];
+  const groupedOperationalSummaries = [
+    `Global operational state: ${globalOperationalState}.`,
+    `Queue state: ${queueState}.`,
+    `Rollout state: ${rolloutState}.`,
+    `Incident state: ${incidentState}.`,
+    `Degraded-mode state: ${degradedModeState}.`,
+    `Operator availability state: ${operatorAvailabilityState}.`,
+  ];
+  const groupedQueueSummaries = [
+    `Moderation queue: ${moderationPendingTotal} pending, oldest age ${formatMinutes(moderationOldestMinutes)}, bucket ${formatAgeBucket(moderationOldestMinutes)}.`,
+    `Billing queue: ${upgradePendingTotal} open reviews, oldest age ${formatMinutes(upgradeOldestMinutes)}, webhook failures / 24h = ${webhookFailures24h}.`,
+    `Support queue: backlog signals / 24h = ${supportSignals}, operator escalations / 24h = ${operatorEscalations24h}, repeated confusion / 24h = ${repeatedConfusion24h}.`,
+  ];
+  const groupedRolloutSummaries = [
+    `Funnel activity: landing ${funnel.landingPageVisits24h ?? 0}, register ${registerCompleted24h}, onboarding ${onboardingCompleted24h}.`,
+    `Conversion posture: register completion ${conversions.registerStartToCompletePct ?? 0}%, onboarding conversion ${conversions.registerCompleteToOnboardingPct ?? 0}%, publish conversion ${conversions.publishStartToSubmitPct ?? 0}%.`,
+    `Adoption readiness: ${formatReadinessStatus(adoptionReadiness?.status)} with ${adoptionReasons.length} current reason(s).`,
+  ];
+  const groupedIncidentSummaries = [
+    `Auth burst visibility: login failures / 15m = ${loginFailures15m}, login failures / 24h = ${loginFailures24h}, rate-limit triggers / 15m = ${rateLimitTriggers15m}.`,
+    `Upload and billing failure visibility: upload failures / 24h = ${uploadFailures24h}, webhook failures / 24h = ${webhookFailures24h}.`,
+    `Readiness visibility: warnings = ${warnings.length}, errors = ${errors.length}, unresolved incident warnings = ${unresolvedIncidentWarnings.length}.`,
+  ];
+  const groupedSourceRules = [
+    "Source-of-truth hierarchy: active /status payload first, visible /health and runtime status second, current queue and owner review surfaces third, operator handoff notes last.",
+    "Timestamp ownership: this page uses the active /status timestamp as the summary clock and treats every assistance block as derivative of that same visible snapshot.",
+    "Conflicting-state handling: when queue pressure, rollout warnings, or billing visibility disagree, operators must inspect the source metrics and current owner context before acting.",
+    "No hidden prioritization: the compressed layer uses only visible counts, ages, readiness messages, and explicit threshold wording rendered on this page.",
   ];
 
   return (
@@ -405,6 +533,45 @@ export default function ProductionReadinessPage() {
           />
         </AssistCard>
 
+        <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <AssistCard title="Compressed operator orientation" generatedAt={generatedAt}>
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-4 text-sm leading-6 text-slate-200">
+              This compression layer is the first unified intelligence surface for operator
+              orientation. It compresses repeated queue, rollout, billing, escalation, and
+              incident reasoning into one timestamped view so operators can decide where to look
+              next without surrendering moderation, billing, severity, escalation, rollback, or
+              rollout authority.
+            </div>
+            <AssistList
+              title="Priority stack"
+              tone={priorityStack.length > 0 ? "amber" : "cyan"}
+              items={
+                priorityStack.length > 0
+                  ? priorityStack
+                  : ["No immediate priority item crossed the visible review thresholds in the active snapshot."]
+              }
+            />
+            <AssistList title="Operational freshness" tone="slate" items={staleStateIndicators} />
+            <AssistList title="Attention routing" tone="cyan" items={attentionRoutingSummary} />
+          </AssistCard>
+
+          <Card title="Unified operational state">
+            <StateGrid
+              items={[
+                { label: "Global operational state", value: globalOperationalState },
+                { label: "Queue state", value: queueState },
+                { label: "Rollout state", value: rolloutState },
+                { label: "Moderation state", value: moderationState },
+                { label: "Billing state", value: billingState },
+                { label: "Escalation state", value: escalationState },
+                { label: "Incident state", value: incidentState },
+                { label: "Degraded-mode state", value: degradedModeState },
+                { label: "Operator availability", value: operatorAvailabilityState },
+              ]}
+            />
+          </Card>
+        </section>
+
         <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <Card title="Feature flags">
             <FlagGrid flags={status?.featureFlags ?? localRuntime} />
@@ -416,6 +583,30 @@ export default function ProductionReadinessPage() {
             ) : (
               <SimpleList items={blockers} tone="rose" />
             )}
+          </Card>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-2">
+          <Card title="Grouped operational summaries">
+            <SimpleList items={groupedOperationalSummaries} tone="cyan" />
+          </Card>
+
+          <Card title="Source-of-truth and freshness rules">
+            <SimpleList items={groupedSourceRules} tone="amber" />
+          </Card>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-3">
+          <Card title="Grouped queue summaries">
+            <SimpleList items={groupedQueueSummaries} tone="cyan" />
+          </Card>
+
+          <Card title="Grouped rollout summaries">
+            <SimpleList items={groupedRolloutSummaries} tone="amber" />
+          </Card>
+
+          <Card title="Grouped incident summaries">
+            <SimpleList items={groupedIncidentSummaries} tone="rose" />
           </Card>
         </section>
 
@@ -866,8 +1057,20 @@ export default function ProductionReadinessPage() {
             </div>
           </Card>
 
-          <Card title="Integration summary">
-            <JsonPreview value={status?.integrations ?? { unavailable: true }} />
+          <Card title="Integration posture">
+            <SimpleList
+              items={[
+                `Commercial mode: ${commercialLaunchMode}.`,
+                `Billing mode: ${billingMode}.`,
+                `Upgrade flow: ${integrations?.commercial?.publicUpgradeFlow ?? "Unknown"}.`,
+                `Webhook mode: ${integrations?.billingWebhook?.mode ?? "Unknown"}.`,
+                `Email / SMS delivery: ${integrations?.commercial?.emailDelivery ?? "Unknown"} / ${integrations?.commercial?.smsDelivery ?? "Unknown"}.`,
+                missingCommercialContract
+                  ? "Commercial contract visibility is incomplete in the active payload and should be treated as a readiness mismatch."
+                  : "Commercial contract visibility is complete enough for advisory operational interpretation on this page.",
+              ]}
+              tone="cyan"
+            />
           </Card>
         </section>
 
@@ -912,32 +1115,32 @@ export default function ProductionReadinessPage() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <Card title="Source metrics snapshot">
-            <JsonPreview
-              value={{
-                funnel: status?.rolloutIntelligence?.funnel ?? {},
-                conversions,
-                operations: {
-                  onboarding: operations?.onboarding ?? {},
-                  moderation: operations?.moderation ?? {},
-                  upgrades: operations?.upgrades ?? {},
-                  failures: operations?.failures ?? {},
-                  feedback: operations?.feedback ?? {},
-                  support: operations?.support ?? {},
-                  aging: operations?.aging ?? {},
-                },
-              }}
+          <Card title="Compressed source metrics">
+            <SimpleList
+              items={[
+                `Onboarding / 24h: started ${operations?.onboarding?.started24h ?? 0}, completed ${onboardingCompleted24h}.`,
+                `Moderation: pending ${moderationPendingTotal}, rejected ${operations?.moderation?.rejectedTotal ?? 0}, oldest age ${formatMinutes(moderationOldestMinutes)}.`,
+                `Billing: pending ${operations?.upgrades?.pending ?? 0}, contacted ${operations?.upgrades?.contacted ?? 0}, oldest open ${formatMinutes(upgradeOldestMinutes)}.`,
+                `Failures: login / 15m ${loginFailures15m}, upload / 24h ${uploadFailures24h}, webhook / 24h ${webhookFailures24h}.`,
+                `Feedback and support: total feedback / 24h ${operations?.feedback?.total24h ?? 0}, support signals / 24h ${supportSignals}, repeated confusion / 24h ${repeatedConfusion24h}.`,
+                `Aging hints: moderation bucket ${formatAgeBucket(moderationOldestMinutes)}, billing review age ${formatMinutes(upgradeOldestMinutes)}.`,
+              ]}
+              tone="cyan"
             />
           </Card>
 
           <Card title="Runtime capabilities">
-            <JsonPreview
-              value={{
-                queues: status?.queues ?? {},
-                runtime: status?.runtime ?? null,
-                localRuntime,
-                timestamp: status?.timestamp ?? null,
-              }}
+            <SimpleList
+              items={[
+                `Runtime environment: ${status?.runtime?.nodeEnv ?? localRuntime.environment}.`,
+                `Auth mode: ${status?.runtime?.authMode ?? "Unknown"}.`,
+                `Database configured: ${String(status?.runtime?.databaseConfigured ?? false)}.`,
+                `JWT configured: ${String(status?.runtime?.jwtSecretConfigured ?? false)}.`,
+                `Storage configured: ${String(status?.runtime?.storageBucketConfigured ?? false)}.`,
+                `Queue visibility surface present: ${status?.queues ? "yes" : "no"}.`,
+                `Snapshot timestamp: ${generatedAt}.`,
+              ]}
+              tone="amber"
             />
           </Card>
         </section>
@@ -1011,11 +1214,19 @@ function EmptyState({ text }: { text: string }) {
   return <div className="rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-4 text-sm text-slate-400">{text}</div>;
 }
 
-function JsonPreview({ value }: { value: unknown }) {
+function StateGrid({ items }: { items: Array<{ label: string; value: string }> }) {
   return (
-    <pre className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-xs leading-6 text-slate-200">
-      {JSON.stringify(value, null, 2)}
-    </pre>
+    <div className="grid gap-3 md:grid-cols-2">
+      {items.map((item) => (
+        <div
+          key={item.label}
+          className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3"
+        >
+          <div className="text-xs uppercase tracking-[0.16em] text-slate-500">{item.label}</div>
+          <div className="mt-2 text-sm font-medium text-slate-100">{item.value}</div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -1084,4 +1295,22 @@ function formatAgeBucket(value?: number | null) {
   }
 
   return "240m+";
+}
+
+function getSnapshotAgeMinutes(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const snapshotTime = new Date(value).getTime();
+  if (Number.isNaN(snapshotTime)) {
+    return null;
+  }
+
+  const diffMs = Date.now() - snapshotTime;
+  if (diffMs < 0) {
+    return 0;
+  }
+
+  return Math.round(diffMs / 60000);
 }
