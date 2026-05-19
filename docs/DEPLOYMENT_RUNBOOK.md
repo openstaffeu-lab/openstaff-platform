@@ -310,7 +310,7 @@ Apply the same pattern for:
 
 ## 11. Known operational notes
 
-As of the final EXEC-26 audit:
+As of the final EXEC-27 audit:
 
 - the Cloud SQL hardening baseline is now explicitly confirmed operator-side
 - keep only the active production secret contract in docs and scripts
@@ -318,15 +318,25 @@ As of the final EXEC-26 audit:
 - resilience and security runbooks are now part of the baseline:
   - `docs/INCIDENT_RESPONSE_RUNBOOK.md`
   - `docs/RELEASE_GOVERNANCE.md`
+  - `docs/RELEASE_LIFECYCLE_POLICY.md`
   - `docs/SECURITY_POSTURE_REVIEW.md`
   - `docs/SECRET_ROTATION_RUNBOOK.md`
   - `docs/DISASTER_RECOVERY_PLAN.md`
   - `docs/COST_BASELINE.md`
   - `docs/RUNTIME_CONFIGURATION_GOVERNANCE.md`
   - `docs/SLO_BASELINE.md`
+  - `docs/ARCHITECTURE_BASELINE.md`
+  - `docs/DEPENDENCY_GOVERNANCE.md`
+  - `docs/DATA_LIFECYCLE_POLICY.md`
+  - `docs/OWNERSHIP_MATRIX.md`
+  - `docs/TECHNICAL_DEBT_REGISTER.md`
 - production operator automation now includes:
   - `scripts/release/exec-26-production-ops-check.ps1`
   - `scripts/release/exec-26-failure-simulations.ps1`
+- lifecycle governance now expects:
+  - release-quality proof beyond clean builds
+  - explicit ownership for migrations, rollback, moderation, billing, and security
+  - architecture and dependency review when major runtime boundaries change
 - the next non-blocking frontend follow-ups are:
   - reduce `CLS` on `https://openstaff.eu/jobs`
   - improve homepage accessibility from the current Lighthouse baseline
@@ -343,6 +353,9 @@ As of the final EXEC-26 audit:
 - Cloud SQL deletion protection enabled
 - Cloud SQL SSL mode verified against the approved production policy
 - Cloud SQL PITR state explicitly confirmed in operator evidence
+- technical debt review updated when schema, auth, or runtime boundaries changed
+- dependency and lifecycle governance docs reviewed when framework or deploy tooling changed
+- ownership for deploy, migration, and rollback explicitly named
 - Production migration reviewed and applied
 - API `/health` and `/status` return success on live domain
 - Demo flags confirmed `false`

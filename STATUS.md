@@ -2,6 +2,80 @@
 
 Last updated: 2026-05-19
 
+## EXEC-27 Engineering Sustainability, Technical Debt & Lifecycle Governance
+
+Verdict: `PASS - production now has a sustainability and lifecycle governance baseline with a structured debt register, explicit architecture boundaries, dependency governance, release lifecycle policy, data lifecycle rules, a durable ownership matrix, and fresh proof that local build and production governance tooling remain healthy`
+
+### EXEC-27 Sustainability Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| production runtime remained healthy | ✅ | `scripts/release/exec-26-production-ops-check.ps1` returned `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy` at `2026-05-19T08:03:27.6869993Z` |
+| technical debt register documented | ✅ | `docs/TECHNICAL_DEBT_REGISTER.md` now classifies structural, operational, dependency, and hygiene debt into `critical`, `medium`, `low`, and `accepted debt` |
+| architecture governance documented | ✅ | `docs/ARCHITECTURE_BASELINE.md` now defines public/admin/API/data/monitoring boundaries and responsibility lines |
+| dependency governance documented | ✅ | `docs/DEPENDENCY_GOVERNANCE.md` now defines dependency baselines, drift risks, upgrade policy, pinning rules, and emergency patch flow |
+| release lifecycle governance documented | ✅ | `docs/RELEASE_LIFECYCLE_POLICY.md` now defines cadence, rollback support window, migration/deprecation rules, and quality gates |
+| data lifecycle governance documented | ✅ | `docs/DATA_LIFECYCLE_POLICY.md` now defines retention, cleanup, rejected-asset handling, backup assumptions, and deletion expectations |
+| ownership matrix documented | ✅ | `docs/OWNERSHIP_MATRIX.md` now defines engineering, Technical Ops, moderation, billing, security, and escalation ownership |
+| engineering quality baseline documented | ✅ | release lifecycle policy now defines minimum build, proof, rollback, and PASS discipline to prevent `soft PASS` drift |
+| release governance gate strengthened | ✅ | `scripts/release/exec-13-release-check.ps1` now requires the EXEC-27 sustainability and lifecycle docs |
+| local build validation remained healthy | ✅ | `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19` |
+| monitoring and ops automation remained healthy | ✅ | fresh ops-check still confirmed `10` monitoring policies, `2` dashboards, `7` uptime checks, and `5` recent backups |
+| safe failure simulations remained healthy | ✅ | fresh simulation still returned `loginThrottleStatus = 429`, `webhookFailureStatus = 400`, `webhookThrottleStatus = 429`, `moderationUnauthorizedStatus = 401`, `storageMissingStatus = 404` at `2026-05-19T08:03:27.8767671Z` |
+| repository hygiene drift reduced | ✅ | outdated topology notes in `apps/admin/README.md` and `apps/admin/web/README.md` were corrected to match the live production shape |
+| retained cleanup debt stayed explicit | ✅ | `apps/admin/api/prisma/dev.db`, `apps/admin/legacy/backend-like/`, and `apps/admin/openstaff/` were reviewed and retained intentionally as tracked debt rather than removed blindly |
+| documentation + proof trail captured | ✅ | `docs/proof/exec27/README.md` now captures debt, architecture, dependency, lifecycle, ownership, cleanup, and validation proof |
+
+### EXEC-27 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - engineering sustainability baseline is now explicit | ✅ | debt, architecture, dependency, lifecycle, data, and ownership governance now exist as first-class documents |
+| GO - PASS discipline is now tighter | ✅ | lifecycle policy now requires builds, release checks, proof, and rollback expectations instead of narrative-only closure |
+| GO - release tooling now enforces the sustainability docs | ✅ | release check now fails if the EXEC-27 governance files are missing |
+| GO - documentation better matches the live system | ✅ | stale “prototype-only” topology notes in app READMEs were corrected |
+| GO - production governance tooling stayed healthy after the changes | ✅ | fresh ops-check and failure simulations both passed without regression |
+| GO - technical debt is now visible rather than implied | ✅ | structural debt like legacy model overlap, fallback surfaces, and manual dependencies are explicitly tracked |
+| NO-GO - blind cleanup of historical artifacts | ✅ prevented | tracked local DB and legacy archive folders were retained because safe removal was not yet proven |
+| NO-GO - treating accepted manual operations as closed automation work | ✅ prevented | manual billing, email, and some operator-dependent paths remain explicit accepted debt and limitations |
+
+### EXEC-27 Validation Proof
+
+- `docs/proof/exec27/README.md` ✅ captures the technical debt summary, architecture governance summary, dependency governance summary, lifecycle governance summary, data lifecycle summary, ownership matrix summary, cleanup summary, and validation summary
+- local build proof ✅: `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19`
+- production ops-check proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-production-ops-check.ps1` returned `verdict = PASS`, `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy`, `monitoringPolicies = 10`, `dashboards = 2`, `uptimeChecks = 7`, `recentBackups = 5`
+- failure simulation proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-failure-simulations.ps1` returned `loginThrottleStatus = 429`, `webhookFailureStatus = 400`, `webhookThrottleStatus = 429`, `moderationUnauthorizedStatus = 401`, `storageMissingStatus = 404`
+- release gate hardening proof ✅: `scripts/release/exec-13-release-check.ps1` now requires `TECHNICAL_DEBT_REGISTER`, `ARCHITECTURE_BASELINE`, `DEPENDENCY_GOVERNANCE`, `RELEASE_LIFECYCLE_POLICY`, `DATA_LIFECYCLE_POLICY`, and `OWNERSHIP_MATRIX`
+- cleanup proof ✅: outdated topology guidance in `apps/admin/README.md` and `apps/admin/web/README.md` was corrected; legacy archive folders and tracked local DB were intentionally retained as documented debt
+- builds aplicatie ✅ required for EXEC-27 and passed locally; no production application deploy was required for this governance and sustainability baseline
+
+### EXEC-27 Accepted Sustainability Limitations
+
+1. the official `User/Profile/Project/PublicPost` model still coexists with legacy `Actor/Job` paths
+2. some public detail routes still contain fallback behavior when live data is unavailable
+3. billing remains `manual_only`
+4. `publicUpgradeFlow = request_upgrade`
+5. `operatorReviewRequired = true`
+6. `emailDelivery = not_configured`
+7. `smsDelivery = not_required`
+8. tracked local/historical artifacts remain in-repo until a dedicated safe cleanup execution approves removal
+
+### EXEC-27 Launch Decision
+
+EXEC-27 raises OpenStaff from a `repeatable operational governance baseline` to a `sustainable engineering and lifecycle governance baseline` suitable for continued controlled growth.
+
+As of `2026-05-19`, the platform now has:
+
+1. a structured technical debt register instead of implicit debt
+2. an explicit architecture baseline for public, admin, API, data, storage, and monitoring boundaries
+3. dependency governance that makes version drift and patch expectations visible
+4. a release lifecycle policy with stronger quality gates and anti-`soft PASS` discipline
+5. a data lifecycle policy for retention, cleanup, backups, and rejected assets
+6. an ownership matrix that names engineering, ops, moderation, billing, security, and escalation responsibilities
+7. fresh validation proof that local builds and production governance tooling remain healthy after the sustainability updates
+
+EXEC-27 is `PASS` while the accepted manual commercial limitations, legacy model overlap, and tracked cleanup debt remain explicit in the governance docs and proof trail.
+
 ## EXEC-26 Release Governance, Incident Response & Operational Automation
 
 Verdict: `PASS - production now has a repeatable operational governance baseline with incident response rules, release governance, runtime configuration ownership, production ops automation, a durable ops-log structure, an initial SLO baseline, and safe live failure-path proof`

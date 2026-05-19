@@ -40,6 +40,7 @@ npm.cmd run dev:all
 
 ## Deployment guidance
 
-- `apps/admin` is the current validated local frontend target.
-- `apps/admin/web` remains prototype-only for now and is not the current production deploy target.
-- Any production deployment changes must be made through the Codex-managed workflow only.
+- `apps/admin` is the live admin/backoffice frontend for `https://backoffice.openstaff.eu`.
+- `apps/admin/web` is the live public frontend for `https://openstaff.eu`.
+- `apps/admin/api` is the live backend API for `https://api.openstaff.eu`.
+- Any production deployment changes must follow the documented runbooks and governance checks.

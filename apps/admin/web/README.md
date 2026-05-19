@@ -1,10 +1,9 @@
-# OpenStaff Public Frontend Prototype
+# OpenStaff Public Frontend
 
-Prototype / public OpenStaff frontend candidate.
+This folder contains the active public OpenStaff frontend.
 
 ## Current decision
 
-- Prototype only for now
-- Not current production deploy target
-- Needs consolidation before deploy
-- Preserved locally for design and product-direction comparison against the active backoffice in `apps/admin`
+1. this is the production public web app for `https://openstaff.eu`
+2. it is built and deployed separately from the admin app in `apps/admin`
+3. public runtime behavior must stay aligned with the API contract and governance docs
