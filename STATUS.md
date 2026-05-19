@@ -2,6 +2,80 @@
 
 Last updated: 2026-05-19
 
+## EXEC-34 Unified Operational Command Surface & Operator Cockpit Baseline
+
+Verdict: `PASS - production now has a unified operational command baseline with an explicit cockpit model, standardized context packets, incident timeline rules, queue coordination expectations, shared operational priority classes, alert-routing expectations, session continuity rules, admin operational UX review, and future automation boundaries that preserve operator authority`
+
+### EXEC-34 Cockpit Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| production runtime remained healthy | ✅ | `scripts/release/exec-26-production-ops-check.ps1` returned `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy` on `2026-05-19` |
+| unified operator cockpit baseline documented | ✅ | `docs/UNIFIED_OPERATOR_COCKPIT_BASELINE.md` now defines the target command-surface structure for rollout status, moderation, billing, onboarding funnel, auth/upload/webhook failures, support pressure, incidents, alerts, readiness, adoption, ownership, and handoff state |
+| context aggregation baseline documented | ✅ | `docs/CONTEXT_AGGREGATION_BASELINE.md` now defines minimum operational, incident, moderation, and billing review context packets |
+| incident timeline baseline documented | ✅ | `docs/INCIDENT_TIMELINE_BASELINE.md` now standardizes incident stages, timestamps, severity markers, coordination state, rollback state, and ownership fields |
+| queue coordination baseline documented | ✅ | `docs/QUEUE_COORDINATION_BASELINE.md` now formalizes ownership, SLA expectations, queue aging thresholds, escalation thresholds, freeze thresholds, and batching rules across moderation, billing, support, escalations, rollout review, and incident review |
+| operational priority matrix documented | ✅ | `docs/OPERATIONAL_PRIORITY_MATRIX.md` now defines `critical`, `urgent`, `important`, `informational`, and `deferred` classes across auth, billing, moderation, upload, webhook, support, rollout, and monitoring scenarios |
+| alert routing review documented | ✅ | `docs/ALERT_ROUTING_REVIEW.md` now classifies alert usefulness and defines routing, acknowledgment, suppression, escalation, and maintenance-window expectations |
+| operator session continuity documented | ✅ | `docs/OPERATOR_SESSION_CONTINUITY.md` now formalizes shift continuation, handoff packages, unresolved incident carryover, moderation carryover, billing carryover, and escalation carryover |
+| admin operational UX review documented | ✅ | `docs/ADMIN_OPERATIONAL_UX_REVIEW.md` now audits discoverability, navigation depth, queue clarity, action clarity, status clarity, escalation clarity, overload risk, and future cockpit candidates |
+| future automation candidate mapping documented | ✅ | `docs/FUTURE_AUTOMATION_CANDIDATES.md` now separates safe assistance, operator-assist only, escalation-only, summary-only, recommendation-only, and unsafe authority transfer |
+| rollout, readiness, capacity, and metrics governance aligned | ✅ | `docs/PRODUCTION_READINESS_MATRIX.md`, `docs/CONTROLLED_ROLLOUT_PLAN.md`, `docs/OPERATIONAL_METRICS_BASELINE.md`, and `docs/OPERATIONAL_CAPACITY_LIMITS.md` now reference the command-surface, context, queue, and continuity baseline |
+| release governance gate strengthened again | ✅ | `scripts/release/exec-13-release-check.ps1` now requires the EXEC-34 cockpit, context, timeline, queue, priority, routing, continuity, UX, and automation docs |
+| local build validation remained healthy | ✅ | `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19` |
+| monitoring and ops automation remained healthy | ✅ | fresh ops-check still confirmed `10` monitoring policies, `2` dashboards, `7` uptime checks, and `5` recent backups |
+| safe failure simulations remained healthy | ✅ | fresh simulation still returned the expected `429/400/429/401/404` guard-rail responses on `2026-05-19` |
+| documentation + proof trail captured | ✅ | `docs/proof/exec34/README.md` now captures cockpit, context aggregation, incident timeline, queue coordination, priority, alert routing, continuity, admin UX, automation, and validation proof |
+
+### EXEC-34 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - operators now have one target command model instead of only fragmented specialist surfaces | ✅ | unified cockpit baseline now defines required sections, priority ordering, personas, and coordination visibility |
+| GO - repeated context rebuilding is now replaced by explicit packet definitions | ✅ | context aggregation baseline now standardizes operational, incident, moderation, and billing context packets |
+| GO - incident handling now has a shared timeline model | ✅ | incident timeline baseline now standardizes timestamps, ownership, severity, coordination state, and rollback state |
+| GO - operational queues now share the same coordination rules | ✅ | queue coordination baseline now defines ownership, SLA, aging, escalation, freeze, and batching expectations across critical queues |
+| GO - alert routing and acknowledgment expectations are now explicit | ✅ | alert routing review now defines actionable versus noisy behavior and routing ownership expectations |
+| GO - session continuity is now treated as a first-class operating control | ✅ | operator session continuity now makes shift continuation and carryover packages explicit |
+| GO - future automation is now constrained to assistance before authority | ✅ | automation candidate mapping keeps moderation, billing activation, severity, degraded mode, and rollback authority human-owned |
+| NO-GO - mistaking a cockpit baseline for automatic operational authority | ✅ prevented | future automation mapping and existing guardrails keep final decisions human-reviewed |
+| NO-GO - accelerating orientation by hiding unresolved ambiguity | ✅ prevented | context packets, queue coordination, and alert routing now require owner, aging, and next-action clarity instead of optimistic summaries |
+
+### EXEC-34 Validation Proof
+
+- `docs/proof/exec34/README.md` ✅ captures the operator cockpit summary, context aggregation summary, incident timeline summary, queue coordination summary, operational priority summary, alert routing summary, session continuity summary, admin operational UX summary, automation candidate summary, and validation summary
+- local build proof ✅: `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19`
+- production ops-check proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-production-ops-check.ps1` returned `verdict = PASS`, `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy`, `monitoringPolicies = 10`, `dashboards = 2`, `uptimeChecks = 7`, `recentBackups = 5`
+- failure simulation proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-failure-simulations.ps1` returned `loginThrottleStatus = 429`, `webhookFailureStatus = 400`, `webhookThrottleStatus = 429`, `moderationUnauthorizedStatus = 401`, `storageMissingStatus = 404`
+- release gate hardening proof ✅: `scripts/release/exec-13-release-check.ps1` now requires `UNIFIED_OPERATOR_COCKPIT_BASELINE`, `CONTEXT_AGGREGATION_BASELINE`, `INCIDENT_TIMELINE_BASELINE`, `QUEUE_COORDINATION_BASELINE`, `OPERATIONAL_PRIORITY_MATRIX`, `ALERT_ROUTING_REVIEW`, `OPERATOR_SESSION_CONTINUITY`, `ADMIN_OPERATIONAL_UX_REVIEW`, and `FUTURE_AUTOMATION_CANDIDATES`
+- coordination-surface proof ✅: EXEC-34 now explicitly documents how the future unified cockpit should consume rollout, readiness, incidents, queue aging, alert routing, ownership, and handoff state without transferring trust or rollback authority to automation
+
+### EXEC-34 Accepted Command-Surface Limitations
+
+1. billing remains `manual_only`
+2. `publicUpgradeFlow = request_upgrade`
+3. `operatorReviewRequired = true`
+4. `emailDelivery = not_configured`
+5. `smsDelivery = not_required`
+6. the unified cockpit baseline is now explicit, but operators still use several existing surfaces until a real aggregated implementation exists
+7. current simulations still validate runtime safety better than cockpit-quality, queue-coordination drift, or session-continuity drift
+
+### EXEC-34 Launch Decision
+
+EXEC-34 raises OpenStaff from a `multi-operator operational readiness baseline` to a `unified operational command baseline` suitable for lower context switching, faster shared triage, clearer queue coordination, and safer multi-operator continuity without weakening trust, governance, or human authority.
+
+As of `2026-05-19`, the platform now has:
+
+1. a unified operator cockpit baseline
+2. standardized context packets for operational, incident, moderation, and billing work
+3. a standard incident timeline model
+4. a queue coordination baseline across critical operational queues
+5. a shared operational priority matrix
+6. an alert-routing and session-continuity baseline
+7. an admin operational UX review and future automation boundary map
+
+EXEC-34 is `PASS` while the accepted manual commercial limitations, still-fragmented live tooling, and still-human command discipline remain explicit in the docs and proof trail.
+
 ## EXEC-33 Operator Tooling, Triage Acceleration & Multi-Operator Readiness
 
 Verdict: `PASS - production now has a multi-operator operational readiness baseline with explicit workflow consolidation, triage-acceleration review, shared-ownership and handoff rules, operational context classification, admin tooling gap review, operational latency KPIs, cognitive-load review, and honest future failure-mode governance`

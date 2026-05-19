@@ -32,6 +32,13 @@ This plan must be used together with:
 - `docs/EFFICIENCY_METRICS_BASELINE.md`
 - `docs/MULTI_OPERATOR_READINESS.md`
 - `docs/OPERATIONAL_LATENCY_BASELINE.md`
+- `docs/UNIFIED_OPERATOR_COCKPIT_BASELINE.md`
+- `docs/CONTEXT_AGGREGATION_BASELINE.md`
+- `docs/INCIDENT_TIMELINE_BASELINE.md`
+- `docs/QUEUE_COORDINATION_BASELINE.md`
+- `docs/OPERATIONAL_PRIORITY_MATRIX.md`
+- `docs/ALERT_ROUTING_REVIEW.md`
+- `docs/OPERATOR_SESSION_CONTINUITY.md`
 
 ## Expansion Bands
 
@@ -69,6 +76,7 @@ Scope:
 
 Operator responsibilities:
 - monitor dashboards at the beginning and end of each shift
+- review the shared cockpit or equivalent consolidated context before acting in specialist tools
 - clear moderation and upgrade queues within the agreed SLA
 - escalate runtime, billing, or security anomalies immediately
 - leave handoff-ready notes another operator can act on safely
@@ -185,6 +193,7 @@ At the end of each cohort window:
 5. choose `expand`, `hold`, `fix-first`, or `rollback`
 6. note whether repeated human effort should trigger automation prioritization
 7. note whether operator coordination or handoff latency created avoidable delay
+8. note whether command-surface, queue-coordination, or alert-routing gaps slowed action materially
 
 ## Support Escalation Model
 

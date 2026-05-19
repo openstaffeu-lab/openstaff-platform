@@ -1,7 +1,7 @@
 # Operational Capacity Limits
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-33`
+Scope: `EXEC-34`
 
 ## Purpose
 
@@ -48,6 +48,7 @@ Treat the following as overload signals:
 5. interruption rate rises because the same operator keeps switching between support, moderation, billing, and release proof
 6. report-writing or proof collection starts delaying queue decisions
 7. ownership transfer takes too long because shared context is fragmented
+8. operators spend too long reconstructing priority order because no shared cockpit-level summary is current enough
 
 ## Freeze and Escalation Conditions
 
@@ -59,6 +60,7 @@ Freeze rollout or escalate when:
 4. incident or maintenance work removes too much operator capacity
 5. operator efficiency drops because repeated manual explanation consumes more time than the underlying decision itself
 6. operator unavailability creates uncovered critical queues or unclear incident ownership
+7. queue coordination, alert routing, or session carryover becomes too fragmented to preserve safe continuity
 
 ## Required Automation Thresholds
 
@@ -70,7 +72,8 @@ Prioritize automation when:
 4. release proof, rollout reporting, or handoff summaries consume enough time to compete with live queue work
 5. interruption rate rises because routing and summaries are still being built manually
 6. multi-operator handoff remains too slow or too dependent on hidden context
+7. operators repeatedly rebuild the same cockpit-level context packets instead of consuming them once
 
 ## Final Assessment
 
-OpenStaff now has explicit operational capacity limits, efficiency triggers, and coordination triggers. Controlled growth should be framed not only as traffic growth, but as whether human attention and shared operator context are still being used on judgment instead of repetition and reorientation.
+OpenStaff now has explicit operational capacity limits, efficiency triggers, coordination triggers, and command-surface triggers. Controlled growth should be framed not only as traffic growth, but as whether human attention and shared operator context are still being used on judgment instead of repetition and reorientation.
