@@ -79,7 +79,7 @@ export default function OnboardingCompletionPage() {
         <div>
           <div style={{ color: "#00C060", fontWeight: 700, fontSize: 13 }}>Profile completion</div>
           <h2 style={{ color: "#1B2A6B", fontSize: 28, fontWeight: 800, margin: "6px 0 0" }}>
-            Identity foundation ready
+            Profilul tau este aproape gata
           </h2>
         </div>
 
@@ -105,8 +105,9 @@ export default function OnboardingCompletionPage() {
             color: "#1E293B",
           }}
         >
-          Profilul public nu expune email, billing, tokenuri sau metadata private. Acesta este
-          stratul pregatit pentru marketplace si extensii viitoare de compliance.
+          Profilul public nu expune emailul de autentificare, tokenuri sau alte date private.
+          Dupa publicare si aprobare, doar informatiile destinate vizibilitatii publice vor fi
+          afisate in marketplace.
         </div>
 
         <div
@@ -116,15 +117,15 @@ export default function OnboardingCompletionPage() {
             border: "1px solid #E8EBF5",
             padding: 16,
             color: "#1E293B",
-            display: "grid",
-            gap: 12,
-          }}
-        >
+          display: "grid",
+          gap: 12,
+        }}
+      >
           <div style={{ fontWeight: 700, color: "#1B2A6B" }}>Verification workflow</div>
           <div>
-            Din acest pas poti selecta explicit documentele si evidenta de compliance
-            care intra in dosarul de verificare pentru identitate si, optional, pentru
-            companie. Review-ul se face in backoffice de catre admin.
+            Din acest pas poti selecta documentele pe care vrei sa le trimiti pentru verificarea
+            identitatii si, optional, a companiei. Cererile sunt revizuite manual de operatori in
+            backoffice.
           </div>
           <div style={{ fontSize: 14, color: "#475569" }}>
             Evidence selectat: <strong>{evidenceCount}</strong>
@@ -157,7 +158,7 @@ export default function OnboardingCompletionPage() {
           />
           <EvidenceGroup
             title="Actor documents"
-            description="Documente operationale sau de identitate din workspace-ul de compliance."
+            description="Documente operationale sau de identitate disponibile deja in workspace-ul tau."
             items={verification.availableEvidence.actorDocuments.map((item) => ({
               id: `actor-document:${item.id}`,
               title: item.title,
@@ -170,7 +171,7 @@ export default function OnboardingCompletionPage() {
           />
           <EvidenceGroup
             title="Certifications"
-            description="Certificari profesionale reutilizabile pentru KYC si director public."
+            description="Certificari profesionale care pot sustine profilul tau public."
             items={verification.availableEvidence.actorCertifications.map((item) => ({
               id: `actor-certification:${item.id}`,
               title: item.title,

@@ -310,7 +310,7 @@ Apply the same pattern for:
 
 ## 11. Known operational notes
 
-As of the final EXEC-27 audit:
+As of the final EXEC-28 audit:
 
 - the Cloud SQL hardening baseline is now explicitly confirmed operator-side
 - keep only the active production secret contract in docs and scripts
@@ -337,6 +337,11 @@ As of the final EXEC-27 audit:
   - release-quality proof beyond clean builds
   - explicit ownership for migrations, rollback, moderation, billing, and security
   - architecture and dependency review when major runtime boundaries change
+- adoption readiness governance now expects:
+  - first-user wording to stay aligned with the real operational contract
+  - no public fallback content to be presented as trustworthy live marketplace truth
+  - support playbook coverage for onboarding, moderation, billing clarification, and rejection explanation
+  - explicit scale, analytics, and operational metrics review as cohorts grow
 - the next non-blocking frontend follow-ups are:
   - reduce `CLS` on `https://openstaff.eu/jobs`
   - improve homepage accessibility from the current Lighthouse baseline
@@ -355,6 +360,8 @@ As of the final EXEC-27 audit:
 - Cloud SQL PITR state explicitly confirmed in operator evidence
 - technical debt review updated when schema, auth, or runtime boundaries changed
 - dependency and lifecycle governance docs reviewed when framework or deploy tooling changed
+- first-user experience and UX trust docs reviewed when public onboarding, publish, moderation, pricing, or public-detail flows changed
+- support, scale, analytics, and operational metrics baselines reviewed when onboarding cohorts materially expanded
 - ownership for deploy, migration, and rollback explicitly named
 - Production migration reviewed and applied
 - API `/health` and `/status` return success on live domain

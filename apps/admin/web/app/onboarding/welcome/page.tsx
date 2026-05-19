@@ -56,15 +56,16 @@ export default function OnboardingWelcomePage() {
     <section style={{ background: "white", borderRadius: 18, padding: 24, border: "1px solid #E8EBF5" }}>
       <div style={{ display: "grid", gap: 18 }}>
         <div>
-          <div style={{ color: "#00C060", fontWeight: 700, fontSize: 13 }}>EXEC-05 foundation</div>
+          <div style={{ color: "#00C060", fontWeight: 700, fontSize: 13 }}>Onboarding</div>
           <h2 style={{ color: "#1B2A6B", fontSize: 28, fontWeight: 800, margin: "6px 0 0" }}>
-            Completeaza identitatea ta digitala
+            Completeaza profilul tau OpenStaff
           </h2>
         </div>
 
         <p style={{ color: "#334155", lineHeight: 1.7 }}>
-          Flow-ul nou separa onboarding-ul de autentificare si pregateste profilul public,
-          compania si extensiile viitoare de compliance fara sa expuna date private.
+          Acest flow te ajuta sa completezi datele publice de baza pentru profilul tau si, daca
+          este cazul, datele companiei. Datele private de autentificare si billing nu sunt afisate
+          public.
         </p>
 
         <div
@@ -75,10 +76,10 @@ export default function OnboardingWelcomePage() {
           }}
         >
           {[
-            "Identity profile cu slug public sigur",
-            "Company layer pregatit pentru directoare si KYC",
-            "Completion scoring centralizat in backend",
-            "Public profile safe, fara auth sau billing data",
+            "Profil public cu slug sigur",
+            "Date separate pentru persoana si companie",
+            "Pasi clari pana la finalizarea profilului",
+            "Datele de autentificare si billing raman private",
           ].map((item) => (
             <div
               key={item}

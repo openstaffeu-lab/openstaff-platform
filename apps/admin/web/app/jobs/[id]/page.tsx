@@ -126,6 +126,42 @@ export default function JobDetailPage() {
   const approvedLinks =
     post.externalLinks?.filter((item) => item.securityStatus === "APPROVED") ?? [];
 
+  if (source === "fallback") {
+    return (
+      <main style={{ maxWidth: 960, margin: "0 auto", padding: "32px 24px 64px" }}>
+        <Link
+          href="/jobs"
+          style={{ color: "#00C060", fontWeight: 700, textDecoration: "none" }}
+        >
+          Back to projects
+        </Link>
+
+        <section
+          style={{
+            marginTop: 16,
+            borderRadius: 24,
+            border: "1px solid #FDE68A",
+            background: "#FFFBEB",
+            color: "#92400E",
+            padding: "28px 24px",
+          }}
+        >
+          <h1 style={{ margin: 0, fontSize: 30, fontWeight: 800 }}>
+            This project is temporarily unavailable
+          </h1>
+          <p style={{ margin: "12px 0 0", lineHeight: 1.7 }}>
+            Live marketplace data for this project could not be loaded right now. No fallback
+            listing is shown here so public visitors only see confirmed live content.
+          </p>
+          <p style={{ margin: "12px 0 0", lineHeight: 1.7 }}>
+            Please return to the projects page or try again later. If you own this listing, contact
+            OpenStaff support or use your account workspace for the latest status.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main style={{ maxWidth: 1120, margin: "0 auto", padding: "32px 24px 64px" }}>
       <Link
@@ -134,24 +170,6 @@ export default function JobDetailPage() {
       >
         Back to projects
       </Link>
-
-      {source === "fallback" ? (
-        <div
-          style={{
-            marginTop: 16,
-            borderRadius: 14,
-            border: "1px solid #FDE68A",
-            background: "#FFFBEB",
-            color: "#92400E",
-            padding: "14px 16px",
-            fontSize: 14,
-            fontWeight: 600,
-          }}
-        >
-          Live marketplace data is temporarily unavailable. You are seeing the legacy fallback
-          feed for this project.
-        </div>
-      ) : null}
 
       <section
         style={{

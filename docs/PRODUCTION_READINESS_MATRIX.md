@@ -1,7 +1,7 @@
 # Production Readiness Matrix
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-27`
+Scope: `EXEC-28`
 
 ## Matrix
 
@@ -32,12 +32,17 @@ Scope: `EXEC-27`
 | cost visibility | documented and usable | cost drivers, growth expectations, and anomaly triggers are explicit | [COST_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/COST_BASELINE.md:1) |
 | SLO baseline | documented and initial | first governance-grade service targets now exist | [SLO_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/SLO_BASELINE.md:1) |
 | operator tooling | stable | admin moderation, billing, security, readiness pages usable | EXEC-25 smoke and EXEC-26 ops-check baseline |
-| support readiness | documented and usable | SOPs, escalation, and controlled-rollout ownership remain active | EXEC-21 docs remain active |
+| first-user experience baseline | documented and improved | company/professional onboarding, publish, moderation wait states, and public browsing trust risks are now audited | [FIRST_USER_EXPERIENCE_AUDIT.md](/C:/Users/admin/Desktop/openstaff-platform/docs/FIRST_USER_EXPERIENCE_AUDIT.md:1) |
+| UX trust governance | documented and improved | pricing, moderation, onboarding, and public-detail trust language now has an explicit review baseline | [UX_TRUST_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/UX_TRUST_REVIEW.md:1) |
+| support readiness | documented and usable | SOPs, support playbook, escalation, and controlled-rollout ownership remain active | [OPERATOR_SUPPORT_PLAYBOOK.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATOR_SUPPORT_PLAYBOOK.md:1) |
 | ownership model | documented and usable | engineering, Technical Ops, moderation, billing, security, and escalation ownership are explicit | [OWNERSHIP_MATRIX.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OWNERSHIP_MATRIX.md:1) |
 | ops audit trail | active and durable | production deploy, restore, IAM, and governance entries now have a permanent home | `docs/ops-log/` plus seeded entries |
 | rollout limitations | explicit | manual billing, no automated email, no SMS requirement remain unchanged | `/status.integrations` remains aligned |
 | future automation gaps | partial | governance and checks are stronger, but business automation remains intentionally manual | `billingPayments = manual_only`, `emailDelivery = not_configured` |
 | capacity baseline | stable for current rollout | Cloud Run limits, DB growth expectations, and uptime checks exist together | no load/stress test performed in EXEC-26 |
+| controlled scale baseline | documented and usable | first-10 and first-100 user expectations, bottlenecks, and freeze triggers are explicit | [SCALE_READINESS_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/SCALE_READINESS_BASELINE.md:1) |
+| product analytics baseline | documented and initial | first adoption-readiness events, ownership, and privacy constraints are explicit | [PRODUCT_ANALYTICS_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/PRODUCT_ANALYTICS_BASELINE.md:1) |
+| operational metrics baseline | documented and initial | onboarding, moderation, billing, backlog, and escalation KPIs are now defined | [OPERATIONAL_METRICS_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_METRICS_BASELINE.md:1) |
 | IAM least privilege | stable and more durable | runtime SA stayed constrained; build/deploy identity remains separate | EXEC-25 identity split remains active |
 | deploy pipeline resilience | stable | deploy path no longer depends on broad runtime IAM | dedicated build SA remains baseline |
 | engineering quality baseline | documented and enforceable | PASS now requires builds, release checks, proof, and rollback expectations rather than narrative optimism | [RELEASE_LIFECYCLE_POLICY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELEASE_LIFECYCLE_POLICY.md:1) |
@@ -45,9 +50,9 @@ Scope: `EXEC-27`
 
 ## Governance Verdict
 
-`EXEC-27 PASS`
+`EXEC-28 PASS`
 
-The production baseline is now suitable for repeatable ongoing operations and more sustainable engineering growth because:
+The production baseline is now suitable for repeatable ongoing operations and controlled real-user onboarding because:
 
 1. incident response is defined
 2. release governance is defined
@@ -55,7 +60,7 @@ The production baseline is now suitable for repeatable ongoing operations and mo
 4. architecture, dependency, lifecycle, data, and ownership governance now exist as first-class docs
 5. ops automation exists for repeated checks and safe simulations
 6. an audit structure exists for deploys, restores, IAM, security, and future incidents
-7. initial SLO targets make current maturity visible
+7. first-user trust, support, scale, analytics, and operational metrics baselines are now explicit
 
 ## Accepted Remaining Limitations
 

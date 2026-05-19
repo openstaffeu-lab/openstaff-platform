@@ -337,8 +337,8 @@ export default function PublishMarketplacePage() {
                   {selectedId ? "Edit public post" : "Create public post"}
                 </h2>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                  Projects, professionals, and subcontractor pools now publish through the moderated
-                  `PublicPost` feed.
+                  Projects, professionals, and subcontractor pools are published into the moderated
+                  marketplace feed.
                 </p>
               </div>
               {selectedId ? (
@@ -427,7 +427,7 @@ export default function PublishMarketplacePage() {
               <div className="text-xs uppercase tracking-[0.32em] text-cyan-300">Assets & Links</div>
               <h3 className="mt-3 text-2xl font-semibold">Moderated attachments</h3>
               <p className="mt-2 text-sm text-slate-400">
-                Every upload creates a moderation placeholder task and stays hidden until admin approval.
+                Every upload is queued for operator review and stays hidden until it is approved.
               </p>
 
               <div className="mt-6 grid gap-6 xl:grid-cols-3">

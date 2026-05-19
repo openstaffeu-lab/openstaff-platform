@@ -100,6 +100,42 @@ export default function ProfessionalDetailPage() {
   const approvedLinks =
     post.externalLinks?.filter((item) => item.securityStatus === "APPROVED") ?? [];
 
+  if (source === "fallback") {
+    return (
+      <main style={{ maxWidth: 960, margin: "0 auto", padding: "32px 24px 64px" }}>
+        <Link
+          href="/professionals"
+          style={{ color: "#00C060", fontWeight: 700, textDecoration: "none" }}
+        >
+          Back to professionals
+        </Link>
+
+        <section
+          style={{
+            marginTop: 16,
+            borderRadius: 24,
+            border: "1px solid #FDE68A",
+            background: "#FFFBEB",
+            color: "#92400E",
+            padding: "28px 24px",
+          }}
+        >
+          <h1 style={{ margin: 0, fontSize: 30, fontWeight: 800 }}>
+            This profile is temporarily unavailable
+          </h1>
+          <p style={{ margin: "12px 0 0", lineHeight: 1.7 }}>
+            Live marketplace data for this profile could not be loaded right now. No fallback
+            profile is shown here so public visitors only see confirmed live content.
+          </p>
+          <p style={{ margin: "12px 0 0", lineHeight: 1.7 }}>
+            Please return to the professionals page or try again later. If you own this profile,
+            contact OpenStaff support or use your account workspace for the latest status.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main style={{ maxWidth: 1080, margin: "0 auto", padding: "32px 24px 64px" }}>
       <Link
@@ -108,24 +144,6 @@ export default function ProfessionalDetailPage() {
       >
         Back to professionals
       </Link>
-
-      {source === "fallback" ? (
-        <div
-          style={{
-            marginTop: 16,
-            borderRadius: 14,
-            border: "1px solid #FDE68A",
-            background: "#FFFBEB",
-            color: "#92400E",
-            padding: "14px 16px",
-            fontSize: 14,
-            fontWeight: 600,
-          }}
-        >
-          Live marketplace profile data is temporarily unavailable. You are seeing the legacy
-          fallback profile for this professional entry.
-        </div>
-      ) : null}
 
       <section
         style={{

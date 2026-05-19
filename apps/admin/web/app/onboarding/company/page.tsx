@@ -72,7 +72,8 @@ export default function OnboardingCompanyPage() {
         <h2 style={{ color: "#1B2A6B", fontSize: 28, fontWeight: 800, margin: 0 }}>Company identity</h2>
         <p style={{ color: "#334155", margin: 0 }}>
           Pentru conturi individuale poti sari peste acest pas. Pentru companii si institutii,
-          acest strat va alimenta viitoarele directoare publice si extensii KYC.
+          aceste date ajuta operatorii sa inteleaga cine publica si sa pregateasca eventualele
+          verificari sau clarificari comerciale.
         </p>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>

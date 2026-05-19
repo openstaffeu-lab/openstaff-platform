@@ -2,6 +2,79 @@
 
 Last updated: 2026-05-19
 
+## EXEC-28 Adoption Readiness, UX Trust & Controlled Real-User Operational Maturity
+
+Verdict: `PASS - production now has an adoption-readiness baseline with a first-user experience audit, UX trust governance, operator support playbooks, controlled scale expectations, initial analytics and operational metrics baselines, targeted trust-copy cleanup, and fresh proof that local builds plus production governance tooling remain healthy`
+
+### EXEC-28 Adoption Readiness Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| production runtime remained healthy | ✅ | `scripts/release/exec-26-production-ops-check.ps1` returned `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy` at `2026-05-19T09:58:06.6779342Z` |
+| first-user experience audit documented | ✅ | `docs/FIRST_USER_EXPERIENCE_AUDIT.md` now audits company/professional onboarding, profile completion, publish, upload, moderation waiting, rejected content, upgrade requests, and public browsing |
+| UX trust review documented | ✅ | `docs/UX_TRUST_REVIEW.md` now governs pricing, onboarding, moderation, approval/rejection, legal/privacy tone, and operational disclaimers |
+| operator support playbook documented | ✅ | `docs/OPERATOR_SUPPORT_PLAYBOOK.md` now standardizes onboarding support, moderation responses, billing clarification, rejection explanation, abuse handling, and escalation handling |
+| controlled scale readiness documented | ✅ | `docs/SCALE_READINESS_BASELINE.md` now defines first-10 and first-100 user expectations, bottlenecks, overload triggers, and freeze/rollback thresholds |
+| product analytics baseline documented | ✅ | `docs/PRODUCT_ANALYTICS_BASELINE.md` now defines registration, onboarding, publish, moderation, billing-request, auth-failure, upload-failure, and admin-intervention event expectations |
+| operational metrics baseline documented | ✅ | `docs/OPERATIONAL_METRICS_BASELINE.md` now defines onboarding, moderation, upgrade, backlog, failed upload/auth, webhook, intervention, and escalation KPIs |
+| public trust copy improved | ✅ | onboarding, publish, and public profile copy no longer expose internal rollout milestone jargon or placeholder wording |
+| misleading public fallback presentation removed | ✅ | public job and professional detail pages no longer present legacy fallback content as if it were trustworthy live marketplace content |
+| local build validation remained healthy | ✅ | `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19` |
+| monitoring and ops automation remained healthy | ✅ | fresh ops-check still confirmed `10` monitoring policies, `2` dashboards, `7` uptime checks, and `5` recent backups |
+| safe failure simulations remained healthy | ✅ | fresh simulation still returned `loginThrottleStatus = 429`, `webhookFailureStatus = 400`, `webhookThrottleStatus = 429`, `moderationUnauthorizedStatus = 401`, `storageMissingStatus = 404` at `2026-05-19T09:58:06.6047013Z` |
+| release governance gate strengthened again | ✅ | `scripts/release/exec-13-release-check.ps1` now requires the EXEC-28 adoption-readiness and trust-governance docs |
+| documentation + proof trail captured | ✅ | `docs/proof/exec28/README.md` now captures first-user audit, trust review, support readiness, scale readiness, analytics, metrics, UX trust fixes, and validation proof |
+
+### EXEC-28 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - first-user experience is now explicitly audited | ✅ | onboarding, publish, moderation wait states, billing request flow, and public browsing were reviewed as real adoption surfaces |
+| GO - UX trust governance is now explicit | ✅ | public copy now has formal rules against fake automation, instant-activation promises, and misleading moderation wording |
+| GO - operators now have stronger support scripts | ✅ | support, moderation, billing clarification, rejection explanation, and escalation expectations are standardized |
+| GO - public detail trust is stronger | ✅ | fallback detail pages now show temporary-unavailable states instead of legacy fallback content |
+| GO - scale expectations are now visible | ✅ | first-10 and first-100 user expectations, bottlenecks, and freeze triggers are documented |
+| GO - product analytics and operational metrics now have a baseline | ✅ | event ownership, privacy constraints, and launch KPIs are defined |
+| GO - production governance tooling stayed healthy after the trust-focused updates | ✅ | fresh ops-check and failure simulations both passed without regression |
+| NO-GO - implying unsupported automation | ✅ prevented | pricing, support playbooks, and trust review all keep `manual_only` and operator-review realities explicit |
+| NO-GO - presenting fallback content as live truth | ✅ prevented | public detail pages no longer render fallback marketplace content to visitors when live data is unavailable |
+
+### EXEC-28 Validation Proof
+
+- `docs/proof/exec28/README.md` ✅ captures the first-user audit summary, UX trust review summary, operator support readiness summary, scale readiness summary, analytics baseline summary, operational metrics summary, UX trust fixes, and validation summary
+- local build proof ✅: `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19`
+- production ops-check proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-production-ops-check.ps1` returned `verdict = PASS`, `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy`, `monitoringPolicies = 10`, `dashboards = 2`, `uptimeChecks = 7`, `recentBackups = 5`
+- failure simulation proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-failure-simulations.ps1` returned `loginThrottleStatus = 429`, `webhookFailureStatus = 400`, `webhookThrottleStatus = 429`, `moderationUnauthorizedStatus = 401`, `storageMissingStatus = 404`
+- release gate hardening proof ✅: `scripts/release/exec-13-release-check.ps1` now requires `FIRST_USER_EXPERIENCE_AUDIT`, `UX_TRUST_REVIEW`, `OPERATOR_SUPPORT_PLAYBOOK`, `SCALE_READINESS_BASELINE`, `PRODUCT_ANALYTICS_BASELINE`, and `OPERATIONAL_METRICS_BASELINE`
+- UX trust fix proof ✅: onboarding pages, publish page, and public job/professional/public-profile surfaces were updated to remove internal milestone/platform jargon and fallback-trust ambiguity
+- builds aplicatie ✅ required for EXEC-28 and passed locally; no production application deploy was required for this adoption-readiness baseline
+
+### EXEC-28 Accepted Adoption Limitations
+
+1. billing remains `manual_only`
+2. `publicUpgradeFlow = request_upgrade`
+3. `operatorReviewRequired = true`
+4. `emailDelivery = not_configured`
+5. `smsDelivery = not_required`
+6. rejection explanation still depends partly on operator follow-up rather than rich self-serve user messaging
+7. analytics and KPI definitions now exist, but routine automated reporting on those baselines is still future work
+
+### EXEC-28 Launch Decision
+
+EXEC-28 raises OpenStaff from a `sustainable engineering and lifecycle governance baseline` to an `adoption-ready controlled real-user operations baseline` suitable for careful onboarding growth.
+
+As of `2026-05-19`, the platform now has:
+
+1. an explicit first-user experience audit instead of assumed UX trust
+2. formal copy-governance rules for pricing, moderation, onboarding, and public-facing disclaimers
+3. a support playbook for first-user questions, moderation responses, billing clarification, and escalation handling
+4. a scale-readiness baseline for the first 10 and first 100 users
+5. initial product analytics and operational metrics baselines for adoption-readiness visibility
+6. targeted UI trust fixes that remove internal rollout jargon and public fallback ambiguity
+7. fresh validation proof that local builds and production governance tooling remain healthy after the adoption-readiness work
+
+EXEC-28 is `PASS` while the accepted manual commercial limitations, operator-dependent rejection explanation, and still-maturing analytics/reporting automation remain explicit in the governance docs and proof trail.
+
 ## EXEC-27 Engineering Sustainability, Technical Debt & Lifecycle Governance
 
 Verdict: `PASS - production now has a sustainability and lifecycle governance baseline with a structured debt register, explicit architecture boundaries, dependency governance, release lifecycle policy, data lifecycle rules, a durable ownership matrix, and fresh proof that local build and production governance tooling remain healthy`

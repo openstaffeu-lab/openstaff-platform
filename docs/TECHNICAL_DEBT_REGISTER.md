@@ -1,7 +1,7 @@
 # OpenStaff Technical Debt Register
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-27`
+Scope: `EXEC-28`
 
 ## Purpose
 
@@ -9,7 +9,7 @@ This register captures the engineering debt that most affects sustainability, re
 
 ## Audit Method
 
-The EXEC-27 audit reviewed:
+The EXEC-27 and EXEC-28 audits reviewed:
 
 1. active Prisma migration folders and legacy archives
 2. package manifests and lockfile warnings
@@ -27,7 +27,7 @@ Important note:
 | Severity | Area | Current state | Why it matters | Planned handling |
 |---|---|---|---|---|
 | critical | domain model boundary | the active product model is `User/Profile/Project/PublicPost`, but legacy `Actor/Job` flows and `FirebaseAuthGuard` are still present and tracked as legacy | this keeps auth, profile ownership, and long-term schema ownership ambiguous | choose one direction: formally bridge the models or retire the legacy layer in a dedicated execution |
-| critical | public fallback surfaces | public job and professional detail paths still contain legacy fallback behavior in `apps/admin/web/app/jobs/[id]/page.tsx`, `apps/admin/web/app/professionals/[id]/page.tsx`, and `apps/admin/web/lib/public-posts.ts` | fallback content can blur the boundary between live production truth and demo-safe behavior | remove live user-facing fallback rendering for production paths once replacement API coverage is complete |
+| medium | residual fallback and demo helper surfaces | public detail pages no longer render fallback marketplace content to visitors, but fallback/demo helper logic still exists in supporting helpers such as `apps/admin/web/lib/public-posts.ts` | retained fallback/helper logic can still confuse future changes if it is not clearly bounded away from public truth surfaces | keep fallback logic out of public-rendered detail views and continue retiring helper-level demo/fallback paths as replacement coverage improves |
 | medium | placeholder runtime behaviors | active runtime still contains placeholder-oriented responses for areas such as public feedback, admin roles, NACE fallback, compliance exports, and parts of billing/payroll metadata | placeholder responses are acceptable for controlled rollout, but they complicate support expectations and PASS discipline | keep only where explicitly documented; convert each surviving placeholder to either a real workflow or a gated non-production feature |
 | medium | dependency drift between frontends | `apps/admin` uses `next 16.2.3` while `apps/admin/web` uses `next 16.2.4`; both use the same React major line | patch-version drift makes support and rollback analysis harder than it needs to be | unify both frontend apps on one validated Next patch during the next dependency sweep |
 | medium | deprecated transitive dependencies | current lockfiles report deprecated transitive packages such as older `uuid`, older `glob`, and `inflight` | transitive deprecations increase long-term patch risk even when the direct dependency list looks healthy | review dependency tree during the next patch window and upgrade or replace the upstream packages that still pull them in |

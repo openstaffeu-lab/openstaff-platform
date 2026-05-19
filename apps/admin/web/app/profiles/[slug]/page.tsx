@@ -28,7 +28,7 @@ export default async function PublicIdentityProfilePage({ params }: PageProps) {
           {profile.displayName}
         </h1>
         <p style={{ maxWidth: 720, color: "#E2E8F0", lineHeight: 1.8 }}>
-          {profile.bio || "Profil public in curs de extindere. Acest strat este pregatit pentru marketplace, directoare si extensii viitoare de compliance."}
+          {profile.bio || "Acest profil public este in curs de completare. Informatiile afisate aici reflecta doar datele aprobate pentru vizibilitate publica."}
         </p>
 
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 24 }}>
