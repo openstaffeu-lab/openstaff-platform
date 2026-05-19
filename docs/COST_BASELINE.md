@@ -1,13 +1,15 @@
 # OpenStaff Cost Baseline
 
-Last updated: `2026-05-18`  
-Scope: `EXEC-25`
+Last updated: `2026-05-19`  
+Scope: `EXEC-31`
 
 ## Executive Summary
 
 OpenStaff production is currently optimized for controlled rollout rather than for high-throughput scale. The largest always-on cost center is Cloud SQL. Cloud Run stays relatively cost-efficient at idle because `minScale = 0`, while storage, logging, monitoring, and Artifact Registry grow more gradually with usage.
 
 This document defines the qualitative cost baseline and the operational signals that should trigger cost review.
+
+It should now be read together with `docs/LONG_TERM_COST_PROJECTION.md`.
 
 ## Expected Idle Cost Shape
 
@@ -147,3 +149,4 @@ Use these as operator review triggers rather than as finance-grade budgeting rul
 1. current commercial flow remains manual, so billing automation volume is not yet a major cost driver
 2. monitoring breadth increased in EXEC-24 and EXEC-25, which modestly increases observability cost in exchange for earlier incident detection
 3. stale rollback assets should not be pruned blindly just to reduce cost; rollback value still outweighs minor short-term savings at the current scale
+4. long-term cost sustainability now includes operator burden, not only infrastructure burden

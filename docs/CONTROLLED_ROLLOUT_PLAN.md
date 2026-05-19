@@ -25,6 +25,9 @@ This plan must be used together with:
 - `docs/COHORT_REVIEW_FRAMEWORK.md`
 - `docs/ADOPTION_READINESS_SCORECARD.md`
 - `docs/templates/COHORT_DECISION_REPORT.md`
+- `docs/BUSINESS_CONTINUITY_BASELINE.md`
+- `docs/OPERATIONAL_CAPACITY_LIMITS.md`
+- `docs/KNOWLEDGE_CONTINUITY_POLICY.md`
 
 ## Expansion Bands
 
@@ -256,6 +259,14 @@ Rollback or launch pause must be considered if any of the following occurs:
 
 - summarize incidents, pending queues, and next-owner handoff
 - confirm no open blockers for the next monitoring window
+
+## Continuity Expectations
+
+During controlled rollout:
+
+1. degraded mode must be declared explicitly when service quality drops but full outage is not present
+2. operator handoff must remain sufficient for another trained owner to continue safely
+3. expansion must stop before continuity depends on one exhausted operator
 
 ## Success Criteria For EXEC-21
 

@@ -1,7 +1,7 @@
 # Production Readiness Matrix
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-30`
+Scope: `EXEC-31`
 
 ## Matrix
 
@@ -52,6 +52,13 @@ Scope: `EXEC-30`
 | product iteration decision rules | documented and usable | rollout evidence now has explicit rules for copy fixes, onboarding work, pauses, freezes, expansion, and automation prioritization | [PRODUCT_ITERATION_DECISION_RULES.md](/C:/Users/admin/Desktop/openstaff-platform/docs/PRODUCT_ITERATION_DECISION_RULES.md:1) |
 | feedback triage workflow | documented and usable | rollout feedback now has a lifecycle from receipt through assignment, resolution, escalation, debt conversion, and backlog conversion | [FEEDBACK_TRIAGE_WORKFLOW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/FEEDBACK_TRIAGE_WORKFLOW.md:1) |
 | adoption readiness scorecard | documented and usable | onboarding, publish, moderation, billing, support, trust, stability, security, and cohort satisfaction now share one review model | [ADOPTION_READINESS_SCORECARD.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ADOPTION_READINESS_SCORECARD.md:1) |
+| operational sustainability review | documented and usable | operator fatigue, moderation, billing, support, release, and governance burden are now explicitly reviewed | [OPERATIONAL_SUSTAINABILITY_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_SUSTAINABILITY_REVIEW.md:1) |
+| business continuity baseline | documented and usable | degraded mode, fallback operation, partial outage procedure, and emergency operator actions are now explicit | [BUSINESS_CONTINUITY_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/BUSINESS_CONTINUITY_BASELINE.md:1) |
+| knowledge continuity policy | documented and usable | tribal knowledge, handover, and operator onboarding expectations are now first-class continuity controls | [KNOWLEDGE_CONTINUITY_POLICY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/KNOWLEDGE_CONTINUITY_POLICY.md:1) |
+| maintenance window governance | documented and usable | deploy timing, freeze periods, rollback timing, and hotfix expectations are now explicit | [MAINTENANCE_WINDOW_POLICY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/MAINTENANCE_WINDOW_POLICY.md:1) |
+| production drift governance | documented and usable | config, runtime, secret, IAM, and documentation drift now have formal prevention rules | [PRODUCTION_DRIFT_POLICY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/PRODUCTION_DRIFT_POLICY.md:1) |
+| long-term cost sustainability | documented and usable | infrastructure and human operational cost growth are now considered together | [LONG_TERM_COST_PROJECTION.md](/C:/Users/admin/Desktop/openstaff-platform/docs/LONG_TERM_COST_PROJECTION.md:1) |
+| operational capacity limits | documented and usable | moderation, support, billing, overload, freeze, and automation thresholds are now explicit | [OPERATIONAL_CAPACITY_LIMITS.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_CAPACITY_LIMITS.md:1) |
 | IAM least privilege | stable and more durable | runtime SA stayed constrained; build/deploy identity remains separate | EXEC-25 identity split remains active |
 | deploy pipeline resilience | stable | deploy path no longer depends on broad runtime IAM | dedicated build SA remains baseline |
 | engineering quality baseline | documented and enforceable | PASS now requires builds, release checks, proof, and rollback expectations rather than narrative optimism | [RELEASE_LIFECYCLE_POLICY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELEASE_LIFECYCLE_POLICY.md:1) |
@@ -59,7 +66,7 @@ Scope: `EXEC-30`
 
 ## Governance Verdict
 
-`EXEC-30 PASS`
+`EXEC-31 PASS`
 
 The production baseline is now suitable for repeatable ongoing operations and controlled real-user onboarding because:
 
@@ -71,6 +78,7 @@ The production baseline is now suitable for repeatable ongoing operations and co
 6. an audit structure exists for deploys, restores, IAM, security, and future incidents
 7. first-user trust, support, scale, analytics, operational metrics, funnel visibility, feedback loops, error intelligence, and reporting baselines are now explicit
 8. cohort reviews, adoption scorecards, and product iteration decisions are now explicitly tied to rollout evidence
+9. sustainability, continuity, drift prevention, long-term cost, and human-capacity limits are now explicit enough for longer-term controlled growth
 
 ## Accepted Remaining Limitations
 

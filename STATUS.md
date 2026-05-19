@@ -2,6 +2,79 @@
 
 Last updated: 2026-05-19
 
+## EXEC-31 Sustainability, Continuity & Long-Term Operations Baseline
+
+Verdict: `PASS - production now has a long-term sustainability and continuity baseline with explicit operator-burden review, business continuity expectations, knowledge-continuity rules, maintenance-window governance, drift prevention, long-term cost projection, capacity thresholds, and fresh proof that local builds plus production governance tooling remain healthy`
+
+### EXEC-31 Sustainability Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| production runtime remained healthy | ✅ | `scripts/release/exec-26-production-ops-check.ps1` returned `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy` on `2026-05-19` |
+| operational sustainability review documented | ✅ | `docs/OPERATIONAL_SUSTAINABILITY_REVIEW.md` now reviews operator fatigue, moderation sustainability, manual billing sustainability, support limits, escalation bottlenecks, single-operator dependencies, maintenance burden, release burden, and governance overhead |
+| business continuity baseline documented | ✅ | `docs/BUSINESS_CONTINUITY_BASELINE.md` now defines degraded mode, fallback operational modes, partial outage procedures, communication responsibilities, freeze conditions, and emergency operator actions |
+| knowledge continuity policy documented | ✅ | `docs/KNOWLEDGE_CONTINUITY_POLICY.md` now defines hidden-knowledge risks, mandatory documentation, handover rules, and operator onboarding expectations |
+| maintenance window governance documented | ✅ | `docs/MAINTENANCE_WINDOW_POLICY.md` now defines deploy timing, rollback timing, freeze periods, high-risk deploy conditions, rollback authority, and hotfix expectations |
+| production drift governance documented | ✅ | `docs/PRODUCTION_DRIFT_POLICY.md` now formalizes prevention and detection for config drift, runtime drift, dependency drift, undocumented infra changes, manual production edits, secret drift, and IAM drift |
+| long-term cost sustainability documented | ✅ | `docs/LONG_TERM_COST_PROJECTION.md` now extends cost visibility to projected growth costs, moderation/support/billing burden, storage growth, alert noise, and manual billing ceiling |
+| operational capacity limits documented | ✅ | `docs/OPERATIONAL_CAPACITY_LIMITS.md` now defines sustainable moderation, support, billing, overload thresholds, freeze conditions, and automation triggers |
+| deployment and rollout governance aligned | ✅ | `docs/DEPLOYMENT_RUNBOOK.md`, `docs/COST_BASELINE.md`, `docs/CONTROLLED_ROLLOUT_PLAN.md`, and `docs/PRODUCTION_READINESS_MATRIX.md` now reference the sustainability and continuity baseline |
+| resilience blind spots reviewed explicitly | ✅ | restore evidence, alert fatigue, monitoring blind spots, support blind spots, moderation blind spots, and rollout blind spots are now captured in the EXEC-31 proof and continuity docs |
+| release governance gate strengthened again | ✅ | `scripts/release/exec-13-release-check.ps1` now requires the EXEC-31 sustainability and continuity docs |
+| local build validation remained healthy | ✅ | `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19` |
+| monitoring and ops automation remained healthy | ✅ | fresh ops-check still confirmed `10` monitoring policies, `2` dashboards, `7` uptime checks, and `5` recent backups |
+| safe failure simulations remained healthy | ✅ | fresh simulation still returned the expected `429/400/429/401/404` guard-rail responses on `2026-05-19` |
+| documentation + proof trail captured | ✅ | `docs/proof/exec31/README.md` now captures sustainability, continuity, knowledge, maintenance, drift, cost, capacity, resilience-review, and validation proof |
+
+### EXEC-31 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - long-term operator burden is now explicit | ✅ | sustainability review and capacity limits now treat fatigue, overload, and single-operator dependencies as first-class operational risks |
+| GO - continuity no longer depends on implied degraded-mode behavior | ✅ | business continuity baseline now defines fallback operation and emergency operator expectations |
+| GO - tribal knowledge risk is now governed | ✅ | knowledge continuity policy now requires documentation, handover, and operator onboarding discipline |
+| GO - maintenance timing and hotfix authority are now explicit | ✅ | maintenance window policy now defines freeze periods, risky deploy conditions, and rollback authority |
+| GO - production drift now has prevention rules | ✅ | config, runtime, IAM, secret, and documentation drift are now governed instead of assumed visible |
+| GO - long-term cost now includes human burden | ✅ | cost projection now includes moderation, support, alerting noise, and manual billing ceiling alongside infrastructure growth |
+| GO - release governance still enforces the sustainability docs | ✅ | release check now fails if the EXEC-31 continuity and sustainability files are missing |
+| NO-GO - assuming launch discipline automatically scales over months | ✅ prevented | continuity, capacity, drift, and knowledge risks are now explicit rather than implied |
+| NO-GO - relying on hidden operator heroics | ✅ prevented | overload thresholds, handover rules, and continuity expectations now treat concentrated human burden as a real blocker |
+
+### EXEC-31 Validation Proof
+
+- `docs/proof/exec31/README.md` ✅ captures the sustainability summary, continuity summary, knowledge continuity summary, maintenance governance summary, drift summary, long-term cost summary, capacity summary, resilience review summary, and validation summary
+- local build proof ✅: `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19`
+- production ops-check proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-production-ops-check.ps1` returned `verdict = PASS`, `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy`, `monitoringPolicies = 10`, `dashboards = 2`, `uptimeChecks = 7`, `recentBackups = 5`
+- failure simulation proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-failure-simulations.ps1` returned `loginThrottleStatus = 429`, `webhookFailureStatus = 400`, `webhookThrottleStatus = 429`, `moderationUnauthorizedStatus = 401`, `storageMissingStatus = 404`
+- release gate hardening proof ✅: `scripts/release/exec-13-release-check.ps1` now requires `OPERATIONAL_SUSTAINABILITY_REVIEW`, `BUSINESS_CONTINUITY_BASELINE`, `KNOWLEDGE_CONTINUITY_POLICY`, `MAINTENANCE_WINDOW_POLICY`, `PRODUCTION_DRIFT_POLICY`, `LONG_TERM_COST_PROJECTION`, and `OPERATIONAL_CAPACITY_LIMITS`
+- continuity and resilience proof ✅: EXEC-24 restore drill evidence remains the active restore proof; unresolved alert-fatigue, support, moderation, rollout, and human-burden risks are now documented explicitly rather than hidden behind stable runtime status
+
+### EXEC-31 Accepted Sustainability Limitations
+
+1. billing remains `manual_only`
+2. `publicUpgradeFlow = request_upgrade`
+3. `operatorReviewRequired = true`
+4. `emailDelivery = not_configured`
+5. `smsDelivery = not_required`
+6. continuity and sustainability are now documented, but human discipline is still required to keep docs, handoffs, and freezes honest over time
+7. critical security and operational noise still rely partly on Cloud Logging-visible proxy signals until richer native metrics are exported
+
+### EXEC-31 Launch Decision
+
+EXEC-31 raises OpenStaff from a `decision-driven controlled adoption baseline` to a `long-term sustainable controlled operations baseline` suitable for multi-month controlled growth with stronger continuity, drift, and human-capacity governance.
+
+As of `2026-05-19`, the platform now has:
+
+1. an operational sustainability review for human and process burden
+2. a business continuity baseline for degraded and partial-outage operation
+3. a knowledge continuity policy for reducing tribal knowledge risk
+4. a maintenance window policy for longer-term release discipline
+5. a production drift policy for protecting source-of-truth integrity
+6. a long-term cost projection that includes operator burden
+7. explicit operational capacity limits and overload thresholds
+
+EXEC-31 is `PASS` while the accepted manual commercial limitations, operator-review dependency, and still-human continuity discipline remain explicit in the docs and proof trail.
+
 ## EXEC-30 Adoption Decisioning, Cohort Review & Product Iteration Loop
 
 Verdict: `PASS - production now has a closed adoption-decision loop with cohort review discipline, explicit product iteration rules, feedback triage workflow, adoption scorecard governance, stronger admin rollout summaries, formal expansion criteria, and fresh proof that local builds plus production governance tooling remain healthy`
