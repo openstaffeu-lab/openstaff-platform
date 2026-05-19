@@ -1,7 +1,7 @@
 # Operational Metrics Baseline
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-32`
+Scope: `EXEC-33`
 
 ## Purpose
 
@@ -29,6 +29,16 @@ This baseline defines the KPIs needed to judge whether the platform is supportab
 6. operator interruption rate
 7. alert-action ratio
 8. dashboard usefulness ratio
+
+## Operational Latency KPIs
+
+1. incident acknowledgment time
+2. moderation response time
+3. billing review response time
+4. escalation routing time
+5. support first-response time
+6. rollback decision time
+7. operator handoff time
 
 ## Metric Definitions
 
@@ -71,6 +81,8 @@ These KPI families must now also support:
 3. operator-efficiency review
 4. noise-reduction review
 5. capacity-overload detection before continuity degrades
+6. triage-acceleration review
+7. multi-operator readiness review
 
 ## Current Baseline Use
 
@@ -81,6 +93,7 @@ Use these KPIs to answer:
 3. are support issues coming from product confusion or runtime instability
 4. is the current controlled-rollout contract still believable at the observed scale
 5. is operator time being spent on judgment or on repetition
+6. are operators finding context fast enough to act and hand off safely
 
 ## Ownership
 
@@ -91,6 +104,7 @@ Use these KPIs to answer:
 | upgrade/billing | billing owner |
 | escalation/support backlog | support owner + Technical Ops |
 | efficiency and interruption metrics | Technical Ops + functional queue owner |
+| triage and handoff latency | Technical Ops + functional queue owner |
 
 ## Interpretation Notes
 
@@ -98,7 +112,8 @@ Use these KPIs to answer:
 2. moderation and billing latency matter more than raw traffic volume at this stage
 3. support escalations should be treated as product-trust signals, not only support-load signals
 4. efficiency gains are only valid if human review quality and truthfulness remain intact
+5. better latency is only meaningful if backup operators can make sense of the same context without re-triaging it
 
 ## Final Assessment
 
-OpenStaff now has an explicit operational metrics baseline, a first rollout-intelligence implementation, and an efficiency layer for deciding where automation reduces human burden without weakening control.
+OpenStaff now has an explicit operational metrics baseline, a first rollout-intelligence implementation, an efficiency layer, and a latency layer for deciding whether operators can orient, act, escalate, and hand off fast enough without weakening control.

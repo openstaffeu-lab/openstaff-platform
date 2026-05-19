@@ -30,6 +30,8 @@ This plan must be used together with:
 - `docs/KNOWLEDGE_CONTINUITY_POLICY.md`
 - `docs/AUTOMATION_GUARDRAILS.md`
 - `docs/EFFICIENCY_METRICS_BASELINE.md`
+- `docs/MULTI_OPERATOR_READINESS.md`
+- `docs/OPERATIONAL_LATENCY_BASELINE.md`
 
 ## Expansion Bands
 
@@ -69,6 +71,7 @@ Operator responsibilities:
 - monitor dashboards at the beginning and end of each shift
 - clear moderation and upgrade queues within the agreed SLA
 - escalate runtime, billing, or security anomalies immediately
+- leave handoff-ready notes another operator can act on safely
 
 ### Cohort 2: First Test Companies / Clients
 
@@ -181,6 +184,7 @@ At the end of each cohort window:
 4. complete `docs/templates/COHORT_DECISION_REPORT.md`
 5. choose `expand`, `hold`, `fix-first`, or `rollback`
 6. note whether repeated human effort should trigger automation prioritization
+7. note whether operator coordination or handoff latency created avoidable delay
 
 ## Support Escalation Model
 
@@ -271,6 +275,7 @@ During controlled rollout:
 2. operator handoff must remain sufficient for another trained owner to continue safely
 3. expansion must stop before continuity depends on one exhausted operator
 4. automation must reduce repeated clerical work before it attempts to reduce required human judgment
+5. active cohorts must not depend on one operator holding private operational context
 
 ## Success Criteria For EXEC-21
 
