@@ -1,7 +1,7 @@
 # Production Readiness Matrix
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-36`
+Scope: `EXEC-37`
 
 ## Matrix
 
@@ -93,6 +93,9 @@ Scope: `EXEC-36`
 | live assistance surfaces | implemented at first level | production readiness now renders advisory queue, incident, digest, and correlation summaries from the active `/status` payload | EXEC-36 admin readiness surface |
 | assistance surface safety review | documented and usable | live assistance wording, visibility hierarchy, and prohibited authority signals are now explicitly reviewed | [ASSISTANCE_SURFACE_SAFETY_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ASSISTANCE_SURFACE_SAFETY_REVIEW.md:1) |
 | assistance runtime review | documented and usable | performance, dashboard noise, duplication, readability, and stale-summary risk are now explicitly reviewed | [ASSISTANCE_RUNTIME_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ASSISTANCE_RUNTIME_REVIEW.md:1) |
+| assistance noise validation | documented and live-validated | live production review now confirms the assistance layer is not obviously noisy, duplicated, stale, or overload-heavy in the current rollout state | [ASSISTANCE_NOISE_VALIDATION.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ASSISTANCE_NOISE_VALIDATION.md:1) |
+| assistance usability validation | documented and live-validated | authenticated Chrome and Edge proof now confirm the live assistance layer is visible, readable, and usable without false authority signals | [ASSISTANCE_USABILITY_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ASSISTANCE_USABILITY_REVIEW.md:1) |
+| admin deploy path for assistance rollout | stable with explicit build identity | live admin promotion for the assistance surface now succeeds when the dedicated build service account is used explicitly | EXEC-37 deploy proof on revision `openstaff-admin-00012-jj8` |
 | IAM least privilege | stable and more durable | runtime SA stayed constrained; build/deploy identity remains separate | EXEC-25 identity split remains active |
 | deploy pipeline resilience | stable | deploy path no longer depends on broad runtime IAM | dedicated build SA remains baseline |
 | engineering quality baseline | documented and enforceable | PASS now requires builds, release checks, proof, and rollback expectations rather than narrative optimism | [RELEASE_LIFECYCLE_POLICY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELEASE_LIFECYCLE_POLICY.md:1) |
@@ -100,7 +103,7 @@ Scope: `EXEC-36`
 
 ## Governance Verdict
 
-`EXEC-36 PASS`
+`EXEC-37 PASS`
 
 The production baseline is now suitable for repeatable ongoing operations and controlled real-user onboarding because:
 
@@ -118,6 +121,7 @@ The production baseline is now suitable for repeatable ongoing operations and co
 12. a unified cockpit model, context-packet baseline, incident timeline model, queue-coordination baseline, alert-routing model, and session-continuity model now define how operator surfaces should converge without weakening authority or trust
 13. a first operational assistance baseline now defines what the system may summarize, highlight, correlate, suggest, prioritize, and route without transferring moderation, billing, severity, escalation, rollback, or rollout authority away from humans
 14. a first live assistance surface now renders advisory queue, incident, digest, and correlation summaries directly in the admin readiness experience with visible source reasoning and timestamps
+15. live deployment, authenticated rendering, operator noise review, and operator usability review are now proven on the active production admin revision rather than inferred from local build output only
 
 ## Accepted Remaining Limitations
 

@@ -48,6 +48,8 @@ This plan must be used together with:
 - `docs/ADMIN_ASSISTANCE_UX_REVIEW.md`
 - `docs/ASSISTANCE_SURFACE_SAFETY_REVIEW.md`
 - `docs/ASSISTANCE_RUNTIME_REVIEW.md`
+- `docs/ASSISTANCE_NOISE_VALIDATION.md`
+- `docs/ASSISTANCE_USABILITY_REVIEW.md`
 
 ## Expansion Bands
 
@@ -88,6 +90,7 @@ Operator responsibilities:
 - review the shared cockpit or equivalent consolidated context before acting in specialist tools
 - use assistance summaries as orientation support, not as authority-bearing outcomes
 - review live assistance cards together with their source metrics before escalating, pausing rollout, or changing queue priorities
+- confirm that assistance timestamps still match the current operational moment before treating a summary as active context
 - clear moderation and upgrade queues within the agreed SLA
 - escalate runtime, billing, or security anomalies immediately
 - leave handoff-ready notes another operator can act on safely
@@ -206,6 +209,7 @@ At the end of each cohort window:
 7. note whether operator coordination or handoff latency created avoidable delay
 8. note whether command-surface, queue-coordination, or alert-routing gaps slowed action materially
 9. note whether the live assistance surfaces reduced synthesis time or created noise, duplication, or stale-summary confusion
+10. note whether browser-visible wording, timestamps, and source reasoning remained trustworthy during the cohort window
 
 ## Support Escalation Model
 

@@ -2,6 +2,70 @@
 
 Last updated: 2026-05-19
 
+## EXEC-37 Live Assistance Deployment & Operational Usability Validation
+
+Verdict: `PASS - the live operational assistance rollout is now deployed, authenticated production rendering is proven in Chrome and Edge, the advisory authority boundary remains explicit, and the current live assistance layer is usable without obvious noise or misleading automation signals`
+
+### EXEC-37 Live Rollout Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| admin deploy-path blocker resolved | ✅ | default deploy path failed because `605639023972-compute@developer.gserviceaccount.com` lacked `storage.objects.get` for the staged Cloud Build source object, while the source-bucket viewer grant existed on `openstaff-build@openstaff-platform.iam.gserviceaccount.com` |
+| admin deploy promoted successfully | ✅ | `gcloud builds submit --config apps/admin/cloudbuild.admin.yaml --service-account=projects/openstaff-platform/serviceAccounts/openstaff-build@openstaff-platform.iam.gserviceaccount.com .` succeeded as build `6761661d-1f06-488a-8b72-1b106ab57c8c` |
+| latest ready admin revision verified | ✅ | `gcloud run services describe openstaff-admin --region europe-west1` now reports `latestReadyRevisionName = openstaff-admin-00012-jj8` with traffic on the same revision |
+| live assistance rendering proven | ✅ | authenticated Chrome and Edge validation on `https://backoffice.openstaff.eu/admin/production-readiness` confirmed live rendering of the queue assistance, incident assistance, digests, correlations, and source metrics snapshot |
+| assistance timestamps and reasoning visible | ✅ | both browser proofs confirmed snapshot timestamps plus `Source reasoning` / `Correlation reasoning` blocks |
+| authority boundary remained explicit live | ✅ | live rendered `Assistance safety contract` states the page is advisory only and may not approve, reject, escalate automatically, assign severity automatically, activate billing, trigger rollback, change rollout state, or override an operator |
+| console and request health remained clean | ✅ | Chrome and Edge browser proof returned `consoleErrors = []`, `pageErrors = []`, `failedRequests = []` |
+| assistance noise review documented | ✅ | `docs/ASSISTANCE_NOISE_VALIDATION.md` now records duplication, stale-summary, overload, and scanning-cost findings from the live surface |
+| assistance usability review documented | ✅ | `docs/ASSISTANCE_USABILITY_REVIEW.md` now records readability, scanning speed, queue visibility, escalation clarity, incident comprehension, digest usefulness, and correlation usefulness findings |
+| proof trail captured | ✅ | `docs/proof/exec37/README.md` now captures deploy resolution, live rendering proof, safety review, noise/usability review, runtime performance, smoke, and cleanup proof |
+
+### EXEC-37 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - live admin assistance is truly deployed | ✅ | active production admin revision now includes the assistance surface and renders it under authenticated browser proof |
+| GO - assistance remains advisory and explainable live | ✅ | browser proof confirmed `Advisory only`, visible source metrics, snapshot timestamps, and explicit authority-boundary wording |
+| GO - queue, incident, digest, and correlation cards are operator-usable | ✅ | Chrome and Edge validation confirmed rendering, readability, and absence of browser/runtime noise |
+| GO - release governance now includes live assistance usability and noise validation | ✅ | STATUS, readiness matrix, rollout plan, guardrails, and EXEC-37 proof now reference the live operational closure |
+| NO-GO - hidden automation or silent authority transfer | ✅ prevented | live rendered text still prohibits automatic moderation approval, automatic escalation, automatic severity, billing activation, rollback triggering, rollout-state change, and operator override |
+| NO-GO - claiming live rollout closure without deploy proof | ✅ prevented | deploy closure is tied to build `6761661d-1f06-488a-8b72-1b106ab57c8c` and revision `openstaff-admin-00012-jj8` |
+
+### EXEC-37 Validation Proof
+
+- `docs/proof/exec37/README.md` ✅ captures the deployment resolution summary, live assistance rendering summary, assistance safety summary, operational noise summary, operational usability summary, runtime performance summary, production smoke summary, validation summary, and cleanup proof
+- deploy resolution proof ✅: explicit `--service-account=projects/openstaff-platform/serviceAccounts/openstaff-build@openstaff-platform.iam.gserviceaccount.com` fixed the Cloud Build source-object access mismatch without broadening runtime IAM
+- latest admin revision proof ✅: `openstaff-admin-00012-jj8`
+- browser proof ✅: authenticated Chrome and Edge validation confirmed live rendering of assistance safety, queue assistance, incident assistance, digests, correlations, timestamps, reasoning, and source metrics with no console/request failures
+- production smoke proof ✅: `/health`, `/status`, and `https://backoffice.openstaff.eu/admin/production-readiness` remained healthy during proof; active readiness snapshot still showed `warnings = []` and `errors = []`
+- local/build validation proof ✅: `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19`
+- release governance proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-13-release-check.ps1` passed after the EXEC-37 updates
+
+### EXEC-37 Accepted Assistance Limitations
+
+1. billing remains `manual_only`
+2. `publicUpgradeFlow = request_upgrade`
+3. `operatorReviewRequired = true`
+4. `emailDelivery = not_configured`
+5. `smsDelivery = not_required`
+6. the live assistance layer still depends on the existing `/status` contract rather than a dedicated incident engine or queue orchestration backend
+7. current browser proof validates live rendering, wording, and basic usability better than long-term recommendation quality drift
+
+### EXEC-37 Launch Decision
+
+EXEC-37 closes the live operational assistance rollout honestly.
+
+As of `2026-05-19`, OpenStaff now has:
+
+1. a working production deployment path for the admin assistance surface
+2. an authenticated live assistance rendering proof on the active admin revision
+3. live browser proof that the assistance layer remains advisory, source-linked, and non-authoritative
+4. explicit noise and usability reviews for the production assistance experience
+
+EXEC-37 is `PASS`.
+
+
 ## EXEC-36 Operational Assistance Surfaces & Live Operator Summaries
 
 Verdict: `IN PROGRESS - assistance surfaces are implemented and validated locally, but live admin promotion and authenticated production rendering remain unproven because Cloud Build could not read the staged source object during deploy from this environment`
@@ -2628,5 +2692,6 @@ Consecinta:
 4. Decide whether the legacy `User/Profile/Project` domain should be bridged into the new `Actor/Job` domain or gradually retired; both now coexist in the schema.
 5. Enable Secret Manager, Firebase Auth, and Firestore in the GCP project before marking production as ready.
 6. Investigate the Next.js Turbopack panic in the admin dev server log before considering the local admin runtime fully healthy.
+
 
 
