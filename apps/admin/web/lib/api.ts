@@ -562,6 +562,20 @@ type RequestOptions = {
   token?: string | null;
 };
 
+type FunnelEventType =
+  | "LANDING_PAGE_VISIT"
+  | "REGISTER_STARTED"
+  | "PUBLISH_STARTED";
+
+type OperationalFeedbackType =
+  | "ONBOARDING_FRICTION"
+  | "MODERATION_CONFUSION"
+  | "BILLING_CONFUSION"
+  | "SUPPORT_PAIN_POINT"
+  | "FAILED_FLOW"
+  | "OPERATOR_ESCALATION"
+  | "REPEATED_USER_CONFUSION";
+
 export function getApiUrl() {
   return API_URL;
 }
@@ -613,6 +627,74 @@ export function getAuthToken() {
 
 export function getRefreshToken() {
   return getStoredRefreshToken();
+}
+
+function sessionDedupeKey(key: string) {
+  return `openstaff_rollout_event:${key}`;
+}
+
+export async function trackRolloutFunnelEvent(input: {
+  eventType: FunnelEventType;
+  surface: string;
+  sourceId?: string;
+  metadata?: Record<string, unknown>;
+  dedupeKey?: string;
+}) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (input.dedupeKey) {
+    const existing = window.sessionStorage.getItem(sessionDedupeKey(input.dedupeKey));
+    if (existing) {
+      return;
+    }
+    window.sessionStorage.setItem(sessionDedupeKey(input.dedupeKey), "1");
+  }
+
+  const payload = JSON.stringify(input);
+
+  try {
+    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+      const blob = new Blob([payload], { type: "application/json" });
+      navigator.sendBeacon(`${API_URL}/ops/funnel-events`, blob);
+      return;
+    }
+
+    await fetch(`${API_URL}/ops/funnel-events`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: payload,
+      keepalive: true,
+      cache: "no-store",
+    });
+  } catch {
+    // Funnel visibility must stay non-blocking for the user flow.
+  }
+}
+
+export async function submitOperationalFeedback(input: {
+  feedbackType: OperationalFeedbackType;
+  surface: string;
+  summary?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  try {
+    await fetch(`${API_URL}/ops/feedback`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {}),
+      },
+      body: JSON.stringify(input),
+      keepalive: true,
+      cache: "no-store",
+    });
+  } catch {
+    // Operational feedback should never block the primary user action.
+  }
 }
 
 async function parseError(response: Response) {

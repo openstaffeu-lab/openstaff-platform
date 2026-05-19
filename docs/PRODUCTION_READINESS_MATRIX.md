@@ -1,7 +1,7 @@
 # Production Readiness Matrix
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-28`
+Scope: `EXEC-29`
 
 ## Matrix
 
@@ -42,7 +42,12 @@ Scope: `EXEC-28`
 | capacity baseline | stable for current rollout | Cloud Run limits, DB growth expectations, and uptime checks exist together | no load/stress test performed in EXEC-26 |
 | controlled scale baseline | documented and usable | first-10 and first-100 user expectations, bottlenecks, and freeze triggers are explicit | [SCALE_READINESS_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/SCALE_READINESS_BASELINE.md:1) |
 | product analytics baseline | documented and initial | first adoption-readiness events, ownership, and privacy constraints are explicit | [PRODUCT_ANALYTICS_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/PRODUCT_ANALYTICS_BASELINE.md:1) |
-| operational metrics baseline | documented and initial | onboarding, moderation, billing, backlog, and escalation KPIs are now defined | [OPERATIONAL_METRICS_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_METRICS_BASELINE.md:1) |
+| operational metrics baseline | documented and implemented at first level | onboarding, moderation, billing, backlog, escalation, and failure KPIs are now defined and exposed through rollout summaries | [OPERATIONAL_METRICS_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_METRICS_BASELINE.md:1) |
+| funnel visibility baseline | documented and implemented at first level | landing, register, onboarding, publish, upgrade, auth-failure, and upload-failure visibility now exist | [FUNNEL_VISIBILITY_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/FUNNEL_VISIBILITY_BASELINE.md:1) |
+| operational feedback loop | documented and implemented at first level | onboarding friction, moderation confusion, billing confusion, failed flows, escalations, and repeated confusion can now be logged | [OPERATIONAL_FEEDBACK_LOOP.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_FEEDBACK_LOOP.md:1) |
+| supportability review | documented and usable | support load, moderation burden, billing burden, and escalation quality are now assessed explicitly | [SUPPORTABILITY_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/SUPPORTABILITY_REVIEW.md:1) |
+| error intelligence baseline | documented and usable | retryability, severity, wording expectations, and escalation triggers now exist for rollout-critical failures | [ERROR_INTELLIGENCE_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ERROR_INTELLIGENCE_BASELINE.md:1) |
+| rollout reporting baseline | documented and usable | daily rollout, moderation, onboarding, billing, incident, and support backlog reporting expectations are now explicit | [ROLLOUT_REPORTING_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ROLLOUT_REPORTING_BASELINE.md:1) |
 | IAM least privilege | stable and more durable | runtime SA stayed constrained; build/deploy identity remains separate | EXEC-25 identity split remains active |
 | deploy pipeline resilience | stable | deploy path no longer depends on broad runtime IAM | dedicated build SA remains baseline |
 | engineering quality baseline | documented and enforceable | PASS now requires builds, release checks, proof, and rollback expectations rather than narrative optimism | [RELEASE_LIFECYCLE_POLICY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELEASE_LIFECYCLE_POLICY.md:1) |
@@ -50,7 +55,7 @@ Scope: `EXEC-28`
 
 ## Governance Verdict
 
-`EXEC-28 PASS`
+`EXEC-29 PASS`
 
 The production baseline is now suitable for repeatable ongoing operations and controlled real-user onboarding because:
 
@@ -60,7 +65,7 @@ The production baseline is now suitable for repeatable ongoing operations and co
 4. architecture, dependency, lifecycle, data, and ownership governance now exist as first-class docs
 5. ops automation exists for repeated checks and safe simulations
 6. an audit structure exists for deploys, restores, IAM, security, and future incidents
-7. first-user trust, support, scale, analytics, and operational metrics baselines are now explicit
+7. first-user trust, support, scale, analytics, operational metrics, funnel visibility, feedback loops, error intelligence, and reporting baselines are now explicit
 
 ## Accepted Remaining Limitations
 

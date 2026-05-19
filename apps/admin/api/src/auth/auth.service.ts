@@ -162,6 +162,27 @@ export class AuthService {
       },
     });
 
+    await this.notificationService.emitEvent({
+      key: `rollout-funnel:register-completed:${user.id}`,
+      eventType: 'REGISTER_COMPLETED',
+      sourceType: 'ROLLOUT_FUNNEL',
+      sourceId: user.id,
+      userId: user.id,
+      actorId: user.id,
+      category: NotificationCategory.ADMIN,
+      channel: 'SYSTEM' as any,
+      channels: ['SYSTEM' as any],
+      title: 'Registration completed',
+      message: 'A user completed account registration.',
+      metadata: {
+        actorType: data.actorType,
+        role,
+      },
+      relatedEntityType: 'User',
+      relatedEntityId: user.id,
+      skipNotification: true,
+    });
+
     await this.auditService.logSecurityEvent({
       userId: user.id,
       type: 'LOGIN_SUCCESS' as any,

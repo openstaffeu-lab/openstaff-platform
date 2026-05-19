@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { trackRolloutFunnelEvent } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
 const ACTOR_TYPES = [
@@ -20,6 +21,15 @@ export default function RegisterPage() {
   const [actorType, setActorType] = useState<(typeof ACTOR_TYPES)[number]["value"]>("INDIVIDUAL");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    void trackRolloutFunnelEvent({
+      eventType: "REGISTER_STARTED",
+      surface: "register-page",
+      sourceId: "public-register",
+      dedupeKey: "register-started",
+    });
+  }, []);
 
   async function handleRegister() {
     setLoading(true);

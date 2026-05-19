@@ -147,6 +147,28 @@ export class PublicPostsService {
       include: this.adminPostInclude,
     });
 
+    await this.notificationService.emitEvent({
+      key: `rollout-funnel:publish-submitted:${post.id}`,
+      eventType: 'PUBLISH_SUBMITTED',
+      sourceType: 'ROLLOUT_FUNNEL',
+      sourceId: post.id,
+      userId: user.sub,
+      actorId: user.sub,
+      category: NotificationCategory.ADMIN,
+      channel: 'SYSTEM' as any,
+      channels: ['SYSTEM' as any],
+      title: 'Publish submitted',
+      message: `A ${post.type.toLowerCase()} post was submitted for moderation.`,
+      metadata: {
+        postType: post.type,
+        moderationStatus: post.moderationStatus,
+        visibility: post.visibility,
+      },
+      relatedEntityType: 'PublicPost',
+      relatedEntityId: post.id,
+      skipNotification: true,
+    });
+
     return buildSuccessResponse(this.toPublicPostResponse(withRelations ?? post, true));
   }
 
@@ -264,7 +286,14 @@ export class PublicPostsService {
       throw new BadRequestException('Media file is required');
     }
 
-    const storageKey = await this.persistUploadedFile(postId, 'media', file);
+    let storageKey: string;
+
+    try {
+      storageKey = await this.persistUploadedFile(postId, 'media', file);
+    } catch (error) {
+      await this.recordUploadFailure(postId, user.sub, 'media', error, file);
+      throw error;
+    }
     const storageReference = this.storageBucket
       ? this.buildGcsReference(storageKey, this.storageBucket)
       : storageKey;
@@ -321,7 +350,14 @@ export class PublicPostsService {
       throw new BadRequestException('Document file is required');
     }
 
-    const storageKey = await this.persistUploadedFile(postId, 'documents', file);
+    let storageKey: string;
+
+    try {
+      storageKey = await this.persistUploadedFile(postId, 'documents', file);
+    } catch (error) {
+      await this.recordUploadFailure(postId, user.sub, 'documents', error, file);
+      throw error;
+    }
 
     const document = await this.prisma.publicPostDocument.create({
       data: {
@@ -483,6 +519,29 @@ export class PublicPostsService {
     });
 
     if (post.authorUserId && nextModerationStatus) {
+      if (nextModerationStatus === PublicModerationStatus.APPROVED) {
+        await this.notificationService.emitEvent({
+          key: `rollout-funnel:publish-approved:${post.id}`,
+          eventType: 'PUBLISH_APPROVED',
+          sourceType: 'ROLLOUT_FUNNEL',
+          sourceId: post.id,
+          userId: post.authorUserId,
+          actorId: post.authorUserId,
+          category: NotificationCategory.ADMIN,
+          channel: 'SYSTEM' as any,
+          channels: ['SYSTEM' as any],
+          title: 'Publish approved',
+          message: `A public post is now live after moderation approval.`,
+          metadata: {
+            status: post.status,
+            visibility: post.visibility,
+          },
+          relatedEntityType: 'PublicPost',
+          relatedEntityId: post.id,
+          skipNotification: true,
+        });
+      }
+
       await this.notificationService.emitEvent({
         key: `public-post:${post.id}:${nextModerationStatus}`,
         eventType:
@@ -1118,6 +1177,56 @@ export class PublicPostsService {
     await writeFile(join(this.getBaseUploadsPath(), relativeStorageKey), file.buffer);
 
     return relativeStorageKey;
+  }
+
+  private async recordUploadFailure(
+    postId: string,
+    userId: string,
+    surface: 'media' | 'documents',
+    error: unknown,
+    file?: UploadedMarketplaceFile,
+  ) {
+    const message =
+      error instanceof Error ? error.message : 'Upload failed before persistence completed.';
+
+    await this.notificationService.emitEvent({
+      key: `rollout-funnel:upload-failed:${surface}:${postId}:${Date.now()}`,
+      eventType: 'UPLOAD_FAILED',
+      sourceType: 'ROLLOUT_FUNNEL',
+      sourceId: postId,
+      userId,
+      actorId: userId,
+      category: NotificationCategory.ADMIN,
+      channel: 'SYSTEM' as any,
+      channels: ['SYSTEM' as any],
+      title: 'Upload failed',
+      message: `${surface} upload failed for a public post.`,
+      metadata: {
+        surface,
+        fileName: file?.originalname ?? null,
+        mimeType: file?.mimetype ?? null,
+        sizeBytes: file?.size ?? null,
+        error: message.slice(0, 200),
+      },
+      relatedEntityType: 'PublicPost',
+      relatedEntityId: postId,
+      skipNotification: true,
+    });
+
+    await this.auditService.log({
+      actorUserId: userId,
+      entityType: 'PUBLIC_POST_UPLOAD',
+      entityId: postId,
+      action: 'UPLOAD_FAILED',
+      category: 'ROLLOUT_INTELLIGENCE',
+      metadata: {
+        surface,
+        fileName: file?.originalname ?? null,
+        mimeType: file?.mimetype ?? null,
+        sizeBytes: file?.size ?? null,
+        error: message.slice(0, 200),
+      },
+    });
   }
 
   private getBaseUploadsPath() {

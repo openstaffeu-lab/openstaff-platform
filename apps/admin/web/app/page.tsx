@@ -5,7 +5,12 @@ import { useEffect, useState } from "react";
 import ActorCard from "@/components/ActorCard";
 import GeminiChatbot from "@/components/GeminiChatbot";
 import JobCard from "@/components/JobCard";
-import { MarketplacePost, getMarketplaceProfessionals, getMarketplaceProjects } from "@/lib/api";
+import {
+  MarketplacePost,
+  getMarketplaceProfessionals,
+  getMarketplaceProjects,
+  trackRolloutFunnelEvent,
+} from "@/lib/api";
 
 const CATEGORIES = [
   { key: "DATA_CENTER", label: "Data Center", color: "#3B82F6", icon: "🖥" },
@@ -22,6 +27,13 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    void trackRolloutFunnelEvent({
+      eventType: "LANDING_PAGE_VISIT",
+      surface: "homepage",
+      sourceId: "openstaff-homepage",
+      dedupeKey: "homepage-landing-visit",
+    });
+
     Promise.all([getMarketplaceProjects(6), getMarketplaceProfessionals(8)]).then(
       ([projectsResponse, professionalsResponse]) => {
         setProjects(projectsResponse.data);

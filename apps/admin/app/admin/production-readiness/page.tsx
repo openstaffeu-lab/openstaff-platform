@@ -25,6 +25,25 @@ type StatusPayload = {
   };
   integrations?: Record<string, unknown>;
   queues?: Record<string, unknown>;
+  rolloutIntelligence?: {
+    windowHours?: number;
+    funnel?: Record<string, number>;
+    operations?: {
+      onboarding?: Record<string, number>;
+      moderation?: Record<string, number>;
+      upgrades?: Record<string, number>;
+      failures?: Record<string, number>;
+      feedback?: Record<string, number>;
+      recentOperatorActions?: Array<{
+        createdAt: string;
+        action: string;
+        category: string | null;
+        entityType: string;
+        actorEmail: string;
+        actorRole: string;
+      }>;
+    };
+  };
 };
 
 export default function ProductionReadinessPage() {
@@ -92,6 +111,9 @@ export default function ProductionReadinessPage() {
       }
     | undefined;
   const commercialLaunchMode = integrations?.commercial?.launchMode ?? "Unknown";
+  const rolloutWindowHours = status?.rolloutIntelligence?.windowHours ?? 24;
+  const funnel = status?.rolloutIntelligence?.funnel ?? {};
+  const operations = status?.rolloutIntelligence?.operations;
   const billingMode =
     integrations?.commercial?.billingMode ??
     integrations?.billingPayments?.mode ??
@@ -178,6 +200,33 @@ export default function ProductionReadinessPage() {
           />
         </section>
 
+        <section className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
+          <MetricCard
+            label={`Landing / ${rolloutWindowHours}h`}
+            value={funnel.landingPageVisits24h ?? 0}
+          />
+          <MetricCard
+            label={`Register / ${rolloutWindowHours}h`}
+            value={funnel.registerCompleted24h ?? 0}
+          />
+          <MetricCard
+            label={`Onboarding / ${rolloutWindowHours}h`}
+            value={funnel.onboardingCompleted24h ?? 0}
+          />
+          <MetricCard
+            label="Pending Moderation"
+            value={operations?.moderation?.pendingTotal ?? 0}
+          />
+          <MetricCard
+            label="Upgrade Requests"
+            value={operations?.upgrades?.pending ?? 0}
+          />
+          <MetricCard
+            label={`Auth Failures / 15m`}
+            value={operations?.failures?.loginFailures15m ?? 0}
+          />
+        </section>
+
         {error ? (
           <section className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-5 text-rose-100">
             <div className="text-sm uppercase tracking-[0.18em] text-rose-200">API status error</div>
@@ -214,6 +263,24 @@ export default function ProductionReadinessPage() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
+          <Card title="Rollout funnel visibility">
+            <JsonPreview value={status?.rolloutIntelligence?.funnel ?? { unavailable: true }} />
+          </Card>
+
+          <Card title="Operational summaries">
+            <JsonPreview
+              value={{
+                onboarding: operations?.onboarding ?? {},
+                moderation: operations?.moderation ?? {},
+                upgrades: operations?.upgrades ?? {},
+                failures: operations?.failures ?? {},
+                feedback: operations?.feedback ?? {},
+              }}
+            />
+          </Card>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-2">
           <Card title="Integration summary">
             <JsonPreview value={status?.integrations ?? { unavailable: true }} />
           </Card>
@@ -225,6 +292,45 @@ export default function ProductionReadinessPage() {
                 localRuntime,
                 timestamp: status?.timestamp ?? null,
               }}
+            />
+          </Card>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-2">
+          <Card title="Recent operator actions">
+            {operations?.recentOperatorActions?.length ? (
+              <div className="space-y-3">
+                {operations.recentOperatorActions.map((item) => (
+                  <div
+                    key={`${item.createdAt}-${item.action}-${item.entityType}`}
+                    className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3"
+                  >
+                    <div className="text-sm font-medium text-slate-100">
+                      {item.action} · {item.entityType}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      {item.actorEmail} ({item.actorRole}) · {new Date(item.createdAt).toLocaleString()}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {item.category ?? "uncategorized"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState text="No recent operator actions were included in the current snapshot." />
+            )}
+          </Card>
+
+          <Card title="Rollout interpretation">
+            <SimpleList
+              items={[
+                `Register started vs completed gives the first honesty check on the public signup funnel.`,
+                `Pending and rejected moderation counts expose operator backlog without leaking end-user content.`,
+                `Auth failure and rate-limit bursts help separate confusion from abuse or runtime instability.`,
+                `Webhook and upload failure counts make operational regressions visible before users report them manually.`,
+              ]}
+              tone="cyan"
             />
           </Card>
         </section>
@@ -275,9 +381,13 @@ function FlagGrid({ flags }: { flags: Record<string, unknown> }) {
   );
 }
 
-function SimpleList({ items, tone }: { items: string[]; tone: "rose" | "amber" }) {
+function SimpleList({ items, tone }: { items: string[]; tone: "rose" | "amber" | "cyan" }) {
   const bulletClass =
-    tone === "rose" ? "border-rose-500/25 bg-rose-500/10 text-rose-100" : "border-amber-500/25 bg-amber-500/10 text-amber-100";
+    tone === "rose"
+      ? "border-rose-500/25 bg-rose-500/10 text-rose-100"
+      : tone === "amber"
+        ? "border-amber-500/25 bg-amber-500/10 text-amber-100"
+        : "border-cyan-500/25 bg-cyan-500/10 text-cyan-100";
 
   return (
     <div className="space-y-3">

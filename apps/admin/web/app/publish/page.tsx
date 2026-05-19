@@ -9,6 +9,8 @@ import {
   deletePublicPost,
   getMyPublicPosts,
   type MarketplacePost,
+  submitOperationalFeedback,
+  trackRolloutFunnelEvent,
   updatePublicPost,
   uploadPublicPostDocument,
   uploadPublicPostMedia,
@@ -62,8 +64,18 @@ export default function PublishMarketplacePage() {
       return;
     }
 
+    void trackRolloutFunnelEvent({
+      eventType: "PUBLISH_STARTED",
+      surface: "publish-page",
+      sourceId: "public-publish",
+      dedupeKey: "publish-started",
+      metadata: {
+        role: user?.role ?? "authenticated-user",
+      },
+    });
+
     void loadPosts();
-  }, [token]);
+  }, [token, user?.role]);
 
   const selectedPost = useMemo(
     () => posts.find((post) => post.id === selectedId) ?? null,
@@ -199,6 +211,15 @@ export default function PublishMarketplacePage() {
       await loadPosts();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Media upload failed.");
+      await submitOperationalFeedback({
+        feedbackType: "FAILED_FLOW",
+        surface: "publish-media-upload",
+        summary: "Media upload failed in the publish flow.",
+        metadata: {
+          postId: selectedId,
+          fileName: mediaFile.name,
+        },
+      });
     } finally {
       setSaving(false);
     }
@@ -226,6 +247,15 @@ export default function PublishMarketplacePage() {
       await loadPosts();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Document upload failed.");
+      await submitOperationalFeedback({
+        feedbackType: "FAILED_FLOW",
+        surface: "publish-document-upload",
+        summary: "Document upload failed in the publish flow.",
+        metadata: {
+          postId: selectedId,
+          fileName: documentFile.name,
+        },
+      });
     } finally {
       setSaving(false);
     }

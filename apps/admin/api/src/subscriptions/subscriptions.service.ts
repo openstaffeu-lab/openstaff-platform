@@ -265,6 +265,28 @@ export class SubscriptionsService {
       },
     });
 
+    await this.notificationService.emitEvent({
+      key: `rollout-funnel:upgrade-requested:${upgradeRequest.id}`,
+      eventType: 'UPGRADE_REQUESTED',
+      sourceType: 'ROLLOUT_FUNNEL',
+      sourceId: upgradeRequest.id,
+      userId: authUser?.id ?? null,
+      actorId: authUser?.id ?? null,
+      category: NotificationCategory.ADMIN,
+      channel: 'SYSTEM' as any,
+      channels: ['SYSTEM' as any],
+      title: 'Upgrade request recorded',
+      message: `A ${requestedPlan.code} upgrade request was submitted.`,
+      metadata: {
+        requestedPlanCode: requestedPlan.code,
+        source: input.source ?? 'PRICING',
+        authenticated: Boolean(authUser?.id),
+      },
+      relatedEntityType: 'SubscriptionUpgradeRequest',
+      relatedEntityId: upgradeRequest.id,
+      skipNotification: true,
+    });
+
     return {
       ...upgradeRequest,
       message: 'Upgrade request received',

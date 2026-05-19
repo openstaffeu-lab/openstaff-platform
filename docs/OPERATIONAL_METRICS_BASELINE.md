@@ -1,11 +1,11 @@
 # Operational Metrics Baseline
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-28`
+Scope: `EXEC-29`
 
 ## Purpose
 
-This baseline defines the launch KPIs needed to judge whether the platform is supportable for controlled real-user onboarding.
+This baseline defines the launch KPIs needed to judge whether the platform is supportable for controlled real-user onboarding and whether rollout intelligence is good enough to detect friction before it becomes invisible drift.
 
 ## Core KPIs
 
@@ -33,6 +33,15 @@ This baseline defines the launch KPIs needed to judge whether the platform is su
 | admin intervention rate | share of user journeys that require manual operator action |
 | support escalation frequency | number of issues that move from L1 to billing, technical, or security owners |
 
+## EXEC-29 Visibility Notes
+
+These KPI families now have a first implementation path:
+
+1. funnel counts and upload failures are exposed through rollout intelligence summaries in `/status`
+2. failed auth bursts are visible through security telemetry summaries
+3. moderation and upgrade backlog counts are visible in the same readiness surface
+4. support escalation and repeated confusion can now be logged through the operational feedback loop
+
 ## Current Baseline Use
 
 Use these KPIs to answer:
@@ -59,4 +68,4 @@ Use these KPIs to answer:
 
 ## Final Assessment
 
-OpenStaff now has an explicit operational metrics baseline for controlled rollout. The next maturity step is turning these KPI definitions into routine operator reporting rather than relying only on episodic proof capture.
+OpenStaff now has an explicit operational metrics baseline and a first rollout-intelligence implementation for controlled adoption. The next maturity step is turning these KPI definitions into routine operator reporting rather than relying only on episodic proof capture.

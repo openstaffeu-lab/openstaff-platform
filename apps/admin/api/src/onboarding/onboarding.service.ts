@@ -92,6 +92,7 @@ export class OnboardingService {
       before,
       after,
     });
+    await this.emitProfileCompletedIfNeeded(before, after, userId);
     await this.emitOnboardingCompletedIfNeeded(userId, after);
     return after;
   }
@@ -160,6 +161,7 @@ export class OnboardingService {
       before,
       after,
     });
+    await this.emitProfileCompletedIfNeeded(before, after, userId);
     await this.emitOnboardingCompletedIfNeeded(userId, after);
     return after;
   }
@@ -786,6 +788,36 @@ export class OnboardingService {
       metadata: {
         completionPercent: after.completionPercent,
       },
+    });
+  }
+
+  private async emitProfileCompletedIfNeeded(before: any, after: any, userId: string) {
+    const beforePercent = Number(before?.identityProfile?.profileCompletionPercent ?? 0);
+    const afterPercent = Number(after?.identityProfile?.profileCompletionPercent ?? 0);
+
+    if (beforePercent >= 80 || afterPercent < 80) {
+      return;
+    }
+
+    await this.notificationService.emitEvent({
+      key: `rollout-funnel:profile-completed:${userId}`,
+      eventType: 'PROFILE_COMPLETED',
+      sourceType: 'ROLLOUT_FUNNEL',
+      sourceId: after?.identityProfile?.id ?? userId,
+      userId,
+      actorId: userId,
+      category: NotificationCategory.ADMIN,
+      channel: 'SYSTEM' as any,
+      channels: ['SYSTEM' as any],
+      title: 'Profile completed',
+      message: 'A user profile reached the rollout completion threshold.',
+      metadata: {
+        previousCompletionPercent: beforePercent,
+        completionPercent: afterPercent,
+      },
+      relatedEntityType: 'IdentityProfile',
+      relatedEntityId: after?.identityProfile?.id ?? userId,
+      skipNotification: true,
     });
   }
 }

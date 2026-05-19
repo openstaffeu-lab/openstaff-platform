@@ -27,6 +27,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { PublicFeedbackModule } from './public-feedback/public-feedback.module';
 import { PublicPostsModule } from './public-posts/public-posts.module';
 import { ReluModule } from './relu/relu.module';
+import { RolloutIntelligenceModule } from './rollout-intelligence/rollout-intelligence.module';
 import { TaxonomyModule } from './taxonomy/taxonomy.module';
 import { TimesheetsModule } from './timesheets/timesheets.module';
 import { UiConfigModule } from './ui-config/ui-config.module';
@@ -50,6 +51,7 @@ import { WorkforceModule } from './workforce/workforce.module';
     DocumentsModule,
     GeminiModule,
     ReluModule,
+    RolloutIntelligenceModule,
     ProjectsModule,
     ComplianceModule,
     ProfilesModule,

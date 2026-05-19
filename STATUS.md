@@ -2,6 +2,78 @@
 
 Last updated: 2026-05-19
 
+## EXEC-29 Rollout Intelligence, Funnel Visibility & Operational Feedback Loops
+
+Verdict: `PASS - production now has a measurable rollout-intelligence baseline with privacy-respectful funnel visibility, lightweight operational feedback capture, stronger admin readiness summaries, explicit supportability and error-intelligence reviews, formal rollout reporting expectations, and fresh proof that local builds plus production governance tooling remain healthy`
+
+### EXEC-29 Rollout Intelligence Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| production runtime remained healthy | ✅ | `scripts/release/exec-26-production-ops-check.ps1` returned `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy` on `2026-05-19` |
+| funnel visibility baseline documented | ✅ | `docs/FUNNEL_VISIBILITY_BASELINE.md` now defines landing, register, onboarding, publish, upgrade, auth-failure, and upload-failure visibility |
+| operational feedback loop documented | ✅ | `docs/OPERATIONAL_FEEDBACK_LOOP.md` now defines onboarding friction, moderation confusion, billing confusion, failed flow, escalation, and repeated confusion capture |
+| supportability review documented | ✅ | `docs/SUPPORTABILITY_REVIEW.md` now reviews moderation burden, billing burden, support effort, response pressure, and documentation gaps |
+| error intelligence baseline documented | ✅ | `docs/ERROR_INTELLIGENCE_BASELINE.md` now classifies rollout-critical errors by severity, retryability, wording, and operator action |
+| rollout reporting baseline documented | ✅ | `docs/ROLLOUT_REPORTING_BASELINE.md` now defines daily rollout, moderation, onboarding, billing, incident, and support backlog reports |
+| server-side rollout event visibility improved | ✅ | register complete, profile complete, onboarding complete, publish submit, publish approve, upgrade request, upgrade approve, login failure, and upload failure now have first-class internal visibility |
+| privacy-respectful client funnel visibility added | ✅ | homepage, register, and authenticated publish entry now emit minimal session-deduped funnel events without ad-tech or third-party trackers |
+| admin readiness visibility improved | ✅ | `/status` and `apps/admin/app/admin/production-readiness/page.tsx` now expose onboarding, moderation, upgrade, auth-failure, upload-failure, webhook-failure, feedback, and recent operator-action summaries |
+| operational metrics baseline strengthened | ✅ | `docs/OPERATIONAL_METRICS_BASELINE.md` now ties KPI definitions to the new rollout-intelligence summaries |
+| release governance gate strengthened again | ✅ | `scripts/release/exec-13-release-check.ps1` now requires the EXEC-29 rollout-intelligence and reporting docs |
+| local build validation remained healthy | ✅ | `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19` |
+| monitoring and ops automation remained healthy | ✅ | fresh ops-check still confirmed `10` monitoring policies, `2` dashboards, `7` uptime checks, and `5` recent backups |
+| safe failure simulations remained healthy | ✅ | fresh simulation still returned the expected `429/400/429/401/404` guard-rail responses on `2026-05-19` |
+| documentation + proof trail captured | ✅ | `docs/proof/exec29/README.md` now captures funnel visibility, feedback loop, supportability, error intelligence, reporting, admin visibility, and validation proof |
+
+### EXEC-29 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - rollout is now measurable, not only governable | ✅ | funnel and failure summaries now exist in the active runtime contract |
+| GO - operator feedback can now be captured explicitly | ✅ | operational feedback loop categories now have a concrete logging path |
+| GO - admin readiness shows real operational pressure | ✅ | onboarding, moderation, upgrade, auth, upload, webhook, and operator-action summaries are now visible together |
+| GO - error handling expectations are now explicit | ✅ | retryability, wording, and escalation expectations are documented for rollout-critical failures |
+| GO - reporting expectations are now explicit | ✅ | rollout, moderation, onboarding, billing, incident, and support backlog reports now have a formal baseline |
+| GO - privacy trust remained intact | ✅ | no third-party ad trackers or invasive profiling were introduced |
+| NO-GO - hiding rollout friction behind narrative PASS language | ✅ prevented | supportability, feedback, and error baselines now make friction explicit instead of implied |
+| NO-GO - leaking sensitive operator/user data into visibility surfaces | ✅ prevented | `/status` and admin readiness now expose operational summaries only, not secrets or raw credentials |
+
+### EXEC-29 Validation Proof
+
+- `docs/proof/exec29/README.md` ✅ captures the funnel visibility summary, operational feedback summary, supportability review summary, error intelligence summary, rollout reporting summary, admin visibility summary, and validation summary
+- local build proof ✅: `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19`
+- production ops-check proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-production-ops-check.ps1` returned `verdict = PASS`, `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy`, `monitoringPolicies = 10`, `dashboards = 2`, `uptimeChecks = 7`, `recentBackups = 5`
+- failure simulation proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-failure-simulations.ps1` returned `loginThrottleStatus = 429`, `webhookFailureStatus = 400`, `webhookThrottleStatus = 429`, `moderationUnauthorizedStatus = 401`, `storageMissingStatus = 404`
+- release gate hardening proof ✅: `scripts/release/exec-13-release-check.ps1` now requires `FUNNEL_VISIBILITY_BASELINE`, `OPERATIONAL_FEEDBACK_LOOP`, `SUPPORTABILITY_REVIEW`, `ERROR_INTELLIGENCE_BASELINE`, and `ROLLOUT_REPORTING_BASELINE`
+- rollout intelligence proof ✅: API/runtime now emits server-side visibility for register complete, profile complete, onboarding complete, publish submit/approve, upgrade request/approve, login failure, and upload failure; public web now emits minimal landing/register/publish-start signals
+
+### EXEC-29 Accepted Rollout Intelligence Limitations
+
+1. billing remains `manual_only`
+2. `publicUpgradeFlow = request_upgrade`
+3. `operatorReviewRequired = true`
+4. `emailDelivery = not_configured`
+5. `smsDelivery = not_required`
+6. landing/register/publish-start visibility still depends on lightweight client beacons because those entry points are not inferable purely from server-side state
+7. reporting baseline is now defined, but routine archived rollout reports are still future discipline rather than automated output
+
+### EXEC-29 Launch Decision
+
+EXEC-29 raises OpenStaff from an `adoption-ready controlled real-user operations baseline` to a `measurable controlled adoption baseline` suitable for careful production learning, operational reporting, and early-funnel truth validation.
+
+As of `2026-05-19`, the platform now has:
+
+1. privacy-respectful funnel visibility instead of assumed user adoption visibility
+2. an operational feedback loop for onboarding, moderation, billing, failed flows, and escalations
+3. stronger admin readiness summaries for onboarding, moderation, upgrades, auth bursts, uploads, webhooks, and recent operator actions
+4. an explicit supportability review instead of implied support readiness
+5. an error intelligence baseline for retryability, user wording, and escalation expectations
+6. a rollout reporting baseline for daily operational decision-making
+7. fresh validation proof that local builds and production governance tooling remain healthy after the rollout-intelligence updates
+
+EXEC-29 is `PASS` while the accepted manual commercial limitations, client-beacon dependence for a few entry signals, and still-maturing reporting discipline remain explicit in the docs and proof trail.
+
 ## EXEC-28 Adoption Readiness, UX Trust & Controlled Real-User Operational Maturity
 
 Verdict: `PASS - production now has an adoption-readiness baseline with a first-user experience audit, UX trust governance, operator support playbooks, controlled scale expectations, initial analytics and operational metrics baselines, targeted trust-copy cleanup, and fresh proof that local builds plus production governance tooling remain healthy`

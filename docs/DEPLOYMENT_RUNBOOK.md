@@ -310,7 +310,7 @@ Apply the same pattern for:
 
 ## 11. Known operational notes
 
-As of the final EXEC-28 audit:
+As of the final EXEC-29 audit:
 
 - the Cloud SQL hardening baseline is now explicitly confirmed operator-side
 - keep only the active production secret contract in docs and scripts
@@ -342,6 +342,11 @@ As of the final EXEC-28 audit:
   - no public fallback content to be presented as trustworthy live marketplace truth
   - support playbook coverage for onboarding, moderation, billing clarification, and rejection explanation
   - explicit scale, analytics, and operational metrics review as cohorts grow
+- rollout intelligence governance now expects:
+  - funnel visibility to remain privacy-respectful and operationally truthful
+  - no third-party ad trackers to be introduced as a shortcut for rollout measurement
+  - `/status` to keep exposing summary-level onboarding, moderation, upgrade, auth-failure, upload-failure, webhook-failure, and recent operator action visibility
+  - operational feedback and escalation signals to remain loggable without sensitive leakage
 - the next non-blocking frontend follow-ups are:
   - reduce `CLS` on `https://openstaff.eu/jobs`
   - improve homepage accessibility from the current Lighthouse baseline
@@ -362,6 +367,7 @@ As of the final EXEC-28 audit:
 - dependency and lifecycle governance docs reviewed when framework or deploy tooling changed
 - first-user experience and UX trust docs reviewed when public onboarding, publish, moderation, pricing, or public-detail flows changed
 - support, scale, analytics, and operational metrics baselines reviewed when onboarding cohorts materially expanded
+- funnel visibility, operational feedback, supportability, error intelligence, and rollout reporting docs reviewed when rollout measurement or operator reporting changes materially
 - ownership for deploy, migration, and rollback explicitly named
 - Production migration reviewed and applied
 - API `/health` and `/status` return success on live domain
