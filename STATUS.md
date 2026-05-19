@@ -2,6 +2,75 @@
 
 Last updated: 2026-05-19
 
+## EXEC-36 Operational Assistance Surfaces & Live Operator Summaries
+
+Verdict: `IN PROGRESS - assistance surfaces are implemented and validated locally, but live admin promotion and authenticated production rendering remain unproven because Cloud Build could not read the staged source object during deploy from this environment`
+
+### EXEC-36 Surface Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| production readiness assistance surface implemented | ✅ | `apps/admin/app/admin/production-readiness/page.tsx` now renders advisory readiness assistance with timestamps, source reasoning, queue pressure, overload indicators, escalation pressure, and unresolved incident warnings |
+| reusable operator-assist components implemented | ✅ | `apps/admin/app/components/operator-assist/` now contains reusable assistance cards for queue summaries, incident assistance, digests, and correlation summaries |
+| moderation queue assistance implemented | ✅ | readiness UI now renders moderation backlog, aging bucket, source reasoning, backlog warnings, and operator-only escalation recommendations |
+| billing queue assistance implemented | ✅ | readiness UI now renders open billing review aging, webhook failure pressure, billing confusion signals, and operator-only recommendations |
+| support and escalation assistance implemented | ✅ | readiness UI now renders support backlog, escalation pressure, repeated confusion, failed-flow pressure, and handoff-oriented recommendations |
+| incident assistance surface implemented | ✅ | readiness UI now renders affected systems, likely impacted flows, recent correlated failures, unresolved risks, next checks, and rollback-risk reminders without assigning severity |
+| operator digest rendering implemented | ✅ | readiness UI now renders digest sections for auth anomalies, moderation backlog, upload failures, billing pressure, escalation pressure, and rollout warnings |
+| operational correlation surface implemented | ✅ | readiness UI now renders summary-only correlations for auth/onboarding, upload/moderation, webhook/billing, and rollout/support patterns |
+| assistance surface safety review documented | ✅ | `docs/ASSISTANCE_SURFACE_SAFETY_REVIEW.md` now defines wording safety, non-authoritative presentation, source-metric visibility, and prohibited authority signals |
+| assistance runtime review documented | ✅ | `docs/ASSISTANCE_RUNTIME_REVIEW.md` now documents performance impact, readability, noise risk, duplication risk, and stale-summary risk |
+| readiness, rollout, metrics, and guardrail governance aligned | ✅ | `docs/PRODUCTION_READINESS_MATRIX.md`, `docs/CONTROLLED_ROLLOUT_PLAN.md`, `docs/OPERATIONAL_METRICS_BASELINE.md`, and `docs/AUTOMATION_GUARDRAILS.md` now reference the live assistance surface baseline |
+| release governance gate strengthened again | ✅ | `scripts/release/exec-13-release-check.ps1` now requires `ASSISTANCE_SURFACE_SAFETY_REVIEW` and `ASSISTANCE_RUNTIME_REVIEW` |
+| live admin assistance rendering promoted | ❌ blocker | `gcloud builds submit --config apps/admin/cloudbuild.admin.yaml .` failed with `403` because `605639023972-compute@developer.gserviceaccount.com` lacked `storage.objects.get` for the staged Cloud Build source object |
+| validation + proof captured | ✅ | `docs/proof/exec36/README.md` now captures surface summary, safety/runtime review, validation, and live smoke proof |
+
+### EXEC-36 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - operators now have live assistance surfaces instead of only governance docs | ✅ | production readiness now renders live queue, incident, digest, and correlation summaries from the active `/status` payload |
+| GO - all assistance remains explainable and timestamped | ✅ | each new assistance surface now shows snapshot time and source reasoning tied to visible metrics |
+| GO - assistance can now reduce manual synthesis across multiple signals | ✅ | digest and correlation cards now connect auth, upload, webhook, moderation, billing, support, and rollout signals on one page |
+| GO - raw source metrics remain visible beside interpreted summaries | ✅ | readiness page still exposes source snapshots and runtime/integration detail for operator verification |
+| GO - release governance still enforces the new assistance docs | ✅ | release check now fails if the EXEC-36 safety and runtime review docs are missing |
+| NO-GO - claiming live assistance rendering without a promoted admin revision | ❌ blocker | local build and repo validation passed, but authenticated production rendering of the new surface was not proven after the Cloud Build deploy failure |
+| NO-GO - autonomous operational execution hidden inside summary UI | ✅ prevented | assistance surfaces render recommendations only and do not execute moderation, billing, escalation, severity, rollback, or rollout-state actions |
+| NO-GO - false authority signals such as automatic severity or automatic escalation | ✅ prevented | wording, badges, and guardrails in the UI and docs keep all assistance explicitly advisory |
+
+### EXEC-36 Validation Proof
+
+- `docs/proof/exec36/README.md` ✅ captures the production readiness assistance summary, queue assistance summary, incident assistance summary, digest rendering summary, operational correlation summary, assistance UX safety summary, runtime assistance summary, validation summary, and live smoke summary
+- local build proof ✅: `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19`
+- production ops-check proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-production-ops-check.ps1` returned `verdict = PASS`, `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy`, `monitoringPolicies = 10`, `dashboards = 2`, `uptimeChecks = 7`, `recentBackups = 5`
+- failure simulation proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-failure-simulations.ps1` returned `loginThrottleStatus = 429`, `webhookFailureStatus = 400`, `webhookThrottleStatus = 429`, `moderationUnauthorizedStatus = 401`, `storageMissingStatus = 404`
+- release gate hardening proof ✅: `scripts/release/exec-13-release-check.ps1` now requires `ASSISTANCE_SURFACE_SAFETY_REVIEW` and `ASSISTANCE_RUNTIME_REVIEW`
+- authority-boundary proof ✅: EXEC-36 assistance surfaces now summarize and recommend from visible metrics, but may not approve moderation, activate billing, assign severity automatically, escalate automatically, trigger rollback, change rollout state, or override operators
+- live deploy blocker proof ❌: `gcloud builds submit --config apps/admin/cloudbuild.admin.yaml .` failed with `403` because the active deploy identity could not read the staged Cloud Build source object
+
+### EXEC-36 Accepted Assistance Limitations
+
+1. billing remains `manual_only`
+2. `publicUpgradeFlow = request_upgrade`
+3. `operatorReviewRequired = true`
+4. `emailDelivery = not_configured`
+5. `smsDelivery = not_required`
+6. live assistance now renders inside admin readiness, but it still depends on the existing `/status` contract rather than a dedicated incident engine or queue orchestration service
+7. current simulations still validate runtime safety better than assistance-quality drift, stale-summary drift, or recommendation usefulness drift
+
+### EXEC-36 Launch Decision
+
+EXEC-36 prepares OpenStaff to move from an `operational assistance baseline` to a `live operational assistance surface baseline` suitable for faster operator orientation and lower synthesis burden without weakening moderation, billing, severity, escalation, rollback, or rollout authority.
+
+As of `2026-05-19`, the platform now has:
+
+1. a live readiness assistance summary
+2. reusable queue, incident, digest, and correlation assistance components
+3. explicit safety and runtime reviews for assistance surfaces
+4. stronger release-gate enforcement for live assistance governance
+
+EXEC-36 remains `IN PROGRESS` until the updated admin surface is promoted successfully and the authenticated production readiness page can be re-smoked with the new assistance rendering live.
+
 ## EXEC-35 Operational Assistance Layer & Assisted Triage Baseline
 
 Verdict: `PASS - production now has a safe operational assistance baseline with explicit incident-summary assistance, queue-pressure assistance, operational pattern detection, assisted triage recommendations, operator digest rules, safe correlation rules, stronger automation-boundary enforcement, and non-authoritative admin assistance UX governance`

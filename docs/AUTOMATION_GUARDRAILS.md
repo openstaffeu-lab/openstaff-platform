@@ -1,7 +1,7 @@
 # Automation Guardrails
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-35`
+Scope: `EXEC-36`
 
 ## Purpose
 
@@ -14,6 +14,7 @@ This policy defines what OpenStaff may automate safely, what must remain human-r
 3. anything that changes public trust, money state, access state, or rollout risk must remain explicitly reviewable
 4. automation must preserve observability rather than hide the work it performs
 5. assistance may accelerate operator understanding before it accelerates operator action
+6. live assistance surfaces must keep their threshold logic and source metrics visible to operators
 
 ## Allowed Assistance Layer
 
@@ -34,6 +35,7 @@ The assistance layer may not:
 4. trigger rollback
 5. override operators
 6. change rollout state automatically
+7. imply that a recommendation is already confirmed operator intent
 
 ## What May Be Automated
 
@@ -46,6 +48,7 @@ The assistance layer may not:
 7. operator digests and queue-pressure summaries
 8. safe correlation summaries across logs, alerts, queues, and rollout signals
 9. triage recommendations using clearly non-authoritative wording
+10. live readiness-page summaries that turn visible `/status` metrics into explainable operator context
 
 ## What Must Remain Human-Reviewed
 
@@ -59,6 +62,7 @@ The assistance layer may not:
 8. production freeze or hotfix approval
 9. cohort expansion decisions and scorecard interpretation
 10. final escalation decision where operator confirmation is still required
+11. accepting or rejecting live assistance recommendations shown in admin surfaces
 
 ## What Requires Escalation
 
@@ -82,6 +86,7 @@ The assistance layer may not:
 1. operator judgment always supersedes assistance wording
 2. assistance may not hide or replace the source evidence an operator needs
 3. operators may ignore, reject, or reinterpret suggested classifications and next checks
+4. operators must be able to review the underlying metrics on the same surface before acting
 
 ## Authority Boundaries By Domain
 

@@ -46,6 +46,8 @@ This plan must be used together with:
 - `docs/OPERATOR_DIGEST_BASELINE.md`
 - `docs/OPERATIONAL_CORRELATION_REVIEW.md`
 - `docs/ADMIN_ASSISTANCE_UX_REVIEW.md`
+- `docs/ASSISTANCE_SURFACE_SAFETY_REVIEW.md`
+- `docs/ASSISTANCE_RUNTIME_REVIEW.md`
 
 ## Expansion Bands
 
@@ -85,6 +87,7 @@ Operator responsibilities:
 - monitor dashboards at the beginning and end of each shift
 - review the shared cockpit or equivalent consolidated context before acting in specialist tools
 - use assistance summaries as orientation support, not as authority-bearing outcomes
+- review live assistance cards together with their source metrics before escalating, pausing rollout, or changing queue priorities
 - clear moderation and upgrade queues within the agreed SLA
 - escalate runtime, billing, or security anomalies immediately
 - leave handoff-ready notes another operator can act on safely
@@ -202,6 +205,7 @@ At the end of each cohort window:
 6. note whether repeated human effort should trigger automation prioritization
 7. note whether operator coordination or handoff latency created avoidable delay
 8. note whether command-surface, queue-coordination, or alert-routing gaps slowed action materially
+9. note whether the live assistance surfaces reduced synthesis time or created noise, duplication, or stale-summary confusion
 
 ## Support Escalation Model
 

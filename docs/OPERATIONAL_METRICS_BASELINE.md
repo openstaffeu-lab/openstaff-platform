@@ -1,7 +1,7 @@
 # Operational Metrics Baseline
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-35`
+Scope: `EXEC-36`
 
 ## Purpose
 
@@ -105,6 +105,17 @@ These KPI families must now also support:
 4. digest usefulness
 5. correlation usefulness
 6. assistance wording safety
+
+## EXEC-36 Surface Notes
+
+These KPI families must now also support:
+
+1. live production-readiness assistance rendering
+2. queue-summary explainability
+3. incident-assistance explainability
+4. digest readability in the admin surface
+5. correlation-card usefulness without hidden scoring
+6. stale-summary detection through visible timestamps
 
 ## Current Baseline Use
 

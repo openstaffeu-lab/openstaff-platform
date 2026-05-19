@@ -115,6 +115,8 @@ try {
     "docs/OPERATOR_DIGEST_BASELINE.md",
     "docs/OPERATIONAL_CORRELATION_REVIEW.md",
     "docs/ADMIN_ASSISTANCE_UX_REVIEW.md",
+    "docs/ASSISTANCE_SURFACE_SAFETY_REVIEW.md",
+    "docs/ASSISTANCE_RUNTIME_REVIEW.md",
     "scripts/gcp/secret-manager-setup.ps1",
     "scripts/gcp/prisma-production-migration-check.ps1",
     "scripts/release/exec-13-release-check.ps1",

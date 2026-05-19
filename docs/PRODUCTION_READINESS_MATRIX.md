@@ -1,7 +1,7 @@
 # Production Readiness Matrix
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-35`
+Scope: `EXEC-36`
 
 ## Matrix
 
@@ -90,6 +90,9 @@ Scope: `EXEC-35`
 | operator digest baseline | documented and usable | recurring operational, moderation, billing, rollout, incident, and escalation digests are now standardized | [OPERATOR_DIGEST_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATOR_DIGEST_BASELINE.md:1) |
 | operational correlation review | documented and usable | safe correlation candidates and no-authority correlation limits are now explicit | [OPERATIONAL_CORRELATION_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_CORRELATION_REVIEW.md:1) |
 | admin assistance UX review | documented and usable | assistance presentation, non-authoritative wording, and visibility hierarchy are now explicitly governed | [ADMIN_ASSISTANCE_UX_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ADMIN_ASSISTANCE_UX_REVIEW.md:1) |
+| live assistance surfaces | implemented at first level | production readiness now renders advisory queue, incident, digest, and correlation summaries from the active `/status` payload | EXEC-36 admin readiness surface |
+| assistance surface safety review | documented and usable | live assistance wording, visibility hierarchy, and prohibited authority signals are now explicitly reviewed | [ASSISTANCE_SURFACE_SAFETY_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ASSISTANCE_SURFACE_SAFETY_REVIEW.md:1) |
+| assistance runtime review | documented and usable | performance, dashboard noise, duplication, readability, and stale-summary risk are now explicitly reviewed | [ASSISTANCE_RUNTIME_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ASSISTANCE_RUNTIME_REVIEW.md:1) |
 | IAM least privilege | stable and more durable | runtime SA stayed constrained; build/deploy identity remains separate | EXEC-25 identity split remains active |
 | deploy pipeline resilience | stable | deploy path no longer depends on broad runtime IAM | dedicated build SA remains baseline |
 | engineering quality baseline | documented and enforceable | PASS now requires builds, release checks, proof, and rollback expectations rather than narrative optimism | [RELEASE_LIFECYCLE_POLICY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELEASE_LIFECYCLE_POLICY.md:1) |
@@ -97,7 +100,7 @@ Scope: `EXEC-35`
 
 ## Governance Verdict
 
-`EXEC-35 PASS`
+`EXEC-36 PASS`
 
 The production baseline is now suitable for repeatable ongoing operations and controlled real-user onboarding because:
 
@@ -114,6 +117,7 @@ The production baseline is now suitable for repeatable ongoing operations and co
 11. shared context, triage speed, multi-operator handoff discipline, and operator-latency governance are now explicit enough to improve coordination without weakening control
 12. a unified cockpit model, context-packet baseline, incident timeline model, queue-coordination baseline, alert-routing model, and session-continuity model now define how operator surfaces should converge without weakening authority or trust
 13. a first operational assistance baseline now defines what the system may summarize, highlight, correlate, suggest, prioritize, and route without transferring moderation, billing, severity, escalation, rollback, or rollout authority away from humans
+14. a first live assistance surface now renders advisory queue, incident, digest, and correlation summaries directly in the admin readiness experience with visible source reasoning and timestamps
 
 ## Accepted Remaining Limitations
 
