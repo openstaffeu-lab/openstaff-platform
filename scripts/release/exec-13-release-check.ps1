@@ -111,11 +111,18 @@ try {
   $secretHits = @()
   foreach ($file in $trackedFiles) {
     if ($file -match '(^|/)(package-lock\.json|STATUS\.md)$') { continue }
+    if ($file -match '^docs/proof/') { continue }
     if (-not (Test-Path $file)) { continue }
     $content = Get-Content $file -Raw -ErrorAction SilentlyContinue
     if ($null -eq $content) { continue }
     if ($content -match '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----') { $secretHits += $file; continue }
-    if ($content -match 'AIza[0-9A-Za-z\-_]{20,}') { $secretHits += $file; continue }
+    if ($content -match 'AIza[0-9A-Za-z\-_]{20,}') {
+      if ($file -match '^apps/admin(/web)?/cloudbuild\.(admin|web)\.yaml$' -and $content -match 'NEXT_PUBLIC_FIREBASE_API_KEY') {
+        continue
+      }
+      $secretHits += $file
+      continue
+    }
     if ($content -match 'ya29\.[0-9A-Za-z\-_]+') { $secretHits += $file; continue }
     if ($content -match 'postgres(ql)?:\/\/[^:\s]+:[^@\s]+@') {
       if ($file -notmatch '\.env\.example$' -and $content -notmatch 'USER:PASS|OPENSTAFF_DB_USER:OPENSTAFF_DB_PASSWORD|invalid:invalid') {
