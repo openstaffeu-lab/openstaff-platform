@@ -28,6 +28,8 @@ This plan must be used together with:
 - `docs/BUSINESS_CONTINUITY_BASELINE.md`
 - `docs/OPERATIONAL_CAPACITY_LIMITS.md`
 - `docs/KNOWLEDGE_CONTINUITY_POLICY.md`
+- `docs/AUTOMATION_GUARDRAILS.md`
+- `docs/EFFICIENCY_METRICS_BASELINE.md`
 
 ## Expansion Bands
 
@@ -178,6 +180,7 @@ At the end of each cohort window:
 3. review incidents and friction themes
 4. complete `docs/templates/COHORT_DECISION_REPORT.md`
 5. choose `expand`, `hold`, `fix-first`, or `rollback`
+6. note whether repeated human effort should trigger automation prioritization
 
 ## Support Escalation Model
 
@@ -267,6 +270,7 @@ During controlled rollout:
 1. degraded mode must be declared explicitly when service quality drops but full outage is not present
 2. operator handoff must remain sufficient for another trained owner to continue safely
 3. expansion must stop before continuity depends on one exhausted operator
+4. automation must reduce repeated clerical work before it attempts to reduce required human judgment
 
 ## Success Criteria For EXEC-21
 

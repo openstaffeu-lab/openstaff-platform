@@ -1,11 +1,11 @@
 # Operational Metrics Baseline
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-30`
+Scope: `EXEC-32`
 
 ## Purpose
 
-This baseline defines the launch KPIs needed to judge whether the platform is supportable for controlled real-user onboarding and whether rollout intelligence is good enough to detect friction before it becomes invisible drift.
+This baseline defines the KPIs needed to judge whether the platform is supportable for controlled real-user onboarding, whether rollout intelligence is good enough to detect friction before it becomes invisible drift, and whether operator effort is becoming more efficient over time.
 
 ## Core KPIs
 
@@ -18,6 +18,17 @@ This baseline defines the launch KPIs needed to judge whether the platform is su
 7. webhook failures
 8. admin intervention rate
 9. support escalation frequency
+
+## Efficiency KPIs
+
+1. moderation minutes per item
+2. support minutes per ticket
+3. billing minutes per request
+4. rollout review time
+5. release preparation time
+6. operator interruption rate
+7. alert-action ratio
+8. dashboard usefulness ratio
 
 ## Metric Definitions
 
@@ -51,6 +62,16 @@ These KPI families now also support:
 3. freeze or expand decisions
 4. product iteration prioritization for copy, onboarding, and automation
 
+## EXEC-32 Efficiency Notes
+
+These KPI families must now also support:
+
+1. human-load review
+2. automation prioritization
+3. operator-efficiency review
+4. noise-reduction review
+5. capacity-overload detection before continuity degrades
+
 ## Current Baseline Use
 
 Use these KPIs to answer:
@@ -59,6 +80,7 @@ Use these KPIs to answer:
 2. are moderation and billing staying within operator capacity
 3. are support issues coming from product confusion or runtime instability
 4. is the current controlled-rollout contract still believable at the observed scale
+5. is operator time being spent on judgment or on repetition
 
 ## Ownership
 
@@ -68,13 +90,15 @@ Use these KPIs to answer:
 | moderation | moderation owner |
 | upgrade/billing | billing owner |
 | escalation/support backlog | support owner + Technical Ops |
+| efficiency and interruption metrics | Technical Ops + functional queue owner |
 
 ## Interpretation Notes
 
 1. high admin intervention is expected during controlled rollout, but it must remain visible
 2. moderation and billing latency matter more than raw traffic volume at this stage
 3. support escalations should be treated as product-trust signals, not only support-load signals
+4. efficiency gains are only valid if human review quality and truthfulness remain intact
 
 ## Final Assessment
 
-OpenStaff now has an explicit operational metrics baseline, a first rollout-intelligence implementation, and a defined decision loop for using those metrics during controlled adoption.
+OpenStaff now has an explicit operational metrics baseline, a first rollout-intelligence implementation, and an efficiency layer for deciding where automation reduces human burden without weakening control.
