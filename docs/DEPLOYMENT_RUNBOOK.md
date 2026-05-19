@@ -310,16 +310,23 @@ Apply the same pattern for:
 
 ## 11. Known operational notes
 
-As of the final EXEC-25 audit:
+As of the final EXEC-26 audit:
 
 - the Cloud SQL hardening baseline is now explicitly confirmed operator-side
 - keep only the active production secret contract in docs and scripts
 - performance proof is archived in `docs/proof/exec17/`
 - resilience and security runbooks are now part of the baseline:
+  - `docs/INCIDENT_RESPONSE_RUNBOOK.md`
+  - `docs/RELEASE_GOVERNANCE.md`
   - `docs/SECURITY_POSTURE_REVIEW.md`
   - `docs/SECRET_ROTATION_RUNBOOK.md`
   - `docs/DISASTER_RECOVERY_PLAN.md`
   - `docs/COST_BASELINE.md`
+  - `docs/RUNTIME_CONFIGURATION_GOVERNANCE.md`
+  - `docs/SLO_BASELINE.md`
+- production operator automation now includes:
+  - `scripts/release/exec-26-production-ops-check.ps1`
+  - `scripts/release/exec-26-failure-simulations.ps1`
 - the next non-blocking frontend follow-ups are:
   - reduce `CLS` on `https://openstaff.eu/jobs`
   - improve homepage accessibility from the current Lighthouse baseline

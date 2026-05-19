@@ -1,6 +1,83 @@
 ﻿# OpenStaff Platform Status
 
-Last updated: 2026-05-18
+Last updated: 2026-05-19
+
+## EXEC-26 Release Governance, Incident Response & Operational Automation
+
+Verdict: `PASS - production now has a repeatable operational governance baseline with incident response rules, release governance, runtime configuration ownership, production ops automation, a durable ops-log structure, an initial SLO baseline, and safe live failure-path proof`
+
+### EXEC-26 Operational Governance Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| production runtime remained healthy | ✅ | `scripts/release/exec-26-production-ops-check.ps1` returned `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy` at `2026-05-19T06:29:56.7881746Z` |
+| incident response framework documented | ✅ | `docs/INCIDENT_RESPONSE_RUNBOOK.md` now defines `SEV-1` to `SEV-4`, ownership, escalation, rollback authority, communication states, and scenario playbooks |
+| release governance documented | ✅ | `docs/RELEASE_GOVERNANCE.md` now standardizes deploy approvals, rollback checklists, migration rules, freeze rules, hotfix flow, smoke requirements, and PASS proof expectations |
+| runtime configuration governance documented | ✅ | `docs/RUNTIME_CONFIGURATION_GOVERNANCE.md` now defines source-of-truth secrets, env ownership, build-time vs runtime boundaries, propagation flow, and anti-drift rules |
+| production automation baseline improved | ✅ | new scripts `exec-26-production-ops-check.ps1` and `exec-26-failure-simulations.ps1` automate production smoke, monitoring presence, backup presence, and safe failure-path checks |
+| operational audit trail structure created | ✅ | `docs/ops-log/` now contains durable directories for deploys, incidents, migrations, restores, security changes, IAM changes, and rollbacks plus a shared template |
+| ops-log seeded with real entries | ✅ | deploy, IAM, restore, and governance entries were added using EXEC-24/25/26 evidence |
+| SLO baseline documented | ✅ | `docs/SLO_BASELINE.md` now defines initial targets for API, auth, moderation/admin, asset delivery, billing webhook processing, and public website availability |
+| monitoring baseline remained intact | ✅ | production ops-check confirmed `10` monitoring policies, `2` dashboards, and `7` uptime checks still present |
+| backup verification automated | ✅ | production ops-check confirmed `5` recent Cloud SQL backups; latest visible backup `1779159600000` was `SUCCESSFUL` |
+| safe auth throttling simulation passed | ✅ | `scripts/release/exec-26-failure-simulations.ps1` returned `loginThrottleStatus = 429` |
+| safe webhook failure + throttling simulation passed | ✅ | failure simulation returned `webhookFailureStatus = 400` and `webhookThrottleStatus = 429` |
+| safe moderation protection simulation passed | ✅ | failure simulation returned `moderationUnauthorizedStatus = 401` |
+| safe storage failure simulation passed | ✅ | failure simulation returned `storageMissingStatus = 404` |
+| Cloud Logging visibility confirmed for simulations | ✅ | `gcloud logging read` showed the simulated `429`, `400`, `401`, and `404` requests on `openstaff-api` within the last `15m` |
+| alerting, dashboards, and synthetics stayed operational during simulations | ✅ | alert policy list, dashboard list, and uptime-check list remained healthy after the controlled negative tests |
+| documentation + proof trail captured | ✅ | `docs/proof/exec26/README.md` now captures incident response, release governance, automation, ops-log, runtime config governance, SLO, and failure simulation proof |
+
+### EXEC-26 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - incident response is now explicit | ✅ | severity, escalation, rollback authority, and scenario playbooks are documented against the current production shape |
+| GO - release governance is now repeatable | ✅ | deploy approval, rollback, migration, freeze, hotfix, and proof rules are documented |
+| GO - production automation reduces manual drift | ✅ | repeatable scripts now check runtime health, monitoring presence, backup presence, and safe failure-path behavior |
+| GO - runtime/source-of-truth confusion is reduced | ✅ | runtime configuration governance now separates build-time config, runtime flags, and Secret Manager-backed secrets |
+| GO - operational audit trail has a durable home | ✅ | `docs/ops-log/` exists with tracked categories and seeded entries |
+| GO - initial SLO baseline exists | ✅ | service targets and maturity limits are documented for ongoing production operations |
+| GO - safe live failure simulations proved response visibility | ✅ | auth throttling, webhook guard/throttle, moderation unauthorized access, and missing asset delivery all returned controlled responses and appeared in Cloud Logging |
+| NO-GO - unsafe chaos against real user data | ✅ prevented | simulations were limited to controlled negative tests that did not mutate real production data or corrupt runtime state |
+| NO-GO - governance only on paper without execution proof | ✅ prevented | new operator scripts were executed live and their results were captured in `docs/proof/exec26/README.md` |
+
+### EXEC-26 Validation Proof
+
+- `docs/proof/exec26/README.md` ✅ captures the incident response summary, release governance summary, automation proof, ops-log structure, runtime governance summary, SLO baseline, failure simulations, and live validation outputs
+- production ops-check proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-production-ops-check.ps1` returned `verdict = PASS`, `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy`, `monitoringPolicies = 10`, `dashboards = 2`, `uptimeChecks = 7`, `recentBackups = 5`
+- failure simulation proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-failure-simulations.ps1` returned `loginThrottleStatus = 429`, `webhookFailureStatus = 400`, `webhookThrottleStatus = 429`, `moderationUnauthorizedStatus = 401`, `storageMissingStatus = 404`
+- Cloud Logging visibility proof ✅: recent `gcloud logging read` queries showed the simulated `429`, `400`, `401`, and `404` requests against `openstaff-api`
+- alerting continuity proof ✅: `gcloud monitoring policies list` still returned the `10` enabled production policies
+- dashboard continuity proof ✅: `gcloud monitoring dashboards list` still returned `OpenStaff Prod - Overview` and `OpenStaff Prod - Operational Signals`
+- uptime continuity proof ✅: `gcloud monitoring uptime list-configs` still returned the `7` EXEC-25 synthetic probes
+- builds aplicatie ✅ not required; EXEC-26 introduced docs, PowerShell automation, and live operator validation without an application deploy
+
+### EXEC-26 Accepted Operational Limitations
+
+1. `billingPayments = manual_only`
+2. `publicUpgradeFlow = request_upgrade`
+3. `operatorReviewRequired = true`
+4. `emailDelivery = not_configured`
+5. `smsDelivery = not_required`
+6. critical security alerting still relies on Cloud Logging-visible proxy signals until richer native metrics are exported
+7. Cloud Run ingress remains `all`, and public `run.app` URLs remain reachable in addition to the mapped domains
+
+### EXEC-26 Launch Decision
+
+EXEC-26 raises OpenStaff from a `stable operational baseline` to a `repeatable operational governance baseline` suitable for ongoing production operations and controlled scaling.
+
+As of `2026-05-19`, production now has:
+
+1. an incident response model with explicit severities, owners, and rollback authority
+2. a release governance model for deploys, migrations, freezes, hotfixes, and PASS proof
+3. repeatable operator automation for production checks and safe negative testing
+4. a durable operational audit trail structure with seeded real entries
+5. explicit runtime configuration governance to prevent source-of-truth drift
+6. an initial SLO baseline that makes current operational maturity visible
+7. safe live failure-path proof that auth throttling, webhook guard rails, moderation protection, and storage-missing responses remain visible and controlled
+
+EXEC-26 is `PASS` while the accepted commercial and ingress limitations remain explicit in the runbooks, readiness matrix, and proof trail.
 
 ## EXEC-25 Operational Excellence, Security Posture & Resilience Baseline
 

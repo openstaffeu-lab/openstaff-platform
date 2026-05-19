@@ -51,9 +51,15 @@ try {
     "apps/admin/web/.env.example",
     "apps/admin/.env.example",
     "docs/DEPLOYMENT_RUNBOOK.md",
+    "docs/INCIDENT_RESPONSE_RUNBOOK.md",
+    "docs/RELEASE_GOVERNANCE.md",
+    "docs/RUNTIME_CONFIGURATION_GOVERNANCE.md",
+    "docs/SLO_BASELINE.md",
     "scripts/gcp/secret-manager-setup.ps1",
-    "scripts/gcp/prisma-production-migration-check.ps1"
-    "scripts/release/exec-13-release-check.ps1"
+    "scripts/gcp/prisma-production-migration-check.ps1",
+    "scripts/release/exec-13-release-check.ps1",
+    "scripts/release/exec-26-production-ops-check.ps1",
+    "scripts/release/exec-26-failure-simulations.ps1"
   )
 
   foreach ($file in $requiredFiles) {
