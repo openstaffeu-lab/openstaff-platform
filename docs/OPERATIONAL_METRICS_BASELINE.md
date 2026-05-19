@@ -1,7 +1,7 @@
 # Operational Metrics Baseline
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-34`
+Scope: `EXEC-35`
 
 ## Purpose
 
@@ -95,6 +95,17 @@ These KPI families must now also support:
 5. alert-routing usefulness
 6. session continuity quality
 
+## EXEC-35 Assistance Notes
+
+These KPI families must now also support:
+
+1. incident-summary usefulness
+2. queue-pressure summary usefulness
+3. pattern-detection usefulness
+4. digest usefulness
+5. correlation usefulness
+6. assistance wording safety
+
 ## Current Baseline Use
 
 Use these KPIs to answer:
@@ -106,6 +117,7 @@ Use these KPIs to answer:
 5. is operator time being spent on judgment or on repetition
 6. are operators finding context fast enough to act and hand off safely
 7. are operators seeing the same priority order, ownership state, and carryover state from the same command surface
+8. is the assistance layer reducing synthesis time without creating authority confusion
 
 ## Ownership
 
@@ -118,6 +130,7 @@ Use these KPIs to answer:
 | efficiency and interruption metrics | Technical Ops + functional queue owner |
 | triage and handoff latency | Technical Ops + functional queue owner |
 | cockpit aggregation and alert-routing quality | Technical Ops + functional queue owner |
+| assistance quality and wording safety | Technical Ops + functional queue owner |
 
 ## Interpretation Notes
 
@@ -127,7 +140,8 @@ Use these KPIs to answer:
 4. efficiency gains are only valid if human review quality and truthfulness remain intact
 5. better latency is only meaningful if backup operators can make sense of the same context without re-triaging it
 6. better visibility is only meaningful if the same shared summary helps multiple operators reach the same safe conclusion
+7. better assistance is only meaningful if operators remain the explicit authority for moderation, billing, escalation, severity, rollback, and rollout state
 
 ## Final Assessment
 
-OpenStaff now has an explicit operational metrics baseline, a first rollout-intelligence implementation, an efficiency layer, a latency layer, and a command-surface layer for deciding whether operators can orient, act, escalate, and hand off from shared context without weakening control.
+OpenStaff now has an explicit operational metrics baseline, a first rollout-intelligence implementation, an efficiency layer, a latency layer, a command-surface layer, and an assistance layer for deciding whether operators can orient, act, escalate, and hand off from shared context without weakening control.

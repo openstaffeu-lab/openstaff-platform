@@ -1,7 +1,7 @@
 # Production Readiness Matrix
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-34`
+Scope: `EXEC-35`
 
 ## Matrix
 
@@ -83,6 +83,13 @@ Scope: `EXEC-34`
 | operator session continuity | documented and usable | shift continuation, carryover packets, and unresolved queue continuity are now standardized | [OPERATOR_SESSION_CONTINUITY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATOR_SESSION_CONTINUITY.md:1) |
 | admin operational UX review | documented and usable | discoverability, navigation depth, queue clarity, escalation clarity, and cockpit UX candidates are now reviewed explicitly | [ADMIN_OPERATIONAL_UX_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ADMIN_OPERATIONAL_UX_REVIEW.md:1) |
 | future automation candidate mapping | documented and usable | safe assistance is now separated explicitly from unsafe operational authority transfer | [FUTURE_AUTOMATION_CANDIDATES.md](/C:/Users/admin/Desktop/openstaff-platform/docs/FUTURE_AUTOMATION_CANDIDATES.md:1) |
+| assisted incident summary baseline | documented and usable | the standard operator-assist incident summary is now explicit and non-authoritative | [ASSISTED_INCIDENT_SUMMARY_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ASSISTED_INCIDENT_SUMMARY_BASELINE.md:1) |
+| queue pressure assistance | documented and usable | safe assistance for queue aging, SLA risk, overload, growth, and escalation recommendations is now explicit | [QUEUE_PRESSURE_ASSISTANCE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/QUEUE_PRESSURE_ASSISTANCE.md:1) |
+| operational pattern detection | documented and usable | detectable patterns now have advisory classifications without autonomous action | [OPERATIONAL_PATTERN_DETECTION.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_PATTERN_DETECTION.md:1) |
+| assisted triage recommendations | documented and usable | likely surfaces, services, workflows, owners, checks, rollback candidates, and user impact may now be suggested safely | [ASSISTED_TRIAGE_RECOMMENDATIONS.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ASSISTED_TRIAGE_RECOMMENDATIONS.md:1) |
+| operator digest baseline | documented and usable | recurring operational, moderation, billing, rollout, incident, and escalation digests are now standardized | [OPERATOR_DIGEST_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATOR_DIGEST_BASELINE.md:1) |
+| operational correlation review | documented and usable | safe correlation candidates and no-authority correlation limits are now explicit | [OPERATIONAL_CORRELATION_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_CORRELATION_REVIEW.md:1) |
+| admin assistance UX review | documented and usable | assistance presentation, non-authoritative wording, and visibility hierarchy are now explicitly governed | [ADMIN_ASSISTANCE_UX_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ADMIN_ASSISTANCE_UX_REVIEW.md:1) |
 | IAM least privilege | stable and more durable | runtime SA stayed constrained; build/deploy identity remains separate | EXEC-25 identity split remains active |
 | deploy pipeline resilience | stable | deploy path no longer depends on broad runtime IAM | dedicated build SA remains baseline |
 | engineering quality baseline | documented and enforceable | PASS now requires builds, release checks, proof, and rollback expectations rather than narrative optimism | [RELEASE_LIFECYCLE_POLICY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELEASE_LIFECYCLE_POLICY.md:1) |
@@ -90,7 +97,7 @@ Scope: `EXEC-34`
 
 ## Governance Verdict
 
-`EXEC-34 PASS`
+`EXEC-35 PASS`
 
 The production baseline is now suitable for repeatable ongoing operations and controlled real-user onboarding because:
 
@@ -106,6 +113,7 @@ The production baseline is now suitable for repeatable ongoing operations and co
 10. human load, automation priorities, efficiency guardrails, and noise reduction are now explicit enough to improve operator leverage without weakening trust
 11. shared context, triage speed, multi-operator handoff discipline, and operator-latency governance are now explicit enough to improve coordination without weakening control
 12. a unified cockpit model, context-packet baseline, incident timeline model, queue-coordination baseline, alert-routing model, and session-continuity model now define how operator surfaces should converge without weakening authority or trust
+13. a first operational assistance baseline now defines what the system may summarize, highlight, correlate, suggest, prioritize, and route without transferring moderation, billing, severity, escalation, rollback, or rollout authority away from humans
 
 ## Accepted Remaining Limitations
 

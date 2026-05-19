@@ -39,6 +39,13 @@ This plan must be used together with:
 - `docs/OPERATIONAL_PRIORITY_MATRIX.md`
 - `docs/ALERT_ROUTING_REVIEW.md`
 - `docs/OPERATOR_SESSION_CONTINUITY.md`
+- `docs/ASSISTED_INCIDENT_SUMMARY_BASELINE.md`
+- `docs/QUEUE_PRESSURE_ASSISTANCE.md`
+- `docs/OPERATIONAL_PATTERN_DETECTION.md`
+- `docs/ASSISTED_TRIAGE_RECOMMENDATIONS.md`
+- `docs/OPERATOR_DIGEST_BASELINE.md`
+- `docs/OPERATIONAL_CORRELATION_REVIEW.md`
+- `docs/ADMIN_ASSISTANCE_UX_REVIEW.md`
 
 ## Expansion Bands
 
@@ -77,6 +84,7 @@ Scope:
 Operator responsibilities:
 - monitor dashboards at the beginning and end of each shift
 - review the shared cockpit or equivalent consolidated context before acting in specialist tools
+- use assistance summaries as orientation support, not as authority-bearing outcomes
 - clear moderation and upgrade queues within the agreed SLA
 - escalate runtime, billing, or security anomalies immediately
 - leave handoff-ready notes another operator can act on safely

@@ -2,6 +2,78 @@
 
 Last updated: 2026-05-19
 
+## EXEC-35 Operational Assistance Layer & Assisted Triage Baseline
+
+Verdict: `PASS - production now has a safe operational assistance baseline with explicit incident-summary assistance, queue-pressure assistance, operational pattern detection, assisted triage recommendations, operator digest rules, safe correlation rules, stronger automation-boundary enforcement, and non-authoritative admin assistance UX governance`
+
+### EXEC-35 Assistance Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| production runtime remained healthy | ✅ | `scripts/release/exec-26-production-ops-check.ps1` returned `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy` on `2026-05-19` |
+| assisted incident summary baseline documented | ✅ | `docs/ASSISTED_INCIDENT_SUMMARY_BASELINE.md` now defines the standard operator-assist incident summary with overview, affected systems, timeline summary, queue impact, cohort impact, severity hints, rollback hints, unresolved risks, and required operator actions |
+| queue pressure assistance documented | ✅ | `docs/QUEUE_PRESSURE_ASSISTANCE.md` now defines safe assistance for moderation, billing, support, escalations, and rollout-review queues through aging, SLA risk, overload, growth, and escalation summaries |
+| operational pattern detection documented | ✅ | `docs/OPERATIONAL_PATTERN_DETECTION.md` now classifies auth spikes, upload bursts, webhook retry storms, moderation backlog growth, support flood patterns, rollout instability, and operator overload signals into informational, attention, escalation, and freeze-recommended summaries |
+| assisted triage recommendations documented | ✅ | `docs/ASSISTED_TRIAGE_RECOMMENDATIONS.md` now defines safe recommendation categories for likely affected surface, service, workflow, owner, next checks, rollback candidate, and user impact while prohibiting autonomous decisions |
+| operator digest baseline documented | ✅ | `docs/OPERATOR_DIGEST_BASELINE.md` now defines daily operational, moderation, billing, rollout, incident, and escalation digests |
+| operational correlation review documented | ✅ | `docs/OPERATIONAL_CORRELATION_REVIEW.md` now defines safe correlation candidates across logs, alerts, queues, rollout events, billing events, moderation events, and auth events |
+| automation guardrails strengthened | ✅ | `docs/AUTOMATION_GUARDRAILS.md` now explicitly allows summary/correlation/recommendation assistance while prohibiting moderation approval, billing activation, automatic severity, rollback execution, operator override, and automatic rollout-state change |
+| admin assistance UX review documented | ✅ | `docs/ADMIN_ASSISTANCE_UX_REVIEW.md` now defines safe presentation rules, non-authoritative wording, operator acknowledgment expectations, and assistance visibility hierarchy |
+| readiness, rollout, metrics, and automation governance aligned | ✅ | `docs/PRODUCTION_READINESS_MATRIX.md`, `docs/OPERATIONAL_METRICS_BASELINE.md`, `docs/CONTROLLED_ROLLOUT_PLAN.md`, and `docs/AUTOMATION_PRIORITY_MATRIX.md` now reference the assistance baseline |
+| release governance gate strengthened again | ✅ | `scripts/release/exec-13-release-check.ps1` now requires the EXEC-35 assistance, correlation, digest, and UX docs |
+| local build validation remained healthy | ✅ | `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19` |
+| monitoring and ops automation remained healthy | ✅ | fresh ops-check still confirmed `10` monitoring policies, `2` dashboards, `7` uptime checks, and `5` recent backups |
+| safe failure simulations remained healthy | ✅ | fresh simulation still returned the expected `429/400/429/401/404` guard-rail responses on `2026-05-19` |
+| documentation + proof trail captured | ✅ | `docs/proof/exec35/README.md` now captures assisted incident summaries, queue assistance, pattern detection, assisted triage, digests, correlation, automation boundaries, admin assistance UX, and validation proof |
+
+### EXEC-35 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - operators now have a governed assistance layer for synthesis work | ✅ | incident summary, queue assistance, digests, and correlation rules now define what safe help looks like |
+| GO - assistance may now highlight likely severity and rollback candidates without taking authority | ✅ | assisted incident and triage docs keep these hints explicitly advisory |
+| GO - recurring operational patterns are now formally detectable | ✅ | pattern detection review now gives operators a shared way to interpret recurring auth, upload, webhook, moderation, support, rollout, and overload shapes |
+| GO - automation boundaries are now revalidated at the assistance layer | ✅ | automation guardrails now state explicitly what may be summarized or suggested versus what must remain human-approved |
+| GO - admin UX now has guidance for showing assistance safely | ✅ | admin assistance UX review now governs wording, hierarchy, and acknowledgment expectations |
+| GO - release governance still enforces the assistance docs | ✅ | release check now fails if the EXEC-35 assistance and UX files are missing |
+| NO-GO - autonomous operational authority | ✅ prevented | the new baseline explicitly prohibits automated moderation approval, billing activation, severity assignment, rollback execution, operator override, and automatic rollout-state change |
+| NO-GO - silent escalation or rollback automation hidden behind “assistance” wording | ✅ prevented | assisted triage, correlation, and guardrails require operator confirmation and non-authoritative wording |
+
+### EXEC-35 Validation Proof
+
+- `docs/proof/exec35/README.md` ✅ captures the assisted incident summary, queue assistance summary, operational pattern summary, assisted triage summary, operator digest summary, operational correlation summary, automation boundary summary, admin assistance UX summary, and validation summary
+- local build proof ✅: `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-19`
+- production ops-check proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-production-ops-check.ps1` returned `verdict = PASS`, `healthStatus = ok`, `readinessStatus = ok`, `databaseStatus = healthy`, `monitoringPolicies = 10`, `dashboards = 2`, `uptimeChecks = 7`, `recentBackups = 5`
+- failure simulation proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-failure-simulations.ps1` returned `loginThrottleStatus = 429`, `webhookFailureStatus = 400`, `webhookThrottleStatus = 429`, `moderationUnauthorizedStatus = 401`, `storageMissingStatus = 404`
+- release gate hardening proof ✅: `scripts/release/exec-13-release-check.ps1` now requires `ASSISTED_INCIDENT_SUMMARY_BASELINE`, `QUEUE_PRESSURE_ASSISTANCE`, `OPERATIONAL_PATTERN_DETECTION`, `ASSISTED_TRIAGE_RECOMMENDATIONS`, `OPERATOR_DIGEST_BASELINE`, `OPERATIONAL_CORRELATION_REVIEW`, and `ADMIN_ASSISTANCE_UX_REVIEW`
+- authority-boundary proof ✅: EXEC-35 now explicitly revalidates that assistance may summarize, highlight, correlate, suggest, prioritize, and route, but may not approve moderation, activate billing, assign severity automatically, trigger rollback, override operators, or change rollout state automatically
+
+### EXEC-35 Accepted Assistance Limitations
+
+1. billing remains `manual_only`
+2. `publicUpgradeFlow = request_upgrade`
+3. `operatorReviewRequired = true`
+4. `emailDelivery = not_configured`
+5. `smsDelivery = not_required`
+6. the assistance baseline is now governed, but the current platform still relies on human-written summaries rather than live generated assistance
+7. current simulations still validate runtime safety better than assistance-quality drift, wording drift, or recommendation-quality drift
+
+### EXEC-35 Launch Decision
+
+EXEC-35 raises OpenStaff from a `unified operational command baseline` to an `operational assistance baseline` suitable for faster synthesis, safer operator orientation, and lower clerical triage burden without weakening moderation, billing, escalation, rollback, or rollout authority.
+
+As of `2026-05-19`, the platform now has:
+
+1. an assisted incident summary baseline
+2. queue-pressure assistance rules
+3. operational pattern detection rules
+4. assisted triage recommendation rules
+5. recurring operator digest structures
+6. safe operational correlation rules
+7. stronger automation boundary enforcement and admin assistance UX rules
+
+EXEC-35 is `PASS` while the accepted manual commercial limitations, still-human authority boundaries, and still-unimplemented live assistance layer remain explicit in the docs and proof trail.
+
 ## EXEC-34 Unified Operational Command Surface & Operator Cockpit Baseline
 
 Verdict: `PASS - production now has a unified operational command baseline with an explicit cockpit model, standardized context packets, incident timeline rules, queue coordination expectations, shared operational priority classes, alert-routing expectations, session continuity rules, admin operational UX review, and future automation boundaries that preserve operator authority`

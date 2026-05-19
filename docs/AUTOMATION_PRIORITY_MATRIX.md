@@ -1,7 +1,7 @@
 # Automation Priority Matrix
 
 Last updated: `2026-05-19`  
-Scope: `EXEC-32`
+Scope: `EXEC-35`
 
 ## Purpose
 
@@ -18,6 +18,19 @@ This matrix ranks automation opportunities by operator hours saved, risk reducti
 | P5 | onboarding guidance automation | medium | medium | low | high | medium | better self-serve guidance removes repetitive support load and improves user trust |
 | P6 | incident reporting automation | medium | medium | low | medium | medium | drafting incident state and evidence saves time during stressful windows |
 | P7 | escalation automation | medium | medium | medium | medium | medium | owner suggestions and stale-escalation reminders help, but only after the issue taxonomy is used consistently |
+
+## EXEC-35 Assistance Emphasis
+
+The next safe assistance wave should emphasize:
+
+1. assisted incident summaries
+2. queue-pressure summaries
+3. operator digests
+4. pattern detection
+5. safe correlation summaries
+6. advisory triage recommendations
+
+These are high-value precisely because they reduce synthesis time without changing operational authority.
 
 ## Recommended Automation Roadmap
 
