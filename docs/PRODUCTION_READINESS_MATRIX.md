@@ -1,7 +1,7 @@
 # Production Readiness Matrix
 
 Last updated: `2026-05-20`  
-Scope: `EXEC-39`
+Scope: `EXEC-40`
 
 ## Matrix
 
@@ -107,6 +107,11 @@ Scope: `EXEC-39`
 | escalation compression model | documented and implemented at first level | escalation packets, carryover summaries, ownership continuity, dependency visibility, and freshness cues now have a shared baseline | [ESCALATION_COMPRESSION_MODEL.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ESCALATION_COMPRESSION_MODEL.md:1) |
 | operational response signals | documented and implemented at first level | blocked-state, stalled-review, overloaded-operator, stale-incident, degraded-response, escalation saturation, and rollout-pressure signals are now explicitly governed | [OPERATIONAL_RESPONSE_SIGNALS.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_RESPONSE_SIGNALS.md:1) |
 | operational response timing | documented and usable | time-to-next-action, escalation-preparation latency, and queue-review latency now complement time-to-orientation | [OPERATIONAL_RESPONSE_TIMING.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_RESPONSE_TIMING.md:1) |
+| shared operational memory model | documented and implemented at first level | operational memory lifecycle, unresolved-state persistence, carryover persistence, handoff persistence, freshness, and authority boundaries are now explicitly governed | [SHARED_OPERATIONAL_MEMORY_MODEL.md](/C:/Users/admin/Desktop/openstaff-platform/docs/SHARED_OPERATIONAL_MEMORY_MODEL.md:1) |
+| decision-support review | documented and implemented at first level | repeated operator decisions, escalation reasoning, rollout decisions, moderation reasoning, billing reconstruction, and incident reconstruction are now explicitly reviewed | [DECISION_SUPPORT_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/DECISION_SUPPORT_REVIEW.md:1) |
+| escalation continuity baseline | documented and implemented at first level | escalation carryover packets, unresolved-state persistence, dependency continuity, ownership continuity, and stalled-escalation visibility now have a shared baseline | [ESCALATION_CONTINUITY_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ESCALATION_CONTINUITY_BASELINE.md:1) |
+| operational memory compression | documented and implemented at first level | compressed operational timelines, recurring issue summaries, repeated failure grouping, repeated queue patterns, and recurring rollout friction now have a bounded non-authoritative baseline | [OPERATIONAL_MEMORY_COMPRESSION.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_MEMORY_COMPRESSION.md:1) |
+| decision-support signals | documented and implemented at first level | repeated-failure, recurring escalation, repeated-review, unresolved dependency, overload carryover, stalled-resolution, and degraded-response signals are now explicitly governed | [DECISION_SUPPORT_SIGNALS.md](/C:/Users/admin/Desktop/openstaff-platform/docs/DECISION_SUPPORT_SIGNALS.md:1) |
 | IAM least privilege | stable and more durable | runtime SA stayed constrained; build/deploy identity remains separate | EXEC-25 identity split remains active |
 | deploy pipeline resilience | stable | deploy path no longer depends on broad runtime IAM | dedicated build SA remains baseline |
 | engineering quality baseline | documented and enforceable | PASS now requires builds, release checks, proof, and rollback expectations rather than narrative optimism | [RELEASE_LIFECYCLE_POLICY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELEASE_LIFECYCLE_POLICY.md:1) |
@@ -135,6 +140,7 @@ The production baseline is now suitable for repeatable ongoing operations and co
 15. live deployment, authenticated rendering, operator noise review, and operator usability review are now proven on the active production admin revision rather than inferred from local build output only
 16. a first operational compression layer now reduces repeated reasoning and local page fragmentation through grouped state, freshness, and attention-routing summaries without transferring operational authority
 17. a first response-acceleration layer now reduces action-preparation friction through queue acceleration, escalation-readiness, blocked-state visibility, stale-action visibility, and grouped next-action summaries without transferring authority
+18. a first shared operational memory layer now reduces repeated decision reconstruction and escalation rediscovery through bounded carryover, recurring issue summaries, repeated-failure summaries, and operator handoff summaries without transferring authority
 
 ## Accepted Remaining Limitations
 

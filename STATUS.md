@@ -2,6 +2,76 @@
 
 Last updated: 2026-05-20
 
+## EXEC-40 Shared Operational Memory & Decision Support Layer
+
+Verdict: `PASS - the first shared operational memory layer is now live on the admin readiness surface, bounded decision-support and escalation continuity now preserve unresolved context across operator reviews and shifts, and repeated decision reconstruction is reduced without transferring moderation, billing, escalation, severity, rollback, or production authority away from humans`
+
+### EXEC-40 Shared Operational Memory Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| shared operational memory model documented | ✅ | `docs/SHARED_OPERATIONAL_MEMORY_MODEL.md` now defines the operational memory lifecycle, incident/escalation/moderation/rollout/billing memory, unresolved-state persistence, carryover persistence, handoff persistence, freshness, stale-memory handling, conflict resolution, authority ownership, and audit visibility |
+| decision-support review documented | ✅ | `docs/DECISION_SUPPORT_REVIEW.md` now captures repeated operator decisions, repeated escalation reasoning, repeated rollout decisions, repeated moderation reasoning, repeated billing-review reconstruction, and repeated incident-response reconstruction |
+| escalation continuity baseline documented | ✅ | `docs/ESCALATION_CONTINUITY_BASELINE.md` now defines escalation carryover packets, unresolved-state persistence, escalation continuity summaries, dependency continuity, ownership continuity, timeline continuity, and stalled-escalation indicators |
+| operational memory compression documented | ✅ | `docs/OPERATIONAL_MEMORY_COMPRESSION.md` now defines compressed operational timelines, recurring issue summaries, repeated failure grouping, repeated queue patterns, recurring moderation patterns, recurring billing patterns, and recurring rollout friction without autonomous conclusions |
+| decision-support signals documented | ✅ | `docs/DECISION_SUPPORT_SIGNALS.md` now defines repeated-failure, recurring escalation, repeated-review, unresolved dependency, overload carryover, stalled-resolution, and degraded-response indicators as advisory, explainable, timestamped, and source-linked |
+| live shared-memory layer implemented | ✅ | `apps/admin/app/admin/production-readiness/page.tsx` now renders operational memory summaries, decision-support summaries, escalation continuity, unresolved-state carryover, recurring issue summaries, repeated-failure summaries, operator handoff summaries, and grouped operational history |
+| authority boundary remained explicit live | ✅ | the live page keeps shared memory and decision-support strictly advisory-only and still prohibits automatic decisions, automatic severity, automatic moderation approval, automatic billing activation, automatic escalation, automatic rollback, autonomous production mutation, and operator override |
+| latest ready admin revision verified | ✅ | `gcloud run services describe openstaff-admin --region europe-west1` now reports `latestReadyRevisionName = openstaff-admin-00015-p92` with `100%` traffic on the same revision |
+| admin deploy promoted successfully | ✅ | `gcloud builds submit --config apps/admin/cloudbuild.admin.yaml --service-account=projects/openstaff-platform/serviceAccounts/openstaff-build@openstaff-platform.iam.gserviceaccount.com .` succeeded as build `255d53c6-28b8-4d2b-a152-56dd49a66b1e` |
+| browser proof for shared memory completed | ✅ | authenticated Chrome, Edge, and mobile Chrome validation on `https://backoffice.openstaff.eu/admin/production-readiness` confirmed the EXEC-40 headings, carryover visibility, grouped operational history, timestamps, and clean console/request health |
+| moderation/admin smoke remained healthy | ✅ | authenticated smoke still confirmed `GET /admin/public-posts = 200` and `GET /admin/public-post-media = 200` after the EXEC-40 rollout |
+| proof trail captured | ✅ | `docs/proof/exec40/README.md` now captures the shared memory, decision-support, escalation continuity, operational memory compression, runtime safety, browser proof, smoke, validation, deploy, and cleanup baseline |
+
+### EXEC-40 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - operators now get shared carryover context on the same surface as orientation and action prep | ✅ | the live readiness page now preserves operational memory, unresolved carryover, handoff summaries, and grouped operational history before deeper specialist review |
+| GO - decision-support reduces repeated reconstruction without hiding raw evidence | ✅ | decision-support now groups recurring issues, repeated failures, unresolved dependencies, and likely next checks while leaving source metrics visible on the same surface |
+| GO - escalation continuity now reduces transfer-context loss without automatic escalation | ✅ | the live continuity layer surfaces carryover packets, unresolved dependencies, and handoff cues while keeping escalation authority human-owned |
+| GO - browser validation now covers the new continuity and memory layer | ✅ | Chrome, Edge, and mobile Chrome all rendered the new EXEC-40 headings with no console errors, runtime errors, failed requests, or mobile overflow |
+| GO - runtime safety remained intact | ✅ | no backend authority change, autonomous workflow, hidden prioritization, automatic severity, automatic moderation decision, automatic billing activation, or autonomous production mutation was introduced |
+| NO-GO - stale or hidden memory treated as authority | ✅ prevented | the memory layer keeps timestamps, source linkage, freshness cues, and explicit advisory wording visible instead of silently converting carryover into truth |
+| NO-GO - decision-support used as silent authority transfer | ✅ prevented | the EXEC-40 layer preserves context and suggests next checks, but it does not make decisions, escalate automatically, rollback automatically, or override operators |
+
+### EXEC-40 Validation Proof
+
+- `docs/proof/exec40/README.md` ✅ captures the shared operational memory summary, decision-support summary, escalation continuity summary, operational memory compression summary, runtime safety summary, browser validation summary, production smoke summary, validation summary, deploy summary, and cleanup proof
+- browser proof ✅: authenticated Chrome, Edge, and mobile Chrome validation confirmed `Operational memory summaries`, `Decision-support summaries`, `Escalation continuity`, `Unresolved-state carryover`, `Recurring issue summaries`, `Repeated-failure summaries`, `Operator handoff summaries`, and `Grouped operational history`
+- deploy proof ✅: admin build `255d53c6-28b8-4d2b-a152-56dd49a66b1e` promoted `openstaff-admin-00015-p92`
+- latest admin revision proof ✅: `openstaff-admin-00015-p92`
+- production smoke proof ✅: `/health`, `/status`, the authenticated readiness page, and protected admin/moderation surfaces remained healthy during proof
+- local/build validation proof ✅: `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-20`
+- ops automation proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-production-ops-check.ps1` and `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-failure-simulations.ps1` still passed after the EXEC-40 updates
+- release governance proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-13-release-check.ps1` now requires the EXEC-40 shared-memory and decision-support docs
+
+### EXEC-40 Accepted Memory Limitations
+
+1. billing remains `manual_only`
+2. `publicUpgradeFlow = request_upgrade`
+3. `operatorReviewRequired = true`
+4. `emailDelivery = not_configured`
+5. `smsDelivery = not_required`
+6. the shared memory layer still depends on the existing `/status` contract and recent operator-action visibility rather than a dedicated memory service or incident datastore
+7. better continuity still depends on operator note quality, current source freshness, and human judgment once a specialist queue is opened
+
+### EXEC-40 Launch Decision
+
+EXEC-40 closes the first shared operational memory and decision-support layer honestly.
+
+As of `2026-05-20`, OpenStaff now has:
+
+1. a shared operational memory model
+2. a documented decision-support review
+3. an escalation continuity baseline
+4. an operational memory compression baseline
+5. a decision-support signals baseline
+6. a live shared-memory and continuity layer on the authenticated readiness page
+7. browser proof across Chrome, Edge, and mobile Chrome for the new bounded continuity and decision-support layer
+
+EXEC-40 is `PASS`.
+
 ## EXEC-39 Actionability & Operational Response Acceleration
 
 Verdict: `PASS - the first operational response acceleration layer is now live on the admin readiness surface, queue and escalation preparation are compressed into the shared operator view, and time-to-next-action is reduced without transferring moderation, billing, escalation, rollback, severity, or rollout authority away from humans`

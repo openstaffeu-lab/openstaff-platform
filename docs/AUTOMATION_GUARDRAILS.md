@@ -1,7 +1,7 @@
 # Automation Guardrails
 
 Last updated: `2026-05-20`  
-Scope: `EXEC-39`
+Scope: `EXEC-40`
 
 ## Purpose
 
@@ -20,6 +20,8 @@ This policy defines what OpenStaff may automate safely, what must remain human-r
 9. unified intelligence surfaces must keep grouped state explainable instead of collapsing it into opaque scoring
 10. actionability layers may prepare the next step faster, but they may not silently take the step
 11. response-preparation layers must keep blocked, stale, unresolved, and overload cues visible instead of burying them in hidden routing logic
+12. shared operational memory may preserve prior context, but it may not convert prior context into automatic decision authority
+13. decision-support layers must keep recurring issue summaries, unresolved state, and carryover cues timestamped and source-linked
 
 ## Allowed Assistance Layer
 
@@ -58,6 +60,7 @@ The assistance layer may not:
 12. compressed operator orientation surfaces that group visible queue, rollout, incident, and freshness state without changing production state
 13. stale-state indicators, grouped state summaries, and attention-routing cues that remain source-linked and advisory-only
 14. grouped next-action summaries, queue acceleration hints, escalation packets, and response-preparation prompts that remain visibly advisory
+15. shared operational memory summaries, escalation continuity packets, recurring issue summaries, repeated-failure summaries, and operator handoff summaries that remain visibly advisory
 
 ## What Must Remain Human-Reviewed
 
@@ -76,6 +79,7 @@ The assistance layer may not:
 13. accepting or rejecting compressed priority ordering shown on an operational intelligence surface
 14. deciding whether a stale or conflicting summary still matches current live operator context
 15. accepting or rejecting suggested next-action preparation and escalation-packet summaries
+16. accepting or rejecting shared-memory carryover summaries and recurring-pattern interpretations
 
 ## What Requires Escalation
 
@@ -87,6 +91,7 @@ The assistance layer may not:
 6. any assistance output that surfaces billing-state ambiguity, moderation/public-visibility disagreement, or likely rollback review
 7. any compressed intelligence summary that conflicts materially with specialist queue surfaces or current handoff notes
 8. any response-preparation summary that suggests a blocked, stale, or unresolved state without enough visible source support
+9. any shared-memory or decision-support summary that conflicts materially with live queue state, live owner context, or current readiness warnings
 
 ## What Requires Manual Approval Forever
 
@@ -113,6 +118,7 @@ The assistance layer may not:
 6. rollout pause, freeze, and expansion authority remain human-owned
 7. operational compression may route attention, but it may not route authority
 8. response acceleration may prepare action, but it may not execute action
+9. shared operational memory may preserve decision context, but it may not make the decision
 
 ## Final Assessment
 

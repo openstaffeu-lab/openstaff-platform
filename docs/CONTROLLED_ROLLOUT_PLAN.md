@@ -1,6 +1,6 @@
 # OpenStaff Controlled Rollout Plan
 
-Last updated: 2026-05-19
+Last updated: 2026-05-20
 
 ## Rollout Mode
 
@@ -61,6 +61,11 @@ This plan must be used together with:
 - `docs/ESCALATION_COMPRESSION_MODEL.md`
 - `docs/OPERATIONAL_RESPONSE_SIGNALS.md`
 - `docs/OPERATIONAL_RESPONSE_TIMING.md`
+- `docs/SHARED_OPERATIONAL_MEMORY_MODEL.md`
+- `docs/DECISION_SUPPORT_REVIEW.md`
+- `docs/ESCALATION_CONTINUITY_BASELINE.md`
+- `docs/OPERATIONAL_MEMORY_COMPRESSION.md`
+- `docs/DECISION_SUPPORT_SIGNALS.md`
 
 ## Expansion Bands
 
@@ -104,8 +109,10 @@ Operator responsibilities:
 - confirm that assistance timestamps still match the current operational moment before treating a summary as active context
 - use the compressed operator orientation layer as the first review surface before opening deeper queue, digest, or correlation sections
 - use the response-acceleration layer to prepare the next queue, escalation, or rollout review before opening specialist tools
+- use the shared operational memory layer to recover recent decisions, unresolved carryover, and handoff context before rebuilding the same reasoning from scratch
 - treat grouped operational state as orientation support only and resolve conflicts against source metrics and specialist queue surfaces
 - treat grouped next-action summaries as preparation support only and confirm them against live owner context before acting
+- treat shared operational memory and decision-support summaries as continuity support only and confirm them against fresh source evidence before making a human decision
 - clear moderation and upgrade queues within the agreed SLA
 - escalate runtime, billing, or security anomalies immediately
 - leave handoff-ready notes another operator can act on safely
@@ -227,6 +234,7 @@ At the end of each cohort window:
 10. note whether browser-visible wording, timestamps, and source reasoning remained trustworthy during the cohort window
 11. note whether the compressed orientation layer reduced context switching or hid any nuance that still mattered for safe human judgment
 12. note whether the response-acceleration layer reduced time-to-next-action or merely added more visible advice without reducing prep work
+13. note whether the shared operational memory layer reduced decision reconstruction, escalation rediscovery, and handoff-context loss without creating stale-memory confusion
 
 ## Support Escalation Model
 

@@ -176,6 +176,7 @@ export default function ProductionReadinessPage() {
   const moderationConfusion24h = operations?.feedback?.moderationConfusion24h ?? 0;
   const onboardingFriction24h = operations?.feedback?.onboardingFriction24h ?? 0;
   const adoptionReasons = adoptionReadiness?.reasons ?? [];
+  const recentOperatorActions = operations?.recentOperatorActions ?? [];
   const snapshotAgeMinutes = getSnapshotAgeMinutes(status?.timestamp);
   const freshnessState =
     snapshotAgeMinutes === null
@@ -477,6 +478,117 @@ export default function ProductionReadinessPage() {
       ? `Next rollout action: re-check readiness warnings, adoption reasons, and current queue pressure before treating rollout as ready to expand.`
       : "Next rollout action: continue routine monitoring with no extra response-prep requirement visible here.",
   ];
+  const recentActionWindowSummary =
+    recentOperatorActions.length > 0
+      ? `${recentOperatorActions.length} recent operator action(s) are visible in the active snapshot.`
+      : "No recent operator action was included in the active snapshot.";
+  const groupedOperationalHistory = [
+    recentActionWindowSummary,
+    moderationPendingTotal > 0
+      ? `Moderation history still matters because ${moderationPendingTotal} item(s) remain unresolved in the queue.`
+      : "Moderation history does not currently show unresolved queue carryover from the active snapshot.",
+    upgradePendingTotal > 0 || webhookFailures24h > 0
+      ? `Billing history still matters because ${upgradePendingTotal} open review(s) and ${webhookFailures24h} webhook failure signal(s) can force repeated decision reconstruction.`
+      : "Billing history does not currently show unresolved carryover pressure in the active snapshot.",
+    operatorEscalations24h > 0 || repeatedConfusion24h > 0
+      ? `Escalation history still matters because ${operatorEscalations24h} escalation event(s) and ${repeatedConfusion24h} repeated confusion report(s) suggest carryover context should stay visible between operators.`
+      : "Escalation history does not currently show obvious carryover saturation in the active snapshot.",
+  ];
+  const operationalMemorySummaries = [
+    freshnessState === "fresh"
+      ? "Operational memory is fresh enough for first-pass carryover review, but it remains advisory and source-linked."
+      : `Operational memory is ${freshnessState}, so carryover summaries should be revalidated against live source surfaces before a human decision is taken.`,
+    recentOperatorActions.length > 0
+      ? "Recent operator actions provide bounded memory instead of a full timeline so the next operator can recover context faster without reading raw logs."
+      : "No recent operator action memory is visible yet, so operators should rely more heavily on current queue state and explicit handoff notes.",
+    unresolvedIncidentWarnings.length > 0
+      ? `Unresolved warnings remain preserved as carryover context across ${unresolvedIncidentWarnings.length} visible warning signal(s).`
+      : "No current readiness warning is forcing special unresolved-state memory carryover.",
+    "Shared operational memory may preserve context, prior decisions, unresolved state, and likely next checks, but it may not make the decision itself.",
+  ];
+  const decisionSupportSummaries = [
+    moderationPendingTotal > 0
+      ? "Decision-support can reduce repeated moderation reconstruction by pairing queue size, oldest age, and recent operator actions before a human opens the specialist surface."
+      : "Decision-support does not currently need to compress moderation reasoning because the queue is quiet in the active snapshot.",
+    upgradePendingTotal > 0 || webhookFailures24h > 0
+      ? "Decision-support can reduce repeated billing reconstruction by keeping review backlog, webhook failure pressure, and manual-only billing boundaries visible together."
+      : "Decision-support does not currently need to compress billing reconstruction because the billing queue is quiet in the active snapshot.",
+    operatorEscalations24h > 0 || failedFlows24h > 0
+      ? "Decision-support can reduce repeated escalation reconstruction by preserving owner continuity, unresolved dependency visibility, and likely next checks before transfer."
+      : "Decision-support does not currently need extra escalation reconstruction help from the active snapshot alone.",
+    "Decision-support remains explainable only when operators can still inspect the raw queue, warning, and owner context before acting.",
+  ];
+  const escalationContinuitySummaries = [
+    operatorEscalations24h > 0
+      ? `Escalation continuity packet needed: ${operatorEscalations24h} recent escalation event(s) suggest transfer context should stay grouped by owner, dependency, and next check.`
+      : "No current escalation volume suggests special packet pressure from event count alone.",
+    failedFlows24h > 0
+      ? `Dependency continuity risk: ${failedFlows24h} failed-flow report(s) suggest escalations may stall if unresolved blockers are not carried forward explicitly.`
+      : "No failed-flow report currently forces extra dependency continuity handling.",
+    repeatedConfusion24h > 0
+      ? `Handoff continuity risk: ${repeatedConfusion24h} repeated confusion report(s) suggest the same explanation may be rebuilt unless a carryover summary stays visible.`
+      : "No repeated-confusion pattern currently forces extra handoff continuity handling.",
+    freshnessState !== "fresh"
+      ? "Continuity freshness risk: stale memory should be treated as orientation support only until a newer source snapshot is confirmed."
+      : "Continuity freshness is acceptable for first-pass escalation carryover review.",
+  ];
+  const unresolvedStateCarryover = [
+    ...(moderationPendingTotal > 0
+      ? [`Carry over moderation state: ${moderationPendingTotal} item(s) still need a human review outcome.`]
+      : []),
+    ...(upgradePendingTotal > 0
+      ? [`Carry over billing state: ${upgradePendingTotal} upgrade review request(s) still need human disposition.`]
+      : []),
+    ...(webhookFailures24h > 0
+      ? [`Carry over billing dependency: ${webhookFailures24h} webhook failure signal(s) may keep reconciliation context unresolved.`]
+      : []),
+    ...(unresolvedIncidentWarnings.length > 0
+      ? [`Carry over incident and rollout state: ${unresolvedIncidentWarnings.length} warning signal(s) remain unresolved in the visible readiness snapshot.`]
+      : []),
+    ...(operatorEscalations24h > 0
+      ? [`Carry over escalation state: ${operatorEscalations24h} recent escalation event(s) still need explicit owner continuity.`]
+      : []),
+  ];
+  const recurringIssueSummaries = [
+    repeatedConfusion24h > 0
+      ? `Recurring explanation pattern: ${repeatedConfusion24h} repeated confusion report(s) suggest operators are re-explaining the same issue.`
+      : "No recurring explanation pattern crossed the visible threshold in the active snapshot.",
+    moderationConfusion24h > 0
+      ? `Recurring moderation pattern: ${moderationConfusion24h} moderation confusion report(s) suggest repeated review reasoning is still leaking across sessions.`
+      : "No recurring moderation confusion pattern crossed the visible threshold in the active snapshot.",
+    billingConfusion24h > 0
+      ? `Recurring billing pattern: ${billingConfusion24h} billing confusion report(s) suggest review context is being rebuilt repeatedly.`
+      : "No recurring billing confusion pattern crossed the visible threshold in the active snapshot.",
+    adoptionReasons.length > 0
+      ? `Recurring rollout friction: ${adoptionReasons.length} adoption-readiness reason(s) remain open in the current snapshot.`
+      : "No recurring rollout-friction pattern is currently visible from adoption-readiness reasons.",
+  ];
+  const repeatedFailureSummaries = [
+    loginFailures24h > 0
+      ? `Repeated auth failure summary: ${loginFailures24h} login failure signal(s) were logged in the last 24 hours.`
+      : "No repeated auth failure summary is visible in the active 24-hour window.",
+    uploadFailures24h > 0
+      ? `Repeated upload failure summary: ${uploadFailures24h} upload failure signal(s) were logged in the last 24 hours.`
+      : "No repeated upload failure summary is visible in the active 24-hour window.",
+    webhookFailures24h > 0
+      ? `Repeated webhook failure summary: ${webhookFailures24h} billing webhook failure signal(s) were logged in the last 24 hours.`
+      : "No repeated webhook failure summary is visible in the active 24-hour window.",
+    rateLimitTriggers15m > 0
+      ? `Repeated short-window rate-limit summary: ${rateLimitTriggers15m} rate-limit trigger(s) were logged in the last 15 minutes.`
+      : "No repeated short-window rate-limit summary is visible in the active 15-minute window.",
+  ];
+  const operatorHandoffSummaries = [
+    recentOperatorActions.length > 0
+      ? "Recent action carryover is present, so a new operator can recover the last visible review moves before reopening specialist tools."
+      : "Recent action carryover is absent, so the next operator should treat current queue and source state as the primary handoff anchor.",
+    operatorOverloadIndicators.length > 0
+      ? `Handoff risk is elevated because ${operatorOverloadIndicators.length} overload indicator(s) suggest continuity could depend on better shared memory.`
+      : "No overload indicator currently suggests special handoff risk in the active snapshot.",
+    unresolvedStateCarryover.length > 0
+      ? `Handoff packet should preserve ${unresolvedStateCarryover.length} unresolved carryover item(s) so next-shift operators do not rebuild the same context.`
+      : "No unresolved carryover item currently forces a special handoff packet.",
+    "Operator handoff summaries may preserve who acted, what remains unresolved, and what to check next, but they may not silently transfer authority or final decisions.",
+  ];
 
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-8 text-white md:px-8">
@@ -742,6 +854,48 @@ export default function ProductionReadinessPage() {
               ]}
               tone="amber"
             />
+          </Card>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-3">
+          <Card title="Operational memory summaries">
+            <SimpleList items={operationalMemorySummaries} tone="cyan" />
+          </Card>
+
+          <Card title="Decision-support summaries">
+            <SimpleList items={decisionSupportSummaries} tone="amber" />
+          </Card>
+
+          <Card title="Escalation continuity">
+            <SimpleList items={escalationContinuitySummaries} tone="cyan" />
+          </Card>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-2">
+          <Card title="Unresolved-state carryover">
+            {unresolvedStateCarryover.length > 0 ? (
+              <SimpleList items={unresolvedStateCarryover} tone="rose" />
+            ) : (
+              <EmptyState text="No unresolved carryover item currently needs special memory persistence from the active snapshot." />
+            )}
+          </Card>
+
+          <Card title="Operator handoff summaries">
+            <SimpleList items={operatorHandoffSummaries} tone="amber" />
+          </Card>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-3">
+          <Card title="Recurring issue summaries">
+            <SimpleList items={recurringIssueSummaries} tone="amber" />
+          </Card>
+
+          <Card title="Repeated-failure summaries">
+            <SimpleList items={repeatedFailureSummaries} tone="rose" />
+          </Card>
+
+          <Card title="Grouped operational history">
+            <SimpleList items={groupedOperationalHistory} tone="cyan" />
           </Card>
         </section>
 
@@ -1249,9 +1403,9 @@ export default function ProductionReadinessPage() {
 
         <section className="grid gap-6 lg:grid-cols-2">
           <Card title="Recent operator actions">
-            {operations?.recentOperatorActions?.length ? (
+            {recentOperatorActions.length ? (
               <div className="space-y-3">
-                {operations.recentOperatorActions.map((item) => (
+                {recentOperatorActions.map((item) => (
                   <div
                     key={`${item.createdAt}-${item.action}-${item.entityType}`}
                     className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3"
@@ -1280,6 +1434,7 @@ export default function ProductionReadinessPage() {
                 `Pending and rejected moderation counts expose operator backlog without leaking end-user content.`,
                 `Auth failure and rate-limit bursts help separate confusion from abuse or runtime instability.`,
                 `Webhook and upload failure counts make operational regressions visible before users report them manually.`,
+                `Shared memory summaries preserve bounded carryover context and prior operator actions without turning the page into an infinite history feed.`,
                 "The assistance surfaces above use only the visible `/status` snapshot, the timestamp shown on the page, and explicit threshold wording rendered in source reasoning blocks.",
               ]}
               tone="cyan"
