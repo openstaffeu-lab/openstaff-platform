@@ -6,6 +6,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import {
   OnboardingAdminController,
   OnboardingController,
+  OnboardingPublicController,
   OnboardingPublicProfilesController,
 } from './onboarding.controller';
 import { OnboardingService } from './onboarding.service';
@@ -14,6 +15,7 @@ import { OnboardingService } from './onboarding.service';
   imports: [PrismaModule, AuditModule, AuthModule, NotificationModule],
   controllers: [
     OnboardingController,
+    OnboardingPublicController,
     OnboardingPublicProfilesController,
     OnboardingAdminController,
   ],

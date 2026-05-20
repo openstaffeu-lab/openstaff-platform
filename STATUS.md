@@ -2,6 +2,48 @@
 
 Last updated: 2026-05-20
 
+## EXEC-42 User Registration, Smart Company Autofill, RELU AI Profile Creation & Public Visibility Closure
+
+Verdict: `IN PROGRESS - password recovery, lighter registration, company autofill, locale defaults, RELU AI profile suggestions, dashboard visibility, and homepage trust cleanup are now implemented locally and validated through Prisma plus application builds, but production-grade reset delivery, live deploy proof, and browser-validated end-to-end public closure are still open`
+
+### EXEC-42 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| password recovery baseline implemented | ✅ | `apps/admin/api/src/auth/auth.service.ts`, `auth.controller.ts`, forgot-password and reset-password pages now support secure reset request, token expiry, single use, rate limiting, audit events, and session revocation |
+| progressive registration UX simplified | ✅ | `apps/admin/web/app/register/page.tsx` now starts with account type + email + password, then moves locale defaults, optional phone, and company fiscal/VAT into a lighter second step |
+| geo / locale / VAT defaults implemented | ✅ | `GET /onboarding/defaults` now returns inferred country, language, currency, VAT mode, timezone, and explanation of inferred values |
+| company autofill baseline implemented | ✅ | `PUT /onboarding/company-lookup` plus `apps/admin/web/app/onboarding/company/page.tsx` now support fiscal/VAT normalization, lookup status, provider labeling, autofill, and manual override |
+| RELU AI profile generation surfaced in onboarding | ✅ | `apps/admin/web/app/onboarding/completion/page.tsx` now renders `Analyzeaza cu RELU AI`, summary, ESCO, NACE/category, Uniclass, and missing-information suggestions |
+| taxonomy suggestion baseline documented and visible | ✅ | `docs/TAXONOMY_SUGGESTION_BASELINE.md` and onboarding completion now preserve advisory taxonomy suggestions with confidence when available |
+| dashboard owner visibility improved | ✅ | `apps/admin/web/app/dashboard/page.tsx` now shows approval state, profile moderation state, latest listing state, and owner-visible pending/public guidance |
+| homepage trust cleanup improved | ✅ | `apps/admin/web/app/page.tsx` and `components/ActorCard.tsx` now frame approved companies, professionals, and projects as live marketplace content instead of artificial execution-style copy |
+| password recovery delivery closure | ❌ blocker | `docs/PASSWORD_RECOVERY_SECURITY.md` remains explicit that `emailDelivery = not_configured` still blocks provider-backed reset-link delivery |
+| live browser validation for EXEC-42 | ❌ blocker | Chrome, Edge, and mobile Chrome proof for company registration, professional registration, password recovery, admin approval, and approved homepage visibility has not yet been rerun on a promoted EXEC-42 revision |
+| production deploy promotion for EXEC-42 | ❌ blocker | no fresh API/web/admin production promotion has yet been executed for the EXEC-42 codepath in this execution |
+| proof trail captured | ✅ | `docs/proof/exec42/README.md` now records the implemented baseline, local validation, and remaining live blockers honestly |
+
+### EXEC-42 Validation Proof
+
+- `apps/admin/api -> npx.cmd prisma validate` ✅
+- `apps/admin/api -> npx.cmd prisma generate` ✅
+- `apps/admin/api -> npm.cmd run build` ✅
+- `apps/admin/web -> npm.cmd run build` ✅
+- `apps/admin -> npm.cmd run build` ✅
+- `docs/USER_ONBOARDING_CLOSURE.md` ✅ created
+- `docs/COMPANY_AUTOFILL_BASELINE.md` ✅ created
+- `docs/RELU_PROFILE_GENERATION_BASELINE.md` ✅ created
+- `docs/TAXONOMY_SUGGESTION_BASELINE.md` ✅ created
+- `docs/PASSWORD_RECOVERY_SECURITY.md` ✅ created
+- `docs/proof/exec42/README.md` ✅ created
+
+### EXEC-42 Remaining Blockers
+
+1. `emailDelivery = not_configured` still blocks provider-backed password-reset delivery proof
+2. no fresh production deploy has yet promoted the EXEC-42 codepath
+3. no authenticated live browser proof yet confirms COMPANY registration, PROFESSIONAL registration, forgot-password, company autofill, RELU AI suggestions, upload, moderation approval, and homepage/feed visibility after approval
+4. company lookup is currently a safe abstraction with deterministic baseline matches, not yet a fully live Romanian + EU registry integration
+
 ## EXEC-41 Coordination Governance & Decision Traceability Layer
 
 Verdict: `PASS - the first coordination-governance and decision-traceability layer is now live on the admin readiness surface, ownership, rationale, accountability, and disagreement state are preserved in one bounded operator view, and coordination consistency is improved without transferring moderation, billing, escalation, rollback, severity, or production authority away from humans`

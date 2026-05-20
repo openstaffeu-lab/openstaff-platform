@@ -1,7 +1,7 @@
 # Production Readiness Matrix
 
 Last updated: `2026-05-20`  
-Scope: `EXEC-41`
+Scope: `EXEC-42`
 
 ## Matrix
 
@@ -9,6 +9,11 @@ Scope: `EXEC-41`
 |---|---|---|---|
 | infrastructure | stable | Cloud Run healthy, Cloud SQL hardened, storage configured | production runtime healthy; Cloud SQL `RUNNABLE`, backups/PITR on, `ENCRYPTED_ONLY` |
 | auth / security | stable | `firebase-admin`, audit/security flows operational, security posture documented | [SECURITY_POSTURE_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/SECURITY_POSTURE_REVIEW.md:1) and EXEC-25 live proof |
+| password recovery | implemented locally, live closure still pending | forgot-password, reset-token expiry, single-use invalidation, rate limiting, and audit events now exist | [PASSWORD_RECOVERY_SECURITY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/PASSWORD_RECOVERY_SECURITY.md:1); provider-backed delivery still blocked by `emailDelivery = not_configured` |
+| onboarding closure | improved locally, live closure still pending | lighter register flow, company autofill entrypoint, RELU AI completion visibility, and owner dashboard visibility now exist | [USER_ONBOARDING_CLOSURE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/USER_ONBOARDING_CLOSURE.md:1) |
+| company autofill | implemented at baseline level | fiscal/VAT normalization, lookup status, provider labeling, and manual fallback now exist in onboarding | [COMPANY_AUTOFILL_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/COMPANY_AUTOFILL_BASELINE.md:1) |
+| RELU AI profile generation | implemented at baseline level | RELU AI profile analysis, summary, and taxonomy suggestion visibility now exist in onboarding completion | [RELU_PROFILE_GENERATION_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELU_PROFILE_GENERATION_BASELINE.md:1) |
+| taxonomy suggestions | implemented at baseline level | ESCO, NACE/category, and Uniclass suggestions are now surfaced with advisory wording and manual confirmation expectations | [TAXONOMY_SUGGESTION_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/TAXONOMY_SUGGESTION_BASELINE.md:1) |
 | security posture | stable with accepted residual risks | attack surface, ingress, CORS, secret access, admin exposure, and DB exposure documented | no wildcard CORS; anonymous admin API still blocked; public `run.app` exposure accepted |
 | incident response | documented and usable | severity model, ownership, escalation, rollback authority, and recovery expectations are explicit | [INCIDENT_RESPONSE_RUNBOOK.md](/C:/Users/admin/Desktop/openstaff-platform/docs/INCIDENT_RESPONSE_RUNBOOK.md:1) |
 | release governance | documented and usable | deploy approvals, rollback rules, freeze rules, hotfix path, and PASS proof expectations are explicit | [RELEASE_GOVERNANCE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELEASE_GOVERNANCE.md:1) |
@@ -124,7 +129,7 @@ Scope: `EXEC-41`
 
 ## Governance Verdict
 
-`EXEC-41 PASS`
+`EXEC-42 IN PROGRESS`
 
 The production baseline is now suitable for repeatable ongoing operations and controlled real-user onboarding because:
 
@@ -147,6 +152,7 @@ The production baseline is now suitable for repeatable ongoing operations and co
 17. a first response-acceleration layer now reduces action-preparation friction through queue acceleration, escalation-readiness, blocked-state visibility, stale-action visibility, and grouped next-action summaries without transferring authority
 18. a first shared operational memory layer now reduces repeated decision reconstruction and escalation rediscovery through bounded carryover, recurring issue summaries, repeated-failure summaries, and operator handoff summaries without transferring authority
 19. a first coordination-governance and decision-traceability layer now preserves rationale, accountability, disagreement visibility, ownership continuity, and grouped operator-action history without transferring authority
+20. password recovery, progressive registration, company autofill, RELU AI profile generation visibility, and taxonomy-suggestion visibility now have a first application-level closure baseline
 
 ## Accepted Remaining Limitations
 
@@ -157,3 +163,5 @@ The production baseline is now suitable for repeatable ongoing operations and co
 5. `smsDelivery = not_required`
 6. critical security alerting currently uses Cloud Logging-visible proxy signals until richer native metrics are exported
 7. Cloud Run ingress remains `all`, and public `run.app` URLs remain directly reachable
+8. live provider-backed password-reset delivery is still blocked by `emailDelivery = not_configured`
+9. EXEC-42 still requires fresh production deploy proof plus browser validation for company registration, professional registration, password recovery, moderation, and approved homepage visibility

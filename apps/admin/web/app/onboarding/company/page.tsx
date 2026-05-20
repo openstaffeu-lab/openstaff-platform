@@ -4,7 +4,13 @@ import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { getOnboardingMe, updateOnboardingStep, upsertCompanyProfile } from "@/lib/api";
+import {
+  getOnboardingMe,
+  lookupCompanyProfile,
+  updateOnboardingStep,
+  upsertCompanyProfile,
+  type CompanyLookupResult,
+} from "@/lib/api";
 import { useOnboardingState } from "@/lib/onboarding";
 
 export default function OnboardingCompanyPage() {
@@ -24,7 +30,9 @@ export default function OnboardingCompanyPage() {
     website: "",
   });
   const [saving, setSaving] = useState(false);
+  const [lookingUp, setLookingUp] = useState(false);
   const [error, setError] = useState("");
+  const [lookup, setLookup] = useState<CompanyLookupResult | null>(null);
 
   useEffect(() => {
     if (!ready || !token) {
@@ -71,10 +79,22 @@ export default function OnboardingCompanyPage() {
       <div style={{ display: "grid", gap: 16 }}>
         <h2 style={{ color: "#1B2A6B", fontSize: 28, fontWeight: 800, margin: 0 }}>Company identity</h2>
         <p style={{ color: "#334155", margin: 0 }}>
-          Pentru conturi individuale poti sari peste acest pas. Pentru companii si institutii,
-          aceste date ajuta operatorii sa inteleaga cine publica si sa pregateasca eventualele
-          verificari sau clarificari comerciale.
+          For individual accounts you can skip this step. For companies, the fiscal or VAT code can
+          prefill legal details before you review and override them manually.
         </p>
+
+        <div
+          style={{
+            borderRadius: 16,
+            background: "#F8FAFC",
+            border: "1px solid #E8EBF5",
+            padding: 16,
+            color: "#334155",
+          }}
+        >
+          Start with the VAT or fiscal code when you have it. OpenStaff will suggest company data
+          where possible, explain what was inferred, and still let you edit every field.
+        </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
           <input value={form.companyName} onChange={(event) => setForm((current) => ({ ...current, companyName: event.target.value }))} placeholder="Company name" style={inputStyle} />
@@ -88,6 +108,76 @@ export default function OnboardingCompanyPage() {
           <input value={form.postalCode} onChange={(event) => setForm((current) => ({ ...current, postalCode: event.target.value }))} placeholder="Postal code" style={inputStyle} />
           <input value={form.website} onChange={(event) => setForm((current) => ({ ...current, website: event.target.value }))} placeholder="Website URL" style={inputStyle} />
         </div>
+
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            onClick={async () => {
+              setLookingUp(true);
+              setError("");
+
+              try {
+                const result = await lookupCompanyProfile({
+                  fiscalCode: form.vatId,
+                  countryCode: (form.country || "RO").slice(0, 2).toUpperCase(),
+                });
+                setLookup(result);
+                setForm((current) => ({
+                  ...current,
+                  companyName: result.company.companyName ?? current.companyName,
+                  legalName: result.company.legalName ?? current.legalName,
+                  registrationNumber:
+                    result.company.registrationNumber ?? current.registrationNumber,
+                  vatId: result.company.vatId ?? current.vatId,
+                  country: result.company.country ?? current.country,
+                  city: result.company.city ?? current.city,
+                  addressLine1: result.company.addressLine1 ?? current.addressLine1,
+                  postalCode: result.company.postalCode ?? current.postalCode,
+                }));
+                setPartial({
+                  companyName: result.company.companyName ?? form.companyName,
+                  companyCui: result.company.vatId ?? form.vatId,
+                });
+              } catch (lookupError) {
+                setError(
+                  lookupError instanceof Error
+                    ? lookupError.message
+                    : "We could not look up that company automatically.",
+                );
+              } finally {
+                setLookingUp(false);
+              }
+            }}
+            disabled={lookingUp || !form.vatId.trim()}
+            style={primaryButton}
+          >
+            {lookingUp ? "Looking up company..." : "Autofill from fiscal / VAT code"}
+          </button>
+          <span style={{ alignSelf: "center", color: "#64748B", fontSize: 14 }}>
+            Manual edit always stays available after autofill.
+          </span>
+        </div>
+
+        {lookup ? (
+          <div
+            style={{
+              borderRadius: 16,
+              border: "1px solid #E8EBF5",
+              background: "#F8FAFC",
+              padding: 16,
+              color: "#1E293B",
+            }}
+          >
+            <div style={{ fontWeight: 700, color: "#1B2A6B" }}>
+              Lookup status: {lookup.lookupStatus}
+            </div>
+            <div style={{ marginTop: 6 }}>{lookup.explanation}</div>
+            <div style={{ marginTop: 10, fontSize: 14, color: "#475569" }}>
+              Provider: {lookup.provider} · Verification: {lookup.verificationStatus} · Normalized
+              code: {lookup.normalizedFiscalCode || "-"}
+            </div>
+          </div>
+        ) : null}
 
         {error ? <div style={{ color: "#DC2626" }}>{error}</div> : null}
 

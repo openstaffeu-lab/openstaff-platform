@@ -17,8 +17,10 @@ import { RateLimit } from '../common/rate-limit.decorator';
 import { RateLimitGuard } from '../common/rate-limit.guard';
 import { FirebaseExchangeDto } from './dto/firebase-exchange.dto';
 import { LoginDto } from './dto/login.dto';
+import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtGuard } from './jwt.guard';
 import { Public } from './public.decorator';
 
@@ -41,6 +43,27 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() body: LoginDto, @Req() req: any) {
     return this.authService.login(body, req);
+  }
+
+  @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'auth-password-reset-request', maxRequests: 5 })
+  @Post('password-reset/request')
+  @HttpCode(HttpStatus.OK)
+  async requestPasswordReset(
+    @Body() body: RequestPasswordResetDto,
+    @Req() req: any,
+  ) {
+    return this.authService.requestPasswordReset(body.email, req);
+  }
+
+  @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'auth-password-reset-confirm', maxRequests: 10 })
+  @Post('password-reset/confirm')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() body: ResetPasswordDto, @Req() req: any) {
+    return this.authService.resetPassword(body.token, body.password, req);
   }
 
   @UseGuards(JwtGuard)

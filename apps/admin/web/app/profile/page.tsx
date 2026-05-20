@@ -750,6 +750,12 @@ export default function ProfilePage() {
                 </div>
               </div>
 
+              <div className="mt-4 rounded-[1.2rem] border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+                Images and documents are production-ready in this workspace. Video files are
+                accepted only as supporting portfolio evidence and may require manual review before
+                operators rely on them as public-facing assets.
+              </div>
+
               <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <AssetPreview label="Logo" url={profile?.assets.logoUrl ?? null} />
                 <AssetPreview label="Photo" url={profile?.assets.photoUrl ?? null} />

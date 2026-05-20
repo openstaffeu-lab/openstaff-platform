@@ -6,10 +6,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import {
+  classifyProfileWithRelu,
+  enrichProfileWithRelu,
   getVerificationMe,
   getOnboardingMe,
+  getReluProfileResults,
   submitCompanyVerificationCase,
   submitIdentityVerificationCase,
+  type ReluProfileResults,
   type VerificationMe,
   updateOnboardingStep,
 } from "@/lib/api";
@@ -24,8 +28,10 @@ export default function OnboardingCompletionPage() {
   const [saving, setSaving] = useState(false);
   const [submittingIdentity, setSubmittingIdentity] = useState(false);
   const [submittingCompany, setSubmittingCompany] = useState(false);
+  const [analyzingRelu, setAnalyzingRelu] = useState(false);
   const [selectedEvidence, setSelectedEvidence] = useState<Record<string, boolean>>({});
   const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [reluResults, setReluResults] = useState<ReluProfileResults | null>(null);
 
   useEffect(() => {
     if (!ready || !token) {
@@ -72,6 +78,16 @@ export default function OnboardingCompletionPage() {
     evidenceSelection.actorDocumentIds.length +
     evidenceSelection.actorCertificationIds.length +
     evidenceSelection.medicalFitnessCertificateIds.length;
+  const latestReluClassification = reluResults?.classifications?.[0] ?? null;
+  const reluOutput = latestReluClassification?.outputData ?? {};
+  const reluSuggestedSummary = [
+    latestReluClassification?.explanation ?? null,
+    Array.isArray(reluOutput.extractedRequirements) && reluOutput.extractedRequirements.length
+      ? `Key signals: ${reluOutput.extractedRequirements.join(", ")}.`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <section style={{ background: "white", borderRadius: 18, padding: 24, border: "1px solid #E8EBF5" }}>
@@ -108,6 +124,126 @@ export default function OnboardingCompletionPage() {
           Profilul public nu expune emailul de autentificare, tokenuri sau alte date private.
           Dupa publicare si aprobare, doar informatiile destinate vizibilitatii publice vor fi
           afisate in marketplace.
+        </div>
+
+        <div
+          style={{
+            borderRadius: 16,
+            background: "#F8FAFC",
+            border: "1px solid #E8EBF5",
+            padding: 16,
+            color: "#1E293B",
+            display: "grid",
+            gap: 12,
+          }}
+        >
+          <div style={{ fontWeight: 700, color: "#1B2A6B" }}>RELU AI profile generation</div>
+          <div>
+            RELU AI can analyze your current profile, attached evidence, and existing taxonomy to
+            suggest profile positioning, categories, ESCO, and Uniclass mappings. You still review
+            and edit every suggestion before anything becomes public.
+          </div>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button
+              onClick={async () => {
+                if (!token || !snapshot.legacyProfile?.id) {
+                  return;
+                }
+
+                setAnalyzingRelu(true);
+                try {
+                  await enrichProfileWithRelu(snapshot.legacyProfile.id, token);
+                  await classifyProfileWithRelu(snapshot.legacyProfile.id, token);
+                  const nextResults = await getReluProfileResults(snapshot.legacyProfile.id, token);
+                  setReluResults(nextResults);
+                } catch (error) {
+                  setVerificationError(
+                    error instanceof Error
+                      ? error.message
+                      : "RELU AI could not analyze the profile right now.",
+                  );
+                } finally {
+                  setAnalyzingRelu(false);
+                }
+              }}
+              disabled={analyzingRelu || !snapshot.legacyProfile?.id}
+              style={primaryButton}
+            >
+              {analyzingRelu ? "Analyzing with RELU AI..." : "Analyzeaza cu RELU AI"}
+            </button>
+            <Link
+              href="/profile"
+              style={{
+                ...secondaryButton,
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+              }}
+            >
+              Review editable profile draft
+            </Link>
+          </div>
+
+          {latestReluClassification ? (
+            <div
+              style={{
+                borderRadius: 14,
+                background: "white",
+                border: "1px solid #E8EBF5",
+                padding: 16,
+                display: "grid",
+                gap: 10,
+              }}
+            >
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#0F766E", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                Suggested by RELU AI
+              </div>
+              <div style={{ color: "#334155", lineHeight: 1.7 }}>
+                {reluSuggestedSummary || "RELU AI analyzed the profile but did not produce a richer summary yet."}
+              </div>
+              <SuggestionRow
+                label="ESCO"
+                items={
+                  Array.isArray(reluOutput.escoCandidates)
+                    ? reluOutput.escoCandidates.map(
+                        (item) =>
+                          `${item.code} ${item.label}${item.confidence ? ` (${Math.round(item.confidence * 100)}%)` : ""}`,
+                      )
+                    : []
+                }
+              />
+              <SuggestionRow
+                label="NACE / Category"
+                items={
+                  Array.isArray(reluOutput.naceCandidates)
+                    ? reluOutput.naceCandidates.map(
+                        (item) =>
+                          `${item.code} ${item.label}${item.confidence ? ` (${Math.round(item.confidence * 100)}%)` : ""}`,
+                      )
+                    : []
+                }
+              />
+              <SuggestionRow
+                label="Uniclass"
+                items={
+                  Array.isArray(reluOutput.uniclassCandidates)
+                    ? reluOutput.uniclassCandidates.map(
+                        (item) =>
+                          `${item.code} ${item.label}${item.confidence ? ` (${Math.round(item.confidence * 100)}%)` : ""}`,
+                      )
+                    : []
+                }
+              />
+              <SuggestionRow
+                label="Missing information"
+                items={Array.isArray(reluOutput.missingInformation) ? reluOutput.missingInformation : []}
+              />
+              <div style={{ fontSize: 13, color: "#64748B" }}>
+                Suggested by RELU AI only. You still decide what to keep, edit, or discard before
+                anything reaches moderation or public visibility.
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div
@@ -302,6 +438,35 @@ export default function OnboardingCompletionPage() {
         </div>
       </div>
     </section>
+  );
+}
+
+function SuggestionRow({ label, items }: { label: string; items: string[] }) {
+  if (!items.length) {
+    return null;
+  }
+
+  return (
+    <div>
+      <div style={{ fontWeight: 700, color: "#1B2A6B", marginBottom: 6 }}>{label}</div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {items.map((item) => (
+          <span
+            key={`${label}:${item}`}
+            style={{
+              borderRadius: 999,
+              padding: "6px 10px",
+              background: "#ECFDF5",
+              border: "1px solid #A7F3D0",
+              color: "#065F46",
+              fontSize: 13,
+            }}
+          >
+            {item}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 

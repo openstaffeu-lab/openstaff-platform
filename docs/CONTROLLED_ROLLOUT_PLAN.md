@@ -71,6 +71,11 @@ This plan must be used together with:
 - `docs/CONSENSUS_VISIBILITY_REVIEW.md`
 - `docs/OPERATIONAL_ACCOUNTABILITY_BASELINE.md`
 - `docs/CONFLICT_RESOLUTION_BASELINE.md`
+- `docs/USER_ONBOARDING_CLOSURE.md`
+- `docs/COMPANY_AUTOFILL_BASELINE.md`
+- `docs/RELU_PROFILE_GENERATION_BASELINE.md`
+- `docs/TAXONOMY_SUGGESTION_BASELINE.md`
+- `docs/PASSWORD_RECOVERY_SECURITY.md`
 
 ## Expansion Bands
 
@@ -143,6 +148,8 @@ Scope:
 - submit first upgrade request if applicable
 
 Operator responsibilities:
+- use the forgot-password flow and neutral support wording when helping users recover access; never confirm account existence through manual copy alone
+- treat autofilled company data as suggested context until the user confirms it and an operator reviews any public visibility consequence
 - review posts and assets promptly
 - confirm public visibility after approval
 - follow up manually for billing profile and invoice handling
@@ -164,6 +171,8 @@ Scope:
 
 Operator responsibilities:
 - triage auth failures quickly
+- use progressive onboarding support rather than asking users to complete every field in one pass
+- treat RELU AI and taxonomy suggestions as draft enrichment only, not as approved public truth
 - confirm profile-facing flows do not regress after first live use
 
 ### Cohort 4: First Public Posts / Projects

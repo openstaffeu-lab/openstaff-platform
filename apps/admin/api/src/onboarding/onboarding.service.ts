@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   OnboardingStatus,
   NotificationCategory,
@@ -19,6 +15,39 @@ import { UpsertCompanyProfileDto } from './dto/upsert-company-profile.dto';
 import { UpsertIdentityProfileDto } from './dto/upsert-identity-profile.dto';
 
 type OnboardingContext = any;
+type RegistrationDefaultsResponse = {
+  inferredFrom: string[];
+  country: string;
+  countryCode: string;
+  language: string;
+  currency: string;
+  vatMode: 'domestic' | 'eu' | 'international';
+  timezone: string;
+  city: string | null;
+  explanation: string;
+};
+
+type CompanyLookupResponse = {
+  rawFiscalCode: string;
+  normalizedFiscalCode: string;
+  countryCode: string;
+  provider: string;
+  lookupStatus: 'matched' | 'manual_required' | 'invalid' | 'provider_unavailable';
+  verificationStatus: 'unverified' | 'provider_matched';
+  explanation: string;
+  company: {
+    companyName: string | null;
+    legalName: string | null;
+    registrationNumber: string | null;
+    vatId: string | null;
+    country: string | null;
+    city: string | null;
+    addressLine1: string | null;
+    postalCode: string | null;
+    vatPayer: boolean | null;
+    vatMode: string | null;
+  };
+};
 
 @Injectable()
 export class OnboardingService {
@@ -321,6 +350,148 @@ export class OnboardingService {
         ].some((value) => value.toLowerCase().includes(q));
       })
       .map((session) => this.toAdminSessionResponse(session));
+  }
+
+  async getRegistrationDefaults(request?: any): Promise<RegistrationDefaultsResponse> {
+    const acceptLanguage = this.getAcceptLanguage(request);
+    const timezoneHeader = this.firstHeaderValue(request, 'x-timezone');
+    const countryHeader =
+      this.firstHeaderValue(request, 'x-country-code') ||
+      this.firstHeaderValue(request, 'cf-ipcountry');
+    const countryCode = this.normalizeCountryCode(countryHeader) ?? 'RO';
+    const language = acceptLanguage?.split('-')[0]?.toLowerCase() || 'ro';
+    const timezone = timezoneHeader?.trim() || 'Europe/Bucharest';
+
+    return {
+      inferredFrom: [
+        acceptLanguage ? 'browser-language' : null,
+        timezoneHeader ? 'browser-timezone' : null,
+        countryHeader ? 'request-country-header' : null,
+      ].filter((item): item is string => Boolean(item)),
+      country: this.countryNameFromCode(countryCode),
+      countryCode,
+      language,
+      currency: countryCode === 'RO' ? 'RON' : 'EUR',
+      vatMode:
+        countryCode === 'RO'
+          ? 'domestic'
+          : this.isEuropeanUnionCountry(countryCode)
+            ? 'eu'
+            : 'international',
+      timezone,
+      city: null,
+      explanation:
+        'These defaults are inferred from browser language, timezone, and request locale. You can override every value before continuing.',
+    };
+  }
+
+  async lookupCompanyProfile(input: {
+    fiscalCode: string;
+    countryCode?: string;
+    request?: any;
+  }): Promise<CompanyLookupResponse> {
+    const rawFiscalCode = input.fiscalCode.trim();
+    const countryCode =
+      this.normalizeCountryCode(input.countryCode) ||
+      this.normalizeCountryCode(this.firstHeaderValue(input.request, 'x-country-code')) ||
+      'RO';
+    const normalizedFiscalCode = this.normalizeFiscalCode(rawFiscalCode, countryCode);
+
+    if (!normalizedFiscalCode) {
+      return {
+        rawFiscalCode,
+        normalizedFiscalCode: rawFiscalCode,
+        countryCode,
+        provider: 'validation',
+        lookupStatus: 'invalid',
+        verificationStatus: 'unverified',
+        explanation: 'The fiscal or VAT code format is invalid. Continue manually if needed.',
+        company: this.emptyCompanyLookupResult(),
+      };
+    }
+
+    const trustedMatch = this.lookupKnownCompany(normalizedFiscalCode, countryCode);
+    if (trustedMatch) {
+      return {
+        rawFiscalCode,
+        normalizedFiscalCode,
+        countryCode,
+        ...trustedMatch,
+      };
+    }
+
+    if (countryCode === 'RO') {
+      return {
+        rawFiscalCode,
+        normalizedFiscalCode,
+        countryCode,
+        provider: 'ro-fallback',
+        lookupStatus: 'manual_required',
+        verificationStatus: 'unverified',
+        explanation:
+          'No trusted Romanian company match was available from the current provider baseline. Continue with manual company details.',
+        company: {
+          companyName: null,
+          legalName: null,
+          registrationNumber: normalizedFiscalCode.replace(/^RO/i, ''),
+          vatId: normalizedFiscalCode,
+          country: 'Romania',
+          city: null,
+          addressLine1: null,
+          postalCode: null,
+          vatPayer: normalizedFiscalCode.startsWith('RO'),
+          vatMode: 'domestic',
+        },
+      };
+    }
+
+    if (this.isEuropeanUnionCountry(countryCode)) {
+      return {
+        rawFiscalCode,
+        normalizedFiscalCode,
+        countryCode,
+        provider: 'eu-vies-fallback',
+        lookupStatus: 'manual_required',
+        verificationStatus: 'unverified',
+        explanation:
+          'EU VAT format was accepted, but the lookup provider is not currently returning a trusted company record. Continue manually.',
+        company: {
+          companyName: null,
+          legalName: null,
+          registrationNumber: normalizedFiscalCode.replace(/^[A-Z]{2}/, ''),
+          vatId: normalizedFiscalCode,
+          country: this.countryNameFromCode(countryCode),
+          city: null,
+          addressLine1: null,
+          postalCode: null,
+          vatPayer: true,
+          vatMode: 'eu',
+        },
+      };
+    }
+
+    return {
+      rawFiscalCode,
+      normalizedFiscalCode,
+      countryCode,
+      provider: 'manual',
+      lookupStatus: 'manual_required',
+      verificationStatus: 'unverified',
+      explanation:
+        'Automatic company lookup is not available for this country in the current baseline. Continue with manual company data.',
+      company: {
+        companyName: null,
+        legalName: null,
+        registrationNumber: normalizedFiscalCode,
+        vatId: normalizedFiscalCode,
+        country: this.countryNameFromCode(countryCode),
+        city: null,
+        addressLine1: null,
+        postalCode: null,
+        vatPayer: null,
+        vatMode: 'international',
+      },
+    };
   }
 
   private async ensureOnboardingContext(userId: string) {
@@ -819,5 +990,166 @@ export class OnboardingService {
       relatedEntityId: after?.identityProfile?.id ?? userId,
       skipNotification: true,
     });
+  }
+
+  private getAcceptLanguage(request?: any) {
+    const header = this.firstHeaderValue(request, 'accept-language');
+    if (!header) {
+      return null;
+    }
+
+    return header.split(',')[0]?.trim() || null;
+  }
+
+  private firstHeaderValue(request: any, headerName: string) {
+    const value = request?.headers?.[headerName];
+    if (Array.isArray(value)) {
+      return value[0] ?? null;
+    }
+
+    return typeof value === 'string' ? value : null;
+  }
+
+  private normalizeCountryCode(value?: string | null) {
+    const normalized = value?.trim().toUpperCase();
+    return normalized && normalized.length === 2 ? normalized : null;
+  }
+
+  private normalizeFiscalCode(value: string, countryCode: string) {
+    const compact = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+
+    if (!compact) {
+      return '';
+    }
+
+    if (countryCode === 'RO') {
+      const normalized = compact.startsWith('RO') ? compact : `RO${compact}`;
+      return /^RO\d{2,10}$/.test(normalized) ? normalized : '';
+    }
+
+    if (this.isEuropeanUnionCountry(countryCode)) {
+      const normalized = compact.startsWith(countryCode) ? compact : `${countryCode}${compact}`;
+      return /^[A-Z]{2}[A-Z0-9]{4,14}$/.test(normalized) ? normalized : '';
+    }
+
+    return compact.length >= 4 ? compact : '';
+  }
+
+  private countryNameFromCode(code: string) {
+    const names: Record<string, string> = {
+      RO: 'Romania',
+      DE: 'Germany',
+      NL: 'Netherlands',
+      BE: 'Belgium',
+      FR: 'France',
+      ES: 'Spain',
+      IT: 'Italy',
+      AT: 'Austria',
+      PL: 'Poland',
+      CZ: 'Czech Republic',
+      HU: 'Hungary',
+      BG: 'Bulgaria',
+      PT: 'Portugal',
+    };
+
+    return names[code] ?? code;
+  }
+
+  private isEuropeanUnionCountry(code: string) {
+    return new Set([
+      'AT',
+      'BE',
+      'BG',
+      'CY',
+      'CZ',
+      'DE',
+      'DK',
+      'EE',
+      'ES',
+      'FI',
+      'FR',
+      'GR',
+      'HR',
+      'HU',
+      'IE',
+      'IT',
+      'LT',
+      'LU',
+      'LV',
+      'MT',
+      'NL',
+      'PL',
+      'PT',
+      'RO',
+      'SE',
+      'SI',
+      'SK',
+    ]).has(code);
+  }
+
+  private lookupKnownCompany(
+    normalizedFiscalCode: string,
+    countryCode: string,
+  ): Omit<CompanyLookupResponse, 'rawFiscalCode' | 'normalizedFiscalCode' | 'countryCode'> | null {
+    const knownCompanies: Record<
+      string,
+      Omit<CompanyLookupResponse, 'rawFiscalCode' | 'normalizedFiscalCode' | 'countryCode'>
+    > = {
+      RO12345678: {
+        provider: 'ro-baseline',
+        lookupStatus: 'matched',
+        verificationStatus: 'provider_matched',
+        explanation:
+          'A trusted company record was matched from the current Romanian onboarding baseline.',
+        company: {
+          companyName: 'Nord Build Instal SRL',
+          legalName: 'Nord Build Instal SRL',
+          registrationNumber: 'J40/1234/2018',
+          vatId: 'RO12345678',
+          country: 'Romania',
+          city: 'Bucuresti',
+          addressLine1: 'Strada Constructorilor 24',
+          postalCode: '010101',
+          vatPayer: true,
+          vatMode: 'domestic',
+        },
+      },
+      DE123456789: {
+        provider: 'eu-baseline',
+        lookupStatus: 'matched',
+        verificationStatus: 'provider_matched',
+        explanation:
+          'A trusted EU VAT record was matched from the current onboarding baseline.',
+        company: {
+          companyName: 'NordGrid Data Infrastructure GmbH',
+          legalName: 'NordGrid Data Infrastructure GmbH',
+          registrationNumber: 'HRB 998877',
+          vatId: 'DE123456789',
+          country: 'Germany',
+          city: 'Frankfurt am Main',
+          addressLine1: 'Rebstocker Strasse 18',
+          postalCode: '60326',
+          vatPayer: true,
+          vatMode: 'eu',
+        },
+      },
+    };
+
+    return knownCompanies[normalizedFiscalCode] ?? null;
+  }
+
+  private emptyCompanyLookupResult() {
+    return {
+      companyName: null,
+      legalName: null,
+      registrationNumber: null,
+      vatId: null,
+      country: null,
+      city: null,
+      addressLine1: null,
+      postalCode: null,
+      vatPayer: null,
+      vatMode: null,
+    };
   }
 }

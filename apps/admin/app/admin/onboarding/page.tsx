@@ -115,6 +115,7 @@ export default function AdminOnboardingPage() {
                 <th className="px-4 py-4">User</th>
                 <th className="px-4 py-4">Identity</th>
                 <th className="px-4 py-4">Company</th>
+                <th className="px-4 py-4">Public page</th>
                 <th className="px-4 py-4">Step</th>
                 <th className="px-4 py-4">Progress</th>
                 <th className="px-4 py-4">Status</th>
@@ -125,7 +126,7 @@ export default function AdminOnboardingPage() {
             <tbody className="divide-y divide-slate-800">
               {loading ? (
                 <tr>
-                  <td className="px-4 py-6 text-slate-400" colSpan={8}>
+                  <td className="px-4 py-6 text-slate-400" colSpan={9}>
                     Loading onboarding sessions...
                   </td>
                 </tr>
@@ -144,6 +145,20 @@ export default function AdminOnboardingPage() {
                     </td>
                     <td className="px-4 py-4 text-slate-300">
                       {item.companyProfile?.companyName ?? "-"}
+                    </td>
+                    <td className="px-4 py-4 text-slate-300">
+                      {item.identityProfile?.publicSlug ? (
+                        <a
+                          href={`/profiles/${item.identityProfile.publicSlug}`}
+                          className="text-cyan-300 hover:text-cyan-200"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          /profiles/{item.identityProfile.publicSlug}
+                        </a>
+                      ) : (
+                        "-"
+                      )}
                     </td>
                     <td className="px-4 py-4 text-slate-300">{item.currentStep}</td>
                     <td className="px-4 py-4">
@@ -166,7 +181,7 @@ export default function AdminOnboardingPage() {
                 ))
               ) : (
                 <tr>
-                  <td className="px-4 py-6 text-slate-400" colSpan={8}>
+                  <td className="px-4 py-6 text-slate-400" colSpan={9}>
                     No onboarding sessions found.
                   </td>
                 </tr>

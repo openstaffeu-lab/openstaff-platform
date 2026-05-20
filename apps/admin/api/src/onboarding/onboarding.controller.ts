@@ -95,6 +95,48 @@ export class OnboardingController {
   }
 }
 
+@Controller('onboarding')
+export class OnboardingPublicController {
+  constructor(private readonly onboardingService: OnboardingService) {}
+
+  @Public()
+  @Get('defaults')
+  async getDefaults(@Req() req: any) {
+    try {
+      return buildSuccessResponse(
+        await this.onboardingService.getRegistrationDefaults(req),
+      );
+    } catch (error) {
+      logEndpointError('OnboardingPublicController.getDefaults', error);
+      return buildInternalErrorResponse(error);
+    }
+  }
+
+  @Public()
+  @Put('company-lookup')
+  async companyLookup(
+    @Body()
+    body: {
+      fiscalCode?: string;
+      countryCode?: string;
+    },
+    @Req() req: any,
+  ) {
+    try {
+      return buildSuccessResponse(
+        await this.onboardingService.lookupCompanyProfile({
+          fiscalCode: body.fiscalCode ?? '',
+          countryCode: body.countryCode ?? '',
+          request: req,
+        }),
+      );
+    } catch (error) {
+      logEndpointError('OnboardingPublicController.companyLookup', error);
+      return buildInternalErrorResponse(error);
+    }
+  }
+}
+
 @Controller('profiles')
 export class OnboardingPublicProfilesController {
   constructor(private readonly onboardingService: OnboardingService) {}

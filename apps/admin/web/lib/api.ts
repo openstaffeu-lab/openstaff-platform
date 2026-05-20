@@ -263,6 +263,60 @@ export type VerificationMe = {
   };
 };
 
+export type RegistrationDefaults = {
+  inferredFrom: string[];
+  country: string;
+  countryCode: string;
+  language: string;
+  currency: string;
+  vatMode: "domestic" | "eu" | "international";
+  timezone: string;
+  city: string | null;
+  explanation: string;
+};
+
+export type CompanyLookupResult = {
+  rawFiscalCode: string;
+  normalizedFiscalCode: string;
+  countryCode: string;
+  provider: string;
+  lookupStatus: "matched" | "manual_required" | "invalid" | "provider_unavailable";
+  verificationStatus: "unverified" | "provider_matched";
+  explanation: string;
+  company: {
+    companyName: string | null;
+    legalName: string | null;
+    registrationNumber: string | null;
+    vatId: string | null;
+    country: string | null;
+    city: string | null;
+    addressLine1: string | null;
+    postalCode: string | null;
+    vatPayer: boolean | null;
+    vatMode: string | null;
+  };
+};
+
+export type ReluProfileResults = {
+  sourceType: string;
+  sourceId: string;
+  runs: Array<Record<string, unknown>>;
+  classifications: Array<{
+    id: string;
+    explanation: string | null;
+    score: number | null;
+    outputData: {
+      escoCandidates?: Array<{ code: string; label: string; confidence?: number }>;
+      naceCandidates?: Array<{ code: string; label: string; confidence?: number }>;
+      uniclassCandidates?: Array<{ code: string; label: string; confidence?: number }>;
+      missingInformation?: string[];
+      extractedRequirements?: string[];
+    } & Record<string, unknown>;
+  }>;
+  matches: Array<Record<string, unknown>>;
+  recommendations: Array<Record<string, unknown>>;
+};
+
 export type SubmitVerificationCaseInput = {
   note?: string;
   profileDocumentIds?: string[];
@@ -560,6 +614,7 @@ type RequestOptions = {
   body?: unknown;
   formData?: FormData;
   token?: string | null;
+  headers?: Record<string, string>;
 };
 
 type FunnelEventType =
@@ -724,6 +779,7 @@ export async function apiRequest<T>(
     headers: {
       ...(options.body ? { "Content-Type": "application/json" } : {}),
       ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
+      ...(options.headers ?? {}),
     },
     ...(options.body ? { body: JSON.stringify(options.body) } : {}),
     ...(options.formData ? { body: options.formData } : {}),
@@ -794,6 +850,26 @@ export async function loginAccount(payload: {
   });
 }
 
+export async function requestPasswordReset(email: string) {
+  return apiRequest<{ success: boolean; message: string; expiresInMinutes: number }>(
+    "/auth/password-reset/request",
+    {
+      method: "POST",
+      body: { email },
+    },
+  );
+}
+
+export async function confirmPasswordReset(token: string, password: string) {
+  return apiRequest<{ success: boolean; message: string }>(
+    "/auth/password-reset/confirm",
+    {
+      method: "POST",
+      body: { token, password },
+    },
+  );
+}
+
 export async function refreshAuthToken(refreshToken?: string | null) {
   return apiRequest<AuthResponse>("/auth/refresh", {
     method: "POST",
@@ -851,6 +927,29 @@ export async function getOnboardingMe(token?: string | null) {
   });
 }
 
+export async function getRegistrationDefaults() {
+  const timezone =
+    typeof Intl !== "undefined"
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : "Europe/Bucharest";
+
+  return apiRequest<RegistrationDefaults>("/onboarding/defaults", {
+    headers: {
+      "x-timezone": timezone,
+    } as any,
+  });
+}
+
+export async function lookupCompanyProfile(input: {
+  fiscalCode: string;
+  countryCode?: string;
+}) {
+  return apiRequest<CompanyLookupResult>("/onboarding/company-lookup", {
+    method: "PUT",
+    body: input,
+  });
+}
+
 export async function getOnboardingProgress(token?: string | null) {
   return apiRequest<OnboardingSession & { onboardingCompletedAt: string | null }>(
     "/onboarding/progress",
@@ -878,6 +977,26 @@ export async function upsertCompanyProfile(
   return apiRequest<OnboardingMe>("/onboarding/company-profile", {
     method: "PUT",
     body: input,
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function enrichProfileWithRelu(profileId: string, token?: string | null) {
+  return apiRequest(`/relu/profiles/${encodeURIComponent(profileId)}/enrich`, {
+    method: "POST",
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function classifyProfileWithRelu(profileId: string, token?: string | null) {
+  return apiRequest(`/relu/profiles/${encodeURIComponent(profileId)}/classify`, {
+    method: "POST",
+    token: token ?? getAuthToken(),
+  });
+}
+
+export async function getReluProfileResults(profileId: string, token?: string | null) {
+  return apiRequest<ReluProfileResults>(`/relu/profiles/${encodeURIComponent(profileId)}/results`, {
     token: token ?? getAuthToken(),
   });
 }

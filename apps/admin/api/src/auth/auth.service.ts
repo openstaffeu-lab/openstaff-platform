@@ -19,6 +19,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { createHash, randomBytes } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { NotificationCategory } from '@prisma/client';
@@ -74,6 +75,10 @@ type AuthenticatedUserSummary = {
 
 @Injectable()
 export class AuthService {
+  private static readonly PASSWORD_RESET_EVENT_TYPE = 'PASSWORD_RESET_REQUESTED';
+  private static readonly PASSWORD_RESET_SOURCE_TYPE = 'PASSWORD_RESET';
+  private static readonly PASSWORD_RESET_EXPIRY_MINUTES = 30;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -282,6 +287,186 @@ export class AuthService {
 
   async getCurrentUser(userId: string) {
     return this.buildUserSummary(userId);
+  }
+
+  async requestPasswordReset(email: string, request?: any) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: {
+        id: true,
+        email: true,
+      },
+    });
+
+    if (!user) {
+      await this.auditService.logSecurityEvent({
+        type: 'PASSWORD_RESET' as any,
+        category: 'AUTH',
+        sourceType: 'USER',
+        sourceId: normalizedEmail,
+        message: 'Password reset requested for unknown email address',
+        severity: 'WARNING' as any,
+        request,
+      });
+
+      return this.buildPasswordResetRequestResponse();
+    }
+
+    const rawToken = randomBytes(32).toString('hex');
+    const tokenHash = this.hashPasswordResetToken(rawToken);
+    const expiresAt = new Date(
+      Date.now() + AuthService.PASSWORD_RESET_EXPIRY_MINUTES * 60_000,
+    );
+    const resetUrl = this.buildPasswordResetUrl(rawToken);
+
+    await this.prisma.notificationEvent.create({
+      data: {
+        key: `password-reset:${user.id}:${tokenHash}`,
+        eventType: AuthService.PASSWORD_RESET_EVENT_TYPE,
+        sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
+        sourceId: tokenHash,
+        userId: user.id,
+        category: NotificationCategory.ACCOUNT,
+        metadata: {
+          email: user.email,
+          expiresAt: expiresAt.toISOString(),
+          usedAt: null,
+          resetUrl,
+        } as any,
+      },
+    });
+
+    await this.auditService.logSecurityEvent({
+      userId: user.id,
+      type: 'PASSWORD_RESET' as any,
+      category: 'AUTH',
+      sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
+      sourceId: tokenHash,
+      message: 'Password reset token issued',
+      metadata: {
+        expiresAt: expiresAt.toISOString(),
+      },
+      request,
+    });
+
+    await this.notificationService.emitEvent({
+      key: `password-reset:user:${user.id}:${tokenHash}`,
+      eventType: 'PASSWORD_RESET_AVAILABLE',
+      sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
+      sourceId: tokenHash,
+      userId: user.id,
+      category: NotificationCategory.ACCOUNT,
+      title: 'Password reset requested',
+      message:
+        'A password reset was requested for your account. Use the secure reset link to choose a new password.',
+      metadata: {
+        resetUrl,
+        expiresAt: expiresAt.toISOString(),
+      },
+    });
+
+    return this.buildPasswordResetRequestResponse();
+  }
+
+  async resetPassword(token: string, nextPassword: string, request?: any) {
+    const trimmedToken = token.trim();
+    const tokenHash = this.hashPasswordResetToken(trimmedToken);
+    const resetEvent = await this.prisma.notificationEvent.findFirst({
+      where: {
+        eventType: AuthService.PASSWORD_RESET_EVENT_TYPE,
+        sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
+        sourceId: tokenHash,
+      },
+      orderBy: [{ createdAt: 'desc' }],
+    });
+
+    if (!resetEvent) {
+      await this.auditService.logSecurityEvent({
+        type: 'PASSWORD_RESET' as any,
+        category: 'AUTH',
+        sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
+        sourceId: tokenHash,
+        message: 'Password reset rejected because token was not found',
+        severity: 'WARNING' as any,
+        request,
+      });
+      throw new UnauthorizedException('This password reset link is invalid or has expired');
+    }
+
+    const metadata = this.parsePasswordResetMetadata(resetEvent.metadata);
+    const expiresAt = metadata.expiresAt ? new Date(metadata.expiresAt) : null;
+    const usedAt = metadata.usedAt ? new Date(metadata.usedAt) : null;
+
+    if (!expiresAt || Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() < Date.now()) {
+      await this.auditService.logSecurityEvent({
+        userId: resetEvent.userId ?? null,
+        type: 'PASSWORD_RESET' as any,
+        category: 'AUTH',
+        sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
+        sourceId: tokenHash,
+        message: 'Password reset rejected because token expired',
+        severity: 'WARNING' as any,
+        request,
+      });
+      throw new UnauthorizedException('This password reset link is invalid or has expired');
+    }
+
+    if (usedAt) {
+      await this.auditService.logSecurityEvent({
+        userId: resetEvent.userId ?? null,
+        type: 'PASSWORD_RESET' as any,
+        category: 'AUTH',
+        sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
+        sourceId: tokenHash,
+        message: 'Password reset rejected because token was already used',
+        severity: 'WARNING' as any,
+        request,
+      });
+      throw new UnauthorizedException('This password reset link was already used');
+    }
+
+    if (!resetEvent.userId) {
+      throw new UnauthorizedException('This password reset link is invalid or has expired');
+    }
+
+    const passwordHash = await bcrypt.hash(nextPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: resetEvent.userId },
+      data: {
+        password: passwordHash,
+        refreshTokenHash: null,
+      },
+    });
+
+    await this.prisma.notificationEvent.update({
+      where: { id: resetEvent.id },
+      data: {
+        metadata: {
+          ...metadata,
+          usedAt: new Date().toISOString(),
+        } as any,
+        status: 'SENT' as any,
+        deliveredAt: new Date(),
+      },
+    });
+
+    await this.auditService.revokeAllSessionsForUser(resetEvent.userId);
+    await this.auditService.logSecurityEvent({
+      userId: resetEvent.userId,
+      type: 'PASSWORD_RESET' as any,
+      category: 'AUTH',
+      sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
+      sourceId: tokenHash,
+      message: 'Password reset completed and active sessions were revoked',
+      request,
+    });
+
+    return {
+      success: true,
+      message: 'Your password was updated successfully. Please sign in again.',
+    };
   }
 
   async refresh(refreshToken: string, request?: any) {
@@ -765,6 +950,43 @@ export class AuthService {
         .replace(/[\s_-]+/g, '-')
         .replace(/^-+|-+$/g, '') || `profile-${Date.now()}`
     );
+  }
+
+  private buildPasswordResetRequestResponse() {
+    return {
+      success: true,
+      message:
+        'If an account matches that email, a password reset instruction is now available.',
+      expiresInMinutes: AuthService.PASSWORD_RESET_EXPIRY_MINUTES,
+    };
+  }
+
+  private hashPasswordResetToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private buildPasswordResetUrl(token: string) {
+    const baseUrl =
+      process.env.PUBLIC_WEB_URL?.trim() ||
+      process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+      'https://openstaff.eu';
+
+    return `${baseUrl.replace(/\/+$/, '')}/reset-password?token=${encodeURIComponent(token)}`;
+  }
+
+  private parsePasswordResetMetadata(value: unknown) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return {
+        expiresAt: null as string | null,
+        usedAt: null as string | null,
+      };
+    }
+
+    const input = value as Record<string, unknown>;
+    return {
+      expiresAt: typeof input.expiresAt === 'string' ? input.expiresAt : null,
+      usedAt: typeof input.usedAt === 'string' ? input.usedAt : null,
+    };
   }
 
   private mapActorTypeToProfileType(actorType: ActorType) {

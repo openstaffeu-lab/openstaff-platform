@@ -5,7 +5,9 @@ import type { MarketplacePost } from "@/lib/api";
 
 export default function ActorCard({
   id,
+  slug,
   title,
+  domain,
   ownerType,
   naceCodes,
   experienceLabel,
@@ -19,10 +21,10 @@ export default function ActorCard({
     <div
       style={{
         background: "white",
-        borderRadius: 12,
+        borderRadius: 18,
         padding: 20,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-        border: "1.5px solid #00E87A",
+        boxShadow: "0 2px 8px rgba(15,23,42,0.06)",
+        border: "1px solid #DCE5F5",
       }}
     >
       {portrait?.assetUrl ? (
@@ -59,49 +61,57 @@ export default function ActorCard({
 
       <span
         style={{
-          background: "#00E87A20",
-          color: "#00C060",
+          background: "#E8F0FF",
+          color: "#1B2A6B",
           fontSize: 10,
           fontWeight: 700,
           padding: "3px 8px",
-          borderRadius: 4,
+          borderRadius: 999,
           display: "inline-block",
           marginBottom: 8,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
         }}
       >
-        ✓ MARKETPLACE VERIFIED
+        Approved profile
       </span>
 
-      <h3 style={{ color: "#1B2A6B", fontSize: 15, fontWeight: 700, margin: "0 0 4px" }}>
+      <h3 style={{ color: "#1B2A6B", fontSize: 16, fontWeight: 700, margin: "0 0 4px" }}>
         {title}
       </h3>
 
+      {domain ? (
+        <div style={{ color: "#1B2A6B", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
+          {domain}
+        </div>
+      ) : null}
+
       {naceCodes?.[0] ? (
-        <div style={{ color: "#00C060", fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
+        <div style={{ color: "#00A260", fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
           NACE {naceCodes[0]}
         </div>
       ) : null}
 
-      <div style={{ color: "#8892B0", fontSize: 12, marginBottom: 12 }}>
+      <div style={{ color: "#64748B", fontSize: 12, marginBottom: 12, lineHeight: 1.6 }}>
         {experienceLabel || ownerType || "Available for marketplace opportunities"}
-        {location ? ` · ${location}` : ""}
+        {location ? ` | ${location}` : ""}
       </div>
 
       <Link
-        href={`/professionals/${id}`}
+        href={slug ? `/profiles/${slug}` : `/professionals/${id}`}
         style={{
           display: "block",
           textAlign: "center",
           border: "2px solid #1B2A6B",
           color: "#1B2A6B",
           padding: "8px 0",
-          borderRadius: 8,
+          borderRadius: 10,
           textDecoration: "none",
           fontWeight: 700,
           fontSize: 13,
         }}
       >
-        Vezi profil
+        View profile
       </Link>
     </div>
   );
