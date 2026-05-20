@@ -126,7 +126,7 @@ Validation results:
 5. `apps/admin -> npm.cmd run build` PASS
 6. `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-production-ops-check.ps1` PASS at `2026-05-20T09:58:02.2268693Z`
 7. `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-failure-simulations.ps1` PASS at `2026-05-20T09:58:03.3328511Z`
-8. `powershell -ExecutionPolicy Bypass -File scripts/release/exec-13-release-check.ps1` will be rerun on the final clean committed tree after EXEC-41 commit creation
+8. `powershell -ExecutionPolicy Bypass -File scripts/release/exec-13-release-check.ps1` PASS on clean commit `fc95d7a`
 
 Deploy result:
 
