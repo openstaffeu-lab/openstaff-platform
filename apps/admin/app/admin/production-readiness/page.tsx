@@ -391,6 +391,92 @@ export default function ProductionReadinessPage() {
     "Conflicting-state handling: when queue pressure, rollout warnings, or billing visibility disagree, operators must inspect the source metrics and current owner context before acting.",
     "No hidden prioritization: the compressed layer uses only visible counts, ages, readiness messages, and explicit threshold wording rendered on this page.",
   ];
+  const quickOrientationSummary = [
+    `Operational mode right now: ${globalOperationalState}.`,
+    blockers.length > 0 || errors.length > 0
+      ? "Immediate operator posture: resolve blocker and readiness-error context before treating queue work as routine."
+      : "Immediate operator posture: no visible blocker forces interruption of normal review order.",
+    freshnessState === "fresh"
+      ? "Snapshot confidence: current enough for first-pass orientation, but still advisory."
+      : `Snapshot confidence: ${freshnessState}; confirm live source surfaces before using this page as action prep.`,
+    `Owner load hint: ${operatorAvailabilityState}.`,
+  ];
+  const queueAccelerationSummary = [
+    moderationPendingTotal > 0
+      ? `Start moderation from the oldest open item first: ${moderationPendingTotal} pending, oldest age ${formatMinutes(moderationOldestMinutes)}.`
+      : "Moderation queue is currently clear enough that no acceleration hint is needed.",
+    upgradePendingTotal > 0 || webhookFailures24h > 0
+      ? `Bundle billing review prep before opening the queue: ${upgradePendingTotal} open reviews, ${webhookFailures24h} webhook failures, oldest age ${formatMinutes(upgradeOldestMinutes)}.`
+      : "Billing queue is currently quiet enough that no special acceleration hint is needed.",
+    supportSignals > 0 || operatorEscalations24h > 0
+      ? `Route support and escalation work through one owner check first: support signals ${supportSignals}, escalations ${operatorEscalations24h}.`
+      : "Support and escalation queues do not currently require special acceleration handling.",
+  ];
+  const escalationReadinessSummary = [
+    operatorEscalations24h > 0
+      ? `Escalation packet pressure is visible: ${operatorEscalations24h} escalation event(s) in the last 24 hours.`
+      : "No current escalation event volume suggests transfer saturation.",
+    failedFlows24h > 0
+      ? `Carryover prep is needed for ${failedFlows24h} failed-flow report(s) so operators do not rebuild the same escalation story.`
+      : "No failed-flow carryover signal currently increases escalation prep cost.",
+    repeatedConfusion24h > 0
+      ? `Repeated confusion reports (${repeatedConfusion24h}) suggest future escalations should carry pre-grouped context and next checks.`
+      : "Repeated-confusion pressure is currently low enough that escalation packets do not need extra compression.",
+  ];
+  const blockedStateIndicators = [
+    ...(blockers.length > 0 ? blockers.map((item) => `Blocked state: ${item}`) : []),
+    ...(webhookFailures24h > 0
+      ? [`Blocked-state risk: ${webhookFailures24h} failed webhook events can stall billing review preparation.`]
+      : []),
+    ...(uploadFailures24h > 0
+      ? [`Blocked-state risk: ${uploadFailures24h} upload failures can starve moderation intake or distort publish troubleshooting.`]
+      : []),
+    ...(supportSignals > 0 && operatorEscalations24h > 0
+      ? [`Blocked-state risk: support pressure and escalations are both active, so queue resolution may depend on owner continuity rather than raw throughput.`]
+      : []),
+  ];
+  const staleActionIndicators = [
+    ...(freshnessState !== "fresh"
+      ? [`Snapshot age is ${formatMinutes(snapshotAgeMinutes)}; action prep should be revalidated against live source surfaces before handoff or escalation.`]
+      : []),
+    ...(moderationOldestMinutes >= 120
+      ? [`Moderation action prep is aging because the oldest moderation item is ${formatMinutes(moderationOldestMinutes)} old.`]
+      : []),
+    ...(upgradeOldestMinutes >= 240
+      ? [`Billing action prep is aging because the oldest open review is ${formatMinutes(upgradeOldestMinutes)} old.`]
+      : []),
+    ...(supportSignals > 0 && repeatedConfusion24h >= 3
+      ? [`Support action prep may be stale because repeated confusion is high enough that old notes may not match the current question shape.`]
+      : []),
+  ];
+  const unresolvedReviewIndicators = [
+    ...(moderationPendingTotal > 0
+      ? [`Moderation review remains unresolved for ${moderationPendingTotal} item(s).`]
+      : []),
+    ...(upgradePendingTotal > 0
+      ? [`Billing review remains unresolved for ${upgradePendingTotal} open request(s).`]
+      : []),
+    ...(unresolvedIncidentWarnings.length > 0
+      ? [`Incident and rollout review remain unresolved across ${unresolvedIncidentWarnings.length} visible warning signal(s).`]
+      : []),
+    ...(operatorEscalations24h > 0
+      ? [`Escalation review remains unresolved for ${operatorEscalations24h} recent escalation event(s).`]
+      : []),
+  ];
+  const groupedNextActionSummaries = [
+    moderationPendingTotal > 0
+      ? `Next moderation action: open the oldest pending moderation item, confirm current owner, then decide whether batching or handoff is needed.`
+      : "Next moderation action: none suggested from the current snapshot.",
+    upgradePendingTotal > 0 || webhookFailures24h > 0
+      ? `Next billing action: review the oldest open upgrade request together with failed webhook visibility before deciding whether manual follow-up is blocked or simply queued.`
+      : "Next billing action: none suggested from the current snapshot.",
+    supportSignals > 0 || operatorEscalations24h > 0
+      ? `Next escalation action: confirm active owner, unresolved dependency, and freshest notes before transferring or expanding the issue thread.`
+      : "Next escalation action: none suggested from the current snapshot.",
+    warnings.length > 0 || errors.length > 0 || adoptionReasons.length > 0
+      ? `Next rollout action: re-check readiness warnings, adoption reasons, and current queue pressure before treating rollout as ready to expand.`
+      : "Next rollout action: continue routine monitoring with no extra response-prep requirement visible here.",
+  ];
 
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-8 text-white md:px-8">
@@ -568,6 +654,93 @@ export default function ProductionReadinessPage() {
                 { label: "Degraded-mode state", value: degradedModeState },
                 { label: "Operator availability", value: operatorAvailabilityState },
               ]}
+            />
+          </Card>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-3">
+          <Card title="Quick orientation">
+            <SimpleList items={quickOrientationSummary} tone="cyan" />
+            <div className="mt-4 border-t border-slate-800 pt-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                Blocked-state indicators
+              </div>
+              {blockedStateIndicators.length > 0 ? (
+                <div className="mt-3">
+                  <SimpleList items={blockedStateIndicators} tone="rose" />
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <EmptyState text="No current blocked-state indicator crossed the visible response-prep thresholds." />
+                </div>
+              )}
+            </div>
+          </Card>
+
+          <Card title="Queue acceleration">
+            <SimpleList items={queueAccelerationSummary} tone="amber" />
+            <div className="mt-4 border-t border-slate-800 pt-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                Stale-action indicators
+              </div>
+              {staleActionIndicators.length > 0 ? (
+                <div className="mt-3">
+                  <SimpleList items={staleActionIndicators} tone="amber" />
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <EmptyState text="No stale-action indicator is currently visible from snapshot age or queue aging." />
+                </div>
+              )}
+            </div>
+          </Card>
+
+          <Card title="Escalation readiness">
+            <SimpleList items={escalationReadinessSummary} tone="cyan" />
+            <div className="mt-4 border-t border-slate-800 pt-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                Unresolved-review indicators
+              </div>
+              {unresolvedReviewIndicators.length > 0 ? (
+                <div className="mt-3">
+                  <SimpleList items={unresolvedReviewIndicators} tone="rose" />
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <EmptyState text="No unresolved-review indicator currently requires special transfer prep." />
+                </div>
+              )}
+            </div>
+            <div className="mt-4 border-t border-slate-800 pt-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                Operator-load indicators
+              </div>
+              {operatorOverloadIndicators.length > 0 ? (
+                <div className="mt-3">
+                  <SimpleList items={operatorOverloadIndicators} tone="amber" />
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <EmptyState text="No explicit operator-load indicator currently suggests overload or continuity pressure." />
+                </div>
+              )}
+            </div>
+          </Card>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-2">
+          <Card title="Grouped next-action summaries">
+            <SimpleList items={groupedNextActionSummaries} tone="cyan" />
+          </Card>
+
+          <Card title="Action-prep boundaries">
+            <SimpleList
+              items={[
+                "This acceleration layer may prepare, summarize, prefill, route, prioritize, suggest, compress, and correlate.",
+                "This acceleration layer may not approve moderation automatically, activate billing automatically, escalate automatically, rollback automatically, assign severity automatically, mutate production state autonomously, or override operators.",
+                "Suggested next actions remain advisory only and must be confirmed against source metrics, specialist queues, and current owner context before any human action is taken.",
+              ]}
+              tone="amber"
             />
           </Card>
         </section>

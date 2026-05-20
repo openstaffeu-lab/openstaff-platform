@@ -1,7 +1,7 @@
 # Operational Metrics Baseline
 
-Last updated: `2026-05-19`  
-Scope: `EXEC-36`
+Last updated: `2026-05-20`  
+Scope: `EXEC-39`
 
 ## Purpose
 
@@ -129,6 +129,7 @@ Use these KPIs to answer:
 6. are operators finding context fast enough to act and hand off safely
 7. are operators seeing the same priority order, ownership state, and carryover state from the same command surface
 8. is the assistance layer reducing synthesis time without creating authority confusion
+9. is the response-preparation layer reducing time-to-next-action without introducing hidden escalation or approval logic
 
 ## Ownership
 
@@ -142,6 +143,7 @@ Use these KPIs to answer:
 | triage and handoff latency | Technical Ops + functional queue owner |
 | cockpit aggregation and alert-routing quality | Technical Ops + functional queue owner |
 | assistance quality and wording safety | Technical Ops + functional queue owner |
+| actionability and response-prep quality | Technical Ops + functional queue owner |
 
 ## Interpretation Notes
 
@@ -152,7 +154,20 @@ Use these KPIs to answer:
 5. better latency is only meaningful if backup operators can make sense of the same context without re-triaging it
 6. better visibility is only meaningful if the same shared summary helps multiple operators reach the same safe conclusion
 7. better assistance is only meaningful if operators remain the explicit authority for moderation, billing, escalation, severity, rollback, and rollout state
+8. better actionability is only meaningful if operators can act faster because preparation improved, not because authority quietly moved to the system
+
+## EXEC-39 Response Acceleration Notes
+
+These KPI families must now also support:
+
+1. time-to-next-action review
+2. queue acceleration usefulness
+3. escalation packet quality
+4. blocked-state visibility usefulness
+5. stale-action detection usefulness
+6. unresolved-review visibility usefulness
+7. operator-load visibility usefulness
 
 ## Final Assessment
 
-OpenStaff now has an explicit operational metrics baseline, a first rollout-intelligence implementation, an efficiency layer, a latency layer, a command-surface layer, and an assistance layer for deciding whether operators can orient, act, escalate, and hand off from shared context without weakening control.
+OpenStaff now has an explicit operational metrics baseline, a first rollout-intelligence implementation, an efficiency layer, a latency layer, a command-surface layer, an assistance layer, and a response-preparation layer for deciding whether operators can orient, prepare, act, escalate, and hand off from shared context without weakening control.

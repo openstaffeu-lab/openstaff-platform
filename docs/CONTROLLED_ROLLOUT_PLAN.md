@@ -55,6 +55,12 @@ This plan must be used together with:
 - `docs/UNIFIED_INTELLIGENCE_SURFACE.md`
 - `docs/ATTENTION_ROUTING_BASELINE.md`
 - `docs/OPERATIONAL_COMPRESSION_METRICS.md`
+- `docs/OPERATIONAL_ACTIONABILITY_REVIEW.md`
+- `docs/ASSISTED_RESPONSE_PREPARATION.md`
+- `docs/QUEUE_ACCELERATION_BASELINE.md`
+- `docs/ESCALATION_COMPRESSION_MODEL.md`
+- `docs/OPERATIONAL_RESPONSE_SIGNALS.md`
+- `docs/OPERATIONAL_RESPONSE_TIMING.md`
 
 ## Expansion Bands
 
@@ -97,7 +103,9 @@ Operator responsibilities:
 - review live assistance cards together with their source metrics before escalating, pausing rollout, or changing queue priorities
 - confirm that assistance timestamps still match the current operational moment before treating a summary as active context
 - use the compressed operator orientation layer as the first review surface before opening deeper queue, digest, or correlation sections
+- use the response-acceleration layer to prepare the next queue, escalation, or rollout review before opening specialist tools
 - treat grouped operational state as orientation support only and resolve conflicts against source metrics and specialist queue surfaces
+- treat grouped next-action summaries as preparation support only and confirm them against live owner context before acting
 - clear moderation and upgrade queues within the agreed SLA
 - escalate runtime, billing, or security anomalies immediately
 - leave handoff-ready notes another operator can act on safely
@@ -218,6 +226,7 @@ At the end of each cohort window:
 9. note whether the live assistance surfaces reduced synthesis time or created noise, duplication, or stale-summary confusion
 10. note whether browser-visible wording, timestamps, and source reasoning remained trustworthy during the cohort window
 11. note whether the compressed orientation layer reduced context switching or hid any nuance that still mattered for safe human judgment
+12. note whether the response-acceleration layer reduced time-to-next-action or merely added more visible advice without reducing prep work
 
 ## Support Escalation Model
 

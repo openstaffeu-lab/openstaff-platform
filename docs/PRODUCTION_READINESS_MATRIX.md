@@ -1,7 +1,7 @@
 # Production Readiness Matrix
 
-Last updated: `2026-05-19`  
-Scope: `EXEC-38`
+Last updated: `2026-05-20`  
+Scope: `EXEC-39`
 
 ## Matrix
 
@@ -101,6 +101,12 @@ Scope: `EXEC-38`
 | unified intelligence surface | documented and implemented at first level | the readiness page now contains a compressed operator orientation layer, grouped state summaries, and visible freshness handling ahead of detailed assistance cards | [UNIFIED_INTELLIGENCE_SURFACE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/UNIFIED_INTELLIGENCE_SURFACE.md:1) |
 | attention routing baseline | documented and implemented at first level | urgent vs important review order, stale-review visibility, and interruption-minimization rules are now governed explicitly without automatic escalation | [ATTENTION_ROUTING_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ATTENTION_ROUTING_BASELINE.md:1) |
 | operational compression metrics | documented and usable | time-to-orientation, context-switch count, repeated investigation count, repeated queue review count, dashboard navigation count, escalation reconstruction effort, and interruption frequency now have a baseline | [OPERATIONAL_COMPRESSION_METRICS.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_COMPRESSION_METRICS.md:1) |
+| operational actionability review | documented and implemented at first level | current operator action bottlenecks, repeated manual steps, repeated queue traversal, and repeated escalation preparation are now explicitly reviewed | [OPERATIONAL_ACTIONABILITY_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_ACTIONABILITY_REVIEW.md:1) |
+| assisted response preparation | documented and implemented at first level | moderation, billing, escalation, rollout, incident, and deploy verification prep now have a governed advisory model | [ASSISTED_RESPONSE_PREPARATION.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ASSISTED_RESPONSE_PREPARATION.md:1) |
+| queue acceleration baseline | documented and implemented at first level | SLA-risk highlighting, stale-review visibility, repeated-review detection, and grouped queue actions now reduce time-to-review without reducing human control | [QUEUE_ACCELERATION_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/QUEUE_ACCELERATION_BASELINE.md:1) |
+| escalation compression model | documented and implemented at first level | escalation packets, carryover summaries, ownership continuity, dependency visibility, and freshness cues now have a shared baseline | [ESCALATION_COMPRESSION_MODEL.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ESCALATION_COMPRESSION_MODEL.md:1) |
+| operational response signals | documented and implemented at first level | blocked-state, stalled-review, overloaded-operator, stale-incident, degraded-response, escalation saturation, and rollout-pressure signals are now explicitly governed | [OPERATIONAL_RESPONSE_SIGNALS.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_RESPONSE_SIGNALS.md:1) |
+| operational response timing | documented and usable | time-to-next-action, escalation-preparation latency, and queue-review latency now complement time-to-orientation | [OPERATIONAL_RESPONSE_TIMING.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_RESPONSE_TIMING.md:1) |
 | IAM least privilege | stable and more durable | runtime SA stayed constrained; build/deploy identity remains separate | EXEC-25 identity split remains active |
 | deploy pipeline resilience | stable | deploy path no longer depends on broad runtime IAM | dedicated build SA remains baseline |
 | engineering quality baseline | documented and enforceable | PASS now requires builds, release checks, proof, and rollback expectations rather than narrative optimism | [RELEASE_LIFECYCLE_POLICY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELEASE_LIFECYCLE_POLICY.md:1) |
@@ -108,7 +114,7 @@ Scope: `EXEC-38`
 
 ## Governance Verdict
 
-`EXEC-38 PASS`
+`EXEC-39 PASS`
 
 The production baseline is now suitable for repeatable ongoing operations and controlled real-user onboarding because:
 
@@ -128,6 +134,7 @@ The production baseline is now suitable for repeatable ongoing operations and co
 14. a first live assistance surface now renders advisory queue, incident, digest, and correlation summaries directly in the admin readiness experience with visible source reasoning and timestamps
 15. live deployment, authenticated rendering, operator noise review, and operator usability review are now proven on the active production admin revision rather than inferred from local build output only
 16. a first operational compression layer now reduces repeated reasoning and local page fragmentation through grouped state, freshness, and attention-routing summaries without transferring operational authority
+17. a first response-acceleration layer now reduces action-preparation friction through queue acceleration, escalation-readiness, blocked-state visibility, stale-action visibility, and grouped next-action summaries without transferring authority
 
 ## Accepted Remaining Limitations
 

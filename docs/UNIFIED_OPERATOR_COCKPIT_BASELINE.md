@@ -1,7 +1,7 @@
 # Unified Operator Cockpit Baseline
 
-Last updated: `2026-05-19`  
-Scope: `EXEC-38`
+Last updated: `2026-05-20`  
+Scope: `EXEC-39`
 
 ## Purpose
 
@@ -17,7 +17,7 @@ OpenStaff already has:
 4. incident and alert governance
 5. handoff and continuity rules
 
-The remaining gap is that these truths still live across fragmented surfaces. EXEC-38 closes the first part of that gap by introducing a compressed orientation layer inside the live readiness page. The cockpit baseline is therefore no longer only a target model; it now also includes a first implemented intelligence slice.
+The remaining gap is that these truths still live across fragmented surfaces. EXEC-38 closed the first part of that gap by introducing a compressed orientation layer inside the live readiness page. EXEC-39 closes the next part by adding response-preparation guidance on the same surface. The cockpit baseline is therefore no longer only a target model; it now also includes a first implemented intelligence slice and a first implemented actionability slice.
 
 ## Target Cockpit Sections
 
@@ -31,6 +31,7 @@ The unified cockpit should present the following sections in one operator-facing
 6. ownership and coordination summary
 7. action log and handoff summary
 8. compressed operator orientation layer
+9. response-preparation layer
 
 ## Priority Ordering
 
@@ -44,6 +45,7 @@ The cockpit should order information by action urgency, not by system ownership.
 6. production readiness and monitoring posture
 7. handoff and continuity notes
 8. freshness and stale-state visibility
+9. grouped next-action preparation
 
 ## Compression Layer
 
@@ -58,6 +60,13 @@ It must show:
 5. grouped rollout summaries
 6. grouped incident summaries
 7. freshness and stale-state handling
+8. quick orientation
+9. queue acceleration
+10. escalation readiness
+11. blocked-state indicators
+12. stale-action indicators
+13. unresolved-review indicators
+14. grouped next-action summaries
 
 It exists to reduce re-triage, not to replace deeper queue or incident review.
 
@@ -194,4 +203,4 @@ The first baseline does not require a single implemented UI yet. It requires tha
 
 ## Final Assessment
 
-EXEC-34 and EXEC-38 together define the current unified operator cockpit baseline. The most important change is not cosmetic centralization. It is giving every operator the same operational picture, priority ordering, freshness state, and coordination state fast enough to reduce re-triage and context switching without weakening review, trust, or rollback discipline.
+EXEC-34, EXEC-38, and EXEC-39 together define the current unified operator cockpit baseline. The most important change is not cosmetic centralization. It is giving every operator the same operational picture, priority ordering, freshness state, coordination state, and next-action preparation fast enough to reduce re-triage and response friction without weakening review, trust, or rollback discipline.
