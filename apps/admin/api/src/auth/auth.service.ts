@@ -3,6 +3,7 @@ import {
   AccountApprovalStatus,
   AccountLifecycleStatus,
   ActorType,
+  NotificationChannel,
   ProfileLifecycleStatus,
   ProfileModerationStatus,
   ProfileType,
@@ -296,6 +297,11 @@ export class AuthService {
       select: {
         id: true,
         email: true,
+        identityProfile: {
+          select: {
+            language: true,
+          },
+        },
       },
     });
 
@@ -357,12 +363,27 @@ export class AuthService {
       sourceId: tokenHash,
       userId: user.id,
       category: NotificationCategory.ACCOUNT,
+      channel: NotificationChannel.EMAIL,
+      channels: [NotificationChannel.EMAIL, NotificationChannel.IN_APP],
       title: 'Password reset requested',
       message:
         'A password reset was requested for your account. Use the secure reset link to choose a new password.',
       metadata: {
+        email: user.email,
         resetUrl,
         expiresAt: expiresAt.toISOString(),
+        locale: user.identityProfile?.language ?? 'ro',
+        emailSubject: this.buildPasswordResetEmailSubject(user.identityProfile?.language),
+        emailText: this.buildPasswordResetEmailText({
+          locale: user.identityProfile?.language ?? 'ro',
+          resetUrl,
+          expiresAt,
+        }),
+        emailHtml: this.buildPasswordResetEmailHtml({
+          locale: user.identityProfile?.language ?? 'ro',
+          resetUrl,
+          expiresAt,
+        }),
       },
     });
 
@@ -963,6 +984,76 @@ export class AuthService {
 
   private hashPasswordResetToken(token: string) {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  private buildPasswordResetEmailSubject(locale?: string | null) {
+    return String(locale ?? '').toLowerCase().startsWith('ro')
+      ? 'Resetare parola OpenStaff'
+      : 'Reset your OpenStaff password';
+  }
+
+  private buildPasswordResetEmailText(input: {
+    locale?: string | null;
+    resetUrl: string;
+    expiresAt: Date;
+  }) {
+    const expiresLabel = input.expiresAt.toISOString();
+    if (String(input.locale ?? '').toLowerCase().startsWith('ro')) {
+      return [
+        'Ai cerut resetarea parolei pentru contul tau OpenStaff.',
+        '',
+        `Foloseste acest link securizat: ${input.resetUrl}`,
+        `Linkul expira la ${expiresLabel}.`,
+        '',
+        'Daca nu ai cerut tu aceasta actiune, ignora acest mesaj. OpenStaff nu iti va cere niciodata parola prin email.',
+      ].join('\n');
+    }
+
+    return [
+      'You requested a password reset for your OpenStaff account.',
+      '',
+      `Use this secure link: ${input.resetUrl}`,
+      `This link expires at ${expiresLabel}.`,
+      '',
+      'If you did not request this reset, ignore this email. OpenStaff will never ask for your password by email.',
+    ].join('\n');
+  }
+
+  private buildPasswordResetEmailHtml(input: {
+    locale?: string | null;
+    resetUrl: string;
+    expiresAt: Date;
+  }) {
+    const expiresLabel = input.expiresAt.toISOString();
+    if (String(input.locale ?? '').toLowerCase().startsWith('ro')) {
+      return `
+        <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.6">
+          <h1 style="font-size:22px;margin-bottom:16px">Resetare parola OpenStaff</h1>
+          <p>Ai cerut resetarea parolei pentru contul tau OpenStaff.</p>
+          <p>
+            <a href="${input.resetUrl}" style="display:inline-block;background:#1B2A6B;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:10px">
+              Reseteaza parola
+            </a>
+          </p>
+          <p>Linkul expira la <strong>${expiresLabel}</strong>.</p>
+          <p>Daca nu ai cerut tu aceasta actiune, ignora acest email. OpenStaff nu iti va cere niciodata parola prin email.</p>
+        </div>
+      `.trim();
+    }
+
+    return `
+      <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.6">
+        <h1 style="font-size:22px;margin-bottom:16px">Reset your OpenStaff password</h1>
+        <p>You requested a password reset for your OpenStaff account.</p>
+        <p>
+          <a href="${input.resetUrl}" style="display:inline-block;background:#1B2A6B;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:10px">
+            Reset password
+          </a>
+        </p>
+        <p>This link expires at <strong>${expiresLabel}</strong>.</p>
+        <p>If you did not request this reset, ignore this email. OpenStaff will never ask for your password by email.</p>
+      </div>
+    `.trim();
   }
 
   private buildPasswordResetUrl(token: string) {

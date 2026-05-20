@@ -32,9 +32,13 @@ type CompanyLookupResponse = {
   normalizedFiscalCode: string;
   countryCode: string;
   provider: string;
+  providerLabel: string;
+  lookupTimestamp: string;
+  verifiedSource: boolean;
   lookupStatus: 'matched' | 'manual_required' | 'invalid' | 'provider_unavailable';
   verificationStatus: 'unverified' | 'provider_matched';
   explanation: string;
+  lookupMetadata?: Record<string, unknown> | null;
   company: {
     companyName: string | null;
     legalName: string | null;
@@ -46,6 +50,7 @@ type CompanyLookupResponse = {
     postalCode: string | null;
     vatPayer: boolean | null;
     vatMode: string | null;
+    legalStatus?: string | null;
   };
 };
 
@@ -301,13 +306,38 @@ export class OnboardingService {
     onboardingStatus?: OnboardingStatus;
     verificationStatus?: VerificationStatus;
   }) {
-    const sessions = await this.prisma.onboardingSession.findMany({
+    const sessions: any[] = await this.prisma.onboardingSession.findMany({
       include: {
         user: {
           include: {
             identityProfile: true,
             identityCompanyProfiles: {
               orderBy: { createdAt: 'asc' },
+            },
+            profile: {
+              include: {
+                escoClassifications: {
+                  include: {
+                    escoSkill: {
+                      select: { code: true, title: true },
+                    },
+                  },
+                },
+                naceClassifications: {
+                  include: {
+                    nace: {
+                      select: { code: true, title: true },
+                    },
+                  },
+                },
+                uniclassClassifications: {
+                  include: {
+                    uniclass: {
+                      select: { code: true, title: true },
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -391,6 +421,7 @@ export class OnboardingService {
     request?: any;
   }): Promise<CompanyLookupResponse> {
     const rawFiscalCode = input.fiscalCode.trim();
+    const lookupTimestamp = new Date().toISOString();
     const countryCode =
       this.normalizeCountryCode(input.countryCode) ||
       this.normalizeCountryCode(this.firstHeaderValue(input.request, 'x-country-code')) ||
@@ -403,9 +434,16 @@ export class OnboardingService {
         normalizedFiscalCode: rawFiscalCode,
         countryCode,
         provider: 'validation',
+        providerLabel: 'Input validation',
+        lookupTimestamp,
+        verifiedSource: false,
         lookupStatus: 'invalid',
         verificationStatus: 'unverified',
         explanation: 'The fiscal or VAT code format is invalid. Continue manually if needed.',
+        lookupMetadata: {
+          countryCode,
+          stage: 'validation',
+        },
         company: this.emptyCompanyLookupResult(),
       };
     }
@@ -420,16 +458,40 @@ export class OnboardingService {
       };
     }
 
+    const liveProviderMatch =
+      countryCode === 'RO'
+        ? await this.lookupRomanianCompany(normalizedFiscalCode, lookupTimestamp)
+        : this.isEuropeanUnionCountry(countryCode)
+          ? await this.lookupEuropeanVatCompany(normalizedFiscalCode, countryCode, lookupTimestamp)
+          : null;
+
+    if (liveProviderMatch) {
+      return {
+        rawFiscalCode,
+        normalizedFiscalCode,
+        countryCode,
+        ...liveProviderMatch,
+      };
+    }
+
     if (countryCode === 'RO') {
       return {
         rawFiscalCode,
         normalizedFiscalCode,
         countryCode,
-        provider: 'ro-fallback',
-        lookupStatus: 'manual_required',
+        provider: 'ro-provider-unavailable',
+        providerLabel: 'Romanian provider fallback',
+        lookupTimestamp,
+        verifiedSource: false,
+        lookupStatus: 'provider_unavailable',
         verificationStatus: 'unverified',
         explanation:
-          'No trusted Romanian company match was available from the current provider baseline. Continue with manual company details.',
+          'No trusted Romanian company record was returned by the configured provider path. Continue with manual company details or retry later.',
+        lookupMetadata: {
+          countryCode,
+          attemptedProviders: ['configured-romania-provider', 'vies'],
+          fallback: 'manual_override',
+        },
         company: {
           companyName: null,
           legalName: null,
@@ -441,6 +503,7 @@ export class OnboardingService {
           postalCode: null,
           vatPayer: normalizedFiscalCode.startsWith('RO'),
           vatMode: 'domestic',
+          legalStatus: null,
         },
       };
     }
@@ -450,11 +513,19 @@ export class OnboardingService {
         rawFiscalCode,
         normalizedFiscalCode,
         countryCode,
-        provider: 'eu-vies-fallback',
-        lookupStatus: 'manual_required',
+        provider: 'eu-vies',
+        providerLabel: 'European Commission VIES',
+        lookupTimestamp,
+        verifiedSource: false,
+        lookupStatus: 'provider_unavailable',
         verificationStatus: 'unverified',
         explanation:
-          'EU VAT format was accepted, but the lookup provider is not currently returning a trusted company record. Continue manually.',
+          'EU VAT format was accepted, but VIES did not return a trusted company record right now. Continue manually or retry later.',
+        lookupMetadata: {
+          countryCode,
+          attemptedProviders: ['vies'],
+          fallback: 'manual_override',
+        },
         company: {
           companyName: null,
           legalName: null,
@@ -466,6 +537,7 @@ export class OnboardingService {
           postalCode: null,
           vatPayer: true,
           vatMode: 'eu',
+          legalStatus: null,
         },
       };
     }
@@ -475,10 +547,17 @@ export class OnboardingService {
       normalizedFiscalCode,
       countryCode,
       provider: 'manual',
+      providerLabel: 'Manual company entry',
+      lookupTimestamp,
+      verifiedSource: false,
       lookupStatus: 'manual_required',
       verificationStatus: 'unverified',
       explanation:
         'Automatic company lookup is not available for this country in the current baseline. Continue with manual company data.',
+      lookupMetadata: {
+        countryCode,
+        fallback: 'manual_override',
+      },
       company: {
         companyName: null,
         legalName: null,
@@ -490,6 +569,7 @@ export class OnboardingService {
         postalCode: null,
         vatPayer: null,
         vatMode: 'international',
+        legalStatus: null,
       },
     };
   }
@@ -911,6 +991,7 @@ export class OnboardingService {
   private toAdminSessionResponse(session: any) {
     const identity = session.user.identityProfile;
     const company = session.user.identityCompanyProfiles[0] ?? null;
+    const legacyProfile = session.user.profile ?? null;
 
     return {
       id: session.id,
@@ -934,6 +1015,33 @@ export class OnboardingService {
         ? {
             companyName: company.companyName,
             verificationStatus: company.verificationStatus,
+          }
+        : null,
+      legacyProfile: legacyProfile
+        ? {
+            id: legacyProfile.id,
+            slug: legacyProfile.slug,
+            profileType: legacyProfile.profileType,
+            visibility: legacyProfile.visibility,
+            moderationStatus: legacyProfile.moderationStatus,
+            status: legacyProfile.status,
+            taxonomySelections: {
+              esco:
+                legacyProfile.escoClassifications?.map((item: any) => ({
+                  code: item.escoSkill?.code,
+                  label: item.escoSkill?.title,
+                })) ?? [],
+              nace:
+                legacyProfile.naceClassifications?.map((item: any) => ({
+                  code: item.nace?.code,
+                  label: item.nace?.title,
+                })) ?? [],
+              uniclass:
+                legacyProfile.uniclassClassifications?.map((item: any) => ({
+                  code: item.uniclass?.code,
+                  label: item.uniclass?.title,
+                })) ?? [],
+            },
           }
         : null,
     };
@@ -1097,10 +1205,16 @@ export class OnboardingService {
     > = {
       RO12345678: {
         provider: 'ro-baseline',
+        providerLabel: 'Trusted Romanian baseline',
+        lookupTimestamp: new Date().toISOString(),
+        verifiedSource: true,
         lookupStatus: 'matched',
         verificationStatus: 'provider_matched',
         explanation:
           'A trusted company record was matched from the current Romanian onboarding baseline.',
+        lookupMetadata: {
+          source: 'baseline',
+        },
         company: {
           companyName: 'Nord Build Instal SRL',
           legalName: 'Nord Build Instal SRL',
@@ -1112,14 +1226,21 @@ export class OnboardingService {
           postalCode: '010101',
           vatPayer: true,
           vatMode: 'domestic',
+          legalStatus: 'active',
         },
       },
       DE123456789: {
         provider: 'eu-baseline',
+        providerLabel: 'Trusted EU baseline',
+        lookupTimestamp: new Date().toISOString(),
+        verifiedSource: true,
         lookupStatus: 'matched',
         verificationStatus: 'provider_matched',
         explanation:
           'A trusted EU VAT record was matched from the current onboarding baseline.',
+        lookupMetadata: {
+          source: 'baseline',
+        },
         company: {
           companyName: 'NordGrid Data Infrastructure GmbH',
           legalName: 'NordGrid Data Infrastructure GmbH',
@@ -1131,11 +1252,261 @@ export class OnboardingService {
           postalCode: '60326',
           vatPayer: true,
           vatMode: 'eu',
+          legalStatus: 'active',
         },
       },
     };
 
     return knownCompanies[normalizedFiscalCode] ?? null;
+  }
+
+  private async lookupRomanianCompany(normalizedFiscalCode: string, lookupTimestamp: string) {
+    const providerResponse = await this.lookupRomanianProvider(normalizedFiscalCode, lookupTimestamp);
+    if (providerResponse) {
+      return providerResponse;
+    }
+
+    if (!normalizedFiscalCode.startsWith('RO')) {
+      return null;
+    }
+
+    return this.lookupEuropeanVatCompany(normalizedFiscalCode, 'RO', lookupTimestamp);
+  }
+
+  private async lookupRomanianProvider(normalizedFiscalCode: string, lookupTimestamp: string) {
+    const providerUrl =
+      process.env.ROMANIAN_COMPANY_LOOKUP_URL?.trim() ||
+      process.env.COMPANY_LOOKUP_PROVIDER_URL?.trim() ||
+      process.env.ANAF_LOOKUP_URL?.trim();
+    if (!providerUrl) {
+      return null;
+    }
+
+    const providerKey =
+      process.env.ROMANIAN_COMPANY_LOOKUP_API_KEY?.trim() ||
+      process.env.COMPANY_LOOKUP_PROVIDER_API_KEY?.trim() ||
+      process.env.ANAF_LOOKUP_API_KEY?.trim() ||
+      null;
+
+    try {
+      const response = await this.fetchJsonWithTimeout(providerUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(providerKey ? { Authorization: `Bearer ${providerKey}` } : {}),
+        },
+        body: JSON.stringify({
+          countryCode: 'RO',
+          fiscalCode: normalizedFiscalCode.replace(/^RO/i, ''),
+          vatId: normalizedFiscalCode,
+        }),
+      });
+
+      const company = this.normalizeRomanianProviderResponse(response);
+      if (!company) {
+        return null;
+      }
+
+      return {
+        provider: 'ro-registry-provider',
+        providerLabel: 'Romanian company registry provider',
+        lookupTimestamp,
+        verifiedSource: true,
+        lookupStatus: 'matched',
+        verificationStatus: 'provider_matched',
+        explanation:
+          'Company data was returned by the configured Romanian company registry provider.',
+        lookupMetadata: {
+          source: 'configured-romania-provider',
+          countryCode: 'RO',
+        },
+        company,
+      } satisfies Omit<CompanyLookupResponse, 'rawFiscalCode' | 'normalizedFiscalCode' | 'countryCode'>;
+    } catch {
+      return null;
+    }
+  }
+
+  private normalizeRomanianProviderResponse(value: any) {
+    const companyName = this.normalizeNullableString(
+      value?.companyName ?? value?.name ?? value?.denumire,
+    );
+    const legalName = this.normalizeNullableString(
+      value?.legalName ?? value?.denumire,
+    );
+    const vatId = this.normalizeNullableString(value?.vatId ?? value?.cui ?? value?.cif);
+    const country = this.normalizeNullableString(value?.country ?? value?.tara) ?? 'Romania';
+
+    if (!companyName && !legalName) {
+      return null;
+    }
+
+    return {
+      companyName: companyName ?? legalName,
+      legalName: legalName ?? companyName,
+      registrationNumber: this.normalizeNullableString(
+        value?.registrationNumber ?? value?.nrRegCom ?? value?.registrationId,
+      ),
+      vatId: vatId ? this.normalizeFiscalCode(vatId, 'RO') ?? vatId : null,
+      country,
+      city: this.normalizeNullableString(value?.city ?? value?.localitate),
+      addressLine1: this.normalizeNullableString(value?.addressLine1 ?? value?.address ?? value?.adresa),
+      postalCode: this.normalizeNullableString(value?.postalCode ?? value?.codPostal),
+      vatPayer:
+        typeof value?.vatPayer === 'boolean'
+          ? value.vatPayer
+          : typeof value?.tva === 'boolean'
+            ? value.tva
+            : null,
+      vatMode: 'domestic',
+      legalStatus: this.normalizeNullableString(value?.legalStatus ?? value?.status),
+    };
+  }
+
+  private async lookupEuropeanVatCompany(
+    normalizedFiscalCode: string,
+    countryCode: string,
+    lookupTimestamp: string,
+  ) {
+    const vatBody = normalizedFiscalCode.replace(/^[A-Z]{2}/, '');
+    const soapEnvelope = `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:ec.europa.eu:taxud:vies:services:checkVat:types">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <urn:checkVat>
+      <urn:countryCode>${countryCode}</urn:countryCode>
+      <urn:vatNumber>${vatBody}</urn:vatNumber>
+    </urn:checkVat>
+  </soapenv:Body>
+</soapenv:Envelope>`;
+
+    try {
+      const xml = await this.fetchTextWithTimeout(
+        'https://ec.europa.eu/taxation_customs/vies/services/checkVatService',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/xml; charset=utf-8',
+            SOAPAction: 'checkVat',
+          },
+          body: soapEnvelope,
+        },
+      );
+
+      const valid = this.extractXmlTag(xml, 'valid');
+      if (valid?.toLowerCase() !== 'true') {
+        return {
+          provider: 'eu-vies',
+          providerLabel: 'European Commission VIES',
+          lookupTimestamp,
+          verifiedSource: true,
+          lookupStatus: 'invalid',
+          verificationStatus: 'unverified',
+          explanation: 'VIES checked the VAT number and marked it as invalid.',
+          lookupMetadata: {
+            source: 'vies',
+            countryCode,
+          },
+          company: {
+            companyName: null,
+            legalName: null,
+            registrationNumber: vatBody,
+            vatId: normalizedFiscalCode,
+            country: this.countryNameFromCode(countryCode),
+            city: null,
+            addressLine1: null,
+            postalCode: null,
+            vatPayer: false,
+            vatMode: countryCode === 'RO' ? 'domestic' : 'eu',
+            legalStatus: null,
+          },
+        } satisfies Omit<CompanyLookupResponse, 'rawFiscalCode' | 'normalizedFiscalCode' | 'countryCode'>;
+      }
+
+      const name = this.cleanProviderText(this.extractXmlTag(xml, 'name'));
+      const address = this.cleanProviderText(this.extractXmlTag(xml, 'address'));
+      const city = address?.split(/\s*,\s*/).slice(-1)[0] ?? null;
+
+      return {
+        provider: 'eu-vies',
+        providerLabel: 'European Commission VIES',
+        lookupTimestamp,
+        verifiedSource: true,
+        lookupStatus: 'matched',
+        verificationStatus: 'provider_matched',
+        explanation:
+          'VAT data was validated live through the European Commission VIES service.',
+        lookupMetadata: {
+          source: 'vies',
+          countryCode,
+          requestDate: this.cleanProviderText(this.extractXmlTag(xml, 'requestDate')),
+        },
+        company: {
+          companyName: name,
+          legalName: name,
+          registrationNumber: vatBody,
+          vatId: `${countryCode}${vatBody}`,
+          country: this.countryNameFromCode(countryCode),
+          city,
+          addressLine1: address,
+          postalCode: null,
+          vatPayer: true,
+          vatMode: countryCode === 'RO' ? 'domestic' : 'eu',
+          legalStatus: 'vat_valid',
+        },
+      } satisfies Omit<CompanyLookupResponse, 'rawFiscalCode' | 'normalizedFiscalCode' | 'countryCode'>;
+    } catch {
+      return null;
+    }
+  }
+
+  private async fetchJsonWithTimeout(
+    url: string,
+    input: { method: string; headers: Record<string, string>; body: string },
+  ) {
+    const body = await this.fetchTextWithTimeout(url, input);
+    return body.trim() ? JSON.parse(body) : {};
+  }
+
+  private async fetchTextWithTimeout(
+    url: string,
+    input: { method: string; headers: Record<string, string>; body: string },
+  ) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+
+    try {
+      const response = await fetch(url, {
+        method: input.method,
+        headers: input.headers,
+        body: input.body,
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        throw new Error(`http_${response.status}`);
+      }
+      return await response.text();
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  private extractXmlTag(xml: string, tagName: string) {
+    const match = xml.match(new RegExp(`<[^:>]*:?${tagName}>([\\s\\S]*?)</[^:>]*:?${tagName}>`, 'i'));
+    return match?.[1]?.trim() ?? null;
+  }
+
+  private cleanProviderText(value?: string | null) {
+    if (!value) {
+      return null;
+    }
+
+    const cleaned = value
+      .replace(/-+$/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    return cleaned && cleaned !== '---' ? cleaned : null;
   }
 
   private emptyCompanyLookupResult() {
@@ -1150,6 +1521,7 @@ export class OnboardingService {
       postalCode: null,
       vatPayer: null,
       vatMode: null,
+      legalStatus: null,
     };
   }
 }

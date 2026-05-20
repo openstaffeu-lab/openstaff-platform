@@ -1232,6 +1232,41 @@ export type AdminOnboardingSession = {
     companyName: string;
     verificationStatus: "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED";
   } | null;
+  legacyProfile: {
+    id: string;
+    slug: string;
+    profileType: string;
+    visibility: string;
+    moderationStatus: string;
+    status: string;
+    taxonomySelections: {
+      esco: Array<{ code: string; label: string }>;
+      nace: Array<{ code: string; label: string }>;
+      uniclass: Array<{ code: string; label: string }>;
+    };
+  } | null;
+};
+
+export type AdminReluProfileResults = {
+  sourceType: string;
+  sourceId: string;
+  classifications: Array<{
+    id: string;
+    explanation: string | null;
+    score: number | null;
+    status?: string;
+    outputData: {
+      escoCandidates?: Array<{ code: string; label: string; confidence?: number }>;
+      naceCandidates?: Array<{ code: string; label: string; confidence?: number }>;
+      uniclassCandidates?: Array<{ code: string; label: string; confidence?: number }>;
+      missingInformation?: string[];
+      moderationHints?: string[];
+      extractedRequirements?: string[];
+    } & Record<string, unknown>;
+  }>;
+  matches: Array<Record<string, unknown>>;
+  recommendations: Array<Record<string, unknown>>;
+  runs: Array<Record<string, unknown>>;
 };
 
 export type AdminVerificationCase = {
@@ -1496,6 +1531,10 @@ export async function getAdminOnboardingSessions(filters?: {
   return adminFetch<AdminOnboardingSession[]>(
     `/admin/onboarding/sessions${query.toString() ? `?${query.toString()}` : ""}`,
   );
+}
+
+export async function getAdminReluProfileResults(profileId: string) {
+  return adminFetch<AdminReluProfileResults>(`/relu/profiles/${profileId}/results`);
 }
 
 export async function getAdminVerificationCases(filters?: {

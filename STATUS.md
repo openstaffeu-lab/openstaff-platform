@@ -2,6 +2,34 @@
 
 Last updated: 2026-05-20
 
+## EXEC-43 Live Onboarding Promotion, Provider Integrations, RELU AI Moderation Visibility & Production Validation Closure
+
+Verdict: `IN PROGRESS - provider-capable password reset delivery, VIES-backed company lookup, configurable Romanian provider support, first-class admin RELU onboarding visibility, fresh production promotions, and live browser proof are now in place, but production email provider credentials, Romanian provider configuration, residual browser-request failures, and full approved homepage/moderation visibility proof are still open`
+
+### EXEC-43 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| password reset delivery wiring implemented | ✅ | `apps/admin/api/src/notifications/notification.service.ts` now supports transactional email providers (`Resend`, `SendGrid`, `Postmark`, `Mailgun`) and `auth.service.ts` now requests email delivery for password resets |
+| localized reset template baseline implemented | ✅ | `apps/admin/api/src/auth/auth.service.ts` now generates localized subject/text/html reset email content with expiry and anti-phishing wording |
+| live company lookup integration improved | ✅ partial | `apps/admin/api/src/onboarding/onboarding.service.ts` now supports official VIES VAT validation plus configurable Romanian provider URLs/API keys, and live `PUT /onboarding/company-lookup` proof now confirms the production VIES invalid-path contract |
+| onboarding lookup UX improved | ✅ | `apps/admin/web/app/onboarding/company/page.tsx` now shows provider label, trusted-source state, lookup timestamp, and legal status when available |
+| admin RELU moderation visibility improved | ✅ | `apps/admin/app/admin/onboarding/page.tsx` and `apps/admin/lib/api.ts` now expose inline RELU AI results, confidence context, missing-information hints, and comparison against current taxonomy selections; authenticated Chrome proof on `/admin/onboarding` confirmed the new RELU review surface live |
+| local validation remained healthy | ✅ | `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-20` |
+| fresh production promotion completed | ✅ | Cloud Build `4a8de26f-8978-4e22-b9a2-0693826de305` promoted `openstaff-api-00011-ggv`, `c743e5d7-55ef-4044-81e9-eb433418e0cd` promoted `openstaff-web-00011-ngt`, and `cab6f8ff-3776-4504-b73c-6bd9b2fadffd` promoted `openstaff-admin-00017-cc4` |
+| live browser proof captured | ✅ partial | Chrome company registration rerun is clean on the promoted revision after the `x-timezone` CORS fix, while Edge professional onboarding, mobile company lookup, and admin RELU review still show residual failed requests that keep full closure open |
+| production smoke remained healthy | ✅ | `/health = 200`, `/status = 200`, `exec-26-production-ops-check.ps1 = PASS`, `exec-26-failure-simulations.ps1 = PASS`, and the CORS regression discovered during browser proof was fixed and redeployed on `openstaff-api-00011-ggv` |
+| provider-backed password reset proof | ❌ blocker | production Secret Manager and live Cloud Run runtime still do not contain any email delivery provider credential |
+| Romanian provider-backed company proof | ❌ blocker | production still lacks Romanian company provider configuration, so only baseline/VIES-capable logic is ready |
+| approved homepage/search/public-profile proof | ❌ blocker | this execution did not complete a fresh approval cycle proving pending hidden, approved public visibility, rejected hidden, and homepage/search visibility on the EXEC-43 revisions |
+
+### EXEC-43 Remaining Blockers
+
+1. `emailDelivery = not_configured` remains true in production, so provider-backed reset delivery, received-email proof, expired-link proof, and reused-link rejection are not yet closed live
+2. no Romanian provider URL/API key is configured in production for deep company lookup, so the Romanian registry path is code-ready but not provider-proven live
+3. residual failed requests remain in the Edge professional, mobile company-lookup, and admin RELU browser sessions, so full browser closure is not yet clean enough for `PASS`
+4. this execution did not complete a fresh approval cycle proving pending hidden, approved public visibility, rejected hidden, and homepage/search/public-profile visibility on the promoted EXEC-43 revisions
+
 ## EXEC-42 User Registration, Smart Company Autofill, RELU AI Profile Creation & Public Visibility Closure
 
 Verdict: `IN PROGRESS - password recovery, lighter registration, company autofill, locale defaults, RELU AI profile suggestions, dashboard visibility, and homepage trust cleanup are now implemented locally and validated through Prisma plus application builds, but production-grade reset delivery, live deploy proof, and browser-validated end-to-end public closure are still open`

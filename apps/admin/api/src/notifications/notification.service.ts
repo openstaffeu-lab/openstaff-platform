@@ -18,6 +18,14 @@ type AuthenticatedUser = {
 
 type NotificationCategoryMap = Record<NotificationCategory, boolean>;
 
+type DeliveryAttemptResult = {
+  status: NotificationStatus;
+  deliveredAt: Date | null;
+  failedAt: Date | null;
+  failureReason: string | null;
+  metadata?: Record<string, unknown> | null;
+};
+
 type EmitEventInput = {
   key?: string;
   eventType: string;
@@ -216,7 +224,8 @@ export class NotificationService {
     metadata?: Record<string, unknown> | null;
   }) {
     const now = new Date();
-    const { status, deliveredAt, failedAt, failureReason } = this.resolveDeliveryOutcome(input.channel);
+    const { status, deliveredAt, failedAt, failureReason, metadata: deliveryMetadata } =
+      await this.resolveDeliveryOutcome(input.channel, input.metadata, input.userId ?? null);
 
     const delivery = await this.prisma.notificationDelivery.create({
       data: {
@@ -228,7 +237,7 @@ export class NotificationService {
         deliveredAt,
         failedAt,
         metadata: this.normalizeMetadata(
-          input.metadata,
+          this.normalizeMetadata(input.metadata, deliveryMetadata ?? undefined),
           failureReason ? { failureReason } : undefined,
         ) as Prisma.InputJsonValue,
       },
@@ -794,7 +803,11 @@ export class NotificationService {
     return next;
   }
 
-  private resolveDeliveryOutcome(channel: NotificationChannel) {
+  private async resolveDeliveryOutcome(
+    channel: NotificationChannel,
+    metadata?: Record<string, unknown> | null,
+    userId?: string | null,
+  ): Promise<DeliveryAttemptResult> {
     if (channel === NotificationChannel.IN_APP || channel === NotificationChannel.SYSTEM) {
       return {
         status: NotificationStatus.SENT,
@@ -804,17 +817,312 @@ export class NotificationService {
       };
     }
 
+    if (channel === NotificationChannel.EMAIL) {
+      return this.sendEmailDelivery(metadata, userId);
+    }
+
     return {
       status: NotificationStatus.FAILED,
       deliveredAt: null,
       failedAt: new Date(),
       failureReason:
-        channel === NotificationChannel.EMAIL
-          ? 'email_provider_not_configured'
-          : channel === NotificationChannel.SMS_PLACEHOLDER || channel === NotificationChannel.SMS
+        channel === NotificationChannel.SMS_PLACEHOLDER || channel === NotificationChannel.SMS
             ? 'sms_provider_placeholder_only'
             : 'delivery_channel_not_configured',
     };
+  }
+
+  private async sendEmailDelivery(
+    metadata?: Record<string, unknown> | null,
+    userId?: string | null,
+  ): Promise<DeliveryAttemptResult> {
+    const recipient = await this.resolveEmailRecipient(metadata, userId);
+    if (!recipient) {
+      return {
+        status: NotificationStatus.FAILED,
+        deliveredAt: null,
+        failedAt: new Date(),
+        failureReason: 'email_recipient_missing',
+      };
+    }
+
+    const provider = this.resolveEmailProvider();
+    if (!provider) {
+      return {
+        status: NotificationStatus.FAILED,
+        deliveredAt: null,
+        failedAt: new Date(),
+        failureReason: 'email_provider_not_configured',
+      };
+    }
+
+    const subject = this.readMetadataString(metadata, 'emailSubject') ?? this.readMetadataString(metadata, 'title') ?? 'OpenStaff notification';
+    const html =
+      this.readMetadataString(metadata, 'emailHtml') ??
+      this.defaultEmailHtmlTemplate(subject, this.readMetadataString(metadata, 'message'));
+    const text =
+      this.readMetadataString(metadata, 'emailText') ??
+      this.defaultEmailTextTemplate(subject, this.readMetadataString(metadata, 'message'));
+
+    try {
+      const providerResult =
+        provider === 'resend'
+          ? await this.sendWithResend(recipient, subject, html, text)
+          : provider === 'sendgrid'
+            ? await this.sendWithSendGrid(recipient, subject, html, text)
+            : provider === 'postmark'
+              ? await this.sendWithPostmark(recipient, subject, html, text)
+              : await this.sendWithMailgun(recipient, subject, html, text);
+
+      return {
+        status: NotificationStatus.SENT,
+        deliveredAt: new Date(),
+        failedAt: null,
+        failureReason: null,
+        metadata: {
+          deliveryProvider: provider,
+          deliveryRecipient: recipient,
+          providerMessageId: providerResult.messageId,
+          providerAcceptedAt: new Date().toISOString(),
+        },
+      };
+    } catch (error) {
+      return {
+        status: NotificationStatus.FAILED,
+        deliveredAt: null,
+        failedAt: new Date(),
+        failureReason:
+          error instanceof Error && error.message
+            ? `email_provider_error:${error.message}`
+            : 'email_provider_error',
+        metadata: {
+          deliveryProvider: provider,
+          deliveryRecipient: recipient,
+        },
+      };
+    }
+  }
+
+  private async resolveEmailRecipient(
+    metadata?: Record<string, unknown> | null,
+    userId?: string | null,
+  ) {
+    const explicitEmail =
+      this.readMetadataString(metadata, 'emailAddress') ??
+      this.readMetadataString(metadata, 'email');
+
+    if (explicitEmail) {
+      return explicitEmail.trim().toLowerCase();
+    }
+
+    if (!userId) {
+      return null;
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+
+    return user?.email?.trim().toLowerCase() ?? null;
+  }
+
+  private resolveEmailProvider() {
+    if (process.env.RESEND_API_KEY?.trim()) {
+      return 'resend' as const;
+    }
+    if (process.env.SENDGRID_API_KEY?.trim()) {
+      return 'sendgrid' as const;
+    }
+    if (process.env.POSTMARK_SERVER_TOKEN?.trim()) {
+      return 'postmark' as const;
+    }
+    if (process.env.MAILGUN_API_KEY?.trim() && process.env.MAILGUN_DOMAIN?.trim()) {
+      return 'mailgun' as const;
+    }
+
+    return null;
+  }
+
+  private getEmailFromAddress() {
+    return (
+      process.env.EMAIL_FROM?.trim() ||
+      process.env.OPENSTAFF_EMAIL_FROM?.trim() ||
+      process.env.POSTMARK_FROM_EMAIL?.trim() ||
+      'OpenStaff <no-reply@openstaff.eu>'
+    );
+  }
+
+  private async sendWithResend(recipient: string, subject: string, html: string, text: string) {
+    const response = await this.fetchJson('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY?.trim()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: this.getEmailFromAddress(),
+        to: [recipient],
+        subject,
+        html,
+        text,
+      }),
+    });
+
+    return { messageId: this.readUnknownString((response as any)?.id) };
+  }
+
+  private async sendWithSendGrid(recipient: string, subject: string, html: string, text: string) {
+    const response = await this.fetchJson('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.SENDGRID_API_KEY?.trim()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        personalizations: [{ to: [{ email: recipient }] }],
+        from: this.parseEmailIdentity(this.getEmailFromAddress()),
+        subject,
+        content: [
+          { type: 'text/plain', value: text },
+          { type: 'text/html', value: html },
+        ],
+      }),
+      allowEmptyResponse: true,
+    });
+
+    return { messageId: this.readUnknownString((response as any)?.messageId) };
+  }
+
+  private async sendWithPostmark(recipient: string, subject: string, html: string, text: string) {
+    const response = await this.fetchJson('https://api.postmarkapp.com/email', {
+      method: 'POST',
+      headers: {
+        'X-Postmark-Server-Token': process.env.POSTMARK_SERVER_TOKEN?.trim() ?? '',
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        From: this.getEmailFromAddress(),
+        To: recipient,
+        Subject: subject,
+        HtmlBody: html,
+        TextBody: text,
+      }),
+    });
+
+    return {
+      messageId:
+        this.readUnknownString((response as any)?.MessageID) ??
+        this.readUnknownString((response as any)?.MessageId),
+    };
+  }
+
+  private async sendWithMailgun(recipient: string, subject: string, html: string, text: string) {
+    const domain = process.env.MAILGUN_DOMAIN?.trim();
+    if (!domain) {
+      throw new Error('mailgun_domain_missing');
+    }
+
+    const formData = new URLSearchParams({
+      from: this.getEmailFromAddress(),
+      to: recipient,
+      subject,
+      text,
+      html,
+    });
+    const credentials = Buffer.from(`api:${process.env.MAILGUN_API_KEY?.trim() ?? ''}`).toString('base64');
+
+    const response = await this.fetchJson(`https://api.mailgun.net/v3/${domain}/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString(),
+    });
+
+    return { messageId: this.readUnknownString((response as any)?.id) };
+  }
+
+  private async fetchJson(
+    url: string,
+    input: {
+      method: string;
+      headers: Record<string, string>;
+      body: string;
+      allowEmptyResponse?: boolean;
+    },
+  ) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+
+    try {
+      const response = await fetch(url, {
+        method: input.method,
+        headers: input.headers,
+        body: input.body,
+        signal: controller.signal,
+      });
+      const bodyText = await response.text();
+
+      if (!response.ok) {
+        throw new Error(`http_${response.status}`);
+      }
+
+      if (!bodyText.trim()) {
+        if (input.allowEmptyResponse) {
+          return {};
+        }
+        return {};
+      }
+
+      try {
+        return JSON.parse(bodyText);
+      } catch {
+        return { raw: bodyText };
+      }
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  private parseEmailIdentity(input: string) {
+    const match = input.match(/^(.*)<([^>]+)>$/);
+    if (!match) {
+      return { email: input.trim() };
+    }
+
+    return {
+      name: match[1].trim().replace(/^"|"$/g, '') || undefined,
+      email: match[2].trim(),
+    };
+  }
+
+  private defaultEmailHtmlTemplate(subject: string, message?: string | null) {
+    return `<div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.6"><h1 style="font-size:20px">${this.escapeHtml(subject)}</h1><p>${this.escapeHtml(message ?? 'OpenStaff sent you a transactional update.')}</p></div>`;
+  }
+
+  private defaultEmailTextTemplate(subject: string, message?: string | null) {
+    return `${subject}\n\n${message ?? 'OpenStaff sent you a transactional update.'}`;
+  }
+
+  private escapeHtml(value: string) {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  private readMetadataString(metadata: Record<string, unknown> | null | undefined, key: string) {
+    const value = metadata?.[key];
+    return typeof value === 'string' && value.trim() ? value.trim() : null;
+  }
+
+  private readUnknownString(value: unknown) {
+    return typeof value === 'string' && value.trim() ? value.trim() : null;
   }
 
   private async updateEventStatusFromDeliveries(eventId: string) {

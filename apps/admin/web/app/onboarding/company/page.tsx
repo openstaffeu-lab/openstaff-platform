@@ -119,7 +119,7 @@ export default function OnboardingCompanyPage() {
               try {
                 const result = await lookupCompanyProfile({
                   fiscalCode: form.vatId,
-                  countryCode: (form.country || "RO").slice(0, 2).toUpperCase(),
+                  countryCode: deriveCountryCode(form.country, form.vatId),
                 });
                 setLookup(result);
                 setForm((current) => ({
@@ -172,6 +172,16 @@ export default function OnboardingCompanyPage() {
               Lookup status: {lookup.lookupStatus}
             </div>
             <div style={{ marginTop: 6 }}>{lookup.explanation}</div>
+            <div style={{ marginTop: 8, fontSize: 14, color: "#475569" }}>
+              Provider label: {lookup.providerLabel} · Trusted source:{" "}
+              {lookup.verifiedSource ? "yes" : "manual review still needed"} · Checked at:{" "}
+              {new Date(lookup.lookupTimestamp).toLocaleString("ro-RO")}
+            </div>
+            {lookup.company.legalStatus ? (
+              <div style={{ marginTop: 8, fontSize: 14, color: "#475569" }}>
+                Legal status: {lookup.company.legalStatus}
+              </div>
+            ) : null}
             <div style={{ marginTop: 10, fontSize: 14, color: "#475569" }}>
               Provider: {lookup.provider} · Verification: {lookup.verificationStatus} · Normalized
               code: {lookup.normalizedFiscalCode || "-"}
@@ -285,3 +295,40 @@ const secondaryButton: CSSProperties = {
   border: "1px solid #E8EBF5",
   background: "white",
 };
+
+function deriveCountryCode(country: string, vatId: string) {
+  const normalizedVat = vatId.trim().toUpperCase();
+  if (/^[A-Z]{2}/.test(normalizedVat)) {
+    return normalizedVat.slice(0, 2);
+  }
+
+  const normalizedCountry = country.trim().toLowerCase();
+  if (!normalizedCountry) {
+    return "RO";
+  }
+
+  const mapping: Record<string, string> = {
+    romania: "RO",
+    romaniai: "RO",
+    germany: "DE",
+    deutschland: "DE",
+    france: "FR",
+    italy: "IT",
+    spain: "ES",
+    netherlands: "NL",
+    belgium: "BE",
+    austria: "AT",
+    poland: "PL",
+    portugal: "PT",
+    czechia: "CZ",
+    czech: "CZ",
+    ireland: "IE",
+    greece: "EL",
+    sweden: "SE",
+    denmark: "DK",
+    finland: "FI",
+    luxembourg: "LU",
+  };
+
+  return mapping[normalizedCountry] ?? normalizedCountry.slice(0, 2).toUpperCase();
+}

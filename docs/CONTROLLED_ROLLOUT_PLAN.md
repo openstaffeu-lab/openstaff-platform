@@ -2,6 +2,15 @@
 
 Last updated: 2026-05-20
 
+## EXEC-43 Note
+
+Controlled rollout now includes a stricter onboarding proof rule:
+
+- do not call onboarding fully closed until provider-backed reset delivery and live company lookup proof both exist
+- RELU AI onboarding visibility must remain advisory only in admin review
+- homepage/profile visibility proof must be captured after fresh moderation approval on the deployed revision
+- Chrome registration proof is now clean on the promoted EXEC-43 API revision, but Edge/mobile/admin residual request failures must still be cleared before a full onboarding `PASS`
+
 ## Rollout Mode
 
 OpenStaff is now operating in `production` with a `controlled rollout` model.

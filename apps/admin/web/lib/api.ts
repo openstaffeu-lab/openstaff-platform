@@ -280,9 +280,13 @@ export type CompanyLookupResult = {
   normalizedFiscalCode: string;
   countryCode: string;
   provider: string;
+  providerLabel: string;
+  lookupTimestamp: string;
+  verifiedSource: boolean;
   lookupStatus: "matched" | "manual_required" | "invalid" | "provider_unavailable";
   verificationStatus: "unverified" | "provider_matched";
   explanation: string;
+  lookupMetadata?: Record<string, unknown> | null;
   company: {
     companyName: string | null;
     legalName: string | null;
@@ -294,6 +298,7 @@ export type CompanyLookupResult = {
     postalCode: string | null;
     vatPayer: boolean | null;
     vatMode: string | null;
+    legalStatus?: string | null;
   };
 };
 

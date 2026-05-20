@@ -1,7 +1,7 @@
 # UX Trust Review
 
 Last updated: `2026-05-20`  
-Scope: `EXEC-42`
+Scope: `EXEC-43`
 
 ## Purpose
 
@@ -17,7 +17,7 @@ Trust rules:
 
 ## Verdict
 
-`PASS with additional onboarding, password-recovery, and homepage hardening applied through EXEC-42`
+`PASS with additional onboarding, password-recovery, homepage, and admin RELU hardening applied through EXEC-43, while provider-backed reset delivery remains open`
 
 ## Review Summary
 
@@ -25,9 +25,11 @@ Trust rules:
 |---|---|---|
 | pricing | strong | still says request upgrade, not automatic checkout |
 | onboarding | improved | lighter first step, fewer dense fields, no internal rollout language in the touched flow |
-| password recovery | improved | reset request messaging stays neutral and does not confirm account existence |
+| password recovery | improved, but live provider closure pending | reset request messaging stays neutral and does not confirm account existence; EXEC-43 adds provider-capable transactional delivery wiring |
 | moderation messaging | improved | pending versus approved visibility remains explicit |
 | homepage feed trust | improved | approved-content framing now replaces artificial execution-style copy on the homepage |
+| company lookup trust | improved | provider labels, trusted-source state, and lookup timestamps are now part of the onboarding company lookup contract |
+| admin RELU trust | improved | RELU confidence, taxonomy comparison, and missing-information hints are now visible to operators instead of remaining hidden inference |
 | legal and privacy tone | acceptable | public legal pages still avoid unsupported promises |
 
 ## Pricing
@@ -68,7 +70,7 @@ Observed improvements:
 Assessment:
 
 1. trust is stronger because account recovery now exists
-2. full production trust closure still depends on provider-backed reset-link delivery
+2. full production trust closure still depends on provider-backed reset-link delivery and a live clicked-reset proof
 
 ## Homepage Visibility
 
@@ -83,11 +85,25 @@ Assessment:
 1. this reduces the feeling of staged or artificial public content
 2. the homepage is now closer to a truthful approved-content surface
 
+## Admin RELU Visibility
+
+Observed improvements:
+
+1. admin onboarding now shows RELU confidence instead of hiding the result behind implicit automation
+2. operators can compare AI taxonomy suggestions against current user selections
+3. missing-information hints are now visible before moderation or profile follow-up
+
+Assessment:
+
+1. this is more trustworthy because AI remains visible and contestable
+2. the remaining trust work is proving the surrounding admin pages without residual failed requests during browser validation
+
 ## Trust Risks Still To Watch
 
 1. operators could still over-promise manual billing as if it were immediate automation
 2. provider-backed password-reset delivery is still missing because `emailDelivery = not_configured`
 3. company lookup still needs live provider proof before it should be described as external verification
+4. partial browser proof still includes residual failed requests around Edge/mobile/admin flows, so trust closure should not be overstated yet
 
 ## Approved Language
 
@@ -109,4 +125,4 @@ Assessment:
 
 ## Final Assessment
 
-The UX trust layer is now stronger for controlled onboarding because the register, recovery, and homepage surfaces are closer to the real contract. The main remaining trust gap is provider-backed delivery for password reset.
+The UX trust layer is now stronger for controlled onboarding because the register, recovery, homepage, and admin RELU surfaces are closer to the real contract. The main remaining trust gaps are provider-backed delivery for password reset, live Romanian provider proof, and clearing the residual browser-validation request failures.

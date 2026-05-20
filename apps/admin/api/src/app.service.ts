@@ -642,7 +642,8 @@ export class AppService {
       process.env.SMTP_URL?.trim() ||
         process.env.RESEND_API_KEY?.trim() ||
         process.env.SENDGRID_API_KEY?.trim() ||
-        process.env.MAILGUN_API_KEY?.trim(),
+        process.env.MAILGUN_API_KEY?.trim() ||
+        process.env.POSTMARK_SERVER_TOKEN?.trim(),
     );
 
     return hasProvider ? 'configured' : 'not_configured';

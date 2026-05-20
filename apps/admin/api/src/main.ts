@@ -28,7 +28,14 @@ async function bootstrap() {
     origin: getApiCorsOrigins(),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Stripe-Signature', 'X-Request-Id'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Stripe-Signature',
+      'X-Request-Id',
+      'X-Timezone',
+      'X-Country-Code',
+    ],
   });
   app.useGlobalPipes(
     new ValidationPipe({

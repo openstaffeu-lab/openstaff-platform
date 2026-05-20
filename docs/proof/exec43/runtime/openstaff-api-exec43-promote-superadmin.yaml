@@ -1,0 +1,52 @@
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  name: openstaff-api-exec43-promote-superadmin
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cloudsql-instances: openstaff-platform:europe-west1:openstaff-db
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      taskCount: 1
+      template:
+        spec:
+          maxRetries: 0
+          timeoutSeconds: 600
+          serviceAccountName: 605639023972-compute@developer.gserviceaccount.com
+          containers:
+            - image: europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api:9b4eeecf-085c-4ac5-aa03-e9e5218cdc0a
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: DATABASE_URL
+                      key: latest
+                - name: EXEC43_SUPERADMIN_EMAIL
+                  value: exec43-1779291938-admin@openstaff.eu
+              command:
+                - node
+              args:
+                - -e
+                - |
+                  const { PrismaClient } = require('@prisma/client');
+                  const prisma = new PrismaClient();
+                  prisma.user.update({
+                    where: { email: process.env.EXEC43_SUPERADMIN_EMAIL },
+                    data: {
+                      role: 'SUPERADMIN',
+                      approvalStatus: 'APPROVED',
+                      accountStatus: 'LIVE',
+                    },
+                  })
+                    .then((updated) => {
+                      console.log(JSON.stringify(updated));
+                    })
+                    .catch((error) => {
+                      console.error(error);
+                      process.exitCode = 1;
+                    })
+                    .finally(async () => {
+                      await prisma.$disconnect();
+                    });

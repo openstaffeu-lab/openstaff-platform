@@ -1,7 +1,24 @@
 # User Onboarding Closure
 
 Last updated: `2026-05-20`  
-Scope: `EXEC-42`
+Scope: `EXEC-43`
+
+## EXEC-43 Follow-Up
+
+The onboarding closure now extends beyond local UX refactor work.
+
+New EXEC-43 baseline additions:
+
+1. password reset notifications can target real transactional email providers when credentials are configured
+2. company lookup can call VIES live and a configured Romanian provider path
+3. admin onboarding now exposes first-class RELU AI moderation visibility
+
+Still open live:
+
+1. email provider credentials are not configured in production
+2. Romanian company provider credentials are not configured in production
+3. Chrome registration proof is now clean on the promoted revision, but Edge, mobile, and admin proof still contain residual failed requests
+4. a fresh approval-cycle proof for homepage/search/public-profile visibility is still required before claiming full onboarding closure
 
 ## Objective
 
@@ -79,6 +96,7 @@ The final onboarding surface now makes clear that:
 ## Remaining Honest Constraints
 
 1. real password-reset delivery is still constrained by `emailDelivery = not_configured`
-2. company lookup currently uses a provider abstraction plus deterministic baseline matches, not a fully live external registry integration
+2. the Romanian company registry path is code-ready but still lacks live provider configuration in production
 3. old `step-*` onboarding routes still exist and should be retired after the new flow is fully proven live
-4. RELU AI suggestions are visible in onboarding, but operator and user workflows still rely on manual confirmation before profile publishing or moderation
+4. RELU AI suggestions are visible in onboarding and admin review, but operator and user workflows still rely on manual confirmation before profile publishing or moderation
+5. live browser validation is improved but not yet fully clean because some Edge, mobile, and admin requests still fail during proof

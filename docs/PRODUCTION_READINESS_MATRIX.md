@@ -1,7 +1,7 @@
 # Production Readiness Matrix
 
 Last updated: `2026-05-20`  
-Scope: `EXEC-42`
+Scope: `EXEC-43`
 
 ## Matrix
 
@@ -9,10 +9,11 @@ Scope: `EXEC-42`
 |---|---|---|---|
 | infrastructure | stable | Cloud Run healthy, Cloud SQL hardened, storage configured | production runtime healthy; Cloud SQL `RUNNABLE`, backups/PITR on, `ENCRYPTED_ONLY` |
 | auth / security | stable | `firebase-admin`, audit/security flows operational, security posture documented | [SECURITY_POSTURE_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/SECURITY_POSTURE_REVIEW.md:1) and EXEC-25 live proof |
-| password recovery | implemented locally, live closure still pending | forgot-password, reset-token expiry, single-use invalidation, rate limiting, and audit events now exist | [PASSWORD_RECOVERY_SECURITY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/PASSWORD_RECOVERY_SECURITY.md:1); provider-backed delivery still blocked by `emailDelivery = not_configured` |
-| onboarding closure | improved locally, live closure still pending | lighter register flow, company autofill entrypoint, RELU AI completion visibility, and owner dashboard visibility now exist | [USER_ONBOARDING_CLOSURE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/USER_ONBOARDING_CLOSURE.md:1) |
-| company autofill | implemented at baseline level | fiscal/VAT normalization, lookup status, provider labeling, and manual fallback now exist in onboarding | [COMPANY_AUTOFILL_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/COMPANY_AUTOFILL_BASELINE.md:1) |
+| password recovery | code-ready, live provider proof still pending | forgot-password, reset-token expiry, single-use invalidation, audit events, and provider-capable delivery wiring now exist | [PASSWORD_RECOVERY_SECURITY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/PASSWORD_RECOVERY_SECURITY.md:1) and [EMAIL_DELIVERY_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/EMAIL_DELIVERY_BASELINE.md:1); production still lacks provider credentials |
+| onboarding closure | improved and partially live-proven | lighter register flow, company autofill entrypoint, RELU AI completion visibility, admin RELU onboarding review, owner dashboard visibility, fresh promotions, and partial browser proof now exist | [USER_ONBOARDING_CLOSURE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/USER_ONBOARDING_CLOSURE.md:1) and [LIVE_ONBOARDING_VALIDATION.md](/C:/Users/admin/Desktop/openstaff-platform/docs/LIVE_ONBOARDING_VALIDATION.md:1) |
+| company autofill | partially provider-backed and partially live-proven | fiscal/VAT normalization, provider labels, VIES validation, configurable Romanian provider path, and live VIES invalid-path proof now exist | [COMPANY_AUTOFILL_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/COMPANY_AUTOFILL_BASELINE.md:1) and [COMPANY_LOOKUP_PROVIDER_INTEGRATION.md](/C:/Users/admin/Desktop/openstaff-platform/docs/COMPANY_LOOKUP_PROVIDER_INTEGRATION.md:1) |
 | RELU AI profile generation | implemented at baseline level | RELU AI profile analysis, summary, and taxonomy suggestion visibility now exist in onboarding completion | [RELU_PROFILE_GENERATION_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELU_PROFILE_GENERATION_BASELINE.md:1) |
+| RELU AI moderation visibility | improved and partially live-proven | admin onboarding now exposes profile-linked RELU suggestions, confidence context, user taxonomy comparison, and missing-information hints; authenticated admin proof confirmed the target UI on the promoted revision | [RELU_AI_MODERATION_VISIBILITY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELU_AI_MODERATION_VISIBILITY.md:1) |
 | taxonomy suggestions | implemented at baseline level | ESCO, NACE/category, and Uniclass suggestions are now surfaced with advisory wording and manual confirmation expectations | [TAXONOMY_SUGGESTION_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/TAXONOMY_SUGGESTION_BASELINE.md:1) |
 | security posture | stable with accepted residual risks | attack surface, ingress, CORS, secret access, admin exposure, and DB exposure documented | no wildcard CORS; anonymous admin API still blocked; public `run.app` exposure accepted |
 | incident response | documented and usable | severity model, ownership, escalation, rollback authority, and recovery expectations are explicit | [INCIDENT_RESPONSE_RUNBOOK.md](/C:/Users/admin/Desktop/openstaff-platform/docs/INCIDENT_RESPONSE_RUNBOOK.md:1) |
@@ -129,7 +130,7 @@ Scope: `EXEC-42`
 
 ## Governance Verdict
 
-`EXEC-42 IN PROGRESS`
+`EXEC-43 IN PROGRESS`
 
 The production baseline is now suitable for repeatable ongoing operations and controlled real-user onboarding because:
 
@@ -153,6 +154,7 @@ The production baseline is now suitable for repeatable ongoing operations and co
 18. a first shared operational memory layer now reduces repeated decision reconstruction and escalation rediscovery through bounded carryover, recurring issue summaries, repeated-failure summaries, and operator handoff summaries without transferring authority
 19. a first coordination-governance and decision-traceability layer now preserves rationale, accountability, disagreement visibility, ownership continuity, and grouped operator-action history without transferring authority
 20. password recovery, progressive registration, company autofill, RELU AI profile generation visibility, and taxonomy-suggestion visibility now have a first application-level closure baseline
+21. fresh API, public web, and admin revisions were promoted for EXEC-43 and partial live browser proof now exists on those revisions, including a production CORS fix discovered during validation
 
 ## Accepted Remaining Limitations
 
@@ -164,4 +166,6 @@ The production baseline is now suitable for repeatable ongoing operations and co
 6. critical security alerting currently uses Cloud Logging-visible proxy signals until richer native metrics are exported
 7. Cloud Run ingress remains `all`, and public `run.app` URLs remain directly reachable
 8. live provider-backed password-reset delivery is still blocked by `emailDelivery = not_configured`
-9. EXEC-42 still requires fresh production deploy proof plus browser validation for company registration, professional registration, password recovery, moderation, and approved homepage visibility
+9. the Romanian company-provider path is code-ready but still lacks production configuration and live provider proof
+10. browser validation improved materially in EXEC-43, but Edge, mobile, and admin proof still show residual failed requests
+11. full approved homepage/search/public-profile visibility proof was not rerun end-to-end on the promoted EXEC-43 revisions
