@@ -46,7 +46,7 @@ Verdict: `PASS - the first coordination-governance and decision-traceability lay
 - production smoke proof ✅: `/health`, `/status`, the authenticated readiness page, and protected admin/moderation surfaces remained healthy during proof
 - local/build validation proof ✅: `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-20`
 - ops automation proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-production-ops-check.ps1` and `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-failure-simulations.ps1` still passed after the EXEC-41 updates
-- release governance proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-13-release-check.ps1` passed on clean commit `fc95d7a` and now requires the EXEC-41 coordination-governance and traceability docs
+- release governance proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-13-release-check.ps1` passed on clean commit `850cb0f` and now requires the EXEC-41 coordination-governance and traceability docs
 - cleanup proof ✅: promotion execution `openstaff-api-exec41-promote-superadmin-5st6p` succeeded, demotion execution `openstaff-api-exec41-demote-superadmin-bs8rt` succeeded, the proof operator returned to `role = PROFESSIONAL`, and the one-off jobs were deleted after proof
 
 ### EXEC-41 Accepted Coordination Limitations
