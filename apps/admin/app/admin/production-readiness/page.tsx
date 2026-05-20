@@ -589,6 +589,117 @@ export default function ProductionReadinessPage() {
       : "No unresolved carryover item currently forces a special handoff packet.",
     "Operator handoff summaries may preserve who acted, what remains unresolved, and what to check next, but they may not silently transfer authority or final decisions.",
   ];
+  const mostRecentOperatorAction = recentOperatorActions[0] ?? null;
+  const actionCategoryCounts = Object.entries(
+    recentOperatorActions.reduce<Record<string, number>>((accumulator, item) => {
+      const key = item.category ?? "uncategorized";
+      accumulator[key] = (accumulator[key] ?? 0) + 1;
+      return accumulator;
+    }, {}),
+  ).sort((left, right) => right[1] - left[1]);
+  const actionRoleCounts = Object.entries(
+    recentOperatorActions.reduce<Record<string, number>>((accumulator, item) => {
+      const key = item.actorRole || "unknown";
+      accumulator[key] = (accumulator[key] ?? 0) + 1;
+      return accumulator;
+    }, {}),
+  ).sort((left, right) => right[1] - left[1]);
+  const groupedOperatorActions = [
+    mostRecentOperatorAction
+      ? `Most recent visible operator action: ${mostRecentOperatorAction.action} on ${mostRecentOperatorAction.entityType} by ${mostRecentOperatorAction.actorEmail} (${mostRecentOperatorAction.actorRole}) at ${new Date(mostRecentOperatorAction.createdAt).toLocaleString()}.`
+      : "No recent operator action is visible, so grouped action history cannot yet support decision traceability from this snapshot.",
+    actionCategoryCounts.length > 0
+      ? `Visible action categories: ${actionCategoryCounts.map(([category, count]) => `${category} (${count})`).join(", ")}.`
+      : "No visible action category grouping is available from the current snapshot.",
+    actionRoleCounts.length > 0
+      ? `Visible acting roles: ${actionRoleCounts.map(([role, count]) => `${role} (${count})`).join(", ")}.`
+      : "No acting-role grouping is available from the current snapshot.",
+    "Grouped operator actions may compress review history for readability, but they may not replace specialist evidence or final human confirmation.",
+  ];
+  const decisionTraceabilitySummaries = [
+    mostRecentOperatorAction
+      ? "Decision traceability is active enough for first-pass review because recent operator actions, timestamps, and role attribution are visible together."
+      : "Decision traceability is limited because the current snapshot does not include recent operator action history.",
+    recentOperatorActions.length > 0
+      ? `Traceability window: ${recentOperatorActions.length} recent operator action(s) are available for bounded decision reconstruction.`
+      : "Traceability window: no recent operator actions are available for bounded decision reconstruction.",
+    freshnessState === "stale"
+      ? "Traceability freshness risk: stale decision context should be treated as orientation support only until a newer source snapshot is confirmed."
+      : "Traceability freshness is acceptable for advisory decision reconstruction from the current snapshot.",
+    "Decision traceability may preserve rationale, attribution, disagreement state, and grouped action history, but it may not make or override the decision.",
+  ];
+  const accountabilityVisibilitySummaries = [
+    recentOperatorActions.length > 0
+      ? "Accountability visibility is present because recent actions still show who acted, when they acted, and what kind of operational object they touched."
+      : "Accountability visibility is partial because current queue pressure is visible, but recent human action attribution is missing from the snapshot.",
+    moderationPendingTotal > 0
+      ? `Moderation accountability remains active because ${moderationPendingTotal} item(s) still require a human review outcome.`
+      : "Moderation accountability is currently quiet in the visible queue snapshot.",
+    upgradePendingTotal > 0 || webhookFailures24h > 0
+      ? `Billing accountability remains active because ${upgradePendingTotal} open billing review item(s) and ${webhookFailures24h} webhook failure signal(s) still require explicit human follow-up.`
+      : "Billing accountability is currently quiet in the visible queue snapshot.",
+    "Accountability visibility may clarify who owns a decision, who owns verification, and what still lacks closure, but it may not score operators or assign authority automatically.",
+  ];
+  const escalationOwnershipVisibility = [
+    operatorEscalations24h > 0
+      ? `Escalation ownership pressure: ${operatorEscalations24h} recent escalation event(s) suggest transfer ownership and current owner continuity should stay explicit.`
+      : "No current escalation count suggests special ownership-transfer pressure from event volume alone.",
+    supportSignals > 0
+      ? `Escalation review still depends on visible ownership because ${supportSignals} support backlog signal(s) remain active in the current snapshot.`
+      : "Support backlog does not currently imply extra escalation ownership ambiguity.",
+    failedFlows24h > 0
+      ? `Ownership risk remains elevated because ${failedFlows24h} failed-flow report(s) suggest escalation context may stall without a clearly human-owned next check.`
+      : "No failed-flow pattern currently suggests extra escalation ownership ambiguity.",
+    "Escalation ownership visibility may show transfer pressure, dependency pressure, and current review ambiguity, but it may not escalate or reassign work automatically.",
+  ];
+  const unresolvedConsensusVisibility = [
+    unresolvedReviewIndicators.length > 0
+      ? `Unresolved consensus risk: ${unresolvedReviewIndicators.length} unresolved review signal(s) suggest the current human decision space is still open.`
+      : "No unresolved review signal currently forces special consensus caution from the active snapshot.",
+    repeatedConfusion24h > 0
+      ? `Consensus friction remains visible because ${repeatedConfusion24h} repeated confusion report(s) suggest prior explanations are not yet converging cleanly.`
+      : "No repeated-confusion pattern currently suggests obvious consensus friction.",
+    freshnessState !== "fresh"
+      ? "Consensus freshness risk: older context should not be mistaken for current operator agreement."
+      : "Consensus freshness is acceptable for first-pass advisory interpretation.",
+    "Consensus visibility may show agreement pressure, unresolved review, and conflicting interpretation risk, but it may not resolve disagreements automatically.",
+  ];
+  const blockedDecisionVisibility = [
+    blockedStateIndicators.length > 0
+      ? `Blocked-decision visibility: ${blockedStateIndicators.length} blocked-state signal(s) suggest a safe human decision may depend on missing evidence, missing verification, or owner continuity.`
+      : "No blocked-state signal currently suggests a clearly blocked decision path from the active snapshot.",
+    staleActionIndicators.length > 0
+      ? `Stale-decision visibility: ${staleActionIndicators.length} stale-action signal(s) suggest prior preparation may no longer match current queue or incident state.`
+      : "No stale-action signal currently suggests a clearly stale decision path from the active snapshot.",
+    unresolvedStateCarryover.length > 0
+      ? `Carryover block risk: ${unresolvedStateCarryover.length} unresolved carryover item(s) remain visible and should stay attached to any next human review.`
+      : "No unresolved carryover item currently suggests special blocked-decision pressure.",
+    "Blocked-decision visibility may preserve what is missing or unresolved, but it may not trigger automatic escalation, rollback, or resolution.",
+  ];
+  const coordinationContinuitySummaries = [
+    recentOperatorActions.length > 0
+      ? "Coordination continuity is stronger because recent operator actions and carryover cues are visible on the same surface as readiness and queue pressure."
+      : "Coordination continuity is weaker because queue pressure is visible, but prior operator actions are not present in the same snapshot.",
+    operatorOverloadIndicators.length > 0
+      ? `Coordination continuity risk: ${operatorOverloadIndicators.length} overload indicator(s) suggest handoff quality could degrade without explicit shared ownership and clear next checks.`
+      : "No overload indicator currently suggests exceptional coordination continuity risk.",
+    operatorEscalations24h > 0 || unresolvedStateCarryover.length > 0
+      ? "Coordination continuity should preserve active owner, unresolved blocker, and next check before a queue handoff or escalation transfer occurs."
+      : "Coordination continuity does not currently require a special transfer packet beyond routine shared-state awareness.",
+    "Coordination continuity summaries may preserve shared context and ownership continuity, but they may not silently transfer authority between operators.",
+  ];
+  const rationaleSummaries = [
+    warnings.length > 0 || errors.length > 0 || adoptionReasons.length > 0
+      ? "Visible warnings, errors, and adoption-readiness reasons provide the bounded rationale context operators should re-check before a rollout or incident decision."
+      : "No warning or adoption-readiness reason currently adds extra rollout rationale pressure to the snapshot.",
+    moderationPendingTotal > 0 || upgradePendingTotal > 0
+      ? "Queue age, queue volume, and unresolved review state provide the current bounded rationale context for moderation and billing review decisions."
+      : "Current queue state does not add unusual rationale pressure for moderation or billing review decisions.",
+    mostRecentOperatorAction
+      ? "Recent operator actions provide rationale fragments by showing what humans reviewed most recently before the next operator re-opens the specialist surface."
+      : "No recent operator action is available to provide rationale fragments for the next operator.",
+    "Rationale summaries may preserve why prior humans leaned a certain way, but operators must still confirm raw evidence before acting.",
+  ];
 
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-8 text-white md:px-8">
@@ -605,8 +716,9 @@ export default function ProductionReadinessPage() {
               <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-300">
                 This view separates explicit demo behavior from live behavior and now layers in
                 advisory operator summaries that explain queue pressure, incident hints, digests,
-                and correlations without taking approval, escalation, severity, billing, rollback,
-                or rollout authority away from humans.
+                correlations, shared memory, decision traceability, and coordination governance
+                without taking approval, escalation, severity, billing, rollback, or rollout
+                authority away from humans.
               </p>
             </div>
 
@@ -896,6 +1008,44 @@ export default function ProductionReadinessPage() {
 
           <Card title="Grouped operational history">
             <SimpleList items={groupedOperationalHistory} tone="cyan" />
+          </Card>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-3">
+          <Card title="Decision traceability summaries">
+            <SimpleList items={decisionTraceabilitySummaries} tone="cyan" />
+          </Card>
+
+          <Card title="Accountability visibility">
+            <SimpleList items={accountabilityVisibilitySummaries} tone="amber" />
+          </Card>
+
+          <Card title="Escalation ownership visibility">
+            <SimpleList items={escalationOwnershipVisibility} tone="rose" />
+          </Card>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-2">
+          <Card title="Unresolved-consensus visibility">
+            <SimpleList items={unresolvedConsensusVisibility} tone="amber" />
+          </Card>
+
+          <Card title="Blocked-decision visibility">
+            <SimpleList items={blockedDecisionVisibility} tone="rose" />
+          </Card>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-3">
+          <Card title="Coordination continuity summaries">
+            <SimpleList items={coordinationContinuitySummaries} tone="cyan" />
+          </Card>
+
+          <Card title="Rationale summaries">
+            <SimpleList items={rationaleSummaries} tone="amber" />
+          </Card>
+
+          <Card title="Grouped operator actions">
+            <SimpleList items={groupedOperatorActions} tone="cyan" />
           </Card>
         </section>
 
@@ -1411,10 +1561,10 @@ export default function ProductionReadinessPage() {
                     className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3"
                   >
                     <div className="text-sm font-medium text-slate-100">
-                      {item.action} · {item.entityType}
+                      {item.action} - {item.entityType}
                     </div>
                     <div className="mt-1 text-xs text-slate-400">
-                      {item.actorEmail} ({item.actorRole}) · {new Date(item.createdAt).toLocaleString()}
+                      {item.actorEmail} ({item.actorRole}) - {new Date(item.createdAt).toLocaleString()}
                     </div>
                     <div className="mt-1 text-xs text-slate-500">
                       {item.category ?? "uncategorized"}
@@ -1435,6 +1585,7 @@ export default function ProductionReadinessPage() {
                 `Auth failure and rate-limit bursts help separate confusion from abuse or runtime instability.`,
                 `Webhook and upload failure counts make operational regressions visible before users report them manually.`,
                 `Shared memory summaries preserve bounded carryover context and prior operator actions without turning the page into an infinite history feed.`,
+                `Traceability and accountability summaries preserve rationale, grouped actions, and disagreement visibility without turning the page into an operator ranking surface.`,
                 "The assistance surfaces above use only the visible `/status` snapshot, the timestamp shown on the page, and explicit threshold wording rendered in source reasoning blocks.",
               ]}
               tone="cyan"

@@ -1,7 +1,7 @@
 # Operational Metrics Baseline
 
 Last updated: `2026-05-20`  
-Scope: `EXEC-40`
+Scope: `EXEC-41`
 
 ## Purpose
 
@@ -133,6 +133,8 @@ Use these KPIs to answer:
 8. is the assistance layer reducing synthesis time without creating authority confusion
 9. is the response-preparation layer reducing time-to-next-action without introducing hidden escalation or approval logic
 10. is the shared operational memory layer reducing repeated decision reconstruction without hiding stale or conflicting state
+11. is the coordination-governance layer making ownership, accountability, and disagreement visible without creating authority theater
+12. is the decision-traceability layer preserving rationale and grouped operator history without hiding the need for raw evidence
 
 ## Ownership
 
@@ -148,6 +150,7 @@ Use these KPIs to answer:
 | assistance quality and wording safety | Technical Ops + functional queue owner |
 | actionability and response-prep quality | Technical Ops + functional queue owner |
 | shared memory and decision-support quality | Technical Ops + functional queue owner |
+| coordination, accountability, and consensus visibility quality | Technical Ops + functional queue owner |
 
 ## Interpretation Notes
 
@@ -160,6 +163,8 @@ Use these KPIs to answer:
 7. better assistance is only meaningful if operators remain the explicit authority for moderation, billing, escalation, severity, rollback, and rollout state
 8. better actionability is only meaningful if operators can act faster because preparation improved, not because authority quietly moved to the system
 9. better shared memory is only meaningful if a later operator can recover the same unresolved context faster without inheriting silent authority from the system
+10. better coordination visibility is only meaningful if operators can see ownership, disagreement, and accountability more clearly without the system choosing winners
+11. better decision traceability is only meaningful if rationale and grouped operator action history shorten reconstruction without replacing raw evidence or human approval
 
 ## EXEC-39 Response Acceleration Notes
 
@@ -190,3 +195,16 @@ These KPI families must now also support:
 ## Final Assessment
 
 OpenStaff now has an explicit operational metrics baseline, a first rollout-intelligence implementation, an efficiency layer, a latency layer, a command-surface layer, an assistance layer, a response-preparation layer, and a shared-memory layer for deciding whether operators can orient, prepare, act, escalate, remember, and hand off from shared context without weakening control.
+
+## EXEC-41 Coordination Notes
+
+These KPI families must now also support:
+
+1. coordination-governance usefulness
+2. decision-traceability usefulness
+3. accountability visibility usefulness
+4. unresolved-consensus visibility usefulness
+5. blocked-decision visibility usefulness
+6. rationale-summary usefulness
+7. grouped operator-action usefulness
+8. conflict-reconstruction reduction

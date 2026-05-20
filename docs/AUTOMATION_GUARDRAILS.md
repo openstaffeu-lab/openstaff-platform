@@ -1,7 +1,7 @@
 # Automation Guardrails
 
 Last updated: `2026-05-20`  
-Scope: `EXEC-40`
+Scope: `EXEC-41`
 
 ## Purpose
 
@@ -22,6 +22,8 @@ This policy defines what OpenStaff may automate safely, what must remain human-r
 11. response-preparation layers must keep blocked, stale, unresolved, and overload cues visible instead of burying them in hidden routing logic
 12. shared operational memory may preserve prior context, but it may not convert prior context into automatic decision authority
 13. decision-support layers must keep recurring issue summaries, unresolved state, and carryover cues timestamped and source-linked
+14. coordination governance may clarify ownership, disagreement, and accountability, but it may not assign authority automatically
+15. decision traceability may preserve rationale and consensus state, but it may not resolve conflict or choose the correct operator
 
 ## Allowed Assistance Layer
 
@@ -61,6 +63,7 @@ The assistance layer may not:
 13. stale-state indicators, grouped state summaries, and attention-routing cues that remain source-linked and advisory-only
 14. grouped next-action summaries, queue acceleration hints, escalation packets, and response-preparation prompts that remain visibly advisory
 15. shared operational memory summaries, escalation continuity packets, recurring issue summaries, repeated-failure summaries, and operator handoff summaries that remain visibly advisory
+16. coordination-governance summaries, decision-traceability summaries, rationale summaries, accountability visibility, unresolved-consensus summaries, and grouped operator-action summaries that remain visibly advisory
 
 ## What Must Remain Human-Reviewed
 
@@ -80,6 +83,8 @@ The assistance layer may not:
 14. deciding whether a stale or conflicting summary still matches current live operator context
 15. accepting or rejecting suggested next-action preparation and escalation-packet summaries
 16. accepting or rejecting shared-memory carryover summaries and recurring-pattern interpretations
+17. accepting or rejecting decision-traceability summaries, accountability summaries, and grouped operator-action interpretations
+18. resolving conflicting interpretations, tie-break review, and consensus disputes
 
 ## What Requires Escalation
 
@@ -92,6 +97,7 @@ The assistance layer may not:
 7. any compressed intelligence summary that conflicts materially with specialist queue surfaces or current handoff notes
 8. any response-preparation summary that suggests a blocked, stale, or unresolved state without enough visible source support
 9. any shared-memory or decision-support summary that conflicts materially with live queue state, live owner context, or current readiness warnings
+10. any coordination, accountability, or consensus summary that conflicts materially with current owner reality, active specialist review, or release or rollback governance
 
 ## What Requires Manual Approval Forever
 
@@ -119,6 +125,8 @@ The assistance layer may not:
 7. operational compression may route attention, but it may not route authority
 8. response acceleration may prepare action, but it may not execute action
 9. shared operational memory may preserve decision context, but it may not make the decision
+10. coordination governance may surface ownership and disagreement, but it may not resolve disagreement or assign authority automatically
+11. decision traceability may preserve rationale and action history, but it may not override a human decision
 
 ## Final Assessment
 

@@ -2,6 +2,79 @@
 
 Last updated: 2026-05-20
 
+## EXEC-41 Coordination Governance & Decision Traceability Layer
+
+Verdict: `PASS - the first coordination-governance and decision-traceability layer is now live on the admin readiness surface, ownership, rationale, accountability, and disagreement state are preserved in one bounded operator view, and coordination consistency is improved without transferring moderation, billing, escalation, rollback, severity, or production authority away from humans`
+
+### EXEC-41 Coordination Governance Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| decision traceability model documented | ✅ | `docs/DECISION_TRACEABILITY_MODEL.md` now defines operational decision lifecycle, moderation/escalation/billing/rollout/incident/rollback traceability, rationale persistence, timestamp ownership, operator attribution, unresolved disagreement handling, stale-decision handling, and audit retention |
+| coordination governance baseline documented | ✅ | `docs/COORDINATION_GOVERNANCE_BASELINE.md` now defines shared ownership rules, primary vs secondary responsibility, escalation ownership transfer, review ownership, queue ownership, handoff governance, coordination conflict handling, authority hierarchy, emergency override rules, degraded-mode coordination, rollback coordination, and release coordination |
+| consensus visibility review documented | ✅ | `docs/CONSENSUS_VISIBILITY_REVIEW.md` now defines operator agreement, unresolved-review, conflicting-review, stale-consensus, pending-escalation, and blocked-decision indicators as advisory, explainable, timestamped, and operator-attributed |
+| operational accountability baseline documented | ✅ | `docs/OPERATIONAL_ACCOUNTABILITY_BASELINE.md` now defines operator, escalation, moderation, billing, incident, release, and rollback accountability plus explicit ownership for decisions, verification, escalation, rollback approval, and degraded-mode declarations |
+| conflict resolution baseline documented | ✅ | `docs/CONFLICT_RESOLUTION_BASELINE.md` now defines conflicting moderation, escalation, rollout, incident, and billing-review outcomes plus tie-break governance, escalation path, freeze conditions, rollback conditions, and review escalation without autonomous resolution |
+| live coordination-governance layer implemented | ✅ | `apps/admin/app/admin/production-readiness/page.tsx` now renders decision traceability summaries, accountability visibility, escalation ownership visibility, unresolved-consensus visibility, blocked-decision visibility, coordination continuity summaries, rationale summaries, and grouped operator actions |
+| authority boundary remained explicit live | ✅ | the live page keeps coordination, traceability, consensus, and accountability summaries strictly advisory-only and still prohibits automatic authority transfer, automatic conflict resolution, operator ranking, automatic escalation, automatic rollback, automatic moderation decisions, autonomous production mutation, and operator override |
+| latest ready admin revision verified | ✅ | `gcloud run services describe openstaff-admin --region europe-west1` now reports `latestReadyRevisionName = openstaff-admin-00016-kpj` with `100%` traffic on the same revision |
+| admin deploy promoted successfully | ✅ | `gcloud builds submit --config apps/admin/cloudbuild.admin.yaml --service-account=projects/openstaff-platform/serviceAccounts/openstaff-build@openstaff-platform.iam.gserviceaccount.com .` succeeded as build `65c202bc-a62e-4e3a-b2f4-d3a861030355` |
+| browser proof for coordination governance completed | ✅ | authenticated Chrome, Edge, and mobile Chrome validation on `https://backoffice.openstaff.eu/admin/production-readiness` confirmed the EXEC-41 headings, rationale visibility, grouped operator actions, accountability visibility, timestamps, and clean console/request health |
+| moderation/admin smoke remained healthy | ✅ | authenticated smoke still confirmed `GET /admin/public-posts = 200` and `GET /admin/public-post-media = 200` after the EXEC-41 rollout |
+| proof trail captured | ✅ | `docs/proof/exec41/README.md` now captures the coordination governance, decision traceability, consensus visibility, accountability, conflict resolution, runtime safety, browser proof, smoke, validation, deploy, and cleanup baseline |
+
+### EXEC-41 GO / NO-GO Matrix
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| GO - operators now get coordination and traceability context on the same surface as orientation, action prep, and shared memory | ✅ | the live readiness page now preserves ownership visibility, rationale summaries, unresolved-consensus visibility, blocked-decision visibility, and grouped operator actions before deeper specialist review |
+| GO - accountability is clearer without turning into operator scoring | ✅ | accountability summaries now preserve who acted, what remains human-owned, and what still requires verification while explicitly avoiding ranking or scoring |
+| GO - disagreement can stay visible without silent conflict resolution | ✅ | unresolved-consensus and blocked-decision summaries now surface coordination ambiguity while keeping tie-break and final resolution human-owned |
+| GO - escalation ownership is clearer without automatic escalation | ✅ | escalation ownership visibility now keeps transfer pressure, dependency pressure, and owner continuity visible without routing or escalating automatically |
+| GO - browser validation now covers the new governance and traceability layer | ✅ | Chrome, Edge, and mobile Chrome all rendered the new EXEC-41 headings with no console errors, runtime errors, failed requests, or mobile overflow |
+| GO - runtime safety remained intact | ✅ | no backend authority change, no hidden operator ranking, no automatic conflict resolution, no automatic rollback, no automatic moderation decision, and no autonomous production mutation were introduced |
+| NO-GO - traceability or consensus visibility treated as authority | ✅ prevented | the EXEC-41 layer keeps timestamps, attribution, freshness cues, disagreement visibility, and explicit advisory wording visible instead of silently converting summaries into truth |
+| NO-GO - coordination governance used as silent authority transfer | ✅ prevented | the EXEC-41 layer preserves rationale, ownership, accountability, and grouped actions, but it does not choose owners, resolve disagreements, escalate automatically, rollback automatically, or override operators |
+
+### EXEC-41 Validation Proof
+
+- `docs/proof/exec41/README.md` ✅ captures the coordination governance summary, decision traceability summary, consensus visibility summary, accountability summary, conflict-resolution summary, runtime safety summary, browser validation summary, production smoke summary, validation summary, deploy summary, and cleanup proof
+- browser proof ✅: authenticated Chrome, Edge, and mobile Chrome validation confirmed `Decision traceability summaries`, `Accountability visibility`, `Escalation ownership visibility`, `Unresolved-consensus visibility`, `Blocked-decision visibility`, `Coordination continuity summaries`, `Rationale summaries`, and `Grouped operator actions`
+- browser timing proof ✅: Chrome `domContentLoadedMs = 257`, `loadEventMs = 361`; Edge `domContentLoadedMs = 370`, `loadEventMs = 618`; mobile Chrome `domContentLoadedMs = 280`, `loadEventMs = 341`
+- deploy proof ✅: admin build `65c202bc-a62e-4e3a-b2f4-d3a861030355` promoted `openstaff-admin-00016-kpj`
+- latest admin revision proof ✅: `openstaff-admin-00016-kpj`
+- production smoke proof ✅: `/health`, `/status`, the authenticated readiness page, and protected admin/moderation surfaces remained healthy during proof
+- local/build validation proof ✅: `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build` all passed on `2026-05-20`
+- ops automation proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-production-ops-check.ps1` and `powershell -ExecutionPolicy Bypass -File scripts/release/exec-26-failure-simulations.ps1` still passed after the EXEC-41 updates
+- release governance proof ✅: `powershell -ExecutionPolicy Bypass -File scripts/release/exec-13-release-check.ps1` now requires the EXEC-41 coordination-governance and traceability docs
+- cleanup proof ✅: promotion execution `openstaff-api-exec41-promote-superadmin-5st6p` succeeded, demotion execution `openstaff-api-exec41-demote-superadmin-bs8rt` succeeded, the proof operator returned to `role = PROFESSIONAL`, and the one-off jobs were deleted after proof
+
+### EXEC-41 Accepted Coordination Limitations
+
+1. billing remains `manual_only`
+2. `publicUpgradeFlow = request_upgrade`
+3. `operatorReviewRequired = true`
+4. `emailDelivery = not_configured`
+5. `smsDelivery = not_required`
+6. the coordination-governance layer still depends on the existing `/status` contract and recent operator-action visibility rather than a dedicated decision journal or coordination service
+7. better traceability and consensus visibility still depend on operator note quality, current source freshness, and human judgment once a specialist queue is opened
+
+### EXEC-41 Launch Decision
+
+EXEC-41 closes the first coordination-governance and decision-traceability layer honestly.
+
+As of `2026-05-20`, OpenStaff now has:
+
+1. a decision traceability model
+2. a coordination governance baseline
+3. a consensus visibility baseline
+4. an operational accountability baseline
+5. a conflict resolution baseline
+6. a live coordination-governance and traceability layer on the authenticated readiness page
+7. browser proof across Chrome, Edge, and mobile Chrome for the new bounded accountability, rationale, and disagreement-visibility layer
+
+EXEC-41 is `PASS`.
+
 ## EXEC-40 Shared Operational Memory & Decision Support Layer
 
 Verdict: `PASS - the first shared operational memory layer is now live on the admin readiness surface, bounded decision-support and escalation continuity now preserve unresolved context across operator reviews and shifts, and repeated decision reconstruction is reduced without transferring moderation, billing, escalation, severity, rollback, or production authority away from humans`

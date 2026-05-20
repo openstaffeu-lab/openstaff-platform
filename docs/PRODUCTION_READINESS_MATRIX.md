@@ -1,7 +1,7 @@
 # Production Readiness Matrix
 
 Last updated: `2026-05-20`  
-Scope: `EXEC-40`
+Scope: `EXEC-41`
 
 ## Matrix
 
@@ -112,6 +112,11 @@ Scope: `EXEC-40`
 | escalation continuity baseline | documented and implemented at first level | escalation carryover packets, unresolved-state persistence, dependency continuity, ownership continuity, and stalled-escalation visibility now have a shared baseline | [ESCALATION_CONTINUITY_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/ESCALATION_CONTINUITY_BASELINE.md:1) |
 | operational memory compression | documented and implemented at first level | compressed operational timelines, recurring issue summaries, repeated failure grouping, repeated queue patterns, and recurring rollout friction now have a bounded non-authoritative baseline | [OPERATIONAL_MEMORY_COMPRESSION.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_MEMORY_COMPRESSION.md:1) |
 | decision-support signals | documented and implemented at first level | repeated-failure, recurring escalation, repeated-review, unresolved dependency, overload carryover, stalled-resolution, and degraded-response signals are now explicitly governed | [DECISION_SUPPORT_SIGNALS.md](/C:/Users/admin/Desktop/openstaff-platform/docs/DECISION_SUPPORT_SIGNALS.md:1) |
+| decision traceability model | documented and implemented at first level | decision lifecycle, rationale persistence, timestamp ownership, operator attribution, stale-decision handling, and unresolved disagreement handling now have a governed baseline | [DECISION_TRACEABILITY_MODEL.md](/C:/Users/admin/Desktop/openstaff-platform/docs/DECISION_TRACEABILITY_MODEL.md:1) |
+| coordination governance baseline | documented and implemented at first level | shared ownership, primary vs secondary responsibility, ownership transfer, handoff governance, degraded-mode coordination, rollback coordination, and conflict handling are now explicitly governed | [COORDINATION_GOVERNANCE_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/COORDINATION_GOVERNANCE_BASELINE.md:1) |
+| consensus visibility review | documented and implemented at first level | agreement, unresolved-review, conflicting-review, stale-consensus, pending-escalation, and blocked-decision indicators now have an advisory and explainable baseline | [CONSENSUS_VISIBILITY_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/CONSENSUS_VISIBILITY_REVIEW.md:1) |
+| operational accountability baseline | documented and implemented at first level | accountability chains, verification ownership, escalation ownership, rollback approval ownership, and degraded-mode declaration ownership are now explicitly governed | [OPERATIONAL_ACCOUNTABILITY_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATIONAL_ACCOUNTABILITY_BASELINE.md:1) |
+| conflict resolution baseline | documented and implemented at first level | conflicting moderation, escalation, rollout, incident, and billing-review interpretations now have tie-break, freeze, rollback-review, and escalation-path governance without autonomous resolution | [CONFLICT_RESOLUTION_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/CONFLICT_RESOLUTION_BASELINE.md:1) |
 | IAM least privilege | stable and more durable | runtime SA stayed constrained; build/deploy identity remains separate | EXEC-25 identity split remains active |
 | deploy pipeline resilience | stable | deploy path no longer depends on broad runtime IAM | dedicated build SA remains baseline |
 | engineering quality baseline | documented and enforceable | PASS now requires builds, release checks, proof, and rollback expectations rather than narrative optimism | [RELEASE_LIFECYCLE_POLICY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELEASE_LIFECYCLE_POLICY.md:1) |
@@ -119,7 +124,7 @@ Scope: `EXEC-40`
 
 ## Governance Verdict
 
-`EXEC-39 PASS`
+`EXEC-41 PASS`
 
 The production baseline is now suitable for repeatable ongoing operations and controlled real-user onboarding because:
 
@@ -141,6 +146,7 @@ The production baseline is now suitable for repeatable ongoing operations and co
 16. a first operational compression layer now reduces repeated reasoning and local page fragmentation through grouped state, freshness, and attention-routing summaries without transferring operational authority
 17. a first response-acceleration layer now reduces action-preparation friction through queue acceleration, escalation-readiness, blocked-state visibility, stale-action visibility, and grouped next-action summaries without transferring authority
 18. a first shared operational memory layer now reduces repeated decision reconstruction and escalation rediscovery through bounded carryover, recurring issue summaries, repeated-failure summaries, and operator handoff summaries without transferring authority
+19. a first coordination-governance and decision-traceability layer now preserves rationale, accountability, disagreement visibility, ownership continuity, and grouped operator-action history without transferring authority
 
 ## Accepted Remaining Limitations
 

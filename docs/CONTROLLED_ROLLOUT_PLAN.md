@@ -66,6 +66,11 @@ This plan must be used together with:
 - `docs/ESCALATION_CONTINUITY_BASELINE.md`
 - `docs/OPERATIONAL_MEMORY_COMPRESSION.md`
 - `docs/DECISION_SUPPORT_SIGNALS.md`
+- `docs/DECISION_TRACEABILITY_MODEL.md`
+- `docs/COORDINATION_GOVERNANCE_BASELINE.md`
+- `docs/CONSENSUS_VISIBILITY_REVIEW.md`
+- `docs/OPERATIONAL_ACCOUNTABILITY_BASELINE.md`
+- `docs/CONFLICT_RESOLUTION_BASELINE.md`
 
 ## Expansion Bands
 
@@ -110,9 +115,11 @@ Operator responsibilities:
 - use the compressed operator orientation layer as the first review surface before opening deeper queue, digest, or correlation sections
 - use the response-acceleration layer to prepare the next queue, escalation, or rollout review before opening specialist tools
 - use the shared operational memory layer to recover recent decisions, unresolved carryover, and handoff context before rebuilding the same reasoning from scratch
+- use the coordination-governance and decision-traceability layer to confirm who owns the current review, what rationale is visible, and whether disagreement or blocked consensus remains unresolved
 - treat grouped operational state as orientation support only and resolve conflicts against source metrics and specialist queue surfaces
 - treat grouped next-action summaries as preparation support only and confirm them against live owner context before acting
 - treat shared operational memory and decision-support summaries as continuity support only and confirm them against fresh source evidence before making a human decision
+- treat accountability, rationale, and unresolved-consensus summaries as coordination support only and confirm them against active human ownership before acting
 - clear moderation and upgrade queues within the agreed SLA
 - escalate runtime, billing, or security anomalies immediately
 - leave handoff-ready notes another operator can act on safely

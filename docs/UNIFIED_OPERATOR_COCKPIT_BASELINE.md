@@ -1,7 +1,7 @@
 # Unified Operator Cockpit Baseline
 
 Last updated: `2026-05-20`  
-Scope: `EXEC-40`
+Scope: `EXEC-41`
 
 ## Purpose
 
@@ -17,7 +17,7 @@ OpenStaff already has:
 4. incident and alert governance
 5. handoff and continuity rules
 
-The remaining gap is that these truths still live across fragmented surfaces. EXEC-38 closed the first part of that gap by introducing a compressed orientation layer inside the live readiness page. EXEC-39 closed the next part by adding response-preparation guidance on the same surface. EXEC-40 closes the next part by adding shared operational memory and bounded decision-support on the same surface. The cockpit baseline is therefore no longer only a target model; it now also includes a first implemented intelligence slice, a first implemented actionability slice, and a first implemented continuity slice.
+The remaining gap is that these truths still live across fragmented surfaces. EXEC-38 closed the first part of that gap by introducing a compressed orientation layer inside the live readiness page. EXEC-39 closed the next part by adding response-preparation guidance on the same surface. EXEC-40 closed the next part by adding shared operational memory and bounded decision-support on the same surface. EXEC-41 closes the next part by adding coordination governance, decision traceability, consensus visibility, and accountability visibility on the same surface. The cockpit baseline is therefore no longer only a target model; it now also includes a first implemented intelligence slice, a first implemented actionability slice, a first implemented continuity slice, and a first implemented coordination-governance slice.
 
 ## Target Cockpit Sections
 
@@ -215,4 +215,4 @@ The first baseline does not require a single implemented UI yet. It requires tha
 
 ## Final Assessment
 
-EXEC-34, EXEC-38, EXEC-39, and EXEC-40 together define the current unified operator cockpit baseline. The most important change is not cosmetic centralization. It is giving every operator the same operational picture, priority ordering, freshness state, coordination state, carryover state, and next-action preparation fast enough to reduce re-triage, repeated decision reconstruction, and response friction without weakening review, trust, or rollback discipline.
+EXEC-34, EXEC-38, EXEC-39, EXEC-40, and EXEC-41 together define the current unified operator cockpit baseline. The most important change is not cosmetic centralization. It is giving every operator the same operational picture, priority ordering, freshness state, coordination state, carryover state, ownership visibility, disagreement visibility, and next-action preparation fast enough to reduce re-triage, repeated decision reconstruction, and response friction without weakening review, trust, rollback discipline, or operator accountability.
