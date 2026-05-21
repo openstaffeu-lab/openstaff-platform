@@ -58,7 +58,7 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
 
           <nav className="space-y-2">
             {menu.map((item) => (
-              <Link key={item.name} href={item.path}>
+              <Link key={item.name} href={item.path} prefetch={false}>
                 <div className="cursor-pointer rounded-xl px-4 py-3 text-sm text-slate-200 transition hover:bg-slate-800 hover:text-white">
                   {item.name}
                 </div>

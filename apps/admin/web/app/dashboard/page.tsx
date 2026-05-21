@@ -153,7 +153,7 @@ function DashboardCard({
     <div className="rounded-[1.6rem] border border-slate-200 bg-slate-50 p-5">
       <div className="text-lg font-semibold text-brand-charcoal">{title}</div>
       <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
-      <Link href={href} className="mt-5 inline-flex font-semibold text-brand-navy">
+      <Link href={href} prefetch={false} className="mt-5 inline-flex font-semibold text-brand-navy">
         {cta}
       </Link>
     </div>

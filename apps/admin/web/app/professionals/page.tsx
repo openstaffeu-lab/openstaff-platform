@@ -37,6 +37,7 @@ export default function ProfessionalsPage() {
         </div>
         <Link
           href="/publish"
+          prefetch={false}
           style={{ color: "#00C060", fontWeight: 700, textDecoration: "none", alignSelf: "center" }}
         >
           Publish your listing

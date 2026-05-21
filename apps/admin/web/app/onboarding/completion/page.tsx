@@ -173,6 +173,7 @@ export default function OnboardingCompletionPage() {
             </button>
             <Link
               href="/profile"
+              prefetch={false}
               style={{
                 ...secondaryButton,
                 textDecoration: "none",

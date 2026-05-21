@@ -57,28 +57,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const accessToken = getAccessToken();
+    const refreshToken = getRefreshToken();
 
-    if (!accessToken) {
+    if (!accessToken && !refreshToken) {
       setLoading(false);
       return;
     }
 
-    setToken(accessToken);
+    let cancelled = false;
 
-    fetchCurrentAdmin(accessToken)
-      .then((currentUser) => {
-        setUser(currentUser);
-        setIsAdmin(currentUser.role === "ADMIN" || currentUser.role === "SUPERADMIN");
-      })
-      .catch(() => {
-        clearAccessToken();
-        setUser(null);
-        setToken(null);
-        setIsAdmin(false);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    async function bootstrapSession() {
+      try {
+        if (accessToken) {
+          setToken(accessToken);
+
+          const currentUser = await fetchCurrentAdmin(accessToken);
+          if (!cancelled) {
+            setUser(currentUser);
+            setIsAdmin(currentUser.role === "ADMIN" || currentUser.role === "SUPERADMIN");
+          }
+          return;
+        }
+
+        if (!refreshToken) {
+          throw new Error("No stored refresh token available.");
+        }
+
+        const refreshed = await refreshAdminToken(refreshToken);
+        if (cancelled) {
+          return;
+        }
+
+        if (refreshed.user.role !== "ADMIN" && refreshed.user.role !== "SUPERADMIN") {
+          throw new Error("This account does not have backoffice access.");
+        }
+
+        setAccessToken(refreshed.accessToken);
+        setRefreshToken(refreshed.refreshToken);
+        setToken(refreshed.accessToken);
+        setUser(refreshed.user);
+        setIsAdmin(true);
+      } catch {
+        if (!cancelled) {
+          clearAccessToken();
+          setUser(null);
+          setToken(null);
+          setIsAdmin(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void bootstrapSession();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const value = useMemo<AuthContextType>(

@@ -194,6 +194,7 @@ export default function JobsPageClient() {
             </div>
             <Link
               href="/publish"
+              prefetch={false}
               style={{ alignSelf: "center", color: "#00C060", fontWeight: 700 }}
             >
               Publish your listing

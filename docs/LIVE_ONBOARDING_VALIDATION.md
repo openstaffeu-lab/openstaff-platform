@@ -1,6 +1,6 @@
 # Live Onboarding Validation
 
-Last updated: 2026-05-20
+Last updated: 2026-05-21
 
 ## Scope
 
@@ -30,36 +30,38 @@ This baseline defines the production proof expected before onboarding can be cal
 - admin moderation routes remain protected and healthy
 - approved public visibility remains distinct from pending visibility
 
-## EXEC-43 Reality
+## EXEC-44 Reality
 
-As of 2026-05-20, the codebase is closer to production closure because:
+As of 2026-05-21, the codebase is closer to production closure because:
 
 - password reset notifications can now target real transactional email providers when credentials are configured
 - company lookup can now use a configured Romanian provider and official VIES VAT validation
 - admin onboarding now exposes first-class RELU AI review visibility
-- fresh production promotions now exist on `openstaff-api-00011-ggv`, `openstaff-web-00011-ngt`, and `openstaff-admin-00017-cc4`
-- Chrome desktop company registration was rerun clean after the production CORS fix for `X-Timezone`
+- fresh production promotions now exist on `openstaff-api-00011-ggv`, `openstaff-web-00013-7p6`, and `openstaff-admin-00019-88r`
+- browser reruns are now clean across company onboarding, professional RELU, mobile lookup, admin RELU, homepage, jobs, professionals, and public profile
+- approved homepage/jobs/professionals/public-profile visibility is now re-proven live on the EXEC-44 cohort
 
 The execution is still not fully closed live because:
 
 - no production email provider secret is configured yet
 - no Romanian company provider secret or URL is configured yet
-- Edge, mobile, and admin browser sessions still show residual failed requests
-- no fresh approval cycle proof yet confirms pending hidden, approved public visibility, rejected hidden, and homepage/search/public-profile visibility on the promoted revisions
+- live provider-backed reset delivery is still impossible because `/status` remains `emailDelivery = not_configured`
+- live Romanian provider-backed lookup is still impossible because the provider URL/API key is still absent in production
 
 ## Browser Evidence Snapshot
 
-- Chrome desktop company registration ✅: `domContentLoadedMs = 242`, `loadEventMs = 349`, `failedRequests = []`, `consoleErrors = []`, `pageErrors = []`
-- Edge desktop professional registration + RELU ✅ partial: `domContentLoadedMs = 286`, `loadEventMs = 361`, residual failed request `GET /onboarding/me`
-- Mobile Chrome company lookup ✅ partial: `domContentLoadedMs = 3000`, `loadEventMs = 3108`, no horizontal overflow, residual failed requests on `uniclass`, `countries`, `esco`, `profile`, `nace`, and one public-web RSC request
-- Chrome desktop admin onboarding RELU review ✅ partial: `domContentLoadedMs = 244`, `loadEventMs = 344`, RELU confidence and comparison visible, residual adjacent admin/stat requests still failing
+- Chrome desktop company onboarding clean: `httpStatus = 200`, `failedRequests = []`, `badResponses = []`, `consoleErrors = []`, `pageErrors = []`
+- Edge desktop professional onboarding + RELU clean: `httpStatus = 200`, `failedRequests = []`, `badResponses = []`, `consoleErrors = []`, `pageErrors = []`
+- Mobile Chrome company lookup clean: `httpStatus = 200`, `failedRequests = []`, `badResponses = []`, `consoleErrors = []`, `pageErrors = []`, no horizontal overflow
+- Chrome desktop admin onboarding RELU review clean: `httpStatus = 200`, `failedRequests = []`, `badResponses = []`, `consoleErrors = []`, `pageErrors = []`
+- Chrome desktop homepage/jobs/professionals/public-profile clean: all four public visibility routes now render the approved EXEC-44 cohort content with `failedRequests = []`, `badResponses = []`, `consoleErrors = []`, `pageErrors = []`
 
 ## Validation Verdict Rule
 
-`EXEC-43 PASS` is allowed only when:
+`EXEC-44 PASS` is allowed only when:
 
 1. live provider-backed reset email is received and completed successfully
-2. live company lookup returns real provider-backed data
+2. live Romanian company lookup returns real provider-backed data
 3. RELU AI admin visibility is proven on the deployed admin revision
 4. homepage/public visibility proof is captured after moderation approval
 5. browser reruns no longer show residual critical request failures

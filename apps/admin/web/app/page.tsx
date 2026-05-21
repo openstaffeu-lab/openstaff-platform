@@ -104,6 +104,7 @@ export default function HomePage() {
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <Link
               href="/jobs"
+              prefetch={false}
               style={{
                 background: "#00E87A",
                 color: "#12214F",
@@ -117,6 +118,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/register"
+              prefetch={false}
               style={{
                 background: "transparent",
                 color: "white",
@@ -139,6 +141,7 @@ export default function HomePage() {
             <Link
               key={category.key}
               href={`/jobs?category=${category.key}`}
+              prefetch={false}
               style={{
                 background: "white",
                 borderRadius: 16,
@@ -173,7 +176,7 @@ export default function HomePage() {
               Projects open for delivery
             </h2>
           </div>
-          <Link href="/jobs" style={{ color: "#12214F", fontWeight: 700, textDecoration: "none" }}>
+          <Link href="/jobs" prefetch={false} style={{ color: "#12214F", fontWeight: 700, textDecoration: "none" }}>
             View all projects
           </Link>
         </div>
@@ -222,6 +225,7 @@ export default function HomePage() {
             </div>
             <Link
               href="/professionals"
+              prefetch={false}
               style={{ color: "#12214F", fontWeight: 700, textDecoration: "none" }}
             >
               Browse all profiles

@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 import { getPublicIdentityProfile } from "@/lib/api";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
 export default async function PublicIdentityProfilePage({ params }: PageProps) {
-  const { slug } = params;
+  const { slug } = await params;
   const profile = await getPublicIdentityProfile(slug);
 
   return (

@@ -66,6 +66,7 @@ function FooterItem({
     <p>
       <Link
         href={link.href}
+        prefetch={false}
         className="text-sm text-[#F5F7FA] transition hover:text-[#00E676]"
       >
         {link.label}

@@ -97,7 +97,7 @@ export default function OnboardingWelcomePage() {
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <Link href="/" style={{ color: "#1B2A6B", fontWeight: 700, textDecoration: "none" }}>
+          <Link href="/" prefetch={false} style={{ color: "#1B2A6B", fontWeight: 700, textDecoration: "none" }}>
             Mai tarziu
           </Link>
           <button

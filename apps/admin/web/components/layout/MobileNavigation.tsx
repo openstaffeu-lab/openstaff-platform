@@ -22,6 +22,7 @@ export function MobileNavigation() {
             <Link
               key={item.label}
               href={item.href}
+              prefetch={false}
               className={`rounded-2xl px-3 py-3 text-center text-xs font-semibold ${
                 active
                   ? "bg-brand-navy text-white"

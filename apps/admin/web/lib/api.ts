@@ -813,6 +813,31 @@ export async function apiRequest<T>(
   return payload as T;
 }
 
+async function apiRequestWithRefresh<T>(
+  endpoint: string,
+  options: RequestOptions = {},
+): Promise<T> {
+  try {
+    return await apiRequest<T>(endpoint, {
+      ...options,
+      token: options.token ?? getAuthToken(),
+    });
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status !== 401) {
+      throw error;
+    }
+
+    const authResponse = await refreshAuthToken();
+    setStoredToken(authResponse.accessToken);
+    setStoredRefreshToken(authResponse.refreshToken);
+
+    return apiRequest<T>(endpoint, {
+      ...options,
+      token: authResponse.accessToken,
+    });
+  }
+}
+
 export async function apiRequestBlob(
   endpoint: string,
   options: Omit<RequestOptions, "body"> = {},
@@ -927,8 +952,8 @@ export async function createUpgradeRequest(
 }
 
 export async function getOnboardingMe(token?: string | null) {
-  return apiRequest<OnboardingMe>("/onboarding/me", {
-    token: token ?? getAuthToken(),
+  return apiRequestWithRefresh<OnboardingMe>("/onboarding/me", {
+    token,
   });
 }
 
@@ -956,10 +981,10 @@ export async function lookupCompanyProfile(input: {
 }
 
 export async function getOnboardingProgress(token?: string | null) {
-  return apiRequest<OnboardingSession & { onboardingCompletedAt: string | null }>(
+  return apiRequestWithRefresh<OnboardingSession & { onboardingCompletedAt: string | null }>(
     "/onboarding/progress",
     {
-      token: token ?? getAuthToken(),
+      token,
     },
   );
 }
@@ -968,10 +993,10 @@ export async function upsertIdentityProfile(
   input: UpsertIdentityProfileInput,
   token?: string | null,
 ) {
-  return apiRequest<OnboardingMe>("/onboarding/identity-profile", {
+  return apiRequestWithRefresh<OnboardingMe>("/onboarding/identity-profile", {
     method: "PUT",
     body: input,
-    token: token ?? getAuthToken(),
+    token,
   });
 }
 
@@ -979,41 +1004,42 @@ export async function upsertCompanyProfile(
   input: UpsertCompanyProfileInput,
   token?: string | null,
 ) {
-  return apiRequest<OnboardingMe>("/onboarding/company-profile", {
+  return apiRequestWithRefresh<OnboardingMe>("/onboarding/company-profile", {
     method: "PUT",
     body: input,
-    token: token ?? getAuthToken(),
+    token,
   });
 }
 
 export async function enrichProfileWithRelu(profileId: string, token?: string | null) {
-  return apiRequest(`/relu/profiles/${encodeURIComponent(profileId)}/enrich`, {
+  return apiRequestWithRefresh(`/relu/profiles/${encodeURIComponent(profileId)}/enrich`, {
     method: "POST",
-    token: token ?? getAuthToken(),
+    token,
   });
 }
 
 export async function classifyProfileWithRelu(profileId: string, token?: string | null) {
-  return apiRequest(`/relu/profiles/${encodeURIComponent(profileId)}/classify`, {
+  return apiRequestWithRefresh(`/relu/profiles/${encodeURIComponent(profileId)}/classify`, {
     method: "POST",
-    token: token ?? getAuthToken(),
+    token,
   });
 }
 
 export async function getReluProfileResults(profileId: string, token?: string | null) {
-  return apiRequest<ReluProfileResults>(`/relu/profiles/${encodeURIComponent(profileId)}/results`, {
-    token: token ?? getAuthToken(),
-  });
+  return apiRequestWithRefresh<ReluProfileResults>(
+    `/relu/profiles/${encodeURIComponent(profileId)}/results`,
+    { token },
+  );
 }
 
 export async function updateOnboardingStep(
   input: UpdateOnboardingStepInput,
   token?: string | null,
 ) {
-  return apiRequest<OnboardingMe>("/onboarding/steps", {
+  return apiRequestWithRefresh<OnboardingMe>("/onboarding/steps", {
     method: "PATCH",
     body: input,
-    token: token ?? getAuthToken(),
+    token,
   });
 }
 
@@ -1022,8 +1048,8 @@ export async function getPublicIdentityProfile(slug: string) {
 }
 
 export async function getVerificationMe(token?: string | null) {
-  return apiRequest<VerificationMe>("/verification/me", {
-    token: token ?? getAuthToken(),
+  return apiRequestWithRefresh<VerificationMe>("/verification/me", {
+    token,
   });
 }
 
@@ -1031,13 +1057,13 @@ export async function submitIdentityVerificationCase(
   input: SubmitVerificationCaseInput,
   token?: string | null,
 ) {
-  return apiRequest<{
+  return apiRequestWithRefresh<{
     identityProfile: VerificationMe["identityProfile"];
     case: VerificationCaseSummary;
   }>("/verification/identity/submit", {
     method: "POST",
     body: input,
-    token: token ?? getAuthToken(),
+    token,
   });
 }
 
@@ -1045,13 +1071,13 @@ export async function submitCompanyVerificationCase(
   input: SubmitVerificationCaseInput,
   token?: string | null,
 ) {
-  return apiRequest<{
+  return apiRequestWithRefresh<{
     companyProfile: VerificationMe["companyProfile"];
     case: VerificationCaseSummary;
   }>("/verification/company/submit", {
     method: "POST",
     body: input,
-    token: token ?? getAuthToken(),
+    token,
   });
 }
 

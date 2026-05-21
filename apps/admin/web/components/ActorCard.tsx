@@ -99,6 +99,7 @@ export default function ActorCard({
 
       <Link
         href={slug ? `/profiles/${slug}` : `/professionals/${id}`}
+        prefetch={false}
         style={{
           display: "block",
           textAlign: "center",

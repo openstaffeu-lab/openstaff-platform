@@ -1,6 +1,31 @@
 ﻿# OpenStaff Platform Status
 
-Last updated: 2026-05-20
+Last updated: 2026-05-21
+
+## EXEC-44 Browser Stability, Public Visibility Proof & Session Bootstrap Closure
+
+Verdict: `IN PROGRESS - live browser stability, session bootstrap resilience, approved homepage/jobs/professionals/public-profile visibility, and clean production smoke are now closed on fresh web/admin revisions, but production email delivery credentials and Romanian provider configuration are still absent, so provider-backed password reset proof and Romanian registry proof remain open`
+
+### EXEC-44 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| expired-session bootstrap resilience improved | ✅ | `apps/admin/web/context/AuthContext.tsx` and `apps/admin/context/AuthContext.tsx` now recover from refresh tokens during initial session bootstrap instead of dropping the user immediately on the first expired access token |
+| public prefetch request-noise reduced | ✅ | `apps/admin/web/components/JobCard.tsx`, `ActorCard.tsx`, homepage links, professionals links, and jobs CTA links now disable Next prefetch on proof-sensitive public routes |
+| public profile route regression fixed | ✅ | `apps/admin/web/app/profiles/[slug]/page.tsx` now awaits `params` correctly for Next 16, closing the live `500` on approved public profile pages |
+| local validation remained healthy | ✅ | `apps/admin/web -> npm.cmd run build` and `apps/admin -> npm.cmd run build` both passed on `2026-05-21` after the EXEC-44 fixes |
+| fresh production promotion completed | ✅ | Cloud Build `cc41fca7-399a-4063-a5f2-2024c0354f1b` promoted `openstaff-web-00013-7p6`, and `c5ad3ccc-c30b-45e5-a321-232d84c15dc7` promoted `openstaff-admin-00019-88r` |
+| browser proof rerun clean | ✅ | fresh Chrome desktop, Edge desktop, mobile Chrome, admin onboarding, homepage, jobs, professionals, and public-profile proof all returned `failedRequests = []`, `badResponses = []`, `consoleErrors = []`, and `pageErrors = []` on the promoted revisions |
+| approved homepage/search/public-profile proof completed | ✅ | the EXEC-44 cohort now proves pending hidden, approved project visible on homepage/jobs/detail, approved professional visible on professionals/profile, and rejected content still hidden |
+| production smoke remained healthy | ✅ | `/health = 200`, `/status = 200`, `exec-26-production-ops-check.ps1 = PASS`, and `exec-26-failure-simulations.ps1 = PASS` on `2026-05-21` |
+| live operator cleanup completed | ✅ | the temporary EXEC-44 proof operator was demoted back to `PROFESSIONAL`, the one-off Cloud Run job was deleted, and authenticated proof cleanup was revalidated live |
+| provider-backed password reset proof | ❌ blocker | production Secret Manager and live Cloud Run runtime still do not contain any transactional email provider credential, so `/status` still reports `emailDelivery = not_configured` |
+| Romanian provider-backed company proof | ❌ blocker | production still lacks Romanian provider URL/API key configuration, so only VIES invalid-path and trusted EU baseline proof are currently live |
+
+### EXEC-44 Remaining Blockers
+
+1. `emailDelivery = not_configured` remains true in production, so provider-backed reset delivery, received-email proof, expired-link proof, and reused-link rejection are still not closed live
+2. no Romanian provider URL/API key is configured in production for deep company lookup, so the Romanian registry path is still code-ready but not provider-proven live
 
 ## EXEC-43 Live Onboarding Promotion, Provider Integrations, RELU AI Moderation Visibility & Production Validation Closure
 

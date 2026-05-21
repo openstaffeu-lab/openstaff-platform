@@ -95,6 +95,7 @@ export default function JobCard({
 
       <Link
         href={`/jobs/${id}`}
+        prefetch={false}
         style={{
           display: "block",
           textAlign: "center",

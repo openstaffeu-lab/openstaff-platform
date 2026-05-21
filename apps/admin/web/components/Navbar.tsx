@@ -26,7 +26,7 @@ export function Navbar() {
       }}
     >
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4">
-        <Link href="/" className="shrink-0">
+        <Link href="/" prefetch={false} className="shrink-0">
           <OpenStaffLogo size="sm" variant="full" dark />
         </Link>
 
@@ -52,6 +52,7 @@ export function Navbar() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className="rounded-full px-4 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/10 hover:text-white"
             >
               {item.label}
@@ -62,6 +63,7 @@ export function Navbar() {
         <div className="hidden items-center gap-2 md:flex">
           <Link
             href="/login"
+            prefetch={false}
             className="rounded-full border px-4 py-2 text-sm font-bold"
             style={{ borderColor: brand.green, color: brand.green }}
           >
@@ -69,6 +71,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/register"
+            prefetch={false}
             className="rounded-full px-4 py-2 text-sm font-black"
             style={{ backgroundColor: brand.green, color: brand.navy }}
           >
@@ -97,6 +100,7 @@ export function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className="rounded-2xl bg-white/8 px-4 py-3 text-sm font-semibold text-white"
               >
                 {item.label}
@@ -104,6 +108,7 @@ export function Navbar() {
             ))}
             <Link
               href="/login"
+              prefetch={false}
               className="rounded-2xl border px-4 py-3 text-sm font-bold"
               style={{ borderColor: brand.green, color: brand.green }}
             >
@@ -111,6 +116,7 @@ export function Navbar() {
             </Link>
             <Link
               href="/register"
+              prefetch={false}
               className="rounded-2xl px-4 py-3 text-sm font-black"
               style={{ backgroundColor: brand.green, color: brand.navy }}
             >

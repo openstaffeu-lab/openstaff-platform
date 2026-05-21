@@ -23,7 +23,7 @@ export function Logo({
     theme === "dark" ? "text-white/70" : "text-[#1A237E]/70";
 
   return (
-    <Link href={href} className={`inline-flex items-center gap-3 ${className}`}>
+    <Link href={href} prefetch={false} className={`inline-flex items-center gap-3 ${className}`}>
       <div
         className={`flex items-center gap-3 ${
           compact ? "rounded-2xl" : "rounded-3xl"

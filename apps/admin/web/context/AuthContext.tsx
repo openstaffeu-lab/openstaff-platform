@@ -70,26 +70,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const storedToken = getStoredToken();
+    const storedRefreshToken = getRefreshToken();
 
-    if (!storedToken) {
+    if (!storedToken && !storedRefreshToken) {
       setLoading(false);
       return;
     }
 
-    setToken(storedToken);
+    let cancelled = false;
 
-    fetchCurrentUser(storedToken)
-      .then((currentUser) => {
-        setUser(currentUser);
-      })
-      .catch(() => {
-        clearStoredToken();
-        setToken(null);
-        setUser(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    async function bootstrapSession() {
+      try {
+        if (storedToken) {
+          setToken(storedToken);
+
+          const currentUser = await fetchCurrentUser(storedToken);
+          if (!cancelled) {
+            setUser(currentUser);
+          }
+          return;
+        }
+
+        if (!storedRefreshToken) {
+          throw new Error("No stored refresh token available.");
+        }
+
+        const refreshed = await refreshAuthToken(storedRefreshToken);
+        if (cancelled) {
+          return;
+        }
+
+        setStoredToken(refreshed.accessToken);
+        setStoredRefreshToken(refreshed.refreshToken);
+        setToken(refreshed.accessToken);
+        setUser(refreshed.user);
+      } catch {
+        if (!cancelled) {
+          clearStoredToken();
+          setToken(null);
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void bootstrapSession();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const value = useMemo<AuthContextType>(
