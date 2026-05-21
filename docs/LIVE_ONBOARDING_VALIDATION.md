@@ -30,12 +30,13 @@ This baseline defines the production proof expected before onboarding can be cal
 - admin moderation routes remain protected and healthy
 - approved public visibility remains distinct from pending visibility
 
-## EXEC-44 Reality
+## EXEC-45 Reality
 
 As of 2026-05-21, the codebase is closer to production closure because:
 
 - password reset notifications can now target real transactional email providers when credentials are configured
 - company lookup can now use a configured Romanian provider and official VIES VAT validation
+- public company lookup attempts now persist first-class audit evidence with provider, status, fallback, and returned metadata
 - admin onboarding now exposes first-class RELU AI review visibility
 - fresh production promotions now exist on `openstaff-api-00011-ggv`, `openstaff-web-00013-7p6`, and `openstaff-admin-00019-88r`
 - browser reruns are now clean across company onboarding, professional RELU, mobile lookup, admin RELU, homepage, jobs, professionals, and public profile
@@ -45,6 +46,7 @@ The execution is still not fully closed live because:
 
 - no production email provider secret is configured yet
 - no Romanian company provider secret or URL is configured yet
+- `gcloud run services describe openstaff-api --region europe-west1 --project openstaff-platform --format=json` confirms the active runtime still mounts no email-provider or Romanian-provider env
 - live provider-backed reset delivery is still impossible because `/status` remains `emailDelivery = not_configured`
 - live Romanian provider-backed lookup is still impossible because the provider URL/API key is still absent in production
 
@@ -58,7 +60,7 @@ The execution is still not fully closed live because:
 
 ## Validation Verdict Rule
 
-`EXEC-44 PASS` is allowed only when:
+`EXEC-45 PASS` is allowed only when:
 
 1. live provider-backed reset email is received and completed successfully
 2. live Romanian company lookup returns real provider-backed data

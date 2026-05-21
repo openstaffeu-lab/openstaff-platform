@@ -1,0 +1,65 @@
+# Email Provider Proof
+
+Last updated: 2026-05-21
+
+## Scope
+
+This proof tracks the production truth for provider-backed transactional email delivery, with password reset as the closure-critical flow.
+
+## Code Baseline
+
+- `apps/admin/api/src/notifications/notification.service.ts` supports `Resend`, `SendGrid`, `Postmark`, and `Mailgun`
+- `apps/admin/api/src/auth/auth.service.ts` emits localized password reset subject, HTML body, and text fallback
+- `apps/admin/api/src/auth/auth.controller.ts` rate limits forgot-password and reset-confirmation routes
+- `apps/admin/api/src/app.service.ts` reports `/status.integrations.emailDelivery.mode = configured` only when a real provider secret is mounted
+
+## Live Runtime Truth
+
+On `2026-05-21`, the active production API runtime is `openstaff-api-00011-ggv`.
+
+`gcloud run services describe openstaff-api --region europe-west1 --project openstaff-platform --format=json` confirms that the live container env mounts:
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `JWT_REFRESH_SECRET`
+- `STRIPE_WEBHOOK_SECRET`
+- `FIREBASE_SERVICE_ACCOUNT_KEY`
+- `GEMINI_API_KEY`
+
+The same live runtime does **not** mount:
+
+- `SMTP_URL`
+- `RESEND_API_KEY`
+- `SENDGRID_API_KEY`
+- `POSTMARK_SERVER_TOKEN`
+- `MAILGUN_API_KEY`
+- `MAILGUN_DOMAIN`
+- `EMAIL_FROM`
+
+## Live Status Truth
+
+`GET https://api.openstaff.eu/status` still reports:
+
+- `integrations.emailDelivery.mode = not_configured`
+- `integrations.emailDelivery.provider = not_configured`
+
+## Honest Proof Outcome
+
+Because no transactional email provider secret is mounted in production:
+
+- forgot-password can be exercised only against the codepath that records a failed email delivery attempt
+- received-email proof cannot be produced live
+- reset-link click proof from a delivered message cannot be produced live
+- expired-link proof from a delivered message cannot be produced live
+- reused-link rejection after a delivered message cannot be produced live
+
+## Remaining Closure Requirement
+
+EXEC-45 can close this area only after production mounts a real provider credential and sender identity, followed by a fresh live password-reset run proving:
+
+1. email delivery
+2. successful reset from the delivered link
+3. expired-token rejection
+4. reused-token rejection
+5. old-password failure
+6. new-password login success

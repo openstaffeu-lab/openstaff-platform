@@ -428,8 +428,10 @@ export class OnboardingService {
       'RO';
     const normalizedFiscalCode = this.normalizeFiscalCode(rawFiscalCode, countryCode);
 
+    let result: CompanyLookupResponse;
+
     if (!normalizedFiscalCode) {
-      return {
+      result = {
         rawFiscalCode,
         normalizedFiscalCode: rawFiscalCode,
         countryCode,
@@ -446,16 +448,20 @@ export class OnboardingService {
         },
         company: this.emptyCompanyLookupResult(),
       };
+      await this.logCompanyLookupAttempt(result, input.request);
+      return result;
     }
 
     const trustedMatch = this.lookupKnownCompany(normalizedFiscalCode, countryCode);
     if (trustedMatch) {
-      return {
+      result = {
         rawFiscalCode,
         normalizedFiscalCode,
         countryCode,
         ...trustedMatch,
       };
+      await this.logCompanyLookupAttempt(result, input.request);
+      return result;
     }
 
     const liveProviderMatch =
@@ -466,16 +472,18 @@ export class OnboardingService {
           : null;
 
     if (liveProviderMatch) {
-      return {
+      result = {
         rawFiscalCode,
         normalizedFiscalCode,
         countryCode,
         ...liveProviderMatch,
       };
+      await this.logCompanyLookupAttempt(result, input.request);
+      return result;
     }
 
     if (countryCode === 'RO') {
-      return {
+      result = {
         rawFiscalCode,
         normalizedFiscalCode,
         countryCode,
@@ -506,10 +514,12 @@ export class OnboardingService {
           legalStatus: null,
         },
       };
+      await this.logCompanyLookupAttempt(result, input.request);
+      return result;
     }
 
     if (this.isEuropeanUnionCountry(countryCode)) {
-      return {
+      result = {
         rawFiscalCode,
         normalizedFiscalCode,
         countryCode,
@@ -540,9 +550,11 @@ export class OnboardingService {
           legalStatus: null,
         },
       };
+      await this.logCompanyLookupAttempt(result, input.request);
+      return result;
     }
 
-    return {
+    result = {
       rawFiscalCode,
       normalizedFiscalCode,
       countryCode,
@@ -572,6 +584,35 @@ export class OnboardingService {
         legalStatus: null,
       },
     };
+    await this.logCompanyLookupAttempt(result, input.request);
+    return result;
+  }
+
+  private async logCompanyLookupAttempt(
+    result: CompanyLookupResponse,
+    request?: any,
+  ) {
+    await this.auditService.log({
+      entityType: 'COMPANY_LOOKUP',
+      entityId: `${result.countryCode}:${result.normalizedFiscalCode}:${result.lookupTimestamp}`,
+      action: 'LOOKUP',
+      category: 'ONBOARDING',
+      request,
+      metadata: {
+        rawFiscalCode: result.rawFiscalCode,
+        normalizedFiscalCode: result.normalizedFiscalCode,
+        countryCode: result.countryCode,
+        provider: result.provider,
+        providerLabel: result.providerLabel,
+        verifiedSource: result.verifiedSource,
+        lookupStatus: result.lookupStatus,
+        verificationStatus: result.verificationStatus,
+        explanation: result.explanation,
+        lookupTimestamp: result.lookupTimestamp,
+        lookupMetadata: result.lookupMetadata ?? null,
+        company: result.company,
+      },
+    });
   }
 
   private async ensureOnboardingContext(userId: string) {

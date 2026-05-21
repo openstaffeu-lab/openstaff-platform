@@ -1,6 +1,6 @@
 # Company Lookup Provider Integration
 
-Last updated: 2026-05-20
+Last updated: 2026-05-21
 
 ## Live Lookup Paths
 
@@ -59,8 +59,21 @@ The onboarding UI now preserves:
 - legal status when available
 - manual override at all times
 
+## Persistence And Audit
+
+Each public company lookup attempt now persists audit evidence through `AuditLog` with:
+
+- raw and normalized fiscal code
+- country code
+- provider and provider label
+- verified-source state
+- lookup status and verification status
+- lookup timestamp
+- provider metadata and fallback state
+- normalized returned company payload
+
 ## Operational Truth
 
-The VIES integration is code-live once deployed.
+The VIES integration is code-live on the active production API revision.
 
 Romanian deep company lookup still depends on production configuration of a trusted provider endpoint. Without that provider configuration, Romanian lookup can only fall back to baseline records or VIES-style VAT validation where applicable.

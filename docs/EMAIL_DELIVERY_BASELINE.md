@@ -1,6 +1,6 @@
 # Email Delivery Baseline
 
-Last updated: 2026-05-20
+Last updated: 2026-05-21
 
 ## Supported Transactional Providers
 
@@ -28,9 +28,18 @@ Password reset delivery now expects:
 5. audit trail through `NotificationEvent`, `NotificationDelivery`, and security audit logs
 6. rate limiting from the auth controller
 
+## Runtime Status Contract
+
+`/status.integrations.emailDelivery.mode` now reports:
+
+- `configured` when the runtime mounts any of `SMTP_URL`, `RESEND_API_KEY`, `SENDGRID_API_KEY`, `MAILGUN_API_KEY`, or `POSTMARK_SERVER_TOKEN`
+- `not_configured` otherwise
+
+On `2026-05-21`, production still reports `not_configured`.
+
 ## Operational Truth
 
-The integration code is ready, but the live OpenStaff production environment on 2026-05-20 does not yet have any provider credential configured in Secret Manager or Cloud Run runtime env.
+The integration code is ready, but the live OpenStaff production environment on `2026-05-21` still does not have any provider credential configured in Secret Manager or the active Cloud Run runtime env.
 
 That means:
 

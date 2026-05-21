@@ -2,6 +2,29 @@
 
 Last updated: 2026-05-21
 
+## EXEC-45 Email Delivery & Romanian Company Provider Closure
+
+Verdict: `IN PROGRESS - the production codepath now records first-class company lookup audit evidence and the repo-level provider baseline is fully documented, but live Cloud Run still has no transactional email provider secret and no Romanian company provider URL/API key, so provider-backed password reset proof and Romanian registry proof remain honestly blocked`
+
+### EXEC-45 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| transactional email provider codepath already supports production providers | ✅ | `apps/admin/api/src/notifications/notification.service.ts` supports `Resend`, `SendGrid`, `Postmark`, and `Mailgun`, plus `EMAIL_FROM`/text+HTML payloads |
+| password reset delivery contract remained complete | ✅ | `apps/admin/api/src/auth/auth.service.ts` still emits localized reset subject/text/html, token expiry wording, single-use invalidation, session revocation, and security audit logging |
+| password reset throttling remained active | ✅ | `apps/admin/api/src/auth/auth.controller.ts` still rate limits forgot-password and reset-confirmation routes |
+| company lookup provider contract remained complete | ✅ | `apps/admin/api/src/onboarding/onboarding.service.ts` still supports Romanian provider URL/API-key aliases, 15s timeout handling, invalid CUI handling, VIES fallback, and manual override |
+| company lookup audit persistence improved | ✅ | `apps/admin/api/src/onboarding/onboarding.service.ts` now persists each public company lookup attempt into `AuditLog` with provider, status, explanation, lookup timestamp, provider metadata, and normalized company payload |
+| runtime blocker verified live | ❌ blocker | `gcloud run services describe openstaff-api --region europe-west1 --project openstaff-platform --format=json` confirms the active `openstaff-api-00011-ggv` revision mounts no email-provider secret and no Romanian provider URL/API-key env |
+| live status blocker verified | ❌ blocker | `GET https://api.openstaff.eu/status` still reports `integrations.emailDelivery.mode = not_configured` on `2026-05-21` |
+| documentation and proof trail refreshed | ✅ | `docs/LIVE_ONBOARDING_VALIDATION.md`, `docs/EMAIL_DELIVERY_BASELINE.md`, `docs/COMPANY_LOOKUP_PROVIDER_INTEGRATION.md`, `docs/EMAIL_PROVIDER_PROOF.md`, `docs/ROMANIAN_COMPANY_LOOKUP_PROOF.md`, and `docs/proof/exec45/README.md` now capture the EXEC-45 truth |
+
+### EXEC-45 Remaining Blockers
+
+1. `openstaff-api` production runtime still mounts no `RESEND_API_KEY`, `SENDGRID_API_KEY`, `POSTMARK_SERVER_TOKEN`, `MAILGUN_API_KEY`, `SMTP_URL`, or equivalent email-provider credential, so `/status` remains `emailDelivery = not_configured`
+2. production runtime still mounts no `ROMANIAN_COMPANY_LOOKUP_URL`, `ROMANIAN_COMPANY_LOOKUP_API_KEY`, or configured alias equivalent, so Romanian provider-backed company proof cannot run live
+3. because those runtime secrets are absent, live proof for delivered reset email, successful reset completion from email link, expired-token rejection after a delivered link, reused-token rejection after a delivered link, and Romanian provider success/failure fallback cases cannot be completed honestly yet
+
 ## EXEC-44 Browser Stability, Public Visibility Proof & Session Bootstrap Closure
 
 Verdict: `IN PROGRESS - live browser stability, session bootstrap resilience, approved homepage/jobs/professionals/public-profile visibility, and clean production smoke are now closed on fresh web/admin revisions, but production email delivery credentials and Romanian provider configuration are still absent, so provider-backed password reset proof and Romanian registry proof remain open`
