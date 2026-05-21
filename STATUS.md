@@ -2,6 +2,28 @@
 
 Last updated: 2026-05-21
 
+## EXEC-46 Production Provider Secrets Mounting & Final Onboarding Provider Proof
+
+Verdict: `IN PROGRESS - the production API revision remains healthy and the repo/runtime truth is now fully re-verified, but there are still no real transactional email secrets and no Romanian provider secrets available in Secret Manager or mounted on Cloud Run, so provider-backed password reset proof and Romanian registry proof remain blocked`
+
+### EXEC-46 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| production Secret Manager inventory revalidated | ✅ | `gcloud secrets list --project openstaff-platform` still returns only `DATABASE_URL`, `FIREBASE_SERVICE_ACCOUNT_KEY`, `GEMINI_API_KEY`, `JWT_REFRESH_SECRET`, `JWT_SECRET`, and `STRIPE_WEBHOOK_SECRET` |
+| active API runtime revalidated | ✅ | `gcloud run services describe openstaff-api --region europe-west1 --project openstaff-platform --format=json` confirms latest ready revision `openstaff-api-00012-bz7` and still shows no mounted email-provider or Romanian-provider env |
+| live status blocker revalidated | ❌ blocker | `GET https://api.openstaff.eu/status` still reports `integrations.emailDelivery.mode = not_configured` on `2026-05-21` after the fresh API promotion |
+| API remained healthy after EXEC-45 promotion | ✅ | build `8ce0353c-5f7a-4e56-aa9c-4282b66cdcc0` promoted `openstaff-api-00012-bz7`, and `/health = 200`, `/status = 200` remained healthy |
+| Romanian trusted baseline and VIES invalid-path remained healthy live | ✅ partial | `PUT /onboarding/company-lookup` with `RO12345678`, `DE123456789`, `DE000000000`, and `RO99999999` still returned the expected baseline/VIES shapes on `2026-05-21` |
+| provider-secret mounting remained blocked | ❌ blocker | no real `SMTP_URL` / transactional provider secret and no `ROMANIAN_COMPANY_LOOKUP_URL` / `ROMANIAN_COMPANY_LOOKUP_API_KEY` value exists to mount from this environment |
+| documentation and proof trail refreshed for EXEC-46 | ✅ | `docs/LIVE_ONBOARDING_VALIDATION.md`, `docs/EMAIL_DELIVERY_BASELINE.md`, `docs/EMAIL_PROVIDER_PROOF.md`, `docs/COMPANY_LOOKUP_PROVIDER_INTEGRATION.md`, `docs/ROMANIAN_COMPANY_LOOKUP_PROOF.md`, and `docs/proof/exec46/README.md` now capture the EXEC-46 truth |
+
+### EXEC-46 Remaining Blockers
+
+1. `gcloud secrets list --project openstaff-platform` still exposes no real transactional email provider secret to mount, so `/status` remains `emailDelivery = not_configured`
+2. `gcloud secrets list --project openstaff-platform` still exposes no `ROMANIAN_COMPANY_LOOKUP_URL` or `ROMANIAN_COMPANY_LOOKUP_API_KEY` secret to mount into `openstaff-api`
+3. because those real secrets do not exist, live proof for delivered reset email, reset-link completion, expired-link rejection, reused-link rejection, and provider-backed Romanian lookup success/failure fallback cannot be completed honestly yet
+
 ## EXEC-45 Email Delivery & Romanian Company Provider Closure
 
 Verdict: `IN PROGRESS - the production codepath now records first-class company lookup audit evidence and the repo-level provider baseline is fully documented, but live Cloud Run still has no transactional email provider secret and no Romanian company provider URL/API key, so provider-backed password reset proof and Romanian registry proof remain honestly blocked`

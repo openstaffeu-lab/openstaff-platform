@@ -37,6 +37,17 @@ Password reset delivery now expects:
 
 On `2026-05-21`, production still reports `not_configured`.
 
+## Secret Inventory Truth
+
+On `2026-05-21`, `gcloud secrets list --project openstaff-platform` still exposes no transactional email provider secret at all. The production secret inventory remains limited to:
+
+- `DATABASE_URL`
+- `FIREBASE_SERVICE_ACCOUNT_KEY`
+- `GEMINI_API_KEY`
+- `JWT_REFRESH_SECRET`
+- `JWT_SECRET`
+- `STRIPE_WEBHOOK_SECRET`
+
 ## Operational Truth
 
 The integration code is ready, but the live OpenStaff production environment on `2026-05-21` still does not have any provider credential configured in Secret Manager or the active Cloud Run runtime env.

@@ -77,3 +77,5 @@ Each public company lookup attempt now persists audit evidence through `AuditLog
 The VIES integration is code-live on the active production API revision.
 
 Romanian deep company lookup still depends on production configuration of a trusted provider endpoint. Without that provider configuration, Romanian lookup can only fall back to baseline records or VIES-style VAT validation where applicable.
+
+On `2026-05-21`, `gcloud secrets list --project openstaff-platform` still exposes no Romanian provider secrets, and the active `openstaff-api` runtime still mounts no Romanian provider env vars.

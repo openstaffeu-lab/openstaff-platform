@@ -29,6 +29,8 @@ On `2026-05-21`, `gcloud run services describe openstaff-api --region europe-wes
 - `ANAF_LOOKUP_URL`
 - `ANAF_LOOKUP_API_KEY`
 
+`gcloud secrets list --project openstaff-platform` also confirms those Romanian provider secrets do not currently exist in Secret Manager.
+
 ## Live Proof That Exists Today
 
 Production can still prove:

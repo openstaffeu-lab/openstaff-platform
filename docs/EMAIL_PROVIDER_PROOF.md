@@ -15,7 +15,7 @@ This proof tracks the production truth for provider-backed transactional email d
 
 ## Live Runtime Truth
 
-On `2026-05-21`, the active production API runtime is `openstaff-api-00011-ggv`.
+On `2026-05-21`, the active production API runtime is `openstaff-api-00012-bz7`.
 
 `gcloud run services describe openstaff-api --region europe-west1 --project openstaff-platform --format=json` confirms that the live container env mounts:
 
@@ -35,6 +35,10 @@ The same live runtime does **not** mount:
 - `MAILGUN_API_KEY`
 - `MAILGUN_DOMAIN`
 - `EMAIL_FROM`
+
+## Secret Manager Truth
+
+`gcloud secrets list --project openstaff-platform` still shows no transactional email provider secret to mount into Cloud Run.
 
 ## Live Status Truth
 
