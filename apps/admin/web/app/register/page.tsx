@@ -65,11 +65,12 @@ export default function RegisterPage() {
         setCountryCode(defaults.countryCode);
         setLanguageCode(defaults.language);
         setTimezone(defaults.timezone);
+        setPhone((current) => current.trim() || defaults.phonePrefix);
         setDefaultsMessage(defaults.explanation);
       })
       .catch(() => {
         setDefaultsMessage(
-          "OpenStaff will start from Romania and Romanian defaults when your browser locale is unavailable.",
+          "OpenStaff porneste cu valori implicite pentru Romania atunci cand browserul nu trimite suficiente semnale de localizare.",
         );
       });
   }, []);
@@ -110,7 +111,7 @@ export default function RegisterPage() {
       setError(
         registrationError instanceof Error
           ? registrationError.message
-          : "We could not create your account.",
+          : "Nu am putut crea contul.",
       );
     } finally {
       setLoading(false);
@@ -125,28 +126,27 @@ export default function RegisterPage() {
             OpenStaff
           </div>
           <h1 className="mt-4 text-4xl font-bold text-brand-charcoal">
-            Create your account
+            Creeaza-ti contul
           </h1>
           <p className="mt-4 text-slate-600">
-            Start with the minimum you need now. We will guide the rest of the profile in clear
-            steps after signup.
+            Incepi cu minimul necesar acum, apoi completam profilul in pasi clari dupa inregistrare.
           </p>
           <div className="mt-8 rounded-[1.7rem] border border-amber-100 bg-amber-50 p-5 text-sm leading-7 text-slate-700">
-            Public visibility still stays moderated. Registration creates the account first, then
-            the profile can be completed gradually.
+            Vizibilitatea publica ramane moderata. Inregistrarea creeaza contul mai intai, iar profilul
+            poate fi completat treptat dupa aceea.
           </div>
           <div className="mt-8 text-sm text-slate-500">
-            Already have an account?{" "}
+            Ai deja cont?{" "}
             <Link href="/login" className="font-semibold text-brand-navy">
-              Login here
+              Intra aici
             </Link>
           </div>
         </section>
 
         <section className="openstaff-card rounded-[2.2rem] p-8 md:p-10">
           <div className="mb-6 flex items-center gap-3">
-            <ProgressPill active={step === 1} index={1} label="Account" />
-            <ProgressPill active={step === 2} index={2} label="Defaults" />
+            <ProgressPill active={step === 1} index={1} label="Cont" />
+            <ProgressPill active={step === 2} index={2} label="Implicit" />
           </div>
 
           {step === 1 ? (
@@ -236,7 +236,7 @@ export default function RegisterPage() {
                   </span>
                   <input
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none"
-                    placeholder="Optional now, can also be added later"
+                    placeholder="Optional acum, il poti modifica mai tarziu"
                     value={phone}
                     onChange={(event) => setPhone(event.target.value)}
                   />
@@ -250,7 +250,7 @@ export default function RegisterPage() {
                       </span>
                       <input
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none"
-                        placeholder="Optional now, can also be filled after VAT lookup"
+                        placeholder="Optional acum, il poti completa si dupa lookup-ul fiscal"
                         value={companyName}
                         onChange={(event) => setCompanyName(event.target.value)}
                       />
@@ -289,7 +289,7 @@ export default function RegisterPage() {
                   onClick={() => setStep(1)}
                   className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 font-semibold text-slate-700"
                 >
-                  Back
+                  Inapoi
                 </button>
                 <button
                   type="button"
@@ -297,7 +297,7 @@ export default function RegisterPage() {
                   disabled={loading}
                   className="w-full rounded-2xl bg-brand-navy px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {loading ? "Creating account..." : "Create account"}
+                  {loading ? "Se creeaza contul..." : "Creeaza contul"}
                 </button>
               </div>
             </div>

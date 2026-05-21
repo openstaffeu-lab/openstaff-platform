@@ -24,6 +24,7 @@ type RegistrationDefaultsResponse = {
   vatMode: 'domestic' | 'eu' | 'international';
   timezone: string;
   city: string | null;
+  phonePrefix: string;
   explanation: string;
 };
 
@@ -387,16 +388,24 @@ export class OnboardingService {
     const timezoneHeader = this.firstHeaderValue(request, 'x-timezone');
     const countryHeader =
       this.firstHeaderValue(request, 'x-country-code') ||
-      this.firstHeaderValue(request, 'cf-ipcountry');
+      this.firstHeaderValue(request, 'cf-ipcountry') ||
+      this.firstHeaderValue(request, 'x-appengine-country');
+    const cityHeader =
+      this.firstHeaderValue(request, 'x-city') ||
+      this.firstHeaderValue(request, 'cf-ipcity') ||
+      this.firstHeaderValue(request, 'x-appengine-city');
     const countryCode = this.normalizeCountryCode(countryHeader) ?? 'RO';
-    const language = acceptLanguage?.split('-')[0]?.toLowerCase() || 'ro';
+    const language =
+      (countryCode === 'RO' ? 'ro' : acceptLanguage?.split('-')[0]?.toLowerCase()) || 'ro';
     const timezone = timezoneHeader?.trim() || 'Europe/Bucharest';
+    const city = this.normalizeNullableString(cityHeader);
 
     return {
       inferredFrom: [
         acceptLanguage ? 'browser-language' : null,
         timezoneHeader ? 'browser-timezone' : null,
         countryHeader ? 'request-country-header' : null,
+        city ? 'request-city-header' : null,
       ].filter((item): item is string => Boolean(item)),
       country: this.countryNameFromCode(countryCode),
       countryCode,
@@ -409,9 +418,10 @@ export class OnboardingService {
             ? 'eu'
             : 'international',
       timezone,
-      city: null,
+      city,
+      phonePrefix: this.phonePrefixFromCountryCode(countryCode),
       explanation:
-        'These defaults are inferred from browser language, timezone, and request locale. You can override every value before continuing.',
+        'These defaults are inferred from browser language, timezone, country headers, and any available city hint. You can override every value before continuing.',
     };
   }
 
@@ -1548,6 +1558,41 @@ export class OnboardingService {
       .trim();
 
     return cleaned && cleaned !== '---' ? cleaned : null;
+  }
+
+  private phonePrefixFromCountryCode(countryCode: string) {
+    const prefixes: Record<string, string> = {
+      RO: '+40',
+      DE: '+49',
+      FR: '+33',
+      IT: '+39',
+      ES: '+34',
+      NL: '+31',
+      BE: '+32',
+      AT: '+43',
+      PL: '+48',
+      PT: '+351',
+      CZ: '+420',
+      IE: '+353',
+      EL: '+30',
+      GR: '+30',
+      SE: '+46',
+      DK: '+45',
+      FI: '+358',
+      LU: '+352',
+      HU: '+36',
+      BG: '+359',
+      HR: '+385',
+      SI: '+386',
+      SK: '+421',
+      EE: '+372',
+      LV: '+371',
+      LT: '+370',
+      CY: '+357',
+      MT: '+356',
+    };
+
+    return prefixes[countryCode] ?? '+40';
   }
 
   private emptyCompanyLookupResult() {

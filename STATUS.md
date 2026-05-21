@@ -2,6 +2,30 @@
 
 Last updated: 2026-05-21
 
+## EXEC-47 Provider Activation, Smart Company Autofill, RELU AI Completion & Final Production Onboarding Closure
+
+Verdict: `IN PROGRESS - the production API now supports generic EMAIL_PROVIDER / EMAIL_API_KEY activation plus real SMTP delivery, register defaults now include phone-prefix autofill, and fresh API promotion is live on openstaff-api-00013-htb, but production still has no real provider secrets in Secret Manager, so provider-backed password reset proof, Romanian provider-backed lookup proof, and full final browser closure remain blocked`
+
+### EXEC-47 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| generic email-provider activation support improved | ✅ | `apps/admin/api/src/notifications/notification.service.ts` now supports `EMAIL_PROVIDER`, `EMAIL_API_KEY`, provider-specific fallbacks, and real `SMTP_URL` delivery through `nodemailer` |
+| `/status` email readiness contract improved | ✅ | `apps/admin/api/src/app.service.ts` now treats generic `EMAIL_PROVIDER` + `EMAIL_API_KEY` combinations as configurable email delivery state when valid |
+| localization defaults improved | ✅ | `apps/admin/api/src/onboarding/onboarding.service.ts` now returns `phonePrefix`, best-effort city header inference, and stronger language defaults for Romanian onboarding |
+| registration UX now uses localization defaults more usefully | ✅ | `apps/admin/web/app/register/page.tsx` now prefills phone with the inferred prefix and uses cleaner Romanian onboarding copy for core registration states |
+| fresh API promotion completed | ✅ | Cloud Build `c5ece80a-a494-4a3c-ab0c-b1d7191c16a8` promoted `openstaff-api-00013-htb` |
+| fresh web promotion reached a new ready revision | ✅ partial | Cloud Build `6f5b16a0-4d7f-4d2f-9a70-2a59ebeff8e1` hit a polling quota issue, but `openstaff-web` now reports latest ready revision `openstaff-web-00014-hz9` |
+| provider secret inventory still empty | ❌ blocker | `gcloud secrets list --project openstaff-platform` still exposes no real transactional email secret and no Romanian provider secret to mount |
+| live status blocker still present | ❌ blocker | after the fresh API promotion, `GET https://api.openstaff.eu/status` still reports `integrations.emailDelivery.mode = not_configured` |
+
+### EXEC-47 Remaining Blockers
+
+1. no real transactional email provider secret exists in Secret Manager, so the new generic `EMAIL_PROVIDER` / `EMAIL_API_KEY` / `SMTP_URL` support still cannot be activated live
+2. no real Romanian provider secret exists in Secret Manager, so Romanian provider-backed lookup still cannot be proven live
+3. because those secrets do not exist, forgot-password delivery, reset completion, expired-token proof, reused-token proof, and provider-backed Romanian valid/invalid/fallback proof still cannot be completed honestly
+4. the full final browser matrix was not rerun because the provider-backed forgot-password flow remains impossible to exercise live
+
 ## EXEC-46 Production Provider Secrets Mounting & Final Onboarding Provider Proof
 
 Verdict: `IN PROGRESS - the production API revision remains healthy and the repo/runtime truth is now fully re-verified, but there are still no real transactional email secrets and no Romanian provider secrets available in Secret Manager or mounted on Cloud Run, so provider-backed password reset proof and Romanian registry proof remain blocked`

@@ -638,7 +638,20 @@ export class AppService {
   }
 
   private getEmailDeliveryMode() {
+    const configuredProvider = process.env.EMAIL_PROVIDER?.trim().toLowerCase();
+    const genericApiKey = process.env.EMAIL_API_KEY?.trim();
+    const genericProviderConfigured = Boolean(
+      (configuredProvider === 'smtp' && process.env.SMTP_URL?.trim()) ||
+        ((configuredProvider === 'resend' ||
+          configuredProvider === 'sendgrid' ||
+          configuredProvider === 'postmark') &&
+          genericApiKey) ||
+        (configuredProvider === 'mailgun' &&
+          genericApiKey &&
+          process.env.MAILGUN_DOMAIN?.trim()),
+    );
     const hasProvider = Boolean(
+      genericProviderConfigured ||
       process.env.SMTP_URL?.trim() ||
         process.env.RESEND_API_KEY?.trim() ||
         process.env.SENDGRID_API_KEY?.trim() ||

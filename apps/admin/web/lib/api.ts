@@ -272,6 +272,7 @@ export type RegistrationDefaults = {
   vatMode: "domestic" | "eu" | "international";
   timezone: string;
   city: string | null;
+  phonePrefix: string;
   explanation: string;
 };
 

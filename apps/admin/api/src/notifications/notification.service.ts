@@ -7,6 +7,7 @@ import {
   NotificationStatus,
   Prisma,
 } from '@prisma/client';
+import * as nodemailer from 'nodemailer';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -25,6 +26,8 @@ type DeliveryAttemptResult = {
   failureReason: string | null;
   metadata?: Record<string, unknown> | null;
 };
+
+type ResolvedEmailProvider = 'smtp' | 'resend' | 'sendgrid' | 'postmark' | 'mailgun';
 
 type EmitEventInput = {
   key?: string;
@@ -866,7 +869,9 @@ export class NotificationService {
 
     try {
       const providerResult =
-        provider === 'resend'
+        provider === 'smtp'
+          ? await this.sendWithSmtp(recipient, subject, html, text)
+          : provider === 'resend'
           ? await this.sendWithResend(recipient, subject, html, text)
           : provider === 'sendgrid'
             ? await this.sendWithSendGrid(recipient, subject, html, text)
@@ -928,6 +933,29 @@ export class NotificationService {
   }
 
   private resolveEmailProvider() {
+    const configuredProvider = process.env.EMAIL_PROVIDER?.trim().toLowerCase();
+    if (configuredProvider === 'smtp' && process.env.SMTP_URL?.trim()) {
+      return 'smtp' as const;
+    }
+    if (configuredProvider === 'resend' && this.getEmailProviderToken('resend')) {
+      return 'resend' as const;
+    }
+    if (configuredProvider === 'sendgrid' && this.getEmailProviderToken('sendgrid')) {
+      return 'sendgrid' as const;
+    }
+    if (configuredProvider === 'postmark' && this.getEmailProviderToken('postmark')) {
+      return 'postmark' as const;
+    }
+    if (
+      configuredProvider === 'mailgun' &&
+      this.getEmailProviderToken('mailgun') &&
+      process.env.MAILGUN_DOMAIN?.trim()
+    ) {
+      return 'mailgun' as const;
+    }
+    if (process.env.SMTP_URL?.trim()) {
+      return 'smtp' as const;
+    }
     if (process.env.RESEND_API_KEY?.trim()) {
       return 'resend' as const;
     }
@@ -944,6 +972,25 @@ export class NotificationService {
     return null;
   }
 
+  private getEmailProviderToken(provider: Exclude<ResolvedEmailProvider, 'smtp'>) {
+    const genericProvider = process.env.EMAIL_PROVIDER?.trim().toLowerCase();
+    const genericToken = process.env.EMAIL_API_KEY?.trim();
+    if (genericToken && genericProvider === provider) {
+      return genericToken;
+    }
+
+    if (provider === 'resend') {
+      return process.env.RESEND_API_KEY?.trim() ?? null;
+    }
+    if (provider === 'sendgrid') {
+      return process.env.SENDGRID_API_KEY?.trim() ?? null;
+    }
+    if (provider === 'postmark') {
+      return process.env.POSTMARK_SERVER_TOKEN?.trim() ?? null;
+    }
+    return process.env.MAILGUN_API_KEY?.trim() ?? null;
+  }
+
   private getEmailFromAddress() {
     return (
       process.env.EMAIL_FROM?.trim() ||
@@ -953,11 +1000,33 @@ export class NotificationService {
     );
   }
 
+  private async sendWithSmtp(recipient: string, subject: string, html: string, text: string) {
+    const smtpUrl = process.env.SMTP_URL?.trim();
+    if (!smtpUrl) {
+      throw new Error('smtp_url_missing');
+    }
+
+    const transporter = nodemailer.createTransport(smtpUrl);
+    const response = await transporter.sendMail({
+      from: this.getEmailFromAddress(),
+      to: recipient,
+      subject,
+      html,
+      text,
+    });
+
+    return {
+      messageId:
+        this.readUnknownString(response.messageId) ??
+        this.readUnknownString(response.response),
+    };
+  }
+
   private async sendWithResend(recipient: string, subject: string, html: string, text: string) {
     const response = await this.fetchJson('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY?.trim()}`,
+        Authorization: `Bearer ${this.getEmailProviderToken('resend') ?? ''}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -976,7 +1045,7 @@ export class NotificationService {
     const response = await this.fetchJson('https://api.sendgrid.com/v3/mail/send', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.SENDGRID_API_KEY?.trim()}`,
+        Authorization: `Bearer ${this.getEmailProviderToken('sendgrid') ?? ''}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -998,7 +1067,7 @@ export class NotificationService {
     const response = await this.fetchJson('https://api.postmarkapp.com/email', {
       method: 'POST',
       headers: {
-        'X-Postmark-Server-Token': process.env.POSTMARK_SERVER_TOKEN?.trim() ?? '',
+        'X-Postmark-Server-Token': this.getEmailProviderToken('postmark') ?? '',
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
@@ -1031,7 +1100,7 @@ export class NotificationService {
       text,
       html,
     });
-    const credentials = Buffer.from(`api:${process.env.MAILGUN_API_KEY?.trim() ?? ''}`).toString('base64');
+    const credentials = Buffer.from(`api:${this.getEmailProviderToken('mailgun') ?? ''}`).toString('base64');
 
     const response = await this.fetchJson(`https://api.mailgun.net/v3/${domain}/messages`, {
       method: 'POST',

@@ -68,3 +68,28 @@ The execution is still not fully closed live because:
 3. RELU AI admin visibility is proven on the deployed admin revision
 4. homepage/public visibility proof is captured after moderation approval
 5. browser reruns no longer show residual critical request failures
+
+## EXEC-47 Reality
+
+As of 2026-05-21, the onboarding codepath is closer to immediate provider activation because:
+
+- the API now supports generic `EMAIL_PROVIDER` + `EMAIL_API_KEY` activation
+- the API now supports real `SMTP_URL` delivery
+- register defaults now return `phonePrefix`
+- the register form now starts the phone field from the inferred prefix instead of a blank value
+
+The execution is still not fully closed live because:
+
+- Secret Manager still contains no real transactional email provider secret
+- Secret Manager still contains no Romanian company provider secret
+- `/status` still reports `integrations.emailDelivery.mode = not_configured`
+- the final provider-backed forgot-password flow still cannot be exercised in production
+- the final full browser matrix was not rerun without a live provider-backed reset flow
+
+`EXEC-47 PASS` is allowed only when:
+
+1. live provider-backed reset email is received and completed successfully
+2. live Romanian company lookup returns real provider-backed data
+3. localization defaults, company autofill, and RELU AI suggestions are revalidated in the browser on the latest deployed revisions
+4. homepage/public visibility proof is captured after moderation approval on the same fresh revisions
+5. browser reruns return `failedRequests = []`, `consoleErrors = []`, `pageErrors = []`, and no mobile overflow

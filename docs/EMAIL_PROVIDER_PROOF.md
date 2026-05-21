@@ -9,6 +9,7 @@ This proof tracks the production truth for provider-backed transactional email d
 ## Code Baseline
 
 - `apps/admin/api/src/notifications/notification.service.ts` supports `Resend`, `SendGrid`, `Postmark`, and `Mailgun`
+- `apps/admin/api/src/notifications/notification.service.ts` now also supports generic `EMAIL_PROVIDER` + `EMAIL_API_KEY` activation and real `SMTP_URL` delivery
 - `apps/admin/api/src/auth/auth.service.ts` emits localized password reset subject, HTML body, and text fallback
 - `apps/admin/api/src/auth/auth.controller.ts` rate limits forgot-password and reset-confirmation routes
 - `apps/admin/api/src/app.service.ts` reports `/status.integrations.emailDelivery.mode = configured` only when a real provider secret is mounted

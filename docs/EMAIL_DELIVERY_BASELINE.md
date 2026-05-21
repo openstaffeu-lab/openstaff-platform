@@ -10,6 +10,8 @@ The API now supports provider-backed transactional delivery through environment-
 - SendGrid via `SENDGRID_API_KEY`
 - Postmark via `POSTMARK_SERVER_TOKEN`
 - Mailgun via `MAILGUN_API_KEY` + `MAILGUN_DOMAIN`
+- generic provider selection via `EMAIL_PROVIDER` + `EMAIL_API_KEY`
+- SMTP delivery via `SMTP_URL`
 
 Optional sender fields:
 

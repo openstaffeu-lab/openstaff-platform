@@ -59,6 +59,8 @@ The onboarding UI now preserves:
 - legal status when available
 - manual override at all times
 
+Registration defaults now also return a phone prefix aligned to the inferred country so onboarding can start from a more realistic contact baseline before company autofill begins.
+
 ## Persistence And Audit
 
 Each public company lookup attempt now persists audit evidence through `AuditLog` with:
