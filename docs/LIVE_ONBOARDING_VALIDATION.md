@@ -141,3 +141,27 @@ That means the platform is now in a very narrow readiness state:
 6. a real Romanian provider-backed lookup returns live provider data
 7. RELU AI upload-to-profile proof is rerun fresh
 8. Chrome, Edge, and Mobile Chrome reruns are clean on the same promoted revisions
+
+## EXEC-53 Identity Form Reality
+
+As of `2026-05-22`, the live public identity step on `openstaff-web-00018-fb5` is no longer the blocking UX/runtime issue it was before this execution:
+
+- first name, last name, display/public name, phone, country, city, language, timezone, links, and bio now accept reliable typing without defaults overwriting active edits
+- the identity page now explains required versus optional fields in clearer Romanian copy
+- save/continue behavior is now explicit and no longer hides behind a long-running disabled CTA while prior data loads
+- revisit and reload of `/onboarding/identity` now restore saved data quickly on the promoted public web revision
+- relogin bootstrap now restores saved identity data again after authentication
+- mobile validation now confirms no horizontal overflow on the identity step
+
+EXEC-53 does **not** close the provider-backed EXEC-52 work. The live provider blockers remain:
+
+- `integrations.emailDelivery.mode = not_configured`
+- no Romanian provider secret is mounted in production
+
+## EXEC-53 Browser Evidence Snapshot
+
+- Chrome desktop identity typing + save + revisit + reload: `consoleErrors = []`, `pageErrors = []`, `badResponses = []`, revisit restore in `52ms`, reload restore in `18ms`
+- Chrome desktop relogin bootstrap: `consoleErrors = []`, `pageErrors = []`, `badResponses = []`, saved first name restored in `558ms`
+- Edge desktop COMPANY identity save + revisit: `consoleErrors = []`, `pageErrors = []`, `badResponses = []`, revisit restore in `74ms`
+- Mobile Chrome identity save + revisit: `consoleErrors = []`, `pageErrors = []`, `badResponses = []`, revisit restore in `637ms`, post-save restore in `561ms`, and `scrollWidth = viewportWidth`
+- Targeted diacritics proof accepted `Ștefan`, `București`, and `Mecanică, întreținere și coordonare.`

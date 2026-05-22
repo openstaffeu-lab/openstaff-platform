@@ -2,6 +2,33 @@
 
 Last updated: 2026-05-22
 
+## EXEC-53 Fix Onboarding Identity Form Usability, Input Binding & Profile Persistence
+
+Verdict: `PASS - the public identity onboarding form is now materially easier to complete, input binding no longer gets clobbered by defaults or snapshot reloads, saved identity data survives refresh and relogin bootstrap, and fresh Chrome, Edge, and mobile validation confirms the identity step is usable enough for real onboarding even while provider-backed EXEC-52 remains blocked separately`
+
+### EXEC-53 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| identity form input binding stabilized | ✅ | `apps/admin/web/app/onboarding/identity/page.tsx` now uses one local form state, a guarded one-time hydration path, and a dirty-state guard so defaults and onboarding snapshots no longer overwrite active typing |
+| loading/save interaction clarified | ✅ | the identity page now keeps save disabled only while saving, shows advisory copy while prior data is still loading, and no longer strands the user behind a long `Se încarcă...` CTA state |
+| form usability and layout improved | ✅ | the page now renders four clearer sections, wider spacing, stronger labels, required/optional indicators, Romanian helper text, clearer success/error banners, and larger desktop/mobile input affordances |
+| inferred defaults remain overrideable | ✅ | language, timezone, country, city, and phone prefix now render as suggestions with explanation instead of feeling like forced values |
+| save payload and local onboarding cache stay aligned | ✅ | after save, the local onboarding cache now preserves the submitted identity profile values that the next steps need for continuity |
+| refresh persistence proven live | ✅ | Chrome desktop proof on `openstaff-web-00018-fb5` showed the saved first name reappearing on `/onboarding/identity` after revisit in `52ms` and after reload in `18ms` |
+| relogin bootstrap persistence proven live | ✅ | targeted Chrome relogin proof showed saved identity data reappearing after JWT bootstrap in `558ms` with `consoleErrors = []`, `pageErrors = []`, and no `4xx/5xx` responses |
+| Edge desktop identity completion proven live | ✅ | fresh Edge desktop proof completed the COMPANY identity step, saved successfully, and reloaded the saved first name on revisit in `74ms` |
+| mobile identity editing proven live | ✅ | fresh mobile Chrome proof reloaded saved identity values, allowed mobile editing/saving, and returned `scrollWidth = viewportWidth = bodyScrollWidth = 412` with no horizontal overflow |
+| Romanian diacritics input proven live | ✅ | targeted Chrome proof accepted `Ștefan`, `București`, and `Mecanică, întreținere și coordonare.` without value corruption |
+| public web promotion completed | ✅ | Cloud Build `1d707272-b37b-4e59-acfb-9e7a0ab64cf2` promoted `openstaff-web-00018-fb5` |
+| repo and production validation remained healthy | ✅ | `apps/admin/web -> npm.cmd run build`; `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin -> npm.cmd run build`; `scripts/release/exec-26-production-ops-check.ps1`; and `scripts/release/exec-13-release-check.ps1` all passed on `2026-05-22` |
+
+### EXEC-53 Accepted Boundaries
+
+1. EXEC-52 provider blockers remain unchanged: `emailDelivery = not_configured` and no Romanian provider secret is mounted
+2. EXEC-53 closed the identity form usability and persistence gap only; it did not attempt provider-backed password reset or Romanian provider-backed company lookup
+3. browser `requestfailed` events observed during proof were navigation-aborted requests during route transitions, not `4xx/5xx` runtime failures
+
 ## EXEC-51 Provider Activation Orchestration, Production Secret Validation & Final User Trust Closure
 
 Verdict: `PASS - provider activation blockers are now reduced to one explicit external dependency set, the production runtime contract and injection path are re-audited cleanly, user-trust and onboarding-product risks are restated without fake closure, and EXEC-52 can now focus only on real provider mounting plus live end-to-end proof`
