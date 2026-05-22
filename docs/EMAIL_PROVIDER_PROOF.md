@@ -58,6 +58,14 @@ Because no transactional email provider secret is mounted in production:
 - expired-link proof from a delivered message cannot be produced live
 - reused-link rejection after a delivered message cannot be produced live
 
+## Operator Dependency
+
+Final closure now depends on operator-supplied procurement and handoff inputs captured in:
+
+- [PROVIDER_PROCUREMENT_CHECKLIST.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/PROVIDER_PROCUREMENT_CHECKLIST.md:1)
+- [EMAIL_PROVIDER_OPERATOR_HANDOFF.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/EMAIL_PROVIDER_OPERATOR_HANDOFF.md:1)
+- [PROVIDER_SECRET_INJECTION_PLAN.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/PROVIDER_SECRET_INJECTION_PLAN.md:1)
+
 ## Remaining Closure Requirement
 
 EXEC-45 can close this area only after production mounts a real provider credential and sender identity, followed by a fresh live password-reset run proving:

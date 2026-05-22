@@ -1,6 +1,32 @@
 ﻿# OpenStaff Platform Status
 
-Last updated: 2026-05-21
+Last updated: 2026-05-22
+
+## EXEC-49 Provider Procurement, Operator Handoff & Production Credential Readiness
+
+Verdict: `PASS - provider readiness planning is now explicit, the missing transactional email inputs, Romanian provider inputs, GCP injection steps, rollback path, and required onboarding test data are all documented cleanly, and EXEC-50 can now begin immediately once the operator supplies real credentials and approved test values`
+
+### EXEC-49 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| transactional email provider procurement checklist created | ✅ | `docs/PROVIDER_PROCUREMENT_CHECKLIST.md` now defines the required provider choice, verified sender expectations, limits, and DNS-verification questions |
+| email provider operator handoff created | ✅ | `docs/EMAIL_PROVIDER_OPERATOR_HANDOFF.md` now captures the exact env contract, provider-specific procurement expectations, and closure proof requirements |
+| Romanian provider operator handoff created | ✅ | `docs/ROMANIAN_PROVIDER_OPERATOR_HANDOFF.md` now captures the required provider URL/API key, supported field expectations, privacy notes, and approved test-value dependency |
+| GCP secret injection plan created | ✅ | `docs/PROVIDER_SECRET_INJECTION_PLAN.md` now defines stdin-based Secret Manager commands, Cloud Run secret mounts, validation checks, and rollback expectations without printing secret values |
+| onboarding provider test-data pack created | ✅ | `docs/ONBOARDING_PROVIDER_TEST_DATA.md` now captures the required inbox, Romanian CUI/VAT values, test accounts, and admin validation path |
+| product-readiness state refreshed honestly | ✅ | `STATUS.md`, `docs/LIVE_ONBOARDING_VALIDATION.md`, `docs/EMAIL_PROVIDER_PROOF.md`, `docs/ROMANIAN_COMPANY_LOOKUP_PROOF.md`, and `docs/PRODUCTION_READINESS_MATRIX.md` now all state that code is ready but live provider proof still depends on operator-supplied credentials |
+| repo validation remained healthy | ✅ | `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build`; and `scripts/release/exec-13-release-check.ps1` all passed on `2026-05-22` |
+
+### EXEC-49 Remaining External Inputs
+
+1. transactional email provider selection and real credential values
+2. Romanian company provider selection and real credential values
+3. one approved password-reset inbox
+4. approved Romanian valid/invalid CUI or VAT test values
+5. company and professional test accounts plus an admin validation path
+
+## EXEC-47 Provider Activation, Smart Company Autofill, RELU AI Completion & Final Production Onboarding Closure
 
 ## EXEC-47 Provider Activation, Smart Company Autofill, RELU AI Completion & Final Production Onboarding Closure
 

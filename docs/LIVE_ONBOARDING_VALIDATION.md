@@ -93,3 +93,15 @@ The execution is still not fully closed live because:
 3. localization defaults, company autofill, and RELU AI suggestions are revalidated in the browser on the latest deployed revisions
 4. homepage/public visibility proof is captured after moderation approval on the same fresh revisions
 5. browser reruns return `failedRequests = []`, `consoleErrors = []`, `pageErrors = []`, and no mobile overflow
+
+## EXEC-49 Dependency Truth
+
+As of 2026-05-22, the remaining onboarding closure blockers are no longer code-implementation blockers first. They are operator-side provider and test-data blockers:
+
+- transactional email provider credentials are missing
+- Romanian provider credentials are missing
+- password-reset inbox proof is missing
+- approved Romanian CUI/VAT test values are missing
+- final company and professional test accounts are missing
+
+EXEC-50 should start only after those inputs are supplied.

@@ -58,3 +58,11 @@ EXEC-45 can close this area only after production mounts a real Romanian provide
 3. provider-unavailable fallback
 4. manual override continuity
 5. persisted audit metadata from the live provider-backed lookup
+
+## Operator Dependency
+
+Final closure now depends on operator-supplied procurement and handoff inputs captured in:
+
+- [PROVIDER_PROCUREMENT_CHECKLIST.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/PROVIDER_PROCUREMENT_CHECKLIST.md:1)
+- [ROMANIAN_PROVIDER_OPERATOR_HANDOFF.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/ROMANIAN_PROVIDER_OPERATOR_HANDOFF.md:1)
+- [PROVIDER_SECRET_INJECTION_PLAN.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/PROVIDER_SECRET_INJECTION_PLAN.md:1)
