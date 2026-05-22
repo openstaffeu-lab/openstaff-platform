@@ -103,3 +103,11 @@ So even with mailbox identities available operationally, production email activa
 
 1. no runtime provider secrets are mounted
 2. the public deliverability posture is not yet proven production-safe for transactional delivery
+
+## EXEC-57 Revalidation Note
+
+EXEC-57 rechecked runtime truth and confirmed nothing material changed:
+
+- no provider secrets were added
+- no provider mounts were added
+- `/status.integrations.emailDelivery.mode` is still `not_configured`

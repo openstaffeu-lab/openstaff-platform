@@ -38,3 +38,10 @@ The following cannot yet be completed honestly:
 - one reset inbox
 - approved Romanian valid and invalid test identifiers
 - company and professional test accounts plus admin validation path
+
+## EXEC-57 Revalidation
+
+EXEC-57 confirmed that the blocked visitor scenarios remain the same:
+
+- recovery cannot be simulated honestly without real delivered email
+- provider-backed Romanian autofill cannot be simulated honestly without mounted provider secrets

@@ -63,6 +63,13 @@ But the final visitor-trust closure is still blocked by provider reality:
 - Romanian company autofill still has no provider-backed trust proof
 - transactional-email deliverability is not yet strong enough to claim a production-safe sender posture while `_dmarc.openstaff.eu` remains `p=none` and no visible SPF TXT was confirmed
 
+## EXEC-57 Trust Revalidation
+
+The remaining user-trust blocker is now even narrower and clearer:
+
+- public browsing is no longer the main risk
+- provider-backed recovery trust and deliverability trust are still the unresolved production gaps
+
 ## EXEC-53 Identity Trust Closure
 
 The identity step itself is now no longer the main trust blocker for first-time users:

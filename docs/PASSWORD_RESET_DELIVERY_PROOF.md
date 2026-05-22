@@ -31,3 +31,7 @@ That means this execution cannot honestly prove:
 - mounted Cloud Run runtime envs
 - one accessible reset inbox
 - fresh live reset run
+
+## EXEC-57 Revalidation
+
+EXEC-57 confirmed these requirements are still unmet in production, so password-reset delivery remains blocked live.

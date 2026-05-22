@@ -2,6 +2,38 @@
 
 Last updated: 2026-05-22
 
+## EXEC-57 Production Email Activation, DNS Hardening & Final Visitor-Safe Account Recovery Closure
+
+Verdict: `IN PROGRESS - public browsing and onboarding entry remain clean after the EXEC-56 auth-noise fix, but production still has no mounted transactional email provider, no Romanian provider runtime contract, `/status` still reports emailDelivery.mode = not_configured, DMARC remains p=none, and no real password-reset delivery proof can be produced honestly`
+
+### EXEC-57 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| provider runtime inventory rechecked live | ✅ | `gcloud secrets list --project openstaff-platform` still shows only the baseline runtime secrets and no email-provider or Romanian-provider contract |
+| openstaff-api mount contract rechecked live | ✅ | `gcloud run services describe openstaff-api --region europe-west1 --project openstaff-platform --format=json` still shows no `EMAIL_PROVIDER`, `EMAIL_FROM`, `SMTP_URL`, `EMAIL_API_KEY`, `MAILGUN_DOMAIN`, `ROMANIAN_COMPANY_LOOKUP_URL`, or `ROMANIAN_COMPANY_LOOKUP_API_KEY` env mounts |
+| live status remained honest | ✅ | `GET https://api.openstaff.eu/status` still reports `integrations.emailDelivery.mode = not_configured` and no Romanian provider activation |
+| public auth-stability baseline remained intact | ✅ | EXEC-56 remains valid: fresh public browsing on `openstaff-web-00020-wtl` stayed free of repeated `401` spam, console errors, page errors, and failed critical requests |
+| MX presence confirmed again | ✅ partial | `nslookup -type=MX openstaff.eu` still resolves MX to `openstaff.eu`, confirming mailbox presence is not the same as runtime activation |
+| DMARC hardening still open | ❌ blocker | `nslookup -type=TXT _dmarc.openstaff.eu` still returns `v=DMARC1; p=none;` |
+| SPF proof still open | ❌ blocker | no visible SPF TXT record was confirmed for `openstaff.eu` in this execution |
+| DKIM proof still open | ❌ blocker | no active provider selector or provider verification contract was available to validate DKIM honestly |
+| password-reset live delivery proof still blocked | ❌ blocker | with no mounted provider secrets, forgot-password can still not produce a real delivered email, usable reset link, or post-reset login proof |
+| Romanian provider-backed autofill still blocked | ❌ blocker | no Romanian provider secret exists or is mounted, so provider-backed company autofill still cannot be proven live |
+
+### EXEC-57 Exact Remaining Blockers
+
+1. no transactional email provider secrets exist in Secret Manager
+2. `openstaff-api` still mounts no email-provider envs
+3. `/status` still reports `integrations.emailDelivery.mode = not_configured`
+4. no Romanian provider secrets exist in Secret Manager
+5. `openstaff-api` still mounts no Romanian provider envs
+6. DMARC is still `p=none`
+7. no visible SPF TXT record was confirmed
+8. DKIM could not be verified
+9. no real delivered password-reset email proof can be produced
+10. no provider-backed Romanian company autofill proof can be produced
+
 ## EXEC-56 Transactional Email Activation, Auth Noise Elimination & Production-Grade Visitor Experience
 
 Verdict: `IN PROGRESS - the public web now has a safer auth-refresh contract and fresh live Chrome, Edge, and mobile proof confirms clean anonymous browsing without 401 spam on the promoted revision, but production still has no mounted email-provider or Romanian-provider secrets, password-reset delivery still cannot be proven live, and the email deliverability posture is not yet strong enough for a production-grade transactional sender claim`

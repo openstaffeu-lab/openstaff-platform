@@ -174,6 +174,12 @@ EXEC-53 does **not** close the provider-backed EXEC-52 work. The live provider b
 - `/status` remains the source of truth and still reports `integrations.emailDelivery.mode = not_configured`
 - DNS inspection now matters for the remaining closure work: `_dmarc.openstaff.eu = "v=DMARC1; p=none;"`, no SPF TXT was visible at `openstaff.eu`, and DKIM could not be verified without the actual provider selector
 
+# EXEC-57 Recovery Reality
+
+- EXEC-56 public-auth cleanliness remains valid on the current live revisions
+- transactional account recovery is still blocked entirely by missing runtime provider activation and incomplete deliverability hardening
+- no new onboarding or public-browsing regression was discovered during the EXEC-57 re-audit
+
 ## EXEC-54 Identity Product Reality
 
 As of `2026-05-22`, the public identity step on `openstaff-web-00019-5x7` now behaves much more like a guided onboarding flow:

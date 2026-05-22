@@ -39,3 +39,7 @@ Two targeted browser scenarios were executed against the public surface:
 - Chrome desktop: clean anonymous browsing, no `401`, no `4xx/5xx`, no console errors
 - Edge desktop: clean anonymous browsing, no `401`, no `4xx/5xx`, no console errors
 - Mobile Chrome: clean anonymous browsing, no `401`, no `4xx/5xx`, no console errors, `scrollWidth = viewportWidth = bodyScrollWidth = 412`
+
+## EXEC-57 Revalidation
+
+EXEC-57 did not reopen an auth-noise regression. The public auth-cleanliness baseline from EXEC-56 remains the active live truth.

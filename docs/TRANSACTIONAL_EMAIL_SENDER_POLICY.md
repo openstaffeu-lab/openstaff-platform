@@ -42,3 +42,7 @@ So sender-policy closure is still blocked by:
 3. Cloud Run mounting
 4. verified sender identity
 5. stronger deliverability proof
+
+## EXEC-57 Revalidation
+
+No runtime sender activation occurred in EXEC-57. This document remains a policy and blocker snapshot, not a claim of live transactional-delivery closure.
