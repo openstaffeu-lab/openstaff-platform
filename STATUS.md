@@ -2,9 +2,35 @@
 
 Last updated: 2026-05-22
 
+## EXEC-58 Password Reset SMTP Delivery Runtime Debug
+
+Verdict: `IN PROGRESS - production now mounts EMAIL_PROVIDER, EMAIL_FROM, and SMTP_URL on openstaff-api and /status truthfully reports emailDelivery.mode = configured, but live forgot-password delivery still fails because the SMTP server rejects AUTH PLAIN with 535 Incorrect authentication data, so no real reset email has been received yet`
+
+### EXEC-58 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| provider runtime mount revalidated live | ✅ | `gcloud run services describe openstaff-api --region europe-west1 --project openstaff-platform --format=json` now shows `EMAIL_PROVIDER`, `EMAIL_FROM`, and `SMTP_URL` mounted on the live API service |
+| live status remained configured | ✅ | `GET https://api.openstaff.eu/status` on `2026-05-22` reports `integrations.emailDelivery.mode = configured` with `warnings = []` and `errors = []` |
+| API deploy pipeline regression closed | ✅ | `apps/admin/api/cloudbuild.api.yaml` now preserves `EMAIL_PROVIDER`, `EMAIL_FROM`, and `SMTP_URL` during future `openstaff-api` deployments instead of silently dropping them |
+| safe SMTP instrumentation added | ✅ | `apps/admin/api/src/notifications/notification.service.ts` and `apps/admin/api/src/auth/auth.service.ts` now log provider mode, password-reset send attempt, send success, and sanitized send failure details without leaking secrets |
+| password-reset request path proven live | ✅ partial | `POST https://api.openstaff.eu/auth/password-reset/request` returns `200` with neutral delivery wording and increments `queues.notifications.failed` from `17` to `18`, proving the request reaches the delivery path |
+| live SMTP failure reason captured | ❌ blocker | fresh Cloud Run logs on `openstaff-api-00017-f67` show `code=EAUTH`, `command=AUTH PLAIN`, `responseCode=535`, and `Invalid login: 535 Incorrect authentication data` during the reset-email send attempt |
+| EMAIL_PROVIDER casing and status contract validated | ✅ | mounted `EMAIL_PROVIDER` resolves to `SMTP`, `/status` remains `configured`, and the codepath accepts the casing through normalized provider selection |
+| SMTP URL parsing is not the blocking layer | ✅ partial | the transport reaches SMTP authentication and fails on `AUTH PLAIN`, proving the runtime constructs a transport and attempts login; the remaining blocker is authentication acceptance, not provider-mode parsing |
+| frontend forgot-password wording made more honest | ✅ | `apps/admin/web/app/forgot-password/page.tsx` now tells the user OpenStaff will try to deliver a secure reset link shortly and to check Spam/Junk, rather than implying delivery already exists |
+| real reset email delivery proof | ❌ blocker | no reset email has been received yet, so reset-link usability, expired-token rejection from a delivered message, reused-token rejection, old-password rejection, and post-reset login proof remain open |
+
+### EXEC-58 Exact Remaining Blockers
+
+1. the mounted SMTP credentials are rejected live with `EAUTH` / `535 Incorrect authentication data`
+2. because SMTP authentication fails, no password reset email is delivered to the inbox
+3. because no email is delivered, reset-link usability, expired-token proof, reused-token proof, old-password rejection, and new-password login proof cannot be completed honestly
+4. the Romanian company provider contract remains separate and still unresolved under EXEC-52
+
 ## EXEC-57 Production Email Activation, DNS Hardening & Final Visitor-Safe Account Recovery Closure
 
-Verdict: `IN PROGRESS - public browsing and onboarding entry remain clean after the EXEC-56 auth-noise fix, but production still has no mounted transactional email provider, no Romanian provider runtime contract, `/status` still reports emailDelivery.mode = not_configured, DMARC remains p=none, and no real password-reset delivery proof can be produced honestly`
+Verdict: `IN PROGRESS - public browsing and onboarding entry remain clean after the EXEC-56 auth-noise fix, but provider-backed closure is still open because SMTP authentication rejects the mounted credentials, the Romanian provider runtime contract is still missing, DMARC remains p=none, and no real password-reset delivery proof can be produced honestly`
 
 ### EXEC-57 Closure Summary
 

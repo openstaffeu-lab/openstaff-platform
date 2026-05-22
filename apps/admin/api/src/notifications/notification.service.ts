@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
   ComplianceDocumentStatus,
   NotificationCategory,
@@ -64,6 +64,8 @@ const DEFAULT_CATEGORY_PREFERENCES: NotificationCategoryMap = {
 
 @Injectable()
 export class NotificationService {
+  private readonly logger = new Logger(NotificationService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
@@ -851,6 +853,9 @@ export class NotificationService {
 
     const provider = this.resolveEmailProvider();
     if (!provider) {
+      this.logger.warn(
+        `email delivery skipped because provider is not configured (userId=${userId ?? 'anonymous'})`,
+      );
       return {
         status: NotificationStatus.FAILED,
         deliveredAt: null,
@@ -866,6 +871,12 @@ export class NotificationService {
     const text =
       this.readMetadataString(metadata, 'emailText') ??
       this.defaultEmailTextTemplate(subject, this.readMetadataString(metadata, 'message'));
+    const eventType = this.readMetadataString(metadata, 'eventType') ?? 'unknown';
+    const recipientSummary = this.maskEmailRecipient(recipient);
+
+    this.logger.log(
+      `email delivery attempt provider=${provider} eventType=${eventType} recipient=${recipientSummary}`,
+    );
 
     try {
       const providerResult =
@@ -876,8 +887,14 @@ export class NotificationService {
           : provider === 'sendgrid'
             ? await this.sendWithSendGrid(recipient, subject, html, text)
             : provider === 'postmark'
-              ? await this.sendWithPostmark(recipient, subject, html, text)
-              : await this.sendWithMailgun(recipient, subject, html, text);
+          ? await this.sendWithPostmark(recipient, subject, html, text)
+          : await this.sendWithMailgun(recipient, subject, html, text);
+
+      this.logger.log(
+        `email delivery success provider=${provider} eventType=${eventType} recipient=${recipientSummary} messageId=${
+          providerResult.messageId ? 'present' : 'missing'
+        }`,
+      );
 
       return {
         status: NotificationStatus.SENT,
@@ -892,6 +909,15 @@ export class NotificationService {
         },
       };
     } catch (error) {
+      const failure = this.toEmailFailureDetails(error);
+      this.logger.warn(
+        `email delivery failed provider=${provider} eventType=${eventType} recipient=${recipientSummary} code=${
+          failure.code ?? 'unknown'
+        } command=${failure.command ?? 'unknown'} responseCode=${
+          failure.responseCode ?? 'unknown'
+        } reason=${failure.message}`,
+      );
+
       return {
         status: NotificationStatus.FAILED,
         deliveredAt: null,
@@ -903,6 +929,10 @@ export class NotificationService {
         metadata: {
           deliveryProvider: provider,
           deliveryRecipient: recipient,
+          failureCode: failure.code ?? null,
+          failureCommand: failure.command ?? null,
+          failureResponseCode: failure.responseCode ?? null,
+          failureMessage: failure.message,
         },
       };
     }
@@ -1000,11 +1030,75 @@ export class NotificationService {
     );
   }
 
+  private maskEmailRecipient(value: string) {
+    const [localPart, domain] = value.split('@');
+    if (!domain) {
+      return 'invalid-email';
+    }
+
+    const first = localPart?.slice(0, 1) ?? '';
+    return `${first || '*'}***@${domain}`;
+  }
+
+  private toEmailFailureDetails(error: unknown) {
+    if (!(error instanceof Error)) {
+      return {
+        code: null as string | null,
+        command: null as string | null,
+        responseCode: null as string | number | null,
+        message: 'unknown_email_provider_error',
+      };
+    }
+
+    const candidate = error as Error & {
+      code?: string;
+      command?: string;
+      responseCode?: number | string;
+      response?: string;
+    };
+
+    return {
+      code: candidate.code ?? null,
+      command: candidate.command ?? null,
+      responseCode:
+        typeof candidate.responseCode === 'number' || typeof candidate.responseCode === 'string'
+          ? candidate.responseCode
+          : null,
+      message: candidate.message || candidate.response || 'unknown_email_provider_error',
+    };
+  }
+
+  private describeSmtpTransport(value: string) {
+    try {
+      const parsed = new URL(value);
+      return {
+        host: parsed.hostname || null,
+        port: parsed.port || null,
+        secure: parsed.protocol === 'smtps:',
+        hasAuthUser: Boolean(parsed.username),
+      };
+    } catch {
+      return {
+        host: null,
+        port: null,
+        secure: false,
+        hasAuthUser: false,
+      };
+    }
+  }
+
   private async sendWithSmtp(recipient: string, subject: string, html: string, text: string) {
     const smtpUrl = process.env.SMTP_URL?.trim();
     if (!smtpUrl) {
       throw new Error('smtp_url_missing');
     }
+
+    const transport = this.describeSmtpTransport(smtpUrl);
+    this.logger.log(
+      `smtp transport resolved host=${transport.host ?? 'unknown'} port=${transport.port ?? 'default'} secure=${
+        transport.secure
+      } authUser=${transport.hasAuthUser ? 'present' : 'missing'}`,
+    );
 
     const transporter = nodemailer.createTransport(smtpUrl);
     const response = await transporter.sendMail({

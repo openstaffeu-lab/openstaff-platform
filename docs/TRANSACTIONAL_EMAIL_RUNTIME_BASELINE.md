@@ -11,9 +11,9 @@ The production runtime is expected to mount:
 - `SMTP_URL` or provider API key
 - `MAILGUN_DOMAIN` if Mailgun is used
 
-## EXEC-57 Live Runtime Truth
+## EXEC-58 Live Runtime Truth
 
-`openstaff-api` currently mounts only:
+`openstaff-api` now mounts:
 
 - `DATABASE_URL`
 - `JWT_SECRET`
@@ -21,19 +21,28 @@ The production runtime is expected to mount:
 - `STRIPE_WEBHOOK_SECRET`
 - `FIREBASE_SERVICE_ACCOUNT_KEY`
 - `GEMINI_API_KEY`
-
-It does not currently mount:
-
 - `EMAIL_PROVIDER`
 - `EMAIL_FROM`
 - `SMTP_URL`
-- `EMAIL_API_KEY`
-- `MAILGUN_DOMAIN`
+
+The live API status contract now reports:
+
+- `/status.integrations.emailDelivery.mode = configured`
+- `/status.readiness.warnings = []`
+- `/status.readiness.errors = []`
+
+The future deploy path now preserves these secrets as well, because
+`apps/admin/api/cloudbuild.api.yaml` has been updated to pass `EMAIL_PROVIDER`,
+`EMAIL_FROM`, and `SMTP_URL` through `--set-secrets`.
 
 ## Runtime Outcome
 
-As long as this remains true:
+The runtime contract is no longer the blocking layer.
 
-- `/status.integrations.emailDelivery.mode` must remain `not_configured`
-- forgot-password delivery cannot be proven live
-- moderation/security transactional mail cannot be claimed live
+Fresh EXEC-58 live proof shows:
+
+- the password-reset request reaches the email delivery path
+- the failed notification count increases when the request runs
+- Cloud Run logs capture `EAUTH` / `535 Incorrect authentication data` at `AUTH PLAIN`
+
+So the current blocker is SMTP authentication, not missing env mounts or provider-mode parsing.

@@ -39,8 +39,8 @@ export default function ForgotPasswordPage() {
           </div>
           <h1 className="mt-4 text-4xl font-bold text-brand-charcoal">Reset your password</h1>
           <p className="mt-4 text-slate-600">
-            Enter the email address you use for OpenStaff. If an account matches it, a secure
-            password reset instruction becomes available.
+            Enter the email address you use for OpenStaff. If an account matches it, OpenStaff
+            will try to deliver a secure reset link shortly. Please also check Spam or Junk.
           </p>
           <div className="mt-8 rounded-[1.7rem] border border-slate-200 bg-white/80 p-5 text-sm leading-7 text-slate-700">
             For security, this page does not confirm whether a specific account exists.

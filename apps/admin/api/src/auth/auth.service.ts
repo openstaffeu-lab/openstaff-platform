@@ -17,6 +17,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -79,6 +80,7 @@ export class AuthService {
   private static readonly PASSWORD_RESET_EVENT_TYPE = 'PASSWORD_RESET_REQUESTED';
   private static readonly PASSWORD_RESET_SOURCE_TYPE = 'PASSWORD_RESET';
   private static readonly PASSWORD_RESET_EXPIRY_MINUTES = 30;
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -356,7 +358,7 @@ export class AuthService {
       request,
     });
 
-    await this.notificationService.emitEvent({
+    const delivery = await this.notificationService.emitEvent({
       key: `password-reset:user:${user.id}:${tokenHash}`,
       eventType: 'PASSWORD_RESET_AVAILABLE',
       sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
@@ -386,6 +388,29 @@ export class AuthService {
         }),
       },
     });
+
+    const emailDelivery = delivery.deliveries.find(
+      (item) => item.channel === NotificationChannel.EMAIL,
+    );
+
+    if (emailDelivery) {
+      if (emailDelivery.status === 'SENT') {
+        this.logger.log(
+          `password reset email queued successfully for user=${user.id} delivery=${emailDelivery.id}`,
+        );
+      } else {
+        const failureReason =
+          typeof emailDelivery.metadata === 'object' &&
+          emailDelivery.metadata !== null &&
+          'failureReason' in emailDelivery.metadata
+            ? String((emailDelivery.metadata as Record<string, unknown>).failureReason ?? 'unknown')
+            : 'unknown';
+
+        this.logger.warn(
+          `password reset email delivery failed for user=${user.id} delivery=${emailDelivery.id} reason=${failureReason}`,
+        );
+      }
+    }
 
     return this.buildPasswordResetRequestResponse();
   }
@@ -977,7 +1002,7 @@ export class AuthService {
     return {
       success: true,
       message:
-        'If an account matches that email, a password reset instruction is now available.',
+        'If an account matches that email, OpenStaff will try to deliver a secure reset link shortly. Please also check Spam or Junk.',
       expiresInMinutes: AuthService.PASSWORD_RESET_EXPIRY_MINUTES,
     };
   }
