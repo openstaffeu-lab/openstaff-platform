@@ -1,6 +1,6 @@
 # Romanian Company Lookup Proof
 
-Last updated: 2026-05-21
+Last updated: 2026-05-22
 
 ## Scope
 
@@ -51,13 +51,22 @@ Because the production runtime has no Romanian provider URL/API key, EXEC-45 can
 
 ## Remaining Closure Requirement
 
-EXEC-45 can close this area only after production mounts a real Romanian provider URL/API key and a fresh live run proves:
+EXEC-52 can close this area only after production mounts a real Romanian provider URL/API key and a fresh live run proves:
 
 1. valid CUI success
 2. invalid CUI clean failure
 3. provider-unavailable fallback
 4. manual override continuity
 5. persisted audit metadata from the live provider-backed lookup
+
+## EXEC-51 Readiness Note
+
+The remaining Romanian lookup gap is now reduced to:
+
+- operator-chosen provider contract
+- mounted URL/API key secrets
+- approved valid and invalid Romanian test values
+- one fresh browser-assisted autofill rerun on the same promoted revision set
 
 ## Operator Dependency
 

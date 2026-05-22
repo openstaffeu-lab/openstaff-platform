@@ -1,7 +1,7 @@
 # Production Readiness Matrix
 
 Last updated: `2026-05-22`  
-Scope: `EXEC-49`
+Scope: `EXEC-51`
 
 ## Matrix
 
@@ -9,10 +9,10 @@ Scope: `EXEC-49`
 |---|---|---|---|
 | infrastructure | stable | Cloud Run healthy, Cloud SQL hardened, storage configured | production runtime healthy; Cloud SQL `RUNNABLE`, backups/PITR on, `ENCRYPTED_ONLY` |
 | auth / security | stable | `firebase-admin`, audit/security flows operational, security posture documented | [SECURITY_POSTURE_REVIEW.md](/C:/Users/admin/Desktop/openstaff-platform/docs/SECURITY_POSTURE_REVIEW.md:1) and EXEC-25 live proof |
-| password recovery | code-ready, provider credentials pending | forgot-password, reset-token expiry, single-use invalidation, audit events, and provider-capable delivery wiring now exist, but real provider credentials and test inbox proof are still missing | [PASSWORD_RECOVERY_SECURITY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/PASSWORD_RECOVERY_SECURITY.md:1), [EMAIL_DELIVERY_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/EMAIL_DELIVERY_BASELINE.md:1), and [EMAIL_PROVIDER_OPERATOR_HANDOFF.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/EMAIL_PROVIDER_OPERATOR_HANDOFF.md:1) |
+| password recovery | code-ready, provider credentials pending | forgot-password, reset-token expiry, single-use invalidation, audit events, delivery-failure handling, and provider-capable delivery wiring now exist, but real provider credentials and test inbox proof are still missing | [PASSWORD_RECOVERY_SECURITY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/PASSWORD_RECOVERY_SECURITY.md:1), [EMAIL_DELIVERY_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/EMAIL_DELIVERY_BASELINE.md:1), [EMAIL_PROVIDER_PROOF.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/EMAIL_PROVIDER_PROOF.md:1), and [EMAIL_PROVIDER_OPERATOR_HANDOFF.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/EMAIL_PROVIDER_OPERATOR_HANDOFF.md:1) |
 | onboarding closure | code-ready, live provider proof pending | register defaults, company autofill entrypoint, RELU AI completion visibility, admin RELU onboarding review, and public visibility proof exist, but final provider-backed product proof still depends on operator-supplied provider credentials and test data | [USER_ONBOARDING_CLOSURE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/USER_ONBOARDING_CLOSURE.md:1), [LIVE_ONBOARDING_VALIDATION.md](/C:/Users/admin/Desktop/openstaff-platform/docs/LIVE_ONBOARDING_VALIDATION.md:1), and [ONBOARDING_PROVIDER_TEST_DATA.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/ONBOARDING_PROVIDER_TEST_DATA.md:1) |
-| company autofill | code-ready, provider credentials pending | fiscal/VAT normalization, provider labels, VIES validation, configurable Romanian provider path, and live VIES invalid-path proof now exist, but real Romanian provider credentials and approved test values are still missing | [COMPANY_AUTOFILL_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/COMPANY_AUTOFILL_BASELINE.md:1), [COMPANY_LOOKUP_PROVIDER_INTEGRATION.md](/C:/Users/admin/Desktop/openstaff-platform/docs/COMPANY_LOOKUP_PROVIDER_INTEGRATION.md:1), and [ROMANIAN_PROVIDER_OPERATOR_HANDOFF.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/ROMANIAN_PROVIDER_OPERATOR_HANDOFF.md:1) |
-| RELU AI profile generation | implemented at baseline level | RELU AI profile analysis, summary, and taxonomy suggestion visibility now exist in onboarding completion | [RELU_PROFILE_GENERATION_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELU_PROFILE_GENERATION_BASELINE.md:1) |
+| company autofill | code-ready, provider credentials pending | fiscal/VAT normalization, provider labels, VIES validation, configurable Romanian provider path, localization defaults, and live VIES invalid-path proof now exist, but real Romanian provider credentials and approved test values are still missing | [COMPANY_AUTOFILL_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/COMPANY_AUTOFILL_BASELINE.md:1), [COMPANY_LOOKUP_PROVIDER_INTEGRATION.md](/C:/Users/admin/Desktop/openstaff-platform/docs/COMPANY_LOOKUP_PROVIDER_INTEGRATION.md:1), [ROMANIAN_COMPANY_LOOKUP_PROOF.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/ROMANIAN_COMPANY_LOOKUP_PROOF.md:1), and [ROMANIAN_PROVIDER_OPERATOR_HANDOFF.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/ROMANIAN_PROVIDER_OPERATOR_HANDOFF.md:1) |
+| RELU AI profile generation | implemented at baseline level, fresh live product proof pending | RELU AI profile analysis, summary, missing-information hints, and taxonomy suggestion visibility now exist in onboarding completion, but a fresh upload-to-save-to-public proof still depends on the final provider-backed rerun | [RELU_PROFILE_GENERATION_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELU_PROFILE_GENERATION_BASELINE.md:1) and [RELU_AI_PRODUCTIZATION_BASELINE.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/RELU_AI_PRODUCTIZATION_BASELINE.md:1) |
 | RELU AI moderation visibility | improved and partially live-proven | admin onboarding now exposes profile-linked RELU suggestions, confidence context, user taxonomy comparison, and missing-information hints; authenticated admin proof confirmed the target UI on the promoted revision | [RELU_AI_MODERATION_VISIBILITY.md](/C:/Users/admin/Desktop/openstaff-platform/docs/RELU_AI_MODERATION_VISIBILITY.md:1) |
 | taxonomy suggestions | implemented at baseline level | ESCO, NACE/category, and Uniclass suggestions are now surfaced with advisory wording and manual confirmation expectations | [TAXONOMY_SUGGESTION_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/TAXONOMY_SUGGESTION_BASELINE.md:1) |
 | security posture | stable with accepted residual risks | attack surface, ingress, CORS, secret access, admin exposure, and DB exposure documented | no wildcard CORS; anonymous admin API still blocked; public `run.app` exposure accepted |
@@ -43,7 +43,10 @@ Scope: `EXEC-49`
 | support readiness | documented and usable | SOPs, support playbook, escalation, and controlled-rollout ownership remain active | [OPERATOR_SUPPORT_PLAYBOOK.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OPERATOR_SUPPORT_PLAYBOOK.md:1) |
 | ownership model | documented and usable | engineering, Technical Ops, moderation, billing, security, and escalation ownership are explicit | [OWNERSHIP_MATRIX.md](/C:/Users/admin/Desktop/openstaff-platform/docs/OWNERSHIP_MATRIX.md:1) |
 | ops audit trail | active and durable | production deploy, restore, IAM, and governance entries now have a permanent home | `docs/ops-log/` plus seeded entries |
-| rollout limitations | explicit | manual billing, no automated email, no SMS requirement remain unchanged | `/status.integrations` remains aligned |
+| rollout limitations | explicit | manual billing and no SMS requirement remain unchanged; automated email remains code-ready but not live because provider credentials are still absent | `/status.integrations` remains aligned |
+| provider activation readiness | ready for operator cutover, externally blocked | secret names, runtime env mapping, injection order, smoke order, browser-rerun order, and rollback order are now explicit; only real credentials and test data are missing | [PROVIDER_SECRET_INJECTION_PLAN.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/PROVIDER_SECRET_INJECTION_PLAN.md:1) and [PRODUCTION_ACTIVATION_CHECKLIST.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/PRODUCTION_ACTIVATION_CHECKLIST.md:1) |
+| localization readiness | implemented at baseline level, fresh live rerun pending | language, country, timezone, currency, VAT mode, and phone-prefix defaults are implemented, but a fresh post-activation browser proof is still required on the final onboarding cohort | [LOCALIZATION_AUTOFILL_BASELINE.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/LOCALIZATION_AUTOFILL_BASELINE.md:1) |
+| final user trust | reviewed and mostly healthy, fresh provider-backed rerun pending | public copy is now substantially cleaner, instant-activation claims are absent, and fallback/demo content was reduced, but password-recovery trust and provider-backed autofill trust still need a fresh live rerun after activation | [FINAL_USER_TRUST_REVIEW.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/FINAL_USER_TRUST_REVIEW.md:1) |
 | future automation gaps | partial | governance and checks are stronger, but business automation remains intentionally manual | `billingPayments = manual_only`, `emailDelivery = not_configured` |
 | capacity baseline | stable for current rollout | Cloud Run limits, DB growth expectations, and uptime checks exist together | no load/stress test performed in EXEC-26 |
 | controlled scale baseline | documented and usable | first-10 and first-100 user expectations, bottlenecks, and freeze triggers are explicit | [SCALE_READINESS_BASELINE.md](/C:/Users/admin/Desktop/openstaff-platform/docs/SCALE_READINESS_BASELINE.md:1) |
@@ -130,7 +133,7 @@ Scope: `EXEC-49`
 
 ## Governance Verdict
 
-`EXEC-43 IN PROGRESS`
+`EXEC-51 PASS for orchestration/readiness closure`
 
 The production baseline is now suitable for repeatable ongoing operations and controlled real-user onboarding because:
 
@@ -154,7 +157,7 @@ The production baseline is now suitable for repeatable ongoing operations and co
 18. a first shared operational memory layer now reduces repeated decision reconstruction and escalation rediscovery through bounded carryover, recurring issue summaries, repeated-failure summaries, and operator handoff summaries without transferring authority
 19. a first coordination-governance and decision-traceability layer now preserves rationale, accountability, disagreement visibility, ownership continuity, and grouped operator-action history without transferring authority
 20. password recovery, progressive registration, company autofill, RELU AI profile generation visibility, and taxonomy-suggestion visibility now have a first application-level closure baseline
-21. fresh API, public web, and admin revisions were promoted for EXEC-43 and partial live browser proof now exists on those revisions, including a production CORS fix discovered during validation
+21. the production runtime contract is now narrow and unambiguous enough that EXEC-52 can focus only on real provider activation, live password-reset proof, provider-backed Romanian autofill proof, fresh RELU/browser reruns, and final product closure
 
 ## Accepted Remaining Limitations
 
@@ -167,5 +170,6 @@ The production baseline is now suitable for repeatable ongoing operations and co
 7. Cloud Run ingress remains `all`, and public `run.app` URLs remain directly reachable
 8. live provider-backed password-reset delivery is still blocked by `emailDelivery = not_configured`
 9. the Romanian company-provider path is code-ready but still lacks production configuration and live provider proof
-10. browser validation improved materially in EXEC-43, but Edge, mobile, and admin proof still show residual failed requests
-11. full approved homepage/search/public-profile visibility proof was not rerun end-to-end on the promoted EXEC-43 revisions
+10. final provider-backed password-reset proof still depends on real email-provider credentials, a test inbox, and a fresh live rerun
+11. final provider-backed Romanian autofill proof still depends on real Romanian provider credentials and approved valid/invalid test values
+12. fresh RELU upload-to-save and full Chrome/Edge/Mobile reruns still belong to EXEC-52 once the providers are mounted

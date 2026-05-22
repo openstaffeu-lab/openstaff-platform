@@ -1,6 +1,6 @@
 # Email Provider Proof
 
-Last updated: 2026-05-21
+Last updated: 2026-05-22
 
 ## Scope
 
@@ -16,7 +16,7 @@ This proof tracks the production truth for provider-backed transactional email d
 
 ## Live Runtime Truth
 
-On `2026-05-21`, the active production API runtime is `openstaff-api-00012-bz7`.
+On `2026-05-22`, the active production API runtime is `openstaff-api-00013-htb`.
 
 `gcloud run services describe openstaff-api --region europe-west1 --project openstaff-platform --format=json` confirms that the live container env mounts:
 
@@ -68,7 +68,7 @@ Final closure now depends on operator-supplied procurement and handoff inputs ca
 
 ## Remaining Closure Requirement
 
-EXEC-45 can close this area only after production mounts a real provider credential and sender identity, followed by a fresh live password-reset run proving:
+EXEC-52 can close this area only after production mounts a real provider credential and sender identity, followed by a fresh live password-reset run proving:
 
 1. email delivery
 2. successful reset from the delivered link
@@ -76,3 +76,13 @@ EXEC-45 can close this area only after production mounts a real provider credent
 4. reused-token rejection
 5. old-password failure
 6. new-password login success
+
+## EXEC-51 Readiness Note
+
+The remaining gap here is no longer ambiguous implementation work. It is only:
+
+- real provider credential procurement
+- verified sender identity or domain readiness
+- safe Secret Manager injection
+- Cloud Run remount and smoke
+- one real inbox-based reset proof sequence

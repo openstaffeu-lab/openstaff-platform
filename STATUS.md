@@ -2,6 +2,32 @@
 
 Last updated: 2026-05-22
 
+## EXEC-51 Provider Activation Orchestration, Production Secret Validation & Final User Trust Closure
+
+Verdict: `PASS - provider activation blockers are now reduced to one explicit external dependency set, the production runtime contract and injection path are re-audited cleanly, user-trust and onboarding-product risks are restated without fake closure, and EXEC-52 can now focus only on real provider mounting plus live end-to-end proof`
+
+### EXEC-51 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| provider activation readiness re-audited live | ✅ | `gcloud secrets list --project openstaff-platform`, `gcloud run services describe openstaff-api --region europe-west1 --project openstaff-platform --format=json`, and `GET https://api.openstaff.eu/status` were rechecked on `2026-05-22` and still confirm the only remaining runtime blockers are missing provider secrets |
+| exact missing-secret matrix and dependency map documented | ✅ | `docs/PRODUCTION_ACTIVATION_CHECKLIST.md` now captures required email-provider secrets, Romanian-provider secrets, runtime env mapping, deployment order, smoke order, rollback order, and proof ownership |
+| runtime contract revalidated honestly | ✅ | `docs/LIVE_ONBOARDING_VALIDATION.md`, `docs/EMAIL_PROVIDER_PROOF.md`, `docs/ROMANIAN_COMPANY_LOOKUP_PROOF.md`, and `docs/PRODUCTION_READINESS_MATRIX.md` now all restate the current live contract: healthy runtime, code-ready onboarding, but `emailDelivery = not_configured` and no mounted Romanian provider |
+| secret injection dry-run tightened | ✅ | `docs/PROVIDER_SECRET_INJECTION_PLAN.md` now includes secret inventory checks, enabled-version checks, exact Cloud Run mount validation, deploy-order checks, rollback order, and rotation compatibility notes without exposing secret values |
+| final operator activation checklist created | ✅ | `docs/PRODUCTION_ACTIVATION_CHECKLIST.md` now defines provider procurement readiness, DNS verification, Secret Manager injection, Cloud Run redeploy, smoke verification, browser rerun order, and rollback gates |
+| first-user trust review refreshed | ✅ | `docs/FINAL_USER_TRUST_REVIEW.md` now reviews registration clarity, password recovery wording, company autofill clarity, RELU AI visibility, publish/moderation transparency, billing honesty, mobile usability, and public-profile trust from a real-user perspective |
+| localization readiness documented for activation | ✅ | `docs/LIVE_ONBOARDING_VALIDATION.md` and `docs/PRODUCTION_READINESS_MATRIX.md` now treat Romanian/EU defaults, VAT behavior, phone normalization, timezone defaults, and GDPR-adjacent messaging as activation-critical readiness areas rather than implicit behavior |
+| RELU AI productization readiness documented | ✅ | `docs/RELU_AI_PRODUCTIZATION_BASELINE.md` now defines RELU onboarding assistant scope, explainability, confidence/fallback expectations, auditability, editability, and graceful degradation rules |
+| repo and production validation remained healthy | ✅ | `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin/web -> npm.cmd run build`; `apps/admin -> npm.cmd run build`; `scripts/release/exec-26-production-ops-check.ps1`; `scripts/release/exec-26-failure-simulations.ps1`; and `scripts/release/exec-13-release-check.ps1` all passed on `2026-05-22` |
+
+### EXEC-51 Exact Remaining External Dependencies
+
+1. transactional email provider credentials and verified sender identity
+2. Romanian company lookup provider credentials and approved field mapping
+3. one accessible password-reset inbox
+4. approved valid and invalid Romanian CUI/VAT test values
+5. company and professional test accounts plus an admin validation path
+
 ## EXEC-49 Provider Procurement, Operator Handoff & Production Credential Readiness
 
 Verdict: `PASS - provider readiness planning is now explicit, the missing transactional email inputs, Romanian provider inputs, GCP injection steps, rollback path, and required onboarding test data are all documented cleanly, and EXEC-50 can now begin immediately once the operator supplies real credentials and approved test values`

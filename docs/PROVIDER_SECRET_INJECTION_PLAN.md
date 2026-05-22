@@ -69,6 +69,50 @@ The operator must verify:
 4. `/status.integrations.emailDelivery.mode = configured`
 5. no secret values appear in deploy logs or runtime logs
 
+Recommended preflight:
+
+```powershell
+gcloud secrets list --project=openstaff-platform --format="value(name)"
+gcloud run services describe openstaff-api `
+  --project=openstaff-platform `
+  --region=europe-west1 `
+  --format=json
+```
+
+Recommended enabled-version check:
+
+```powershell
+gcloud secrets versions list SECRET_NAME `
+  --project=openstaff-platform `
+  --format="table(name,state,createTime)"
+```
+
+## Deploy Order
+
+1. create or version the provider secrets
+2. confirm latest secret versions are `enabled`
+3. update `openstaff-api` secret mounts only for the chosen provider combination
+4. wait for the new ready revision
+5. verify `/health` and `/status`
+6. verify `/status.integrations.emailDelivery.mode = configured`
+7. verify no unexpected readiness warnings or errors
+8. only then run password-reset proof, Romanian lookup proof, RELU/browser proof, and public-visibility reruns
+
+## Rotation Compatibility
+
+This plan is rotation-compatible because:
+
+- secrets are referenced via `latest`
+- new versions can be added without changing code
+- rollback can remove mounts or return traffic to the previous ready revision
+- provider rotation does not require committing config values to the repository
+
+## Provider Failover Assumption
+
+This runtime currently assumes one active transactional provider at a time and one active Romanian lookup provider at a time.
+
+If the operator wants hot failover between providers, that should be treated as future scope, not implied by the current activation plan.
+
 ## Rollback Plan
 
 If the provider injection causes unexpected regressions:

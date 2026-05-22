@@ -1,6 +1,6 @@
 # Live Onboarding Validation
 
-Last updated: 2026-05-21
+Last updated: 2026-05-22
 
 ## Scope
 
@@ -105,3 +105,39 @@ As of 2026-05-22, the remaining onboarding closure blockers are no longer code-i
 - final company and professional test accounts are missing
 
 EXEC-50 should start only after those inputs are supplied.
+
+## EXEC-51 Runtime Contract Truth
+
+As of `2026-05-22`, the live production contract remains operational and honest:
+
+- `GET /health = 200`
+- `GET /status = 200`
+- `readiness.warnings = []`
+- `readiness.errors = []`
+- `integrations.emailDelivery.mode = not_configured`
+- the active API runtime still mounts no transactional email provider secret
+- the active API runtime still mounts no Romanian provider URL/API key
+
+That means the platform is now in a very narrow readiness state:
+
+- COMPANY and PROFESSIONAL onboarding are code-ready
+- localization defaults are implemented at a useful baseline level
+- RELU AI suggestion surfaces are implemented and visible
+- homepage/jobs/professionals/public-profile proof already exists from EXEC-44
+- final provider-backed password reset proof is still blocked externally
+- final provider-backed Romanian autofill proof is still blocked externally
+
+## EXEC-51 Activation Rule
+
+`EXEC-51 PASS` is allowed only for orchestration and readiness closure.
+
+`EXEC-52 PASS` is allowed only when:
+
+1. Secret Manager contains the real chosen email-provider secrets
+2. Secret Manager contains the real Romanian-provider secrets
+3. `openstaff-api` mounts those secrets on the latest ready revision
+4. `/status.integrations.emailDelivery.mode = configured`
+5. a real reset email is received and used successfully
+6. a real Romanian provider-backed lookup returns live provider data
+7. RELU AI upload-to-profile proof is rerun fresh
+8. Chrome, Edge, and Mobile Chrome reruns are clean on the same promoted revisions
