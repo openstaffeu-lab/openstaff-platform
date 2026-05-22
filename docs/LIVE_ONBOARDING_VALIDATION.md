@@ -166,6 +166,14 @@ EXEC-53 does **not** close the provider-backed EXEC-52 work. The live provider b
 - Mobile Chrome identity save + revisit: `consoleErrors = []`, `pageErrors = []`, `badResponses = []`, revisit restore in `637ms`, post-save restore in `561ms`, and `scrollWidth = viewportWidth`
 - Targeted diacritics proof accepted `Ștefan`, `București`, and `Mecanică, întreținere și coordonare.`
 
+# EXEC-56 Public Auth Noise And Provider Reality
+
+- public anonymous browser checks on promoted `openstaff-web-00020-wtl` across `/, /register, /login, /onboarding/welcome` stayed free of `401` responses, `4xx/5xx` responses, console errors, and page errors in Chrome desktop, Edge desktop, and mobile Chrome
+- stale-access-token browser checks with no refresh token also stayed free of `401` responses after the client-side auth fallback was hardened; only navigation-aborted requests were observed during route transitions
+- production still cannot claim password-reset delivery or Romanian provider-backed company autofill because Secret Manager and Cloud Run still expose no provider secrets or mounts
+- `/status` remains the source of truth and still reports `integrations.emailDelivery.mode = not_configured`
+- DNS inspection now matters for the remaining closure work: `_dmarc.openstaff.eu = "v=DMARC1; p=none;"`, no SPF TXT was visible at `openstaff.eu`, and DKIM could not be verified without the actual provider selector
+
 ## EXEC-54 Identity Product Reality
 
 As of `2026-05-22`, the public identity step on `openstaff-web-00019-5x7` now behaves much more like a guided onboarding flow:

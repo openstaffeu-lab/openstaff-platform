@@ -16,7 +16,7 @@ This proof tracks the production truth for provider-backed transactional email d
 
 ## Live Runtime Truth
 
-On `2026-05-22`, the active production API runtime is `openstaff-api-00013-htb`.
+On `2026-05-22`, the active production API runtime is `openstaff-api-00014-tfr`.
 
 `gcloud run services describe openstaff-api --region europe-west1 --project openstaff-platform --format=json` confirms that the live container env mounts:
 
@@ -86,3 +86,20 @@ The remaining gap here is no longer ambiguous implementation work. It is only:
 - safe Secret Manager injection
 - Cloud Run remount and smoke
 - one real inbox-based reset proof sequence
+
+## EXEC-56 DNS And Deliverability Snapshot
+
+`nslookup -type=MX openstaff.eu` currently resolves MX to `openstaff.eu`.
+
+`nslookup -type=TXT _dmarc.openstaff.eu` currently returns:
+
+- `v=DMARC1; p=none;`
+
+`Resolve-DnsName openstaff.eu -Type TXT` did not surface a visible SPF TXT record in this execution.
+
+DKIM could not be proven honestly here because no active provider selector or provider contract was available to inspect.
+
+So even with mailbox identities available operationally, production email activation is still blocked by two separate realities:
+
+1. no runtime provider secrets are mounted
+2. the public deliverability posture is not yet proven production-safe for transactional delivery

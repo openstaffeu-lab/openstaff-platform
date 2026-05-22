@@ -49,6 +49,20 @@ The live product should continue to avoid:
 
 As of `2026-05-22`, user trust is good enough for provider activation rehearsal and final proof preparation, but not yet fully closed because the last trust-critical experiences still depend on real provider-backed recovery and autofill.
 
+## EXEC-56 Visitor Trust Reality
+
+The public visitor experience is now cleaner at the auth-contract level:
+
+- the web client no longer attempts protected refresh recovery without a real refresh token
+- anonymous public browsing can stay free of repeated `401` spam in the validated clean-session path
+- stale access tokens without a matching refresh token no longer justify cascading refresh noise
+
+But the final visitor-trust closure is still blocked by provider reality:
+
+- password recovery still has no real delivered-email proof
+- Romanian company autofill still has no provider-backed trust proof
+- transactional-email deliverability is not yet strong enough to claim a production-safe sender posture while `_dmarc.openstaff.eu` remains `p=none` and no visible SPF TXT was confirmed
+
 ## EXEC-53 Identity Trust Closure
 
 The identity step itself is now no longer the main trust blocker for first-time users:

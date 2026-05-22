@@ -27,3 +27,9 @@ This review captures the first-user experience around identity onboarding, publi
 - only the supported persisted link set is saved into the current production profile contract
 - homepage and public-profile approval proof still belongs to the previously closed live visibility baseline
 - provider-backed password recovery and Romanian company autofill remain separate EXEC-52 blockers
+
+## EXEC-56 Visitor-Safe Follow-Up
+
+- public profile browsing still depends on the already-closed visibility baseline, not on provider activation
+- visitor safety improved at the client-auth layer because stale or missing auth state no longer needs to trigger refresh cascades before public browsing continues
+- the remaining visitor-risk areas are still password recovery trust and provider-backed Romanian autofill trust, not public-profile rendering itself

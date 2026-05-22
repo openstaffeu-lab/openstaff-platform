@@ -2,6 +2,38 @@
 
 Last updated: 2026-05-22
 
+## EXEC-56 Transactional Email Activation, Auth Noise Elimination & Production-Grade Visitor Experience
+
+Verdict: `IN PROGRESS - the public web now has a safer auth-refresh contract and fresh live Chrome, Edge, and mobile proof confirms clean anonymous browsing without 401 spam on the promoted revision, but production still has no mounted email-provider or Romanian-provider secrets, password-reset delivery still cannot be proven live, and the email deliverability posture is not yet strong enough for a production-grade transactional sender claim`
+
+### EXEC-56 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| auth-refresh contract hardened in the public web client | ✅ partial | `apps/admin/web/lib/api.ts` now refuses to call `/auth/refresh` without a real refresh token, no-ops logout when no token exists, and avoids cascading refresh attempts when `/auth/me` or onboarding endpoints fail without a recoverable session |
+| anonymous public browser proof remained clean | ✅ | fresh browser proof on promoted `openstaff-web-00020-wtl` across Chrome desktop, Edge desktop, and mobile Chrome for `/, /register, /login, /onboarding/welcome` returned `requests401 = []`, `badResponses = []`, `consoleErrors = []`, `pageErrors = []`, and no failed critical requests |
+| stale access-token browser proof remained quiet | ✅ partial | targeted browser proof with a stale access token and no refresh token returned `requests401 = []`, `badResponses = []`, `consoleErrors = []`, and `pageErrors = []`; only navigation-aborted requests were observed during route transitions |
+| transactional email mailbox identities confirmed as an infrastructure starting point | ✅ partial | the execution scope now treats `no-reply@openstaff.eu`, `support@openstaff.eu`, `contact@openstaff.eu`, `office@openstaff.eu`, and `gdpr@openstaff.eu` as sender/support identities, but not yet as a mounted runtime delivery provider |
+| Secret Manager inventory still blocks provider activation | ❌ blocker | `gcloud secrets list --project openstaff-platform` still contains only `DATABASE_URL`, `FIREBASE_SERVICE_ACCOUNT_KEY`, `GEMINI_API_KEY`, `JWT_REFRESH_SECRET`, `JWT_SECRET`, and `STRIPE_WEBHOOK_SECRET` |
+| Cloud Run still lacks provider mounts | ❌ blocker | `gcloud run services describe openstaff-api --region europe-west1 --project openstaff-platform --format=json` still shows no `EMAIL_PROVIDER`, `EMAIL_FROM`, `SMTP_URL`, `EMAIL_API_KEY`, `ROMANIAN_COMPANY_LOOKUP_URL`, or `ROMANIAN_COMPANY_LOOKUP_API_KEY` env mounts |
+| live `/status` remains honest about email delivery | ❌ blocker | `GET https://api.openstaff.eu/status` still reports `integrations.emailDelivery.mode = not_configured` and no Romanian provider configuration |
+| DNS deliverability posture clarified | ⚠️ partial | `nslookup -type=MX openstaff.eu` resolves to `openstaff.eu`; `_dmarc.openstaff.eu` currently returns `v=DMARC1; p=none;`; no SPF TXT record was visible at `openstaff.eu`, and DKIM could not be proven without the provider selector/contract |
+| password-reset live delivery proof | ❌ blocker | no mounted SMTP/API provider means forgot-password, delivered-email, reset-link, reuse rejection, and post-reset login proof still cannot be completed honestly |
+| Romanian provider-backed company autofill proof | ❌ blocker | no Romanian provider URL/API key is mounted, so only the previously closed baseline/VIES behavior remains available |
+| public web promotion completed | ✅ | Cloud Build `ca45df68-113b-40b1-9c2d-a1f173c6464c` promoted `openstaff-web-00020-wtl` |
+| repo and production validation remained healthy | ✅ | `apps/admin/web -> npm.cmd run build`; `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin -> npm.cmd run build`; `scripts/release/exec-26-production-ops-check.ps1`; and `scripts/release/exec-26-failure-simulations.ps1` all passed on `2026-05-22` |
+
+### EXEC-56 Exact Remaining Blockers
+
+1. no transactional email provider secrets exist in Secret Manager
+2. `openstaff-api` still mounts no email-provider runtime envs
+3. `emailDelivery.mode` therefore remains `not_configured`
+4. no Romanian provider secrets exist in Secret Manager
+5. `openstaff-api` still mounts no Romanian provider runtime envs
+6. provider-backed password-reset delivery still cannot be proven live
+7. provider-backed Romanian CUI autofill still cannot be proven live
+8. openstaff.eu currently exposes `_dmarc` with `p=none`, no visible SPF TXT at the apex, and no verified DKIM selector proof in this execution
+
 ## EXEC-54 Human-Friendly Onboarding, Optional Social Identity & RELU AI Assisted Profile Creation
 
 Verdict: `PASS - the public identity onboarding step now behaves like a guided product flow instead of a rigid technical form, optional social links no longer block completion, RELU AI is visible as an interactive assistant during onboarding, and fresh Chrome, Edge, and mobile proof on the promoted revisions confirms save/reload persistence, responsive layout, and friendly validation while provider-backed EXEC-52 blockers remain separate`

@@ -818,17 +818,40 @@ async function apiRequestWithRefresh<T>(
   endpoint: string,
   options: RequestOptions = {},
 ): Promise<T> {
+  const resolvedToken = options.token ?? getAuthToken();
+  const storedRefreshToken = getRefreshToken();
+
+  if (!resolvedToken) {
+    if (!storedRefreshToken) {
+      throw new ApiError("Authentication required", 401);
+    }
+
+    const authResponse = await refreshAuthToken(storedRefreshToken);
+    setStoredToken(authResponse.accessToken);
+    setStoredRefreshToken(authResponse.refreshToken);
+
+    return apiRequest<T>(endpoint, {
+      ...options,
+      token: authResponse.accessToken,
+    });
+  }
+
   try {
     return await apiRequest<T>(endpoint, {
       ...options,
-      token: options.token ?? getAuthToken(),
+      token: resolvedToken,
     });
   } catch (error) {
     if (!(error instanceof ApiError) || error.status !== 401) {
       throw error;
     }
 
-    const authResponse = await refreshAuthToken();
+    if (!storedRefreshToken) {
+      clearStoredToken();
+      throw error;
+    }
+
+    const authResponse = await refreshAuthToken(storedRefreshToken);
     setStoredToken(authResponse.accessToken);
     setStoredRefreshToken(authResponse.refreshToken);
 
@@ -902,32 +925,66 @@ export async function confirmPasswordReset(token: string, password: string) {
 }
 
 export async function refreshAuthToken(refreshToken?: string | null) {
+  const resolvedRefreshToken = refreshToken ?? getRefreshToken();
+
+  if (!resolvedRefreshToken) {
+    throw new ApiError("Authentication required", 401);
+  }
+
   return apiRequest<AuthResponse>("/auth/refresh", {
     method: "POST",
     body: {
-      refreshToken: refreshToken ?? getRefreshToken(),
+      refreshToken: resolvedRefreshToken,
     },
   });
 }
 
 export async function logoutAccount(token?: string | null) {
+  const resolvedToken = token ?? getAuthToken();
+
+  if (!resolvedToken) {
+    return;
+  }
+
   return apiRequest<void>("/auth/logout", {
     method: "POST",
-    token: token ?? getAuthToken(),
+    token: resolvedToken,
   });
 }
 
 export async function fetchCurrentUser(token?: string | null) {
+  const resolvedToken = token ?? getAuthToken();
+  const storedRefreshToken = getRefreshToken();
+
+  if (!resolvedToken) {
+    if (!storedRefreshToken) {
+      throw new ApiError("Authentication required", 401);
+    }
+
+    const authResponse = await refreshAuthToken(storedRefreshToken);
+    setStoredToken(authResponse.accessToken);
+    setStoredRefreshToken(authResponse.refreshToken);
+
+    return apiRequest<AuthUser>("/auth/me", {
+      token: authResponse.accessToken,
+    });
+  }
+
   try {
     return await apiRequest<AuthUser>("/auth/me", {
-      token: token ?? getAuthToken(),
+      token: resolvedToken,
     });
   } catch (error) {
     if (!(error instanceof ApiError) || error.status !== 401) {
       throw error;
     }
 
-    const authResponse = await refreshAuthToken();
+    if (!storedRefreshToken) {
+      clearStoredToken();
+      throw error;
+    }
+
+    const authResponse = await refreshAuthToken(storedRefreshToken);
     setStoredToken(authResponse.accessToken);
     setStoredRefreshToken(authResponse.refreshToken);
 
