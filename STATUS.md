@@ -2,6 +2,33 @@
 
 Last updated: 2026-05-22
 
+## EXEC-54 Human-Friendly Onboarding, Optional Social Identity & RELU AI Assisted Profile Creation
+
+Verdict: `PASS - the public identity onboarding step now behaves like a guided product flow instead of a rigid technical form, optional social links no longer block completion, RELU AI is visible as an interactive assistant during onboarding, and fresh Chrome, Edge, and mobile proof on the promoted revisions confirms save/reload persistence, responsive layout, and friendly validation while provider-backed EXEC-52 blockers remain separate`
+
+### EXEC-54 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| optional social link handling softened | ✅ | `apps/admin/web/app/onboarding/identity/page.tsx` now treats website, LinkedIn, GitHub, portfolio, Facebook, Instagram, YouTube, TikTok, and X/Twitter as optional, shows soft inline guidance only when a value exists, and never blocks continuation for untouched optional fields |
+| backend optional URL validation hardened for empty values | ✅ | `apps/admin/api/src/onboarding/dto/upsert-identity-profile.dto.ts` now skips URL validation for blank optional fields so empty strings no longer produce hard API-side validation failures |
+| progressive onboarding sections introduced | ✅ | the identity step now renders `A. Identitate de baza`, `B. Contact si localizare`, `C. Prezenta profesionala`, `D. Despre tine`, and `E. RELU AI Assistant` with clearer guidance and lower visual density |
+| adaptive onboarding behavior improved | ✅ | the public identity step now changes emphasis between PROFESSIONAL and COMPANY onboarding, hiding GitHub/portfolio emphasis for company flows and shifting the copy toward services, trust, and company presentation |
+| RELU AI made visible during onboarding | ✅ | the identity step now exposes a first-class `RELU AI Assistant` card that can save a draft, run live RELU enrichment/classification, show summary plus ESCO/NACE/Uniclass suggestions, and let the user copy suggestions into the draft explicitly |
+| taxonomy assistance surfaced earlier | ✅ | `apps/admin/web/components/UniclassMultiSelect.tsx` plus the existing NACE/ESCO helpers are now available directly on the identity step for categories, ESCO, and Uniclass suggestions before completion |
+| public preview improved | ✅ | the identity step now shows a public profile preview, trust notes, and a local image preview for logo/photo/banner concepts before the completion step |
+| optional GitHub no longer blocks completion | ✅ | fresh Chrome proof entered an invalid GitHub value, showed the inline guidance `GitHub este optional. Daca il adaugi, foloseste un URL complet.`, and still continued successfully to `/onboarding/company` |
+| RELU AI live suggestion proof captured | ✅ | targeted Chrome proof on `openstaff-web-00019-5x7` confirmed `RELU AI a pregatit sugestii pentru descriere, expertiza si clasificare.` plus visible `ESCO sugerat`, `NACE sugerat`, and `Uniclass sugerat` sections |
+| browser validation remained healthy | ✅ | fresh Chrome desktop, Edge desktop, and mobile Chrome validation on the promoted revision confirmed `consoleErrors = []`, `pageErrors = []`, no `4xx/5xx` responses, optional-social guidance visibility, revisit persistence, and no mobile horizontal overflow |
+| production promotions completed | ✅ | Cloud Build `dcd25cb4-0063-43ff-b98d-f71a0363f976` promoted `openstaff-web-00019-5x7`; Cloud Build `880775e2-b428-40c3-8715-df940adc4a00` promoted `openstaff-api-00014-tfr` |
+| repo and production validation remained healthy | ✅ | `apps/admin/web -> npm.cmd run build`; `apps/admin/api -> npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`; `apps/admin -> npm.cmd run build`; `scripts/release/exec-26-production-ops-check.ps1`; and `scripts/release/exec-26-failure-simulations.ps1` all passed on `2026-05-22` |
+
+### EXEC-54 Accepted Boundaries
+
+1. EXEC-52 provider blockers remain unchanged: `emailDelivery = not_configured` and no Romanian provider secret is mounted
+2. persisted public links still remain the supported production set (`website`, `LinkedIn`, `GitHub`, `portfolio`); additional optional social links are onboarding assistance inputs and soft trust signals for this step, not a new production schema
+3. homepage/public-profile approval visibility remains covered by the earlier live proof trail and was not reopened by this UX-focused execution
+
 ## EXEC-53 Fix Onboarding Identity Form Usability, Input Binding & Profile Persistence
 
 Verdict: `PASS - the public identity onboarding form is now materially easier to complete, input binding no longer gets clobbered by defaults or snapshot reloads, saved identity data survives refresh and relogin bootstrap, and fresh Chrome, Edge, and mobile validation confirms the identity step is usable enough for real onboarding even while provider-backed EXEC-52 remains blocked separately`

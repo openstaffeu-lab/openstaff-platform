@@ -65,3 +65,19 @@ What still remains outside EXEC-53:
 - real provider-backed Romanian company autofill trust
 
 Those remain EXEC-52 blockers, not identity-form blockers.
+
+## EXEC-54 Guided Onboarding Review
+
+The identity step now feels materially more trustworthy for a first external user:
+
+- optional social links no longer feel like hidden required fields
+- the page explains what is public, what stays private, and what RELU AI actually does
+- the flow is grouped into clearer sections instead of one dense technical form
+- the user can see a profile-style preview before moving on
+- invalid optional links now get friendly guidance instead of hard-stop technical errors
+
+Remaining truth:
+
+- real provider-backed password recovery trust is still blocked by missing EXEC-52 credentials
+- real provider-backed Romanian company autofill trust is still blocked by missing EXEC-52 credentials
+- extra social links beyond the persisted production set are currently onboarding assistance inputs, not a newly launched public-profile schema

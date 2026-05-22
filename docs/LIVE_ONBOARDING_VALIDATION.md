@@ -165,3 +165,25 @@ EXEC-53 does **not** close the provider-backed EXEC-52 work. The live provider b
 - Edge desktop COMPANY identity save + revisit: `consoleErrors = []`, `pageErrors = []`, `badResponses = []`, revisit restore in `74ms`
 - Mobile Chrome identity save + revisit: `consoleErrors = []`, `pageErrors = []`, `badResponses = []`, revisit restore in `637ms`, post-save restore in `561ms`, and `scrollWidth = viewportWidth`
 - Targeted diacritics proof accepted `Ștefan`, `București`, and `Mecanică, întreținere și coordonare.`
+
+## EXEC-54 Identity Product Reality
+
+As of `2026-05-22`, the public identity step on `openstaff-web-00019-5x7` now behaves much more like a guided onboarding flow:
+
+- optional public links no longer behave like required fields
+- invalid optional URLs now show soft inline guidance instead of hard save blockers
+- RELU AI is visible directly on the identity step, not only later in completion
+- category, ESCO, and Uniclass suggestions are now available during identity drafting
+- the page now includes a public-preview card and local image preview guidance before completion
+
+## EXEC-54 Browser Evidence Snapshot
+
+- Chrome desktop: invalid GitHub input still allowed continuation, optional guidance was visible, RELU AI was visible, and revisit persistence succeeded in `34ms`
+- Targeted Chrome RELU proof: `RELU AI a pregatit sugestii pentru descriere, expertiza si clasificare.` plus visible `ESCO sugerat`, `NACE sugerat`, and `Uniclass sugerat`
+- Edge desktop COMPANY identity flow: revisit persistence succeeded in `46ms`
+- Mobile Chrome: optional-social toggle visible, revisit persistence succeeded in `56ms`, and `scrollWidth = viewportWidth = bodyScrollWidth`
+- `consoleErrors = []`
+- `pageErrors = []`
+- no `4xx/5xx` responses were observed during the EXEC-54 browser proof
+
+Navigation-aborted requests were still observed during route transitions and background navigation, but they did not surface as `4xx/5xx` runtime failures and did not block completion of the identity step.

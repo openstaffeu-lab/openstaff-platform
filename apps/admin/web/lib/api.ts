@@ -1852,6 +1852,16 @@ export async function searchEsco(q: string) {
   return res.json();
 }
 
+export async function searchUniclass(q: string) {
+  const res = await fetch(`${API}/taxonomy/uniclass?q=${encodeURIComponent(q)}&limit=8`, {
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    return { results: [] };
+  }
+  return res.json();
+}
+
 export async function chatWithRelu(
   message: string,
   history: { role: string; parts: string }[] = [],

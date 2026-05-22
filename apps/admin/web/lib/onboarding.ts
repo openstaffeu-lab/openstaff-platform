@@ -30,6 +30,13 @@ export type OnboardingState = {
   linkedinUrl: string;
   githubUrl: string;
   portfolioUrl: string;
+  facebookUrl: string;
+  instagramUrl: string;
+  youtubeUrl: string;
+  tiktokUrl: string;
+  twitterUrl: string;
+  expertiseTags: string[];
+  uniclassSelections: string[];
   timezone: string;
   currentStep: string;
 };
@@ -60,6 +67,13 @@ export const defaultOnboardingState: OnboardingState = {
   linkedinUrl: "",
   githubUrl: "",
   portfolioUrl: "",
+  facebookUrl: "",
+  instagramUrl: "",
+  youtubeUrl: "",
+  tiktokUrl: "",
+  twitterUrl: "",
+  expertiseTags: [],
+  uniclassSelections: [],
   timezone: "Europe/Bucharest",
   currentStep: "welcome",
 };
