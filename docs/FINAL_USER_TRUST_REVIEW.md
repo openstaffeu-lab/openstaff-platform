@@ -114,3 +114,21 @@ Visitor trust improved again in EXEC-60 after the public media path fix on the h
 The only remaining browser-side failed requests were navigation-aborted `net::ERR_ABORTED` background requests while the scripted proof moved to the next page, not user-visible `4xx/5xx` failures.
 
 EXEC-60 also cleaned up the temporary proof accounts/posts after validation so no internal EXEC/test labels remain public.
+
+## EXEC-61 Trust Closure
+
+EXEC-61 removes the main remaining real-product trust gaps from the EXEC-60 cohort:
+
+- RELU onboarding assistance no longer breaks with an internal error
+- geography and taxonomy selections now persist instead of feeling advisory-only
+- uploaded profile assets now have durable GCS-backed persistence rather than local-only proof behavior
+- approved subcontractor discovery is now visible in the public feed summary, not only on direct deep links
+
+Fresh browser validation on `openstaff-web-00023-6b6` stayed clean across Chrome desktop, Edge desktop, and mobile Chrome with:
+
+- `consoleErrors = []`
+- `pageErrors = []`
+- `badResponses = []`
+- no horizontal overflow
+
+The only remaining browser request failures were navigation-aborted background requests during scripted page transitions, not user-visible runtime failures.

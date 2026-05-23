@@ -179,9 +179,24 @@ async function main() {
   const uniclassResults = uniclassResponse.body?.results ?? [];
   const countriesResults = unwrapData(countriesResponse);
   const legacyEscoResults = unwrapData(escoLegacyResponse);
+  const romaniaCountry = Array.isArray(countriesResults)
+    ? countriesResults.find((country) => country.code === 'RO')
+    : null;
+  const actorRegionByKey = {
+    professional: 'Bucuresti-Ilfov',
+    companyProject: 'Cluj',
+    contractor: 'Bucuresti-Ilfov',
+  };
+  const actorCityByKey = {
+    professional: 'Bucharest',
+    companyProject: 'Cluj-Napoca',
+    contractor: 'Bucharest',
+  };
 
   assert(escoResults.length > 0, 'ESCO search must return at least one result.');
   assert(naceResults.length > 0, 'NACE search must return at least one result.');
+  assert(Array.isArray(countriesResults) && countriesResults.length > 0, 'Countries endpoint must return at least one country.');
+  assert(Array.isArray(legacyEscoResults) && legacyEscoResults.length > 0, 'Legacy ESCO endpoint must return at least one entry.');
 
   const actors = {
     professional: {
@@ -344,7 +359,15 @@ async function main() {
       companyRegistrationNumber: actor.actorType === 'COMPANY' ? (key === 'companyProject' ? 'J40/1234/2026' : 'J40/9876/2026') : null,
       taxNumber: actor.actorType === 'COMPANY' ? (key === 'companyProject' ? 'RO12345678' : 'RO87654321') : null,
       visibility: 'PUBLIC',
+      countryCode: 'RO',
+      countryName: 'Romania',
+      regionName: actorRegionByKey[key],
+      cityName: actorCityByKey[key],
       supportedEngagementModels: actor.actorType === 'COMPANY' ? ['B2B'] : ['B2B', 'B2C'],
+      languageCodes: ['ro', 'en'],
+      escoCodes: escoResults.slice(0, 2).map((item) => item.code),
+      naceCodes: naceResults.slice(0, 2).map((item) => item.code),
+      uniclassCodes: uniclassResults.slice(0, 2).map((item) => item.code),
       certificationsText: 'ANRE, HSE, santier, coordonare, executie.',
       availabilityStatus: 'AVAILABLE',
       contractorProfile:
@@ -477,6 +500,10 @@ async function main() {
       token,
       body: { message: 'Ajuta-ma sa completez profilul pentru proiecte electrice si fotovoltaice.' },
     });
+    assert(
+      reluAssistant.status === 200 || reluAssistant.status === 201,
+      `${key} RELU onboarding assistant must succeed. Received ${reluAssistant.status}: ${JSON.stringify(reluAssistant.body)}`,
+    );
 
     const reluEnrich = await http(baseUrl, `/relu/profiles/${profileId}/enrich`, {
       method: 'POST',
@@ -522,7 +549,7 @@ async function main() {
             : key === 'companyProject'
               ? 'Project: electrical and photovoltaic fit-out package'
               : 'Subcontractor pool for cable routing and site execution',
-        slug: `${actor.publicSlug}-${actor.postType.toLowerCase()}`,
+        slug: `${actor.publicSlug}-${actor.postType.toLowerCase().replace(/_/g, '-')}`,
         description:
           key === 'professional'
             ? 'Professional profile available for approved marketplace discovery.'
@@ -666,6 +693,13 @@ async function main() {
       reloginProfile: unwrapData(profileAfterRelogin),
       publicProfile: unwrapData(publicProfileApi),
       publicPost: unwrapData(publicDetail),
+      persistedTaxonomy: {
+        languageCodes: Array.isArray(currentProfile?.languages) ? currentProfile.languages.map((item) => item.code) : [],
+        escoCodes: Array.isArray(currentProfile?.escoSkills) ? currentProfile.escoSkills.map((item) => item.code) : [],
+        naceCodes: Array.isArray(currentProfile?.naceCodes) ? currentProfile.naceCodes.map((item) => item.code) : [],
+        uniclassCodes: Array.isArray(currentProfile?.uniclassCodes) ? currentProfile.uniclassCodes.map((item) => item.code) : [],
+        geography: currentProfile?.geography ?? null,
+      },
       pendingPublicDetailStatus: pendingPublicDetail.status,
       ownerPendingViewStatus: ownerPendingView.status,
     };
@@ -677,6 +711,7 @@ async function main() {
         assetKind: item.assetKind,
         mimeType: item.mimeType,
         extractionStatus: item.extractionStatus,
+        storage: item.storage,
       })),
       extractedCvStatus: unwrapData(extractCv),
       extractedCvText: unwrapData(extractedCvText),
@@ -728,13 +763,13 @@ async function main() {
   results.publicFeedSummary = {
     total: Array.isArray(feedItems) ? feedItems.length : 0,
     containsProfessional: Array.isArray(feedItems)
-      ? feedItems.some((item) => item.slug === `${actors.professional.publicSlug}-${actors.professional.postType.toLowerCase()}`)
+      ? feedItems.some((item) => item.id === results.publicVisibility.professional?.publicPostId)
       : false,
     containsProject: Array.isArray(feedItems)
-      ? feedItems.some((item) => item.slug === `${actors.companyProject.publicSlug}-${actors.companyProject.postType.toLowerCase()}`)
+      ? feedItems.some((item) => item.id === results.publicVisibility.companyProject?.publicPostId)
       : false,
     containsSubcontractorPool: Array.isArray(feedItems)
-      ? feedItems.some((item) => item.slug === `${actors.contractor.publicSlug}-${actors.contractor.postType.toLowerCase()}`)
+      ? feedItems.some((item) => item.id === results.publicVisibility.contractor?.publicPostId)
       : false,
   };
 

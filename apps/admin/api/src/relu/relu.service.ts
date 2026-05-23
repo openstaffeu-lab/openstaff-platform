@@ -989,6 +989,12 @@ export class ReluService {
         completion,
         missingItems,
       }),
+      fallbackResult: (error) => ({
+        mode: 'AUTHENTICATED_USER',
+        response: this.buildOnboardingAssistantFallback(profile, completion.percentage, missingItems, error),
+        completion,
+        missingItems,
+      }),
     });
   }
 
@@ -1371,6 +1377,7 @@ export class ReluService {
     contextBlocks?: string[];
     userMessage: string;
     resultTransformer: (response: string) => T;
+    fallbackResult?: (error: unknown) => T;
   }) {
     const task = await this.createTask({
       capability: input.capability,
@@ -1408,6 +1415,29 @@ export class ReluService {
 
       return { taskId: task.id, ...result };
     } catch (error) {
+      if (input.fallbackResult) {
+        const fallback = input.fallbackResult(error);
+        await this.completeTask(task.id, fallback);
+        await this.audit.log({
+          actorUserId: input.user.sub,
+          projectId:
+            input.contextEntityType === 'PROJECT' ? input.contextEntityId ?? null : null,
+          entityType: 'RELU_TASK',
+          entityId: task.id,
+          action: `RELU_${input.capability.toUpperCase().replace(/-/g, '_')}_FALLBACK`,
+          after: fallback,
+          metadata: {
+            message: this.getErrorMessage(error),
+            accessMode: input.accessMode,
+            contextEntityType: input.contextEntityType ?? null,
+            contextEntityId: input.contextEntityId ?? null,
+            fallbackUsed: true,
+          },
+        });
+
+        return { taskId: task.id, ...fallback };
+      }
+
       await this.failTask(task.id, error);
       await this.audit.log({
         actorUserId: input.user.sub,
@@ -1422,6 +1452,36 @@ export class ReluService {
       });
       throw error;
     }
+  }
+
+  private buildOnboardingAssistantFallback(
+    profile: any,
+    completionPercentage: number,
+    missingItems: string[],
+    error: unknown,
+  ) {
+    const headline = profile.publicHeadline?.trim() || profile.displayName;
+    const primaryAction =
+      missingItems[0] ??
+      'Review your public summary, taxonomy tags, and uploaded media before sending the profile for moderation.';
+    const additionalActions = missingItems.slice(1, 3);
+    const degradedReason = this.getErrorMessage(error);
+
+    const lines = [
+      `Profilul "${headline}" este la ${completionPercentage}% completare.`,
+      `Pasul recomandat acum: ${primaryAction}.`,
+    ];
+
+    if (additionalActions.length) {
+      lines.push(`Urmatoarele imbunatatiri utile: ${additionalActions.join('; ')}.`);
+    }
+
+    lines.push(
+      'Sugestiile RELU sunt momentan generate in modul de continuitate, fara a suprascrie datele tale. Poti edita orice camp inainte de salvare sau moderare.',
+    );
+    lines.push(`Motiv tehnic degradat: ${degradedReason}.`);
+
+    return lines.join(' ');
   }
 
   private async createTask(input: ReluTaskPayload) {

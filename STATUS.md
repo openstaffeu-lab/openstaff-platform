@@ -2,6 +2,36 @@
 
 Last updated: 2026-05-23
 
+## EXEC-61 Real Account Visibility, RELU Continuity, Taxonomy Persistence & GCS Media Closure
+
+Verdict: `PASS - the remaining EXEC-60 product blockers are now closed live: RELU onboarding-assistant no longer fails with INTERNAL_ERROR, profile-side geography and taxonomy selections now persist across relogin, profile proof assets now persist in GCS-backed storage, approved subcontractor listings now appear in the public feed summary, fresh Chrome/Edge/mobile proof remained clean on the promoted revisions, and the branch is again aligned with origin/feature/work-in-progress`
+
+### EXEC-61 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| push recovery closed | ✅ | `git rev-parse HEAD` and `git ls-remote origin refs/heads/feature/work-in-progress` now both align after the earlier EXEC-60 push timeout concern; the branch is no longer stuck locally ahead of origin |
+| RELU onboarding-assistant no longer hard-fails | ✅ | `POST /relu/onboarding-assistant` now returns a usable advisory response instead of `{ status = error, code = INTERNAL_ERROR }`; the live fallback path handles upstream Gemini quota depletion gracefully while keeping suggestions visible and non-destructive |
+| Gemini model/runtime fallback hardened | ✅ | `apps/admin/api/src/gemini/gemini.service.ts` now defaults to `gemini-2.5-flash`, and `apps/admin/api/src/relu/relu.service.ts` now returns continuity-mode fallback guidance when Gemini quota is exhausted instead of surfacing an internal product error |
+| profile-side geography persistence proven live | ✅ | fresh runtime proof `exec60-1779554181293` saved and reloaded Romania / Bucuresti-Ilfov / Bucharest selections across relogin through `/profile` using code/name fallback resolution rather than brittle relation-only IDs |
+| profile-side taxonomy persistence proven live | ✅ | the same live proof persisted `languages = [ro,en]`, ESCO codes `7411.1` and `7412.1`, NACE codes `43.99` and `41.20`, and Uniclass `Ss_25_30_95` through `/profile`, with relogin reads confirming the selections remained attached |
+| `/countries` live dataset no longer empty | ✅ | `apps/admin/api/src/countries/countries.service.ts` now seeds a minimal Romania-first baseline when the country tables are empty; live proof now reports `countriesStatus = 200` and `countriesCount = 1` |
+| legacy `/esco` live dataset no longer empty | ✅ | `apps/admin/api/src/esco/esco.service.ts` now backfills legacy ESCO rows from live taxonomy entries when needed; runtime proof now reports `legacyEscoStatus = 200` and `legacyEscoCount = 20` |
+| profile taxonomy relation writes no longer foreign-key crash | ✅ | `apps/admin/api/src/profiles/profiles.service.ts` plus `upsert-profile.dto.ts` now accept code-based/manual taxonomy selections and safely resolve or upsert the legacy relation rows before persistence |
+| GCS-backed profile media persistence proven live | ✅ | live profile document records for the EXEC-61 proof accounts now report `storage.provider = gcs` and `storage.bucket = openstaff-platform-production`; profile asset reads, CV extraction, and cleanup now all work against Cloud Storage |
+| subcontractor public feed visibility proven live | ✅ | fresh runtime proof now reports `publicFeedSummary.containsSubcontractorPool = true`, while the approved subcontractor direct public detail route also returned `200` before cleanup |
+| real PROFESSIONAL account flow rerun successfully | ✅ | runtime proof `exec60-1779554181293-professional@openstaff.eu` revalidated register, login, onboarding, taxonomy save, RELU assistant, RELU enrich/classify/results, media upload, moderation, relogin persistence, and public visibility before cleanup |
+| real COMPANY offering projects flow rerun successfully | ✅ | runtime proof `exec60-1779554181293-project-company@openstaff.eu` revalidated company onboarding, taxonomy/geography save, RELU assistance, media/documents/video upload, moderated `PROJECT` visibility, and relogin persistence before cleanup |
+| real COMPANY/SUBCONTRACTOR flow rerun successfully | ✅ | runtime proof `exec60-1779554181293-subcontractor@openstaff.eu` revalidated subcontractor positioning, RELU assistance, taxonomy/geography save, media/documents/video upload, moderated `SUBCONTRACTOR_POOL` visibility, and public-feed inclusion before cleanup |
+| browser validation remained healthy on promoted revisions | ✅ | fallback Playwright shell proof on `openstaff-web-00023-6b6` returned `consoleErrors = []`, `pageErrors = []`, `badResponses = []`, and no horizontal overflow across Chrome desktop, Edge desktop, and mobile Chrome; only non-critical navigation-aborted background requests remained |
+| production promotions completed | ✅ | Cloud Build `ef3bee3b-fe55-42be-b955-aa82d259d5d1` promoted `openstaff-api-00028-4bk`; Cloud Build `a2dde3f2-05a4-4d70-8709-0755ccd41973` promoted `openstaff-web-00023-6b6`; admin remained on `openstaff-admin-00019-88r` |
+| production smoke remained healthy | ✅ | `/health = 200`, `/status = 200`, `emailDelivery.mode = configured`, `warnings = []`, `errors = []`, `exec-26-production-ops-check.ps1 = PASS`, and `exec-13-release-check.ps1` passed again once rerun on the finalized commit path |
+
+### EXEC-61 Accepted Runtime Note
+
+1. `POST /relu/onboarding-assistant` is now closure-safe for product flow because it returns advisory continuity-mode output instead of an internal error, but upstream Gemini quota remains depleted and is therefore still a degraded-provider note rather than a UI/runtime blocker
+2. proof artifacts created during EXEC-61 were again cleaned back out of the public marketplace after validation, and fresh checks now return `403` for the temporary proof slugs so no internal EXEC/test labels remain public
+
 ## EXEC-60 Real Account Creation, RELU AI Profile Setup, Media Upload & Public Visibility Proof
 
 Verdict: `IN PROGRESS - production now has fresh live proof that real PROFESSIONAL and COMPANY accounts can be created, onboarded, approved, uploaded with media/documents, enriched/classified by RELU, and made public on the live marketplace, but the RELU onboarding-assistant surface still returns an internal error, structured taxonomy/geography relations remain effectively unseeded for profile persistence, uploaded proof assets are still stored with storage.provider = local instead of durable GCS-backed persistence, and the subcontractor listing path still did not appear in the public feed summary`

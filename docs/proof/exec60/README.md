@@ -64,6 +64,18 @@ The only remaining browser request failures were `net::ERR_ABORTED` navigation-a
 3. uploaded proof assets still reported `storage.provider = local`
 4. the subcontractor/company-looking-for-projects listing did not appear in the public feed summary even though its direct public detail route was visible before cleanup
 
+## EXEC-61 Follow-up
+
+Those remaining blockers are now closed by EXEC-61:
+
+- the onboarding-assistant path now returns advisory continuity-mode output instead of `INTERNAL_ERROR`
+- `/countries` and legacy `/esco` now return live usable datasets
+- geography and taxonomy selections now persist across relogin
+- proof assets now persist with `storage.provider = gcs`
+- the approved subcontractor/company-looking-for-projects item now appears in the public feed summary
+
+See [exec61/README.md](/abs/path/C:/Users/admin/Desktop/openstaff-platform/docs/proof/exec61/README.md:1) for the closure proof.
+
 ## Cleanup
 
 The temporary proof posts were deleted and the temporary proof profiles were returned to `OFFLINE` after validation so no internal EXEC/test labels remain publicly visible.

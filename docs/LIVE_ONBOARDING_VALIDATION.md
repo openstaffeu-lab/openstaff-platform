@@ -1,6 +1,6 @@
 # Live Onboarding Validation
 
-Last updated: 2026-05-22
+Last updated: 2026-05-23
 
 ## Scope
 
@@ -208,3 +208,21 @@ EXEC-60 added fresh production proof that three real account shapes can register
 1. `POST /relu/onboarding-assistant` still returned `INTERNAL_ERROR`
 2. profile-side structured taxonomy/geography relations remain incomplete because `/countries` and legacy `/esco` returned empty live datasets
 3. uploaded proof assets still reported `storage.provider = local`, so durable GCS-backed persistence was not proven
+
+## EXEC-61 Closure Note
+
+EXEC-61 closes those remaining product/runtime gaps for the real account flow baseline:
+
+- `POST /relu/onboarding-assistant` no longer returns `INTERNAL_ERROR`; it now returns advisory continuity-mode suggestions when Gemini quota is depleted
+- `/countries` now returns a seeded Romania-first baseline when the production table is empty, and legacy `/esco` is backfilled from live taxonomy rows when needed
+- `/profile` now persists geography and taxonomy selections through code/name fallback resolution instead of failing on sparse relation-only datasets
+- live proof assets for profile uploads now persist as `storage.provider = gcs` with bucket `openstaff-platform-production`
+- the approved subcontractor/company-looking-for-projects proof item now appears in the public feed summary, not only on its direct public detail route
+
+Fresh rerun proof `exec60-1779554181293` on the promoted revisions confirmed:
+
+- three real account shapes still register, log in, onboard, upload, moderate, and survive relogin
+- RELU enrich/classify/results still work
+- RELU onboarding-assistant is closure-safe for the user journey
+- geography and taxonomy values persist across relogin
+- public browser validation stayed clean across Chrome desktop, Edge desktop, and mobile Chrome

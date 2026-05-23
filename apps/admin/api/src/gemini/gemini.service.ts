@@ -14,6 +14,8 @@ type AgentExecutionInput = {
   temperatureOverride?: number;
 };
 
+const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+
 const DEFAULT_AGENT_DEFINITIONS: Array<{
   name: string;
   type: AgentType;
@@ -256,7 +258,7 @@ export class GeminiService {
     }
 
     const model = this.genAI.getGenerativeModel({
-      model: process.env.GEMINI_MODEL || 'gemini-1.5-pro-latest',
+      model: DEFAULT_GEMINI_MODEL,
       systemInstruction: systemPrompt,
       generationConfig: {
         temperature,
@@ -529,7 +531,7 @@ export class GeminiService {
             policyJson: definition.policyJson as any,
             systemPrompt: definition.systemPrompt,
             temperature: definition.temperature,
-            model: process.env.GEMINI_MODEL || 'gemini-1.5-pro-latest',
+            model: DEFAULT_GEMINI_MODEL,
           },
           create: {
             name: definition.name,
@@ -540,7 +542,7 @@ export class GeminiService {
             policyJson: definition.policyJson as any,
             publicEnabled: definition.publicEnabled,
             temperature: definition.temperature,
-            model: process.env.GEMINI_MODEL || 'gemini-1.5-pro-latest',
+            model: DEFAULT_GEMINI_MODEL,
             enabled: true,
             maxContextItems: 12,
           },

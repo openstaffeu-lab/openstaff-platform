@@ -20,16 +20,24 @@ EXEC-60 proved the live media/document flow for profile assets and public-post a
 - approved public-post documents became public with `200`
 - rejected subcontractor document remained hidden with `403`
 
-## Important Runtime Truth
+## EXEC-61 GCS Persistence Closure
 
-The uploaded proof assets were not stored in durable cloud storage yet.
+Fresh proof run `exec60-1779554181293` closed the storage gap for profile-side uploads.
 
-Live proof records showed:
+Live proof records now show:
 
-- `storage.provider = local`
-- `bucket = null`
+- `storage.provider = gcs`
+- `storage.bucket = openstaff-platform-production`
 
-So EXEC-60 validated upload behavior and moderation visibility, but not durable GCS-backed persistence.
+That proof covered:
+
+- profile logo/avatar uploads
+- profile documents and CV extraction
+- profile video upload where supported
+- profile/public asset readback from storage
+- cleanup/deletion against the same storage backend
+
+Rejected subcontractor documents still remained hidden with `403`, so the moderation boundary stayed intact while the storage backend moved to durable Cloud Storage.
 
 ## Cleanup
 

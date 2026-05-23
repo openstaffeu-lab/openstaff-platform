@@ -7,31 +7,37 @@ import {
 } from '../common/api-response';
 import { PrismaService } from '../prisma/prisma.service';
 
+const BASELINE_COUNTRY_SEED = [
+  {
+    code: 'RO',
+    name: 'Romania',
+    currency: 'RON',
+    vatRate: 19,
+    regions: [
+      {
+        name: 'Bucuresti-Ilfov',
+        cities: ['Bucharest'],
+      },
+      {
+        name: 'Cluj',
+        cities: ['Cluj-Napoca'],
+      },
+    ],
+  },
+];
+
 @Injectable()
 export class CountriesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll() {
     try {
-      const countries = await this.prisma.country.findMany({
-        include: {
-          regions: {
-            include: {
-              cities: {
-                orderBy: {
-                  name: 'asc',
-                },
-              },
-            },
-            orderBy: {
-              name: 'asc',
-            },
-          },
-        },
-        orderBy: {
-          name: 'asc',
-        },
-      });
+      let countries = await this.loadCountries();
+
+      if (countries.length === 0) {
+        await this.ensureBaselineCountries();
+        countries = await this.loadCountries();
+      }
 
       return buildSuccessResponse(Array.isArray(countries) ? countries : []);
     } catch (error) {
@@ -93,6 +99,83 @@ export class CountriesService {
       }
 
       return buildInternalErrorResponse(error);
+    }
+  }
+
+  private async loadCountries() {
+    return this.prisma.country.findMany({
+      include: {
+        regions: {
+          include: {
+            cities: {
+              orderBy: {
+                name: 'asc',
+              },
+            },
+          },
+          orderBy: {
+            name: 'asc',
+          },
+        },
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+  }
+
+  private async ensureBaselineCountries() {
+    for (const countrySeed of BASELINE_COUNTRY_SEED) {
+      const country = await this.prisma.country.upsert({
+        where: { code: countrySeed.code },
+        update: {
+          name: countrySeed.name,
+          currency: countrySeed.currency,
+          vatRate: countrySeed.vatRate,
+        },
+        create: {
+          code: countrySeed.code,
+          name: countrySeed.name,
+          currency: countrySeed.currency,
+          vatRate: countrySeed.vatRate,
+        },
+      });
+
+      for (const regionSeed of countrySeed.regions) {
+        let region = await this.prisma.region.findFirst({
+          where: {
+            countryId: country.id,
+            name: regionSeed.name,
+          },
+        });
+
+        if (!region) {
+          region = await this.prisma.region.create({
+            data: {
+              countryId: country.id,
+              name: regionSeed.name,
+            },
+          });
+        }
+
+        for (const cityName of regionSeed.cities) {
+          const existingCity = await this.prisma.city.findFirst({
+            where: {
+              regionId: region.id,
+              name: cityName,
+            },
+          });
+
+          if (!existingCity) {
+            await this.prisma.city.create({
+              data: {
+                regionId: region.id,
+                name: cityName,
+              },
+            });
+          }
+        }
+      }
     }
   }
 }

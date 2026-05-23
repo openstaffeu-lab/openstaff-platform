@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Storage } from '@google-cloud/storage';
 import {
   ProfileAssetKind,
   ProfileAvailabilityStatus,
@@ -37,6 +38,12 @@ type AuthenticatedUser = {
   approvalStatus?: string;
 };
 
+type PersistedProfileFile = {
+  storageProvider: string;
+  storageBucket: string | null;
+  storageKey: string;
+};
+
 const extractionStatuses = {
   NOT_REQUESTED: 'NOT_REQUESTED',
   PENDING: 'PENDING',
@@ -47,6 +54,9 @@ const extractionStatuses = {
 
 @Injectable()
 export class ProfilesService {
+  private readonly storageBucket = process.env.STORAGE_BUCKET?.trim() ?? '';
+  private readonly storage = this.storageBucket ? new Storage() : null;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async getCurrentProfile(user: AuthenticatedUser) {
@@ -123,6 +133,7 @@ export class ProfilesService {
       body.slug ?? body.companyName ?? body.displayName,
       existingUser.profile?.id ?? null,
     );
+    const geography = await this.resolveGeographySelection(body);
 
     const isAdmin = user.role === 'ADMIN' || user.role === 'SUPERADMIN';
     const profile = await this.prisma.profile.upsert({
@@ -149,9 +160,9 @@ export class ProfilesService {
         status: isAdmin
           ? body.status ?? existingUser.profile?.status ?? ProfileLifecycleStatus.OFFLINE
           : existingUser.profile?.status ?? ProfileLifecycleStatus.OFFLINE,
-        countryId: body.countryId ?? null,
-        regionId: body.regionId ?? null,
-        cityId: body.cityId ?? null,
+        countryId: geography.countryId,
+        regionId: geography.regionId,
+        cityId: geography.cityId,
         supportedEngagementModels: body.supportedEngagementModels
           ? JSON.stringify(body.supportedEngagementModels)
           : null,
@@ -184,9 +195,9 @@ export class ProfilesService {
         status: isAdmin
           ? body.status ?? ProfileLifecycleStatus.OFFLINE
           : ProfileLifecycleStatus.OFFLINE,
-        countryId: body.countryId ?? null,
-        regionId: body.regionId ?? null,
-        cityId: body.cityId ?? null,
+        countryId: geography.countryId,
+        regionId: geography.regionId,
+        cityId: geography.cityId,
         supportedEngagementModels: body.supportedEngagementModels
           ? JSON.stringify(body.supportedEngagementModels)
           : JSON.stringify(['B2B']),
@@ -243,7 +254,7 @@ export class ProfilesService {
       throw new BadRequestException('Document title is required');
     }
 
-    const relativeStorageKey = await this.persistUploadedFile(profile.id, file);
+    const storedFile = await this.persistUploadedFile(profile.id, file);
     const type = body.type ?? this.inferDocumentType(file, body.assetKind);
 
     const document = await this.prisma.profileDocument.create({
@@ -257,8 +268,9 @@ export class ProfilesService {
         fileName: file.originalname,
         mimeType: file.mimetype || 'application/octet-stream',
         sizeBytes: file.size,
-        storageProvider: 'local',
-        storageKey: relativeStorageKey,
+        storageProvider: storedFile.storageProvider,
+        storageBucket: storedFile.storageBucket,
+        storageKey: storedFile.storageKey,
         extractionStatus: extractionStatuses.NOT_REQUESTED,
       },
     });
@@ -271,17 +283,11 @@ export class ProfilesService {
   async getDocument(profileId: string, documentId: string, user: AuthenticatedUser) {
     const document = await this.getDocumentForRead(profileId, documentId, user);
 
-    if (document.storageProvider !== 'local') {
-      throw new BadRequestException(
-        'Only locally stored profile documents can be downloaded from this endpoint',
-      );
-    }
-
     return {
       fileName: document.fileName,
       mimeType: document.mimeType,
       canPreview: this.canPreview(document.mimeType),
-      stream: createReadStream(this.resolveStoragePath(document.storageKey)),
+      stream: this.createDocumentReadStream(document),
     };
   }
 
@@ -319,7 +325,7 @@ export class ProfilesService {
       fileName: document.fileName,
       mimeType: document.mimeType,
       canPreview: this.canPreview(document.mimeType),
-      stream: createReadStream(this.resolveStoragePath(document.storageKey)),
+      stream: this.createDocumentReadStream(document),
     };
   }
 
@@ -338,12 +344,6 @@ export class ProfilesService {
   async extractDocument(profileId: string, documentId: string, user: AuthenticatedUser) {
     const document = await this.getDocumentForWrite(profileId, documentId, user);
 
-    if (document.storageProvider !== 'local') {
-      throw new BadRequestException(
-        'Only locally stored profile documents can be extracted in this phase',
-      );
-    }
-
     await this.prisma.profileDocument.update({
       where: { id: document.id },
       data: {
@@ -353,7 +353,7 @@ export class ProfilesService {
     });
 
     try {
-      const buffer = await readFile(this.resolveStoragePath(document.storageKey));
+      const buffer = await this.readDocumentBuffer(document);
       const extracted = await this.extractTextFromBuffer(
         document.mimeType,
         document.fileName,
@@ -393,9 +393,7 @@ export class ProfilesService {
       where: { id: document.id },
     });
 
-    if (document.storageProvider === 'local') {
-      await rm(this.resolveStoragePath(document.storageKey), { force: true });
-    }
+    await this.deleteStoredDocument(document);
 
     await this.removeAssetReference(profileId, document);
 
@@ -412,27 +410,32 @@ export class ProfilesService {
     await this.prisma.profileNaceClassification.deleteMany({ where: { profileId } });
     await this.prisma.profileUniclassClassification.deleteMany({ where: { profileId } });
 
-    if (body.languageIds?.length) {
+    const languageIds = await this.resolveLanguageIds(body);
+    const escoSkillIds = await this.resolveEscoSkillIds(body);
+    const naceIds = await this.resolveNaceIds(body);
+    const uniclassIds = await this.resolveUniclassIds(body);
+
+    if (languageIds.length) {
       await this.prisma.profileLanguage.createMany({
-        data: body.languageIds.map((languageId) => ({ profileId, languageId })),
+        data: languageIds.map((languageId) => ({ profileId, languageId })),
       });
     }
 
-    if (body.escoSkillIds?.length) {
+    if (escoSkillIds.length) {
       await this.prisma.profileEscoClassification.createMany({
-        data: body.escoSkillIds.map((escoSkillId) => ({ profileId, escoSkillId })),
+        data: escoSkillIds.map((escoSkillId) => ({ profileId, escoSkillId })),
       });
     }
 
-    if (body.naceIds?.length) {
+    if (naceIds.length) {
       await this.prisma.profileNaceClassification.createMany({
-        data: body.naceIds.map((naceId) => ({ profileId, naceId })),
+        data: naceIds.map((naceId) => ({ profileId, naceId })),
       });
     }
 
-    if (body.uniclassIds?.length) {
+    if (uniclassIds.length) {
       await this.prisma.profileUniclassClassification.createMany({
-        data: body.uniclassIds.map((uniclassId) => ({ profileId, uniclassId })),
+        data: uniclassIds.map((uniclassId) => ({ profileId, uniclassId })),
       });
     }
 
@@ -798,16 +801,39 @@ export class ProfilesService {
     );
   }
 
-  private async persistUploadedFile(profileId: string, file: UploadedProfileFile) {
-    const profileFolder = join(this.getUploadsRoot(), profileId);
+  private async persistUploadedFile(
+    profileId: string,
+    file: UploadedProfileFile,
+  ): Promise<PersistedProfileFile> {
     const extension = extname(file.originalname) || this.extensionFromMime(file.mimetype);
     const uniqueFileName = `${randomUUID()}${extension}`;
-    const relativeStorageKey = `profiles/${profileId}/${uniqueFileName}`;
+    const storageKey = `profiles/${profileId}/${uniqueFileName}`;
 
+    if (this.storage && this.storageBucket) {
+      await this.storage
+        .bucket(this.storageBucket)
+        .file(storageKey)
+        .save(file.buffer, {
+          resumable: false,
+          contentType: file.mimetype || 'application/octet-stream',
+        });
+
+      return {
+        storageProvider: 'gcs',
+        storageBucket: this.storageBucket,
+        storageKey,
+      };
+    }
+
+    const profileFolder = join(this.getUploadsRoot(), profileId);
     await mkdir(profileFolder, { recursive: true });
-    await writeFile(join(this.getBaseUploadsPath(), relativeStorageKey), file.buffer);
+    await writeFile(join(this.getBaseUploadsPath(), storageKey), file.buffer);
 
-    return relativeStorageKey;
+    return {
+      storageProvider: 'local',
+      storageBucket: null,
+      storageKey,
+    };
   }
 
   private getBaseUploadsPath() {
@@ -820,6 +846,338 @@ export class ProfilesService {
 
   private resolveStoragePath(storageKey: string) {
     return join(this.getBaseUploadsPath(), storageKey);
+  }
+
+  private createDocumentReadStream(document: {
+    storageProvider: string;
+    storageBucket?: string | null;
+    storageKey: string;
+  }) {
+    if (document.storageProvider === 'gcs') {
+      const bucketName = document.storageBucket || this.storageBucket;
+      if (!bucketName || !this.storage) {
+        throw new BadRequestException('Profile asset storage is not configured.');
+      }
+
+      return this.storage.bucket(bucketName).file(document.storageKey).createReadStream();
+    }
+
+    return createReadStream(this.resolveStoragePath(document.storageKey));
+  }
+
+  private async readDocumentBuffer(document: {
+    storageProvider: string;
+    storageBucket?: string | null;
+    storageKey: string;
+  }) {
+    if (document.storageProvider === 'gcs') {
+      const bucketName = document.storageBucket || this.storageBucket;
+      if (!bucketName || !this.storage) {
+        throw new BadRequestException('Profile asset storage is not configured.');
+      }
+
+      const [buffer] = await this.storage.bucket(bucketName).file(document.storageKey).download();
+      return buffer;
+    }
+
+    return readFile(this.resolveStoragePath(document.storageKey));
+  }
+
+  private async deleteStoredDocument(document: {
+    storageProvider: string;
+    storageBucket?: string | null;
+    storageKey: string;
+  }) {
+    if (document.storageProvider === 'gcs') {
+      const bucketName = document.storageBucket || this.storageBucket;
+      if (bucketName && this.storage) {
+        await this.storage.bucket(bucketName).file(document.storageKey).delete({
+          ignoreNotFound: true,
+        });
+      }
+      return;
+    }
+
+    await rm(this.resolveStoragePath(document.storageKey), { force: true });
+  }
+
+  private async resolveGeographySelection(body: UpsertProfileDto) {
+    const selectedCountry = await this.resolveCountry(body);
+    const selectedRegion = await this.resolveRegion(body, selectedCountry?.id ?? null);
+    const selectedCity = await this.resolveCity(body, selectedRegion?.id ?? null);
+
+    return {
+      countryId: selectedCountry?.id ?? null,
+      regionId: selectedRegion?.id ?? null,
+      cityId: selectedCity?.id ?? null,
+    };
+  }
+
+  private async resolveCountry(body: UpsertProfileDto) {
+    if (body.countryId) {
+      const existingCountry = await this.prisma.country.findUnique({
+        where: { id: body.countryId },
+      });
+
+      if (existingCountry) {
+        return existingCountry;
+      }
+    }
+
+    const countryCode = body.countryCode?.trim().toUpperCase();
+    const countryName = this.normalizeNullableString(body.countryName);
+
+    if (!countryCode && !countryName) {
+      return null;
+    }
+
+    if (countryCode) {
+      return this.prisma.country.upsert({
+        where: { code: countryCode },
+        update: {
+          ...(countryName ? { name: countryName } : {}),
+        },
+        create: {
+          code: countryCode,
+          name: countryName ?? countryCode,
+          currency: countryCode === 'RO' ? 'RON' : 'EUR',
+          vatRate: countryCode === 'RO' ? 19 : 0,
+        },
+      });
+    }
+
+    return this.prisma.country.findFirst({
+      where: { name: countryName ?? undefined },
+    });
+  }
+
+  private async resolveRegion(body: UpsertProfileDto, countryId: string | null) {
+    if (body.regionId) {
+      const existingRegion = await this.prisma.region.findUnique({
+        where: { id: body.regionId },
+      });
+
+      if (existingRegion) {
+        return existingRegion;
+      }
+    }
+
+    const regionName = this.normalizeNullableString(body.regionName);
+    if (!countryId || !regionName) {
+      return null;
+    }
+
+    const existingRegion = await this.prisma.region.findFirst({
+      where: {
+        countryId,
+        name: regionName,
+      },
+    });
+
+    if (existingRegion) {
+      return existingRegion;
+    }
+
+    return this.prisma.region.create({
+      data: {
+        countryId,
+        name: regionName,
+      },
+    });
+  }
+
+  private async resolveCity(body: UpsertProfileDto, regionId: string | null) {
+    if (body.cityId) {
+      const existingCity = await this.prisma.city.findUnique({
+        where: { id: body.cityId },
+      });
+
+      if (existingCity) {
+        return existingCity;
+      }
+    }
+
+    const cityName = this.normalizeNullableString(body.cityName);
+    if (!regionId || !cityName) {
+      return null;
+    }
+
+    const existingCity = await this.prisma.city.findFirst({
+      where: {
+        regionId,
+        name: cityName,
+      },
+    });
+
+    if (existingCity) {
+      return existingCity;
+    }
+
+    return this.prisma.city.create({
+      data: {
+        regionId,
+        name: cityName,
+      },
+    });
+  }
+
+  private async resolveLanguageIds(body: UpsertProfileDto) {
+    const ids = new Set<string>();
+
+    if (body.languageIds?.length) {
+      const existing = await this.prisma.language.findMany({
+        where: { id: { in: body.languageIds } },
+        select: { id: true },
+      });
+
+      for (const item of existing) {
+        ids.add(item.id);
+      }
+    }
+
+    const codes = (body.languageCodes ?? [])
+      .map((entry) => entry.trim().toLowerCase())
+      .filter(Boolean);
+
+    for (const code of codes) {
+      const language = await this.prisma.language.upsert({
+        where: { code },
+        update: {},
+        create: {
+          code,
+          name: this.languageDisplayName(code),
+        },
+        select: { id: true },
+      });
+      ids.add(language.id);
+    }
+
+    return [...ids];
+  }
+
+  private async resolveEscoSkillIds(body: UpsertProfileDto) {
+    return this.resolveTaxonomyRelationIds({
+      explicitIds: body.escoSkillIds,
+      codes: body.escoCodes,
+      findExistingByIds: (ids) =>
+        this.prisma.escoSkill.findMany({ where: { id: { in: ids } }, select: { id: true } }),
+      upsertByCode: async (code) => {
+        const taxonomy = await this.prisma.taxonomy.findUnique({
+          where: { code_type: { code, type: 'ESCO' } },
+        });
+        const item = await this.prisma.escoSkill.upsert({
+          where: { code },
+          update: {
+            title: taxonomy?.label ?? code,
+            description: taxonomy?.labelEn ?? null,
+          },
+          create: {
+            code,
+            title: taxonomy?.label ?? code,
+            description: taxonomy?.labelEn ?? null,
+          },
+          select: { id: true },
+        });
+        return item.id;
+      },
+    });
+  }
+
+  private async resolveNaceIds(body: UpsertProfileDto) {
+    return this.resolveTaxonomyRelationIds({
+      explicitIds: body.naceIds,
+      codes: body.naceCodes,
+      findExistingByIds: (ids) =>
+        this.prisma.nace.findMany({ where: { id: { in: ids } }, select: { id: true } }),
+      upsertByCode: async (code) => {
+        const taxonomy = await this.prisma.taxonomy.findUnique({
+          where: { code_type: { code, type: 'NACE' } },
+        });
+        const item = await this.prisma.nace.upsert({
+          where: { code },
+          update: {
+            title: taxonomy?.label ?? code,
+            description: taxonomy?.labelEn ?? null,
+          },
+          create: {
+            code,
+            title: taxonomy?.label ?? code,
+            description: taxonomy?.labelEn ?? null,
+          },
+          select: { id: true },
+        });
+        return item.id;
+      },
+    });
+  }
+
+  private async resolveUniclassIds(body: UpsertProfileDto) {
+    return this.resolveTaxonomyRelationIds({
+      explicitIds: body.uniclassIds,
+      codes: body.uniclassCodes,
+      findExistingByIds: (ids) =>
+        this.prisma.uniclass.findMany({ where: { id: { in: ids } }, select: { id: true } }),
+      upsertByCode: async (code) => {
+        const taxonomy = await this.prisma.taxonomy.findUnique({
+          where: { code_type: { code, type: 'UNICLASS' } },
+        });
+        const item = await this.prisma.uniclass.upsert({
+          where: { code },
+          update: {
+            title: taxonomy?.label ?? code,
+            description: taxonomy?.labelEn ?? null,
+          },
+          create: {
+            code,
+            title: taxonomy?.label ?? code,
+            description: taxonomy?.labelEn ?? null,
+          },
+          select: { id: true },
+        });
+        return item.id;
+      },
+    });
+  }
+
+  private async resolveTaxonomyRelationIds(input: {
+    explicitIds?: string[];
+    codes?: string[];
+    findExistingByIds: (ids: string[]) => Promise<Array<{ id: string }>>;
+    upsertByCode: (code: string) => Promise<string>;
+  }) {
+    const ids = new Set<string>();
+
+    const explicitIds = (input.explicitIds ?? []).filter(Boolean);
+    if (explicitIds.length) {
+      const existing = await input.findExistingByIds(explicitIds);
+      for (const item of existing) {
+        ids.add(item.id);
+      }
+    }
+
+    const codes = (input.codes ?? [])
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+
+    for (const code of codes) {
+      ids.add(await input.upsertByCode(code));
+    }
+
+    return [...ids];
+  }
+
+  private languageDisplayName(code: string) {
+    const normalized = code.toLowerCase();
+    const labels: Record<string, string> = {
+      ro: 'Romanian',
+      en: 'English',
+      de: 'German',
+      fr: 'French',
+      it: 'Italian',
+      es: 'Spanish',
+    };
+
+    return labels[normalized] ?? normalized.toUpperCase();
   }
 
   private inferDocumentType(

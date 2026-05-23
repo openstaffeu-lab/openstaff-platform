@@ -146,11 +146,31 @@ export class UpsertProfileDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(8)
+  countryCode?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  countryName?: string | null;
+
+  @IsOptional()
+  @IsString()
   regionId?: string | null;
 
   @IsOptional()
   @IsString()
+  @MaxLength(160)
+  regionName?: string | null;
+
+  @IsOptional()
+  @IsString()
   cityId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  cityName?: string | null;
 
   @IsOptional()
   @IsArray()
@@ -182,8 +202,20 @@ export class UpsertProfileDto {
   @IsOptional()
   @IsArray()
   @ArrayUnique()
+  @IsString({ each: true })
+  languageCodes?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
   @IsUUID('4', { each: true })
   escoSkillIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsString({ each: true })
+  escoCodes?: string[];
 
   @IsOptional()
   @IsArray()
@@ -194,8 +226,20 @@ export class UpsertProfileDto {
   @IsOptional()
   @IsArray()
   @ArrayUnique()
+  @IsString({ each: true })
+  naceCodes?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
   @IsUUID('4', { each: true })
   uniclassIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsString({ each: true })
+  uniclassCodes?: string[];
 
   @IsOptional()
   @ValidateNested()

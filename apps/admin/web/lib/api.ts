@@ -1768,8 +1768,14 @@ export async function getMarketplaceProfessionals(limit?: number) {
     getPublicPosts({ type: "SUBCONTRACTOR_POOL", status: "LIVE" }),
   ]);
 
+  const merged = [...professionals, ...pools].sort((left, right) => {
+    const leftCreatedAt = typeof left.createdAt === "string" ? Date.parse(left.createdAt) : 0;
+    const rightCreatedAt = typeof right.createdAt === "string" ? Date.parse(right.createdAt) : 0;
+    return rightCreatedAt - leftCreatedAt;
+  });
+
   return {
-    data: [...professionals, ...pools].slice(0, limit ?? professionals.length + pools.length),
+    data: merged.slice(0, limit ?? merged.length),
     source: "api" as const,
   };
 }
