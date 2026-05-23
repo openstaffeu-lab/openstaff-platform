@@ -201,3 +201,10 @@ As of `2026-05-22`, the public identity step on `openstaff-web-00019-5x7` now be
 - no `4xx/5xx` responses were observed during the EXEC-54 browser proof
 
 Navigation-aborted requests were still observed during route transitions and background navigation, but they did not surface as `4xx/5xx` runtime failures and did not block completion of the identity step.
+## EXEC-60 Note
+
+EXEC-60 added fresh production proof that three real account shapes can register, save onboarding/profile data, upload proof assets, survive relogin, and reach moderated public visibility before cleanup. The same execution also exposed three honest remaining product/runtime gaps:
+
+1. `POST /relu/onboarding-assistant` still returned `INTERNAL_ERROR`
+2. profile-side structured taxonomy/geography relations remain incomplete because `/countries` and legacy `/esco` returned empty live datasets
+3. uploaded proof assets still reported `storage.provider = local`, so durable GCS-backed persistence was not proven

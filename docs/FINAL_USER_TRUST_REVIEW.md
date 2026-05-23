@@ -102,3 +102,15 @@ Remaining truth:
 - real provider-backed password recovery trust is still blocked by missing EXEC-52 credentials
 - real provider-backed Romanian company autofill trust is still blocked by missing EXEC-52 credentials
 - extra social links beyond the persisted production set are currently onboarding assistance inputs, not a newly launched public-profile schema
+## EXEC-60 Note
+
+Visitor trust improved again in EXEC-60 after the public media path fix on the homepage/profile cards. Fresh Chrome, Edge, and mobile proof on `openstaff-web-00022-mfn` returned:
+
+- `consoleErrors = []`
+- `pageErrors = []`
+- `badResponses = []`
+- no horizontal overflow
+
+The only remaining browser-side failed requests were navigation-aborted `net::ERR_ABORTED` background requests while the scripted proof moved to the next page, not user-visible `4xx/5xx` failures.
+
+EXEC-60 also cleaned up the temporary proof accounts/posts after validation so no internal EXEC/test labels remain public.

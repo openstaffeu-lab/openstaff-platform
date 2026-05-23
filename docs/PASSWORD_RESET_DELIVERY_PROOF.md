@@ -57,3 +57,11 @@ EXEC-59 closed the older parsing/eligibility uncertainty:
 
 Delivery remains blocked live because the mounted SMTP credentials are still rejected with
 `EAUTH` / `AUTH PLAIN` / `535 Incorrect authentication data`.
+## EXEC-60 Note
+
+EXEC-60 did not reopen the already-closed password-reset inbox proof. It only revalidated the production smoke contract around the flow:
+
+- `/status.integrations.emailDelivery.mode = configured`
+- forgot-password smoke request returned neutral `200`
+
+So password-reset closure is carried forward from the closed SMTP/runtime baseline, not newly reproven end-to-end in EXEC-60.

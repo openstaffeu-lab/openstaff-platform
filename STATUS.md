@@ -2,6 +2,39 @@
 
 Last updated: 2026-05-23
 
+## EXEC-60 Real Account Creation, RELU AI Profile Setup, Media Upload & Public Visibility Proof
+
+Verdict: `IN PROGRESS - production now has fresh live proof that real PROFESSIONAL and COMPANY accounts can be created, onboarded, approved, uploaded with media/documents, enriched/classified by RELU, and made public on the live marketplace, but the RELU onboarding-assistant surface still returns an internal error, structured taxonomy/geography relations remain effectively unseeded for profile persistence, uploaded proof assets are still stored with storage.provider = local instead of durable GCS-backed persistence, and the subcontractor listing path still did not appear in the public feed summary`
+
+### EXEC-60 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| password reset runtime remained closed | ✅ partial | `GET https://api.openstaff.eu/status` now reports `integrations.emailDelivery.mode = configured`, and EXEC-60 revalidated the forgot-password smoke contract with a neutral `200` response for an eligible live account |
+| real PROFESSIONAL account creation proven live | ✅ | `apps/admin/api/scripts/exec-60-runtime-check.js` registered `exec60-1779549538497-professional@openstaff.eu`, completed onboarding identity/profile save, uploaded image/CV/PDF/video assets, relogged successfully, and captured a public profile plus approved public post before cleanup |
+| real COMPANY offering projects proven live | ✅ | the same live runtime script registered `exec60-1779549538497-project-company@openstaff.eu`, completed company onboarding/profile save, uploaded logo/banner/documents/video, created a `PROJECT` public post, moderated it to `LIVE`, and captured public visibility before cleanup |
+| real COMPANY/SUBCONTRACTOR flow proven live | ✅ partial | the live runtime script registered `exec60-1779549538497-subcontractor@openstaff.eu`, completed onboarding/profile save, uploaded logo/banner/documents/video, created a `SUBCONTRACTOR_POOL` public post, and proved direct public detail visibility before cleanup, but the feed summary still did not include the subcontractor listing |
+| RELU enrichment/classification proof captured | ✅ partial | `POST /relu/profiles/:id/enrich`, `POST /relu/profiles/:id/classify`, and `GET /relu/profiles/:id/results` all succeeded for professional, project-company, and subcontractor proof accounts, producing editable ESCO/NACE/Uniclass candidate output without silently overwriting saved profile text |
+| RELU onboarding-assistant surface still broken | ❌ blocker | `POST /relu/onboarding-assistant` returned `status = 201` with body `{ status = error, code = INTERNAL_ERROR }` for all three proof accounts, so the visible assistant/chat helper is not yet closure-ready |
+| media upload and moderation path proven live | ✅ partial | profile uploads and public-post media/documents all succeeded live, CV extraction completed, approved post media became public with `200`, and rejected subcontractor documents stayed hidden with `403` |
+| durable storage persistence not yet proven | ❌ blocker | live profile document records for all proof accounts still report `storage.provider = local` and `bucket = null`, so EXEC-60 cannot honestly claim durable GCS-backed persistence for the uploaded proof assets |
+| profile persistence across refresh/relogin proven live | ✅ | the runtime script saved identity/profile data, re-logged each account, and read the persisted `/profile` response successfully after relogin |
+| public visibility proven before cleanup | ✅ partial | public profile APIs returned `200` for professional, project-company, and subcontractor proof slugs, approved public-post details returned `200`, approved media/documents became public, and rejected documents stayed hidden |
+| proof artifacts cleaned out of the public marketplace | ✅ | after proof, the temporary EXEC-60 posts were deleted and the proof profiles were set back to `OFFLINE`; fresh checks now return `403` for the proof profile slugs so no internal EXEC/test labels remain publicly visible |
+| browser validation improved after public media path fix | ✅ partial | `apps/admin/web/components/ActorCard.tsx` now resolves relative media asset paths against `NEXT_PUBLIC_API_URL`, and fresh Chrome desktop, Edge desktop, and mobile Chrome checks on `openstaff-web-00022-mfn` returned `consoleErrors = []`, `pageErrors = []`, `badResponses = []`, and no horizontal overflow |
+| browser request failures remained non-critical only | ✅ partial | the only remaining browser `requestFailures` were `net::ERR_ABORTED` navigation-aborted requests for `/auth/password-reset/request`, `/profile`, `/countries`, `/esco`, `/nace`, and `/uniclass` while the script moved to the next page; no `4xx/5xx` runtime responses remained after the media-path fix |
+| taxonomy/geography persistence remains partially blocked live | ❌ blocker | `/taxonomy/esco`, `/taxonomy/nace`, and `/taxonomy/uniclass` search endpoints returned candidates, but `/countries` and legacy `/esco` still returned empty database-backed lists, and direct profile writes with relation IDs hit foreign-key failures, so structured profile-side ESCO/NACE/Uniclass persistence is not yet closure-ready |
+| public web promotion completed | ✅ | Cloud Build `7f8fd7da-51f9-4671-9681-65eee94f972d` promoted `openstaff-web-00022-mfn` with the ActorCard asset URL fix |
+| production smoke remained healthy | ✅ | `/health = 200`, `/status = 200`, `exec-26-production-ops-check.ps1 = PASS`; `exec-13-release-check.ps1` still passes once rerun from a clean committed tree |
+
+### EXEC-60 Exact Remaining Blockers
+
+1. `POST /relu/onboarding-assistant` still returns `INTERNAL_ERROR`, so the visible RELU assistant/chat surface is not yet production-ready
+2. profile-side structured taxonomy/geography persistence remains incomplete because live relation-backed datasets such as `/countries` and legacy `/esco` are empty, and relation-ID writes still fail foreign-key validation
+3. uploaded proof assets still persist as `storage.provider = local`, so durable GCS-backed media persistence was not proven honestly
+4. the subcontractor/company-looking-for-projects proof item did not appear in the public feed summary even though its direct public detail route was visible before cleanup
+5. EXEC-60 reran only a forgot-password smoke request, not a fresh inbox-based reset-link flow; password-reset closure is therefore carried forward from the already-closed SMTP/runtime baseline, not newly reopened here
+
 ## EXEC-59 Account Inventory, Password Reset Eligibility & SMTP Runtime Closure
 
 Verdict: `IN PROGRESS - production now has operator-safe account reset eligibility diagnostics, sanitized SMTP runtime instrumentation, and live proof that forgot-password stays enumeration-safe for existing and missing emails, but real reset delivery is still blocked because SMTP verifies as host=mail.openstaff.eu port=465 secure=true authUser=present and then fails AUTH PLAIN with 535 Incorrect authentication data`

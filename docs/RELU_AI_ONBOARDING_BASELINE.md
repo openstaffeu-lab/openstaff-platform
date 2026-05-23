@@ -33,3 +33,12 @@ On the identity step, RELU AI can now:
 - RELU AI suggestions do not replace moderation
 - RELU AI suggestions do not replace company-provider proof or password-reset provider proof
 - the onboarding assistant still depends on the existing RELU backend contract rather than a new dedicated onboarding-only AI service
+## EXEC-60 Note
+
+Fresh EXEC-60 runtime proof confirmed that RELU profile enrichment and RELU taxonomy classification still work live for professional and company proof accounts through:
+
+- `POST /relu/profiles/:id/enrich`
+- `POST /relu/profiles/:id/classify`
+- `GET /relu/profiles/:id/results`
+
+The same execution also confirmed that the visible onboarding-assistant surface is still not closure-ready because `POST /relu/onboarding-assistant` returned `INTERNAL_ERROR` for all three proof actors.

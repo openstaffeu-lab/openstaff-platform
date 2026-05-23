@@ -1,7 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import type { MarketplacePost } from "@/lib/api";
+import { getApiUrl, type MarketplacePost } from "@/lib/api";
+
+function resolveAssetUrl(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  return `${getApiUrl()}${value.startsWith("/") ? value : `/${value}`}`;
+}
 
 export default function ActorCard({
   id,
@@ -16,6 +28,7 @@ export default function ActorCard({
 }: Partial<MarketplacePost>) {
   const initial = (title || "?").slice(0, 1).toUpperCase();
   const portrait = mediaAssets?.find((item) => item.role === "PHOTO" || item.role === "GALLERY");
+  const portraitUrl = resolveAssetUrl(portrait?.assetUrl);
 
   return (
     <div
@@ -27,13 +40,13 @@ export default function ActorCard({
         border: "1px solid #DCE5F5",
       }}
     >
-      {portrait?.assetUrl ? (
+      {portraitUrl ? (
         <div
           style={{
             width: 56,
             height: 56,
             borderRadius: "50%",
-            backgroundImage: `url(${portrait.assetUrl})`,
+            backgroundImage: `url(${portraitUrl})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             marginBottom: 12,
