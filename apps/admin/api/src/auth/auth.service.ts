@@ -43,6 +43,14 @@ type LoginPayload = {
   password: string;
 };
 
+type PasswordResetEligibilityStatus =
+  | 'eligible_password_reset'
+  | 'not_found'
+  | 'disabled'
+  | 'external_auth_only'
+  | 'missing_email'
+  | 'unknown_auth_state';
+
 type AuthenticatedUserSummary = {
   id: string;
   email: string;
@@ -299,6 +307,11 @@ export class AuthService {
       select: {
         id: true,
         email: true,
+        password: true,
+        firebaseUid: true,
+        approvalStatus: true,
+        accountStatus: true,
+        role: true,
         identityProfile: {
           select: {
             language: true,
@@ -306,6 +319,11 @@ export class AuthService {
         },
       },
     });
+
+    const eligibility = this.getPasswordResetEligibility(user);
+    this.logger.log(
+      `password reset eligibility email=${this.maskEmailForLogs(normalizedEmail)} status=${eligibility}`,
+    );
 
     if (!user) {
       await this.auditService.logSecurityEvent({
@@ -315,6 +333,28 @@ export class AuthService {
         sourceId: normalizedEmail,
         message: 'Password reset requested for unknown email address',
         severity: 'WARNING' as any,
+        request,
+      });
+
+      return this.buildPasswordResetRequestResponse();
+    }
+
+    if (eligibility !== 'eligible_password_reset') {
+      await this.auditService.logSecurityEvent({
+        userId: user.id,
+        type: 'PASSWORD_RESET' as any,
+        category: 'AUTH',
+        sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
+        sourceId: normalizedEmail,
+        message: `Password reset requested for ineligible account (${eligibility})`,
+        severity: 'WARNING' as any,
+        metadata: {
+          eligibility,
+          role: user.role,
+          approvalStatus: user.approvalStatus,
+          accountStatus: user.accountStatus,
+          firebaseUidPresent: Boolean(user.firebaseUid),
+        },
         request,
       });
 
@@ -1005,6 +1045,55 @@ export class AuthService {
         'If an account matches that email, OpenStaff will try to deliver a secure reset link shortly. Please also check Spam or Junk.',
       expiresInMinutes: AuthService.PASSWORD_RESET_EXPIRY_MINUTES,
     };
+  }
+
+  private getPasswordResetEligibility(
+    user:
+      | {
+          id: string;
+          email: string;
+          password: string;
+          firebaseUid: string | null;
+          approvalStatus: AccountApprovalStatus;
+          accountStatus: AccountLifecycleStatus;
+        }
+      | null,
+  ): PasswordResetEligibilityStatus {
+    if (!user) {
+      return 'not_found';
+    }
+
+    if (!user.email?.trim()) {
+      return 'missing_email';
+    }
+
+    if (
+      user.accountStatus === AccountLifecycleStatus.SUSPENDED ||
+      user.approvalStatus === AccountApprovalStatus.REJECTED
+    ) {
+      return 'disabled';
+    }
+
+    const hasPassword = Boolean(user.password?.trim());
+    if (user.firebaseUid && !hasPassword) {
+      return 'external_auth_only';
+    }
+
+    if (hasPassword) {
+      return 'eligible_password_reset';
+    }
+
+    return 'unknown_auth_state';
+  }
+
+  private maskEmailForLogs(value: string) {
+    const [localPart, domain] = value.split('@');
+    if (!domain) {
+      return 'invalid-email';
+    }
+
+    const first = localPart?.slice(0, 1) ?? '*';
+    return `${first}***@${domain}`;
   }
 
   private hashPasswordResetToken(token: string) {

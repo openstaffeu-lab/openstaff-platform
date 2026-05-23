@@ -1,4 +1,10 @@
-import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import {
   ComplianceDocumentStatus,
   NotificationCategory,
@@ -8,6 +14,7 @@ import {
   Prisma,
 } from '@prisma/client';
 import * as nodemailer from 'nodemailer';
+import * as nodemailerShared from 'nodemailer/lib/shared';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -63,13 +70,17 @@ const DEFAULT_CATEGORY_PREFERENCES: NotificationCategoryMap = {
 };
 
 @Injectable()
-export class NotificationService {
+export class NotificationService implements OnModuleInit {
   private readonly logger = new Logger(NotificationService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
   ) {}
+
+  onModuleInit() {
+    this.logEmailRuntimeSummary('startup');
+  }
 
   async emitEvent(input: EmitEventInput) {
     const channel = input.channel ?? NotificationChannel.IN_APP;
@@ -962,6 +973,19 @@ export class NotificationService {
     return user?.email?.trim().toLowerCase() ?? null;
   }
 
+  getEmailRuntimeSummary() {
+    const configuredProvider = process.env.EMAIL_PROVIDER?.trim() ?? null;
+    const provider = this.resolveEmailProvider();
+    const smtp = this.describeSmtpTransport(process.env.SMTP_URL?.trim() ?? '');
+
+    return {
+      configuredProvider,
+      resolvedProvider: provider,
+      fromConfigured: Boolean(this.getEmailFromAddress().trim()),
+      smtp,
+    };
+  }
+
   private resolveEmailProvider() {
     const configuredProvider = process.env.EMAIL_PROVIDER?.trim().toLowerCase();
     if (configuredProvider === 'smtp' && process.env.SMTP_URL?.trim()) {
@@ -1069,20 +1093,36 @@ export class NotificationService {
   }
 
   private describeSmtpTransport(value: string) {
-    try {
-      const parsed = new URL(value);
+    if (!value) {
       return {
-        host: parsed.hostname || null,
-        port: parsed.port || null,
-        secure: parsed.protocol === 'smtps:',
-        hasAuthUser: Boolean(parsed.username),
+        valid: false,
+        host: null as string | null,
+        port: null as number | null,
+        secure: false,
+        hasAuthUser: false,
+        parseError: 'smtp_url_missing' as string | null,
+      };
+    }
+
+    try {
+      const parsed = nodemailerShared.parseConnectionUrl(value);
+      return {
+        valid: Boolean(parsed.host),
+        host: typeof parsed.host === 'string' && parsed.host.trim() ? parsed.host.trim() : null,
+        port:
+          typeof parsed.port === 'number' && Number.isFinite(parsed.port) ? parsed.port : null,
+        secure: Boolean(parsed.secure),
+        hasAuthUser: Boolean(parsed.auth?.user),
+        parseError: null as string | null,
       };
     } catch {
       return {
+        valid: false,
         host: null,
         port: null,
         secure: false,
         hasAuthUser: false,
+        parseError: 'smtp_url_unparsable' as string | null,
       };
     }
   }
@@ -1095,12 +1135,18 @@ export class NotificationService {
 
     const transport = this.describeSmtpTransport(smtpUrl);
     this.logger.log(
-      `smtp transport resolved host=${transport.host ?? 'unknown'} port=${transport.port ?? 'default'} secure=${
-        transport.secure
-      } authUser=${transport.hasAuthUser ? 'present' : 'missing'}`,
+      `smtp transport resolved host=${transport.host ?? 'unknown'} port=${
+        transport.port ?? 'default'
+      } secure=${transport.secure} authUser=${
+        transport.hasAuthUser ? 'present' : 'missing'
+      } valid=${transport.valid}`,
     );
 
-    const transporter = nodemailer.createTransport(smtpUrl);
+    if (!transport.valid || !transport.host) {
+      throw new Error(transport.parseError ?? 'smtp_url_unparsable');
+    }
+
+    const transporter = nodemailer.createTransport(nodemailerShared.parseConnectionUrl(smtpUrl));
     const response = await transporter.sendMail({
       from: this.getEmailFromAddress(),
       to: recipient,
@@ -1114,6 +1160,19 @@ export class NotificationService {
         this.readUnknownString(response.messageId) ??
         this.readUnknownString(response.response),
     };
+  }
+
+  private logEmailRuntimeSummary(context: 'startup' | 'diagnostic') {
+    const summary = this.getEmailRuntimeSummary();
+    this.logger.log(
+      `email runtime ${context} provider=${summary.resolvedProvider ?? 'not_configured'} configuredProvider=${
+        summary.configuredProvider ?? 'missing'
+      } from=${summary.fromConfigured ? 'present' : 'missing'} smtpHost=${
+        summary.smtp.host ?? 'unknown'
+      } smtpPort=${summary.smtp.port ?? 'default'} smtpSecure=${summary.smtp.secure} smtpAuthUser=${
+        summary.smtp.hasAuthUser ? 'present' : 'missing'
+      } smtpValid=${summary.smtp.valid} smtpParseError=${summary.smtp.parseError ?? 'none'}`,
+    );
   }
 
   private async sendWithResend(recipient: string, subject: string, html: string, text: string) {

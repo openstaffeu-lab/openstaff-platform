@@ -1,6 +1,6 @@
 # Transactional Email Runtime Baseline
 
-Last updated: 2026-05-22
+Last updated: 2026-05-23
 
 ## Intended Runtime Contract
 
@@ -11,7 +11,7 @@ The production runtime is expected to mount:
 - `SMTP_URL` or provider API key
 - `MAILGUN_DOMAIN` if Mailgun is used
 
-## EXEC-58 Live Runtime Truth
+## EXEC-59 Live Runtime Truth
 
 `openstaff-api` now mounts:
 
@@ -31,18 +31,30 @@ The live API status contract now reports:
 - `/status.readiness.warnings = []`
 - `/status.readiness.errors = []`
 
-The future deploy path now preserves these secrets as well, because
-`apps/admin/api/cloudbuild.api.yaml` has been updated to pass `EMAIL_PROVIDER`,
-`EMAIL_FROM`, and `SMTP_URL` through `--set-secrets`.
+The future deploy path now preserves these secrets as well, and the runtime now exposes safe
+operator diagnostics through:
+
+- `apps/admin/api/scripts/exec-59-smtp-check.js`
+- `apps/admin/api/scripts/exec-59-account-inventory.js`
 
 ## Runtime Outcome
 
-The runtime contract is no longer the blocking layer.
+The mount contract is no longer the blocking layer.
 
-Fresh EXEC-58 live proof shows:
+Fresh EXEC-59 live proof shows:
 
-- the password-reset request reaches the email delivery path
-- the failed notification count increases when the request runs
-- Cloud Run logs capture `EAUTH` / `535 Incorrect authentication data` at `AUTH PLAIN`
+- `EMAIL_PROVIDER=SMTP` resolves correctly to provider mode `smtp`
+- the runtime now parses `SMTP_URL` to:
+  - `host = mail.openstaff.eu`
+  - `port = 465`
+  - `secure = true`
+  - `authUserPresent = true`
+  - `valid = true`
+- `nodemailer.verify()` fails with:
+  - `errorCode = EAUTH`
+  - `responseCode = 535`
+  - `command = AUTH PLAIN`
+  - `message = Invalid login: 535 Incorrect authentication data`
 
-So the current blocker is SMTP authentication, not missing env mounts or provider-mode parsing.
+So the current blocker is SMTP authentication acceptance by the server, not missing env mounts,
+provider-mode casing, or SMTP URL parsing.

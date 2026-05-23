@@ -1,6 +1,6 @@
 # Password Reset Delivery Proof
 
-Last updated: 2026-05-22
+Last updated: 2026-05-23
 
 ## Code Truth
 
@@ -17,12 +17,16 @@ Production now mounts a transactional email provider contract and `/status` repo
 
 However, live forgot-password delivery still fails at the SMTP authentication step.
 
-Fresh EXEC-58 runtime proof on `openstaff-api-00017-f67`:
+Fresh EXEC-59 runtime proof on `openstaff-api-00021-2b7`:
 
-- `POST /auth/password-reset/request = 200`
-- neutral user response remained intact
-- `queues.notifications.failed` increased from `17` to `18`
+- `POST /auth/password-reset/request = 200` for an existing eligible account
+- `POST /auth/password-reset/request = 200` for a missing account
+- the public response stayed identical and neutral for both:
+  - `If an account matches that email, OpenStaff will try to deliver a secure reset link shortly. Please also check Spam or Junk.`
 - Cloud Run logs recorded:
+  - `password reset eligibility email=m***@gmail.com status=eligible_password_reset`
+  - `password reset eligibility email=e***@openstaff.eu status=not_found`
+  - `smtp transport resolved host=mail.openstaff.eu port=465 secure=true authUser=present valid=true`
   - `code = EAUTH`
   - `command = AUTH PLAIN`
   - `responseCode = 535`
@@ -39,11 +43,17 @@ That means this execution still cannot honestly prove:
 
 ## Remaining Requirements
 
-- corrected SMTP credentials or SMTP-side auth acceptance for the mounted sender
+- corrected SMTP credentials or SMTP-side auth acceptance for the mounted sender at `mail.openstaff.eu:465`
 - one accessible reset inbox that actually receives the message
 - fresh live reset run after SMTP authentication succeeds
 
-## EXEC-57 Revalidation
+## EXEC-59 Revalidation
 
-EXEC-58 closed the older runtime-mounting blocker, but delivery remains blocked live because the
-mounted SMTP credentials are rejected with `EAUTH` / `535 Incorrect authentication data`.
+EXEC-59 closed the older parsing/eligibility uncertainty:
+
+- the mounted SMTP runtime now resolves to a real host/port/secure/auth-user contract
+- the account inventory now proves which submitted email is eligible for reset and which is not
+- the public forgot-password response still does not enumerate accounts
+
+Delivery remains blocked live because the mounted SMTP credentials are still rejected with
+`EAUTH` / `AUTH PLAIN` / `535 Incorrect authentication data`.

@@ -1,6 +1,34 @@
 ﻿# OpenStaff Platform Status
 
-Last updated: 2026-05-22
+Last updated: 2026-05-23
+
+## EXEC-59 Account Inventory, Password Reset Eligibility & SMTP Runtime Closure
+
+Verdict: `IN PROGRESS - production now has operator-safe account reset eligibility diagnostics, sanitized SMTP runtime instrumentation, and live proof that forgot-password stays enumeration-safe for existing and missing emails, but real reset delivery is still blocked because SMTP verifies as host=mail.openstaff.eu port=465 secure=true authUser=present and then fails AUTH PLAIN with 535 Incorrect authentication data`
+
+### EXEC-59 Closure Summary
+
+| Area | Status | Confirmat prin |
+|---|---|---|
+| operator-safe account inventory created | ✅ | `apps/admin/api/scripts/exec-59-account-inventory.js` now reports total accounts, masked emails by default, auth-source classification, and password-reset eligibility with optional `--full-emails` for trusted CLI/operator use |
+| SMTP diagnostic script created | ✅ | `apps/admin/api/scripts/exec-59-smtp-check.js` now parses `EMAIL_PROVIDER`, `EMAIL_FROM`, and `SMTP_URL`, runs `nodemailer.verify()`, and returns sanitized host/port/secure/auth-user/verify results without leaking secrets |
+| password-reset eligibility logic instrumented | ✅ | `apps/admin/api/src/auth/auth.service.ts` now classifies `eligible_password_reset`, `not_found`, `disabled`, `external_auth_only`, `missing_email`, and `unknown_auth_state` internally while keeping the public response neutral |
+| SMTP parsing/runtime instrumentation hardened | ✅ | `apps/admin/api/src/notifications/notification.service.ts` now logs sanitized startup/runtime SMTP details, uses parsed SMTP connection diagnostics, and hard-fails internal send attempts if the runtime config is missing or invalid |
+| future API images now retain exec59 scripts | ✅ | `apps/admin/api/Dockerfile` now copies `scripts/` into the runtime image so operator diagnostics can run from one-off Cloud Run jobs against production runtime/env |
+| account inventory proven live | ✅ | production Cloud Run job `openstaff-api-exec59-account-summary-cx69v` reported `totalAccounts = 86`, `eligibilityCounts = { eligible_password_reset = 86 }`, existing `mydarrin.hbp@gmail.com -> eligible_password_reset`, and missing `exec59-missing@openstaff.eu -> not_found` |
+| public forgot-password contract remained enumeration-safe | ✅ | fresh live `POST /auth/password-reset/request` for both `mydarrin.hbp@gmail.com` and `exec59-missing@openstaff.eu` returned the same neutral `200` response with identical wording and `expiresInMinutes = 30` |
+| SMTP runtime parsing blocker closed | ✅ | live diagnostic proof on `openstaff-api-00021-2b7` now resolves `host=mail.openstaff.eu`, `port=465`, `secure=true`, `authUser=present`, and `valid=true`, disproving the earlier `host=unknown/authUser=missing` suspicion |
+| exact SMTP auth blocker captured live | ❌ blocker | `exec-59-smtp-check.js` and Cloud Run logs on `openstaff-api-00021-2b7` both show `verify.ok = false`, `errorCode = EAUTH`, `command = AUTH PLAIN`, `responseCode = 535`, and `Invalid login: 535 Incorrect authentication data` |
+| real password-reset email delivery proof | ❌ blocker | because SMTP authentication is rejected by the mail server, no reset email reaches the inbox yet, so reset-link usability, reused-token rejection after successful reset, old-password rejection, and post-reset login proof remain open |
+| browser auth-page proof | ⚠️ partial | live HTTP/runtime proof is healthy for `/auth/password-reset/request`, but a fresh Playwright browser matrix for `/forgot-password`, `/reset-password`, and `/login` was not completed in this execution because the local shell Playwright package/runtime wiring was not cleanly callable for scripted browser assertions |
+
+### EXEC-59 Exact Remaining Blockers
+
+1. the mounted SMTP runtime now parses correctly, but SMTP authentication is still rejected live with `EAUTH` / `AUTH PLAIN` / `535 Incorrect authentication data`
+2. because the mail server rejects authentication, no real reset email is delivered to the inbox
+3. because no real email is delivered, reset-link usability, reused-token rejection after successful reset, old-password rejection, and new-password login proof cannot be completed honestly
+4. a fresh scripted browser matrix for `/forgot-password`, `/reset-password`, and `/login` was not completed in this execution
+5. the Romanian company provider contract remains separate and still unresolved under EXEC-52
 
 ## EXEC-58 Password Reset SMTP Delivery Runtime Debug
 
