@@ -1,6 +1,41 @@
 ﻿# OpenStaff Platform Status
 
-Last updated: 2026-05-23
+Last updated: 2026-05-24
+
+## EXEC-62 Real Marketplace Simulation & End-to-End User Product Validation
+
+Verdict: `BETA_READY - realistic marketplace usage works end-to-end for actor onboarding, public posts, moderation, discovery, media/documents, RELU assistance, anonymous browsing, and mobile rendering, but the product is not PRODUCTION_READY because public company discovery is still indirect, ESCO/Uniclass filters are not first-class public controls, video decode quality is not fully proven, and the local web UX fixes could not be promoted because Cloud Build source staging returned storage.objects.get 403.`
+
+### EXEC-62 Closure Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| professional actor simulation | PASS | 6 realistic professionals were registered, onboarded, enriched/classified, uploaded PHOTO/CV assets, completed CV extraction, and reached moderated public visibility before cleanup |
+| company actor simulation | PASS | 4 realistic companies were onboarded with LOGO/CV/BANNER assets and capability-pool posts, including general contractor, engineering consultancy, facility management, and subcontractor pool shapes |
+| project marketplace simulation | PASS | 5 realistic project posts covered residential construction, industrial retrofit, public infrastructure, HVAC upgrade, and BIM coordination with taxonomy, geography, media, documents, and moderation |
+| discovery/filtering | PASS with gaps | Created projects/professionals/pools appeared in the live public feed; q/category/geography/NACE checks worked; ESCO/Uniclass were data-backed but not exposed as first-class public UI filters |
+| RELU AI validation | PASS | onboarding assistant returned `201 ok`, enrich/classify returned `200`, each actor kept user-authored display name and summary, and repeated RELU smoke requests succeeded |
+| media/document validation | PASS with note | approved media/document readback returned `200`, rejected document readback returned `403`, profile media persisted in GCS, and video asset readback was exercised but browser decode quality remains a production-hardening note |
+| trust/moderation | PASS | pending and rejected posts stayed hidden with `403`; approved posts were visible; no public `EXEC`/`test`/`proof` labels were detected; final cleanup deleted 17 posts, hid 10 users, and archived 10 identity slugs |
+| browser/mobile validation | PASS | Desktop Chrome, Android Chrome simulation, and iPhone Safari simulation returned `consoleErrors = []`, `pageErrors = []`, `badResponses = []`, `unauthorizedResponses = []`, and no horizontal overflow |
+| local UX fixes | PASS locally | `apps/admin/web` build passed after fixing professional card routing to `/professionals/:id` and making the jobs filter grid mobile-safe |
+| production promotion | BLOCKED | `gcloud builds submit --config apps/admin/web/cloudbuild.web.yaml` failed because Cloud Build source staging hit `storage.objects.get` 403; latest live web revision remains `openstaff-web-00023-6b6` |
+
+### EXEC-62 Artifacts
+
+- Runtime proof: `docs/proof/exec62/runtime-live.json`
+- Browser proof: `docs/proof/exec62/browser-proof.json`
+- Cleanup proof: `docs/proof/exec62/cleanup-live-mmpjop5ry.json`
+- Partial-run cleanup proof: `docs/proof/exec62/partial-cleanup-mmpjnudzw.json`
+- Summary: `docs/proof/exec62/README.md`
+
+### EXEC-62 Remaining Blockers
+
+1. No dedicated public company listing page exists; company discovery is currently via projects and subcontractor pools.
+2. Public ESCO/Uniclass filtering is data-backed but not exposed as first-class public filter controls.
+3. Video upload/readback was exercised, but full media decode quality remains browser/player dependent.
+4. Public web card-link/mobile UX fixes are built locally, but production deploy was blocked by Cloud Build source staging IAM.
+5. Existing release-readiness blockers from the extended audit still apply: dependency audit issues, broken API tests, and public web lint errors.
 
 ## EXEC-61 Real Account Visibility, RELU Continuity, Taxonomy Persistence & GCS Media Closure
 

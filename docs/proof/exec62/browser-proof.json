@@ -1,0 +1,686 @@
+{
+  "execution": "EXEC-62",
+  "generatedAt": "2026-05-24T11:33:37.827Z",
+  "webBaseUrl": "https://openstaff.eu",
+  "runtimeProofPath": "docs/proof/exec62/runtime-live.json",
+  "results": [
+    {
+      "browser": "Desktop Chrome",
+      "kind": "desktop",
+      "pages": [
+        {
+          "route": "/",
+          "url": "https://openstaff.eu/",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Real companies": true,
+            "Bucharest residential structure and envelope coordination": true
+          },
+          "metrics": {
+            "viewportWidth": 1440,
+            "viewportHeight": 1200,
+            "scrollWidth": 1440,
+            "scrollHeight": 2810,
+            "horizontalOverflow": false,
+            "bodyTextLength": 3775,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 6,
+            "h1": "Real companies, approved professionals, and live project demand in one marketplace."
+          }
+        },
+        {
+          "route": "/professionals",
+          "url": "https://openstaff.eu/professionals",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Construction manager for residential delivery": true,
+            "Northgate Construct SRL capability pool": true
+          },
+          "metrics": {
+            "viewportWidth": 1440,
+            "viewportHeight": 1200,
+            "scrollWidth": 1440,
+            "scrollHeight": 2014,
+            "horizontalOverflow": false,
+            "bodyTextLength": 3136,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 10,
+            "h1": "Professionals and subcontractors"
+          }
+        },
+        {
+          "route": "/professionals/f580dab2-7433-484f-afb9-dba0b08632ff",
+          "url": "https://openstaff.eu/professionals/f580dab2-7433-484f-afb9-dba0b08632ff",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Construction manager for residential delivery": true
+          },
+          "metrics": {
+            "viewportWidth": 1440,
+            "viewportHeight": 1200,
+            "scrollWidth": 1440,
+            "scrollHeight": 1904,
+            "horizontalOverflow": false,
+            "bodyTextLength": 1717,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 4,
+            "h1": "Construction manager for residential delivery"
+          }
+        },
+        {
+          "route": "/jobs",
+          "url": "https://openstaff.eu/jobs",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Bucharest residential structure and envelope coordination": true
+          },
+          "metrics": {
+            "viewportWidth": 1440,
+            "viewportHeight": 1200,
+            "scrollWidth": 1440,
+            "scrollHeight": 2023,
+            "horizontalOverflow": false,
+            "bodyTextLength": 2574,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 1,
+            "h1": "Project filters"
+          }
+        },
+        {
+          "route": "/jobs?category=CONSTRUCTION&region=Bucharest&nace=41.20",
+          "url": "https://openstaff.eu/jobs?category=CONSTRUCTION&region=Bucharest&nace=41.20",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Bucharest residential structure and envelope coordination": true
+          },
+          "metrics": {
+            "viewportWidth": 1440,
+            "viewportHeight": 1200,
+            "scrollWidth": 1440,
+            "scrollHeight": 1200,
+            "horizontalOverflow": false,
+            "bodyTextLength": 1147,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 1,
+            "h1": "Project filters"
+          }
+        },
+        {
+          "route": "/jobs/8f7ac48b-d097-4286-be5f-9638513cbc06",
+          "url": "https://openstaff.eu/jobs/8f7ac48b-d097-4286-be5f-9638513cbc06",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Bucharest residential structure and envelope coordination": true,
+            "Northgate Construct SRL": true
+          },
+          "metrics": {
+            "viewportWidth": 1440,
+            "viewportHeight": 1200,
+            "scrollWidth": 1440,
+            "scrollHeight": 2201,
+            "horizontalOverflow": false,
+            "bodyTextLength": 2150,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 3,
+            "h1": "Bucharest residential structure and envelope coordination"
+          }
+        },
+        {
+          "route": "/jobs/d964c922-181f-44b5-8dc6-511103332727",
+          "url": "https://openstaff.eu/jobs/d964c922-181f-44b5-8dc6-511103332727",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Brasov logistics facility HVAC upgrade": true
+          },
+          "metrics": {
+            "viewportWidth": 1440,
+            "viewportHeight": 1200,
+            "scrollWidth": 1440,
+            "scrollHeight": 1974,
+            "horizontalOverflow": false,
+            "bodyTextLength": 2096,
+            "mediaNodeCount": 2,
+            "videoNodeCount": 2,
+            "backgroundImageNodeCount": 1,
+            "h1": "Brasov logistics facility HVAC upgrade"
+          }
+        },
+        {
+          "route": "/profiles/andrei-popescu-mmpjop5ry",
+          "url": "https://openstaff.eu/profiles/andrei-popescu-mmpjop5ry",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Andrei Popescu": true
+          },
+          "metrics": {
+            "viewportWidth": 1440,
+            "viewportHeight": 1200,
+            "scrollWidth": 1440,
+            "scrollHeight": 1200,
+            "horizontalOverflow": false,
+            "bodyTextLength": 1307,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 2,
+            "h1": "Andrei Popescu"
+          }
+        },
+        {
+          "route": "/pools",
+          "url": "https://openstaff.eu/pools",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "subcontracting capacity": true
+          },
+          "metrics": {
+            "viewportWidth": 1440,
+            "viewportHeight": 1200,
+            "scrollWidth": 1440,
+            "scrollHeight": 1608,
+            "horizontalOverflow": false,
+            "bodyTextLength": 1442,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 2,
+            "h1": "Subcontracting pools built for repeatable delivery, not one-off searching."
+          }
+        }
+      ],
+      "assetChecks": [
+        {
+          "url": "https://api.openstaff.eu/public-posts/media/5187c65c-6647-4b3d-92e3-5cb8bad9b2d2",
+          "status": 200,
+          "contentType": "image/jpeg"
+        },
+        {
+          "url": "https://api.openstaff.eu/public-posts/documents/7ac72ac6-17a1-4a44-b13f-f1f4d35f3803",
+          "status": 200,
+          "contentType": "application/pdf"
+        },
+        {
+          "url": "https://api.openstaff.eu/public-posts/media/6c7c0380-c763-4841-bc1a-ab3b55c9ae0c",
+          "status": 200,
+          "contentType": "video/mp4"
+        },
+        {
+          "url": "https://api.openstaff.eu/public-posts/media/8bb26738-2ecf-4b9e-a592-6d7e83a25145",
+          "status": 200,
+          "contentType": "image/jpeg"
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "failedRequests": [],
+      "unauthorizedResponses": [],
+      "horizontalOverflowPages": []
+    },
+    {
+      "browser": "Android Chrome simulation",
+      "kind": "mobile",
+      "pages": [
+        {
+          "route": "/",
+          "url": "https://openstaff.eu/",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Real companies": true,
+            "Bucharest residential structure and envelope coordination": true
+          },
+          "metrics": {
+            "viewportWidth": 412,
+            "viewportHeight": 839,
+            "scrollWidth": 412,
+            "scrollHeight": 7311,
+            "horizontalOverflow": false,
+            "bodyTextLength": 3763,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 6,
+            "h1": "Real companies, approved professionals, and live project demand in one marketplace."
+          }
+        },
+        {
+          "route": "/professionals",
+          "url": "https://openstaff.eu/professionals",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Construction manager for residential delivery": true,
+            "Northgate Construct SRL capability pool": true
+          },
+          "metrics": {
+            "viewportWidth": 412,
+            "viewportHeight": 839,
+            "scrollWidth": 412,
+            "scrollHeight": 5905,
+            "horizontalOverflow": false,
+            "bodyTextLength": 3124,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 10,
+            "h1": "Professionals and subcontractors"
+          }
+        },
+        {
+          "route": "/professionals/f580dab2-7433-484f-afb9-dba0b08632ff",
+          "url": "https://openstaff.eu/professionals/f580dab2-7433-484f-afb9-dba0b08632ff",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Construction manager for residential delivery": true
+          },
+          "metrics": {
+            "viewportWidth": 412,
+            "viewportHeight": 839,
+            "scrollWidth": 412,
+            "scrollHeight": 3820,
+            "horizontalOverflow": false,
+            "bodyTextLength": 1705,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 4,
+            "h1": "Construction manager for residential delivery"
+          }
+        },
+        {
+          "route": "/jobs",
+          "url": "https://openstaff.eu/jobs",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Bucharest residential structure and envelope coordination": true
+          },
+          "metrics": {
+            "viewportWidth": 648,
+            "viewportHeight": 1320,
+            "scrollWidth": 648,
+            "scrollHeight": 4432,
+            "horizontalOverflow": false,
+            "bodyTextLength": 2562,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 1,
+            "h1": "Project filters"
+          }
+        },
+        {
+          "route": "/jobs?category=CONSTRUCTION&region=Bucharest&nace=41.20",
+          "url": "https://openstaff.eu/jobs?category=CONSTRUCTION&region=Bucharest&nace=41.20",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Bucharest residential structure and envelope coordination": true
+          },
+          "metrics": {
+            "viewportWidth": 648,
+            "viewportHeight": 1320,
+            "scrollWidth": 648,
+            "scrollHeight": 1820,
+            "horizontalOverflow": false,
+            "bodyTextLength": 1135,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 1,
+            "h1": "Project filters"
+          }
+        },
+        {
+          "route": "/jobs/8f7ac48b-d097-4286-be5f-9638513cbc06",
+          "url": "https://openstaff.eu/jobs/8f7ac48b-d097-4286-be5f-9638513cbc06",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Bucharest residential structure and envelope coordination": true,
+            "Northgate Construct SRL": true
+          },
+          "metrics": {
+            "viewportWidth": 412,
+            "viewportHeight": 839,
+            "scrollWidth": 412,
+            "scrollHeight": 4863,
+            "horizontalOverflow": false,
+            "bodyTextLength": 2138,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 3,
+            "h1": "Bucharest residential structure and envelope coordination"
+          }
+        },
+        {
+          "route": "/jobs/d964c922-181f-44b5-8dc6-511103332727",
+          "url": "https://openstaff.eu/jobs/d964c922-181f-44b5-8dc6-511103332727",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Brasov logistics facility HVAC upgrade": true
+          },
+          "metrics": {
+            "viewportWidth": 412,
+            "viewportHeight": 839,
+            "scrollWidth": 412,
+            "scrollHeight": 4598,
+            "horizontalOverflow": false,
+            "bodyTextLength": 2084,
+            "mediaNodeCount": 2,
+            "videoNodeCount": 2,
+            "backgroundImageNodeCount": 1,
+            "h1": "Brasov logistics facility HVAC upgrade"
+          }
+        },
+        {
+          "route": "/profiles/andrei-popescu-mmpjop5ry",
+          "url": "https://openstaff.eu/profiles/andrei-popescu-mmpjop5ry",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Andrei Popescu": true
+          },
+          "metrics": {
+            "viewportWidth": 412,
+            "viewportHeight": 839,
+            "scrollWidth": 412,
+            "scrollHeight": 2199,
+            "horizontalOverflow": false,
+            "bodyTextLength": 1295,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 2,
+            "h1": "Andrei Popescu"
+          }
+        },
+        {
+          "route": "/pools",
+          "url": "https://openstaff.eu/pools",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "subcontracting capacity": true
+          },
+          "metrics": {
+            "viewportWidth": 412,
+            "viewportHeight": 839,
+            "scrollWidth": 412,
+            "scrollHeight": 2301,
+            "horizontalOverflow": false,
+            "bodyTextLength": 1430,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 2,
+            "h1": "Subcontracting pools built for repeatable delivery, not one-off searching."
+          }
+        }
+      ],
+      "assetChecks": [
+        {
+          "url": "https://api.openstaff.eu/public-posts/media/5187c65c-6647-4b3d-92e3-5cb8bad9b2d2",
+          "status": 200,
+          "contentType": "image/jpeg"
+        },
+        {
+          "url": "https://api.openstaff.eu/public-posts/documents/7ac72ac6-17a1-4a44-b13f-f1f4d35f3803",
+          "status": 200,
+          "contentType": "application/pdf"
+        },
+        {
+          "url": "https://api.openstaff.eu/public-posts/media/6c7c0380-c763-4841-bc1a-ab3b55c9ae0c",
+          "status": 200,
+          "contentType": "video/mp4"
+        },
+        {
+          "url": "https://api.openstaff.eu/public-posts/media/8bb26738-2ecf-4b9e-a592-6d7e83a25145",
+          "status": 200,
+          "contentType": "image/jpeg"
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "failedRequests": [],
+      "unauthorizedResponses": [],
+      "horizontalOverflowPages": []
+    },
+    {
+      "browser": "iPhone Safari simulation",
+      "kind": "mobile",
+      "pages": [
+        {
+          "route": "/",
+          "url": "https://openstaff.eu/",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Real companies": true,
+            "Bucharest residential structure and envelope coordination": true
+          },
+          "metrics": {
+            "viewportWidth": 390,
+            "viewportHeight": 664,
+            "scrollWidth": 390,
+            "scrollHeight": 7718,
+            "horizontalOverflow": false,
+            "bodyTextLength": 3763,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 6,
+            "h1": "Real companies, approved professionals, and live project demand in one marketplace."
+          }
+        },
+        {
+          "route": "/professionals",
+          "url": "https://openstaff.eu/professionals",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Construction manager for residential delivery": true,
+            "Northgate Construct SRL capability pool": true
+          },
+          "metrics": {
+            "viewportWidth": 390,
+            "viewportHeight": 664,
+            "scrollWidth": 390,
+            "scrollHeight": 6037,
+            "horizontalOverflow": false,
+            "bodyTextLength": 3124,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 10,
+            "h1": "Professionals and subcontractors"
+          }
+        },
+        {
+          "route": "/professionals/f580dab2-7433-484f-afb9-dba0b08632ff",
+          "url": "https://openstaff.eu/professionals/f580dab2-7433-484f-afb9-dba0b08632ff",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Construction manager for residential delivery": true
+          },
+          "metrics": {
+            "viewportWidth": 390,
+            "viewportHeight": 664,
+            "scrollWidth": 390,
+            "scrollHeight": 3871,
+            "horizontalOverflow": false,
+            "bodyTextLength": 1705,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 4,
+            "h1": "Construction manager for residential delivery"
+          }
+        },
+        {
+          "route": "/jobs",
+          "url": "https://openstaff.eu/jobs",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Bucharest residential structure and envelope coordination": true
+          },
+          "metrics": {
+            "viewportWidth": 648,
+            "viewportHeight": 1104,
+            "scrollWidth": 648,
+            "scrollHeight": 4432,
+            "horizontalOverflow": false,
+            "bodyTextLength": 2562,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 1,
+            "h1": "Project filters"
+          }
+        },
+        {
+          "route": "/jobs?category=CONSTRUCTION&region=Bucharest&nace=41.20",
+          "url": "https://openstaff.eu/jobs?category=CONSTRUCTION&region=Bucharest&nace=41.20",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Bucharest residential structure and envelope coordination": true
+          },
+          "metrics": {
+            "viewportWidth": 648,
+            "viewportHeight": 1104,
+            "scrollWidth": 648,
+            "scrollHeight": 1820,
+            "horizontalOverflow": false,
+            "bodyTextLength": 1135,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 1,
+            "h1": "Project filters"
+          }
+        },
+        {
+          "route": "/jobs/8f7ac48b-d097-4286-be5f-9638513cbc06",
+          "url": "https://openstaff.eu/jobs/8f7ac48b-d097-4286-be5f-9638513cbc06",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Bucharest residential structure and envelope coordination": true,
+            "Northgate Construct SRL": true
+          },
+          "metrics": {
+            "viewportWidth": 390,
+            "viewportHeight": 664,
+            "scrollWidth": 390,
+            "scrollHeight": 4863,
+            "horizontalOverflow": false,
+            "bodyTextLength": 2138,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 3,
+            "h1": "Bucharest residential structure and envelope coordination"
+          }
+        },
+        {
+          "route": "/jobs/d964c922-181f-44b5-8dc6-511103332727",
+          "url": "https://openstaff.eu/jobs/d964c922-181f-44b5-8dc6-511103332727",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Brasov logistics facility HVAC upgrade": true
+          },
+          "metrics": {
+            "viewportWidth": 390,
+            "viewportHeight": 664,
+            "scrollWidth": 390,
+            "scrollHeight": 4598,
+            "horizontalOverflow": false,
+            "bodyTextLength": 2084,
+            "mediaNodeCount": 2,
+            "videoNodeCount": 2,
+            "backgroundImageNodeCount": 1,
+            "h1": "Brasov logistics facility HVAC upgrade"
+          }
+        },
+        {
+          "route": "/profiles/andrei-popescu-mmpjop5ry",
+          "url": "https://openstaff.eu/profiles/andrei-popescu-mmpjop5ry",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "Andrei Popescu": true
+          },
+          "metrics": {
+            "viewportWidth": 390,
+            "viewportHeight": 664,
+            "scrollWidth": 390,
+            "scrollHeight": 2297,
+            "horizontalOverflow": false,
+            "bodyTextLength": 1295,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 2,
+            "h1": "Andrei Popescu"
+          }
+        },
+        {
+          "route": "/pools",
+          "url": "https://openstaff.eu/pools",
+          "httpStatus": 200,
+          "expectedTexts": {
+            "subcontracting capacity": true
+          },
+          "metrics": {
+            "viewportWidth": 390,
+            "viewportHeight": 664,
+            "scrollWidth": 390,
+            "scrollHeight": 2357,
+            "horizontalOverflow": false,
+            "bodyTextLength": 1430,
+            "mediaNodeCount": 0,
+            "videoNodeCount": 0,
+            "backgroundImageNodeCount": 2,
+            "h1": "Subcontracting pools built for repeatable delivery, not one-off searching."
+          }
+        }
+      ],
+      "assetChecks": [
+        {
+          "url": "https://api.openstaff.eu/public-posts/media/5187c65c-6647-4b3d-92e3-5cb8bad9b2d2",
+          "status": 200,
+          "contentType": "image/jpeg"
+        },
+        {
+          "url": "https://api.openstaff.eu/public-posts/documents/7ac72ac6-17a1-4a44-b13f-f1f4d35f3803",
+          "status": 200,
+          "contentType": "application/pdf"
+        },
+        {
+          "url": "https://api.openstaff.eu/public-posts/media/6c7c0380-c763-4841-bc1a-ab3b55c9ae0c",
+          "status": 200,
+          "contentType": "video/mp4"
+        },
+        {
+          "url": "https://api.openstaff.eu/public-posts/media/8bb26738-2ecf-4b9e-a592-6d7e83a25145",
+          "status": 200,
+          "contentType": "image/jpeg"
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "failedRequests": [],
+      "unauthorizedResponses": [],
+      "horizontalOverflowPages": []
+    }
+  ],
+  "summary": {
+    "pass": true,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "badResponses": [],
+    "unauthorizedResponses": [],
+    "horizontalOverflowPages": [],
+    "failedRequests": [],
+    "missingTexts": [],
+    "failedAssetChecks": [],
+    "checkedBrowsers": [
+      "Desktop Chrome",
+      "Android Chrome simulation",
+      "iPhone Safari simulation"
+    ],
+    "checkedRoutes": [
+      "/",
+      "/professionals",
+      "/professionals/f580dab2-7433-484f-afb9-dba0b08632ff",
+      "/jobs",
+      "/jobs?category=CONSTRUCTION&region=Bucharest&nace=41.20",
+      "/jobs/8f7ac48b-d097-4286-be5f-9638513cbc06",
+      "/jobs/d964c922-181f-44b5-8dc6-511103332727",
+      "/profiles/andrei-popescu-mmpjop5ry",
+      "/pools"
+    ]
+  }
+}

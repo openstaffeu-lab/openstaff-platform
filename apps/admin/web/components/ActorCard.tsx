@@ -17,7 +17,6 @@ function resolveAssetUrl(value?: string | null) {
 
 export default function ActorCard({
   id,
-  slug,
   title,
   domain,
   ownerType,
@@ -111,7 +110,7 @@ export default function ActorCard({
       </div>
 
       <Link
-        href={slug ? `/profiles/${slug}` : `/professionals/${id}`}
+        href={`/professionals/${id}`}
         prefetch={false}
         style={{
           display: "block",

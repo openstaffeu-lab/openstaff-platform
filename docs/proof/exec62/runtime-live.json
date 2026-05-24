@@ -1,0 +1,2662 @@
+{
+  "execution": "EXEC-62",
+  "runKey": "mmpjop5ry",
+  "generatedAt": "2026-05-24T11:21:49.419Z",
+  "baseUrl": "https://api.openstaff.eu",
+  "latestStatus": {
+    "health": 200,
+    "readinessWarnings": [],
+    "readinessErrors": [],
+    "emailDeliveryMode": "configured"
+  },
+  "professionals": [
+    {
+      "key": "constructionManager",
+      "name": "Andrei Popescu",
+      "role": "Construction manager",
+      "kind": "professional",
+      "maskedEmail": "ma***@openstaff.eu",
+      "userId": "9fbc8192-bd5b-4803-a96c-17e3030e11c0",
+      "profileId": "b7f0ac5c-8a37-470b-875d-058630cdb314",
+      "slug": "andrei-popescu-mmpjop5ry",
+      "publicProfileUrl": "https://openstaff.eu/profiles/andrei-popescu-mmpjop5ry",
+      "publicProfileApiUrl": "https://api.openstaff.eu/profiles/public/andrei-popescu-mmpjop5ry",
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "41.20"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ]
+      },
+      "languages": [
+        "ro",
+        "en"
+      ],
+      "media": [
+        {
+          "id": "5cfdd1b1-15ea-4094-9355-b0883aefa7a4",
+          "assetKind": "PHOTO",
+          "mimeType": "image/png",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/b7f0ac5c-8a37-470b-875d-058630cdb314/1735515a-280f-4a0b-970e-8d2d5e1e072b.png"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        },
+        {
+          "id": "b0bb5062-da79-46bc-a009-43db49a9cf12",
+          "assetKind": "CV",
+          "mimeType": "text/plain",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/b7f0ac5c-8a37-470b-875d-058630cdb314/c2bad567-78c1-43dd-97cf-a087ad2e380e.txt"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        }
+      ],
+      "cvExtractionStatus": "COMPLETED",
+      "relu": {
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "enrichStatus": 200,
+        "classifyStatus": 200,
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      }
+    },
+    {
+      "key": "electricalEngineer",
+      "name": "Elena Ionescu",
+      "role": "Electrical engineer",
+      "kind": "professional",
+      "maskedEmail": "ma***@openstaff.eu",
+      "userId": "586d84ce-128a-47ec-b6e8-4511d435fff0",
+      "profileId": "d2fd5073-b81b-4e59-88ae-0454ce081cf7",
+      "slug": "elena-ionescu-mmpjop5ry",
+      "publicProfileUrl": "https://openstaff.eu/profiles/elena-ionescu-mmpjop5ry",
+      "publicProfileApiUrl": "https://api.openstaff.eu/profiles/public/elena-ionescu-mmpjop5ry",
+      "taxonomy": {
+        "escoCodes": [
+          "2152.1",
+          "7411.1"
+        ],
+        "naceCodes": [
+          "43.21"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ]
+      },
+      "languages": [
+        "ro",
+        "en"
+      ],
+      "media": [
+        {
+          "id": "d9ba3102-c7b6-45c5-92b4-0cfb5a4b542f",
+          "assetKind": "PHOTO",
+          "mimeType": "image/png",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/d2fd5073-b81b-4e59-88ae-0454ce081cf7/5296abc3-84bb-4890-942b-7c17c338298a.png"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        },
+        {
+          "id": "eb2f1349-e7f4-4339-9468-40eaa28023dd",
+          "assetKind": "CV",
+          "mimeType": "text/plain",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/d2fd5073-b81b-4e59-88ae-0454ce081cf7/4dfd78c9-31eb-49b4-a219-07ad56376473.txt"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        }
+      ],
+      "cvExtractionStatus": "COMPLETED",
+      "relu": {
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "enrichStatus": 200,
+        "classifyStatus": 200,
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      }
+    },
+    {
+      "key": "bimSpecialist",
+      "name": "Mihai Radu",
+      "role": "BIM/Revit specialist",
+      "kind": "professional",
+      "maskedEmail": "ma***@openstaff.eu",
+      "userId": "212ca78e-ec98-4154-8b65-2d892be6b96b",
+      "profileId": "ad6fa17e-21c6-4ef5-ad85-4b8b9debde67",
+      "slug": "mihai-radu-mmpjop5ry",
+      "publicProfileUrl": "https://openstaff.eu/profiles/mihai-radu-mmpjop5ry",
+      "publicProfileApiUrl": "https://api.openstaff.eu/profiles/public/mihai-radu-mmpjop5ry",
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "71.12"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ]
+      },
+      "languages": [
+        "ro",
+        "en"
+      ],
+      "media": [
+        {
+          "id": "518656f9-79d3-462d-8124-8dcc69659b4b",
+          "assetKind": "PHOTO",
+          "mimeType": "image/png",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/ad6fa17e-21c6-4ef5-ad85-4b8b9debde67/0a57f17f-8837-4070-9e6c-7fc71ee78c5e.png"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        },
+        {
+          "id": "ae9f0bd3-1ee6-48bc-a58b-6d9e10131cea",
+          "assetKind": "CV",
+          "mimeType": "text/plain",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/ad6fa17e-21c6-4ef5-ad85-4b8b9debde67/b6e742d6-b189-480d-b7fe-5395d35f7ef8.txt"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        }
+      ],
+      "cvExtractionStatus": "COMPLETED",
+      "relu": {
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "enrichStatus": 200,
+        "classifyStatus": 200,
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      }
+    },
+    {
+      "key": "hvacTechnician",
+      "name": "Sofia Marin",
+      "role": "HVAC technician",
+      "kind": "professional",
+      "maskedEmail": "ma***@openstaff.eu",
+      "userId": "f8b6d385-f3f8-4be4-a442-277d4a1afe4e",
+      "profileId": "106da9ca-0fce-461f-8eac-329ca1c150a7",
+      "slug": "sofia-marin-mmpjop5ry",
+      "publicProfileUrl": "https://openstaff.eu/profiles/sofia-marin-mmpjop5ry",
+      "publicProfileApiUrl": "https://api.openstaff.eu/profiles/public/sofia-marin-mmpjop5ry",
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "43.22"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ]
+      },
+      "languages": [
+        "ro",
+        "en"
+      ],
+      "media": [
+        {
+          "id": "9ca89dbb-8908-4b53-a885-e2ed3407b867",
+          "assetKind": "PHOTO",
+          "mimeType": "image/png",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/106da9ca-0fce-461f-8eac-329ca1c150a7/d6a3c30b-390f-4ee6-9db5-597c710d2db9.png"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        },
+        {
+          "id": "5006f48f-8448-4d8c-82ea-634540059b3c",
+          "assetKind": "CV",
+          "mimeType": "text/plain",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/106da9ca-0fce-461f-8eac-329ca1c150a7/66085bfe-88ad-429b-95ee-e0d85f1e04cb.txt"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        }
+      ],
+      "cvExtractionStatus": "COMPLETED",
+      "relu": {
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "enrichStatus": 200,
+        "classifyStatus": 200,
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      }
+    },
+    {
+      "key": "civilEngineer",
+      "name": "Radu Constantinescu",
+      "role": "Civil engineer",
+      "kind": "professional",
+      "maskedEmail": "ma***@openstaff.eu",
+      "userId": "0b1269b6-20da-411b-aa0f-31cb990f027d",
+      "profileId": "0a7137c7-c35f-4f7f-a5f0-401c79861689",
+      "slug": "radu-constantinescu-mmpjop5ry",
+      "publicProfileUrl": "https://openstaff.eu/profiles/radu-constantinescu-mmpjop5ry",
+      "publicProfileApiUrl": "https://api.openstaff.eu/profiles/public/radu-constantinescu-mmpjop5ry",
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "42.11"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ]
+      },
+      "languages": [
+        "ro",
+        "en"
+      ],
+      "media": [
+        {
+          "id": "7ac1a5f5-0910-4b2e-8e67-c4f181321db3",
+          "assetKind": "PHOTO",
+          "mimeType": "image/png",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/0a7137c7-c35f-4f7f-a5f0-401c79861689/71ab440b-5e39-4a9c-9114-bf75623b9336.png"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        },
+        {
+          "id": "530f4529-95f1-4027-8db7-8e7076ea6866",
+          "assetKind": "CV",
+          "mimeType": "text/plain",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/0a7137c7-c35f-4f7f-a5f0-401c79861689/631d0245-f456-4b24-857a-365f8bc438ac.txt"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        }
+      ],
+      "cvExtractionStatus": "COMPLETED",
+      "relu": {
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "enrichStatus": 200,
+        "classifyStatus": 200,
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      }
+    },
+    {
+      "key": "projectCoordinator",
+      "name": "Irina Pavel",
+      "role": "Project coordinator",
+      "kind": "professional",
+      "maskedEmail": "ma***@openstaff.eu",
+      "userId": "c1038578-321e-4972-aa00-c060cbfc346a",
+      "profileId": "36dc697a-52d3-43f4-874c-0203967e7f28",
+      "slug": "irina-pavel-mmpjop5ry",
+      "publicProfileUrl": "https://openstaff.eu/profiles/irina-pavel-mmpjop5ry",
+      "publicProfileApiUrl": "https://api.openstaff.eu/profiles/public/irina-pavel-mmpjop5ry",
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "70.22"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ]
+      },
+      "languages": [
+        "ro",
+        "en"
+      ],
+      "media": [
+        {
+          "id": "bc5f1e13-6eab-45fe-9d3e-9e828392a7e2",
+          "assetKind": "PHOTO",
+          "mimeType": "image/png",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/36dc697a-52d3-43f4-874c-0203967e7f28/a678da87-a997-43b0-aafe-f0e4029805ac.png"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        },
+        {
+          "id": "4bd21146-b41f-47a3-b1f0-9f0601f778a4",
+          "assetKind": "CV",
+          "mimeType": "text/plain",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/36dc697a-52d3-43f4-874c-0203967e7f28/085b6f65-b44d-4577-a77e-a45eaab2c83e.txt"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        }
+      ],
+      "cvExtractionStatus": "COMPLETED",
+      "relu": {
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "enrichStatus": 200,
+        "classifyStatus": 200,
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      }
+    }
+  ],
+  "companies": [
+    {
+      "key": "generalContractor",
+      "name": "Northgate Construct SRL",
+      "role": "General contractor",
+      "kind": "company",
+      "maskedEmail": "ma***@openstaff.eu",
+      "userId": "19a0188f-291b-41b3-b5a6-515eca0a04d4",
+      "profileId": "1504f264-0bfa-4742-a3ed-651abacdf6b0",
+      "slug": "northgate-construct-srl-mmpjop5ry",
+      "publicProfileUrl": "https://openstaff.eu/profiles/northgate-construct-srl-mmpjop5ry",
+      "publicProfileApiUrl": "https://api.openstaff.eu/profiles/public/northgate-construct-srl-mmpjop5ry",
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "43.99",
+          "41.20"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ]
+      },
+      "languages": [
+        "ro",
+        "en"
+      ],
+      "media": [
+        {
+          "id": "c2f6736c-8b4c-4ac5-bf43-1b89b329096c",
+          "assetKind": "LOGO",
+          "mimeType": "image/png",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/1504f264-0bfa-4742-a3ed-651abacdf6b0/6954ad12-96a0-40c3-9caf-82fd20671414.png"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        },
+        {
+          "id": "ee858b6f-9bc3-4d57-b2a3-7b8ee4f1ff1c",
+          "assetKind": "CV",
+          "mimeType": "text/plain",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/1504f264-0bfa-4742-a3ed-651abacdf6b0/4d5bf644-8b53-4705-9cf9-2dafd8a8493c.txt"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        },
+        {
+          "id": "5c661408-3862-43c5-b982-f50b52791d83",
+          "assetKind": "BANNER",
+          "mimeType": "image/png",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/1504f264-0bfa-4742-a3ed-651abacdf6b0/29c618a1-c875-4591-81f7-0fcf7bd29f29.png"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        }
+      ],
+      "cvExtractionStatus": "COMPLETED",
+      "relu": {
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "enrichStatus": 200,
+        "classifyStatus": 200,
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      }
+    },
+    {
+      "key": "engineeringConsultancy",
+      "name": "Danube Engineering Studio SRL",
+      "role": "Engineering consultancy",
+      "kind": "company",
+      "maskedEmail": "ma***@openstaff.eu",
+      "userId": "31119237-d094-4c63-a5b8-85c6ccd7f6aa",
+      "profileId": "e05af531-36af-4745-a00d-5d252919a613",
+      "slug": "danube-engineering-studio-srl-mmpjop5ry",
+      "publicProfileUrl": "https://openstaff.eu/profiles/danube-engineering-studio-srl-mmpjop5ry",
+      "publicProfileApiUrl": "https://api.openstaff.eu/profiles/public/danube-engineering-studio-srl-mmpjop5ry",
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "43.99",
+          "41.20"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ]
+      },
+      "languages": [
+        "ro",
+        "en"
+      ],
+      "media": [
+        {
+          "id": "4c22b497-b234-454c-a864-54e475c15ad8",
+          "assetKind": "LOGO",
+          "mimeType": "image/png",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/e05af531-36af-4745-a00d-5d252919a613/13ed5991-67e4-4e14-936b-a1698875f1b9.png"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        },
+        {
+          "id": "b3aa9b51-8dc7-45e1-a334-fda73d721a54",
+          "assetKind": "CV",
+          "mimeType": "text/plain",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/e05af531-36af-4745-a00d-5d252919a613/ba1e0f57-a379-444e-a2f1-39e4825b6988.txt"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        },
+        {
+          "id": "f69c7ff2-641e-40ec-b9a0-26375f620ae2",
+          "assetKind": "BANNER",
+          "mimeType": "image/png",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/e05af531-36af-4745-a00d-5d252919a613/ca0ac257-20ec-41eb-a7af-2fd19dd9cfd5.png"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        }
+      ],
+      "cvExtractionStatus": "COMPLETED",
+      "relu": {
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "enrichStatus": 200,
+        "classifyStatus": 200,
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      }
+    },
+    {
+      "key": "facilityManagement",
+      "name": "Carpathia Facility Services SRL",
+      "role": "Facility management company",
+      "kind": "company",
+      "maskedEmail": "ma***@openstaff.eu",
+      "userId": "03cecc28-e047-4b23-b44c-977962644fd0",
+      "profileId": "2cebcda1-f829-47c1-9265-b016a285c5bb",
+      "slug": "carpathia-facility-services-srl-mmpjop5ry",
+      "publicProfileUrl": "https://openstaff.eu/profiles/carpathia-facility-services-srl-mmpjop5ry",
+      "publicProfileApiUrl": "https://api.openstaff.eu/profiles/public/carpathia-facility-services-srl-mmpjop5ry",
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "43.99",
+          "41.20"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ]
+      },
+      "languages": [
+        "ro",
+        "en"
+      ],
+      "media": [
+        {
+          "id": "9e45d1de-2c7b-49b0-8c5f-69dd3602b456",
+          "assetKind": "LOGO",
+          "mimeType": "image/png",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/2cebcda1-f829-47c1-9265-b016a285c5bb/846a35ff-ffdb-42a5-b075-cfc8948ffad2.png"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        },
+        {
+          "id": "d93114b1-d548-4df0-8eb5-9cbd4eaece91",
+          "assetKind": "CV",
+          "mimeType": "text/plain",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/2cebcda1-f829-47c1-9265-b016a285c5bb/ea8fa7cc-48d8-4548-a049-81eaeb621d36.txt"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        },
+        {
+          "id": "cab14496-59fb-4ef3-9d96-8f40a49e9a19",
+          "assetKind": "BANNER",
+          "mimeType": "image/png",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/2cebcda1-f829-47c1-9265-b016a285c5bb/ec539d64-17bd-4a3d-8ef8-04b1c59291c9.png"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        }
+      ],
+      "cvExtractionStatus": "COMPLETED",
+      "relu": {
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "enrichStatus": 200,
+        "classifyStatus": 200,
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      }
+    },
+    {
+      "key": "subcontractorPool",
+      "name": "ElectroMontaj Partners SRL",
+      "role": "Subcontractor pool company",
+      "kind": "company",
+      "maskedEmail": "ma***@openstaff.eu",
+      "userId": "42527e0c-6159-488b-859a-123564eccf80",
+      "profileId": "1646e713-75ef-4a7b-a5e8-8369f0e34aff",
+      "slug": "electromontaj-partners-srl-mmpjop5ry",
+      "publicProfileUrl": "https://openstaff.eu/profiles/electromontaj-partners-srl-mmpjop5ry",
+      "publicProfileApiUrl": "https://api.openstaff.eu/profiles/public/electromontaj-partners-srl-mmpjop5ry",
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "43.99",
+          "41.20"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ]
+      },
+      "languages": [
+        "ro",
+        "en"
+      ],
+      "media": [
+        {
+          "id": "aacbf2af-e94a-481e-8afe-d65c3cdaa221",
+          "assetKind": "LOGO",
+          "mimeType": "image/png",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/1646e713-75ef-4a7b-a5e8-8369f0e34aff/f6bc7995-6998-469e-a0fb-e507bf4c3b58.png"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        },
+        {
+          "id": "04a4fea9-3f1c-4d96-9637-05a9ab4cdae4",
+          "assetKind": "CV",
+          "mimeType": "text/plain",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/1646e713-75ef-4a7b-a5e8-8369f0e34aff/f7b18133-3cf6-432c-ac41-020c9f3ca6c5.txt"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        },
+        {
+          "id": "c31a44b1-3fb3-4423-a69f-dcea542b3175",
+          "assetKind": "BANNER",
+          "mimeType": "image/png",
+          "storage": {
+            "provider": "gcs",
+            "bucket": "openstaff-platform-production",
+            "key": "profiles/1646e713-75ef-4a7b-a5e8-8369f0e34aff/e2ca3f77-b5f7-4f87-964a-c6a78783f34f.png"
+          },
+          "extractionStatus": "NOT_REQUESTED"
+        }
+      ],
+      "cvExtractionStatus": "COMPLETED",
+      "relu": {
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "enrichStatus": 200,
+        "classifyStatus": 200,
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      }
+    }
+  ],
+  "professionalPosts": [
+    {
+      "id": "f580dab2-7433-484f-afb9-dba0b08632ff",
+      "slug": "andrei-popescu-mmpjop5ry-availability",
+      "type": "PROFESSIONAL",
+      "title": "Construction manager for residential delivery",
+      "domain": "CONSTRUCTION MANAGER FOR RESIDENTIAL DELIVERY",
+      "location": "Bucharest, Romania",
+      "ownerName": "Andrei Popescu",
+      "url": "https://openstaff.eu/professionals/f580dab2-7433-484f-afb9-dba0b08632ff",
+      "pendingPublicStatus": 403,
+      "media": {
+        "id": "8bb26738-2ecf-4b9e-a592-6d7e83a25145",
+        "type": "IMAGE",
+        "role": "GALLERY",
+        "url": "https://api.openstaff.eu/public-posts/media/8bb26738-2ecf-4b9e-a592-6d7e83a25145",
+        "publicReadStatus": 200
+      },
+      "document": {
+        "id": "8706d764-792d-4c36-bba7-841418e0fbac",
+        "fileName": "marketplace-document.pdf",
+        "status": "PENDING",
+        "url": "https://api.openstaff.eu/public-posts/documents/8706d764-792d-4c36-bba7-841418e0fbac",
+        "publicReadStatus": 200,
+        "moderationOutcome": "APPROVED_PUBLIC"
+      },
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "41.20"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ],
+        "languageCodes": [
+          "ro",
+          "en"
+        ]
+      }
+    },
+    {
+      "id": "1287ebae-6e3b-41ef-a3f8-f9826e9ddc4f",
+      "slug": "elena-ionescu-mmpjop5ry-availability",
+      "type": "PROFESSIONAL",
+      "title": "Electrical engineer for industrial packages",
+      "domain": "ELECTRICAL ENGINEER FOR INDUSTRIAL PACKAGES",
+      "location": "Cluj-Napoca, Romania",
+      "ownerName": "Elena Ionescu",
+      "url": "https://openstaff.eu/professionals/1287ebae-6e3b-41ef-a3f8-f9826e9ddc4f",
+      "pendingPublicStatus": 403,
+      "media": {
+        "id": "c385dc73-ddfc-4346-8475-75d5cd2be2c0",
+        "type": "IMAGE",
+        "role": "GALLERY",
+        "url": "https://api.openstaff.eu/public-posts/media/c385dc73-ddfc-4346-8475-75d5cd2be2c0",
+        "publicReadStatus": 200
+      },
+      "document": {
+        "id": "a0fc35c8-c500-4ffa-a4da-017034a59e76",
+        "fileName": "marketplace-document.pdf",
+        "status": "PENDING",
+        "url": "https://api.openstaff.eu/public-posts/documents/a0fc35c8-c500-4ffa-a4da-017034a59e76",
+        "publicReadStatus": 200,
+        "moderationOutcome": "APPROVED_PUBLIC"
+      },
+      "taxonomy": {
+        "escoCodes": [
+          "2152.1",
+          "7411.1"
+        ],
+        "naceCodes": [
+          "43.21"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ],
+        "languageCodes": [
+          "ro",
+          "en"
+        ]
+      }
+    },
+    {
+      "id": "a09799e8-78e2-448e-b7ed-0d28e67b564a",
+      "slug": "mihai-radu-mmpjop5ry-availability",
+      "type": "PROFESSIONAL",
+      "title": "BIM/Revit specialist for coordinated models",
+      "domain": "BIM/REVIT SPECIALIST FOR COORDINATED MODELS",
+      "location": "Iasi, Romania",
+      "ownerName": "Mihai Radu",
+      "url": "https://openstaff.eu/professionals/a09799e8-78e2-448e-b7ed-0d28e67b564a",
+      "pendingPublicStatus": 403,
+      "media": {
+        "id": "cd7049c3-3cea-45d6-9bc2-0a2351ecbfac",
+        "type": "IMAGE",
+        "role": "GALLERY",
+        "url": "https://api.openstaff.eu/public-posts/media/cd7049c3-3cea-45d6-9bc2-0a2351ecbfac",
+        "publicReadStatus": 200
+      },
+      "document": {
+        "id": "d432ef79-076a-4063-bf11-3c2e3fb71584",
+        "fileName": "marketplace-document.pdf",
+        "status": "PENDING",
+        "url": "https://api.openstaff.eu/public-posts/documents/d432ef79-076a-4063-bf11-3c2e3fb71584",
+        "publicReadStatus": 200,
+        "moderationOutcome": "APPROVED_PUBLIC"
+      },
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "71.12"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ],
+        "languageCodes": [
+          "ro",
+          "en"
+        ]
+      }
+    },
+    {
+      "id": "3a040790-eb1d-4a73-92f6-e3b242cf15bb",
+      "slug": "sofia-marin-mmpjop5ry-availability",
+      "type": "PROFESSIONAL",
+      "title": "HVAC technician for retrofit and balancing",
+      "domain": "HVAC TECHNICIAN FOR RETROFIT AND BALANCING",
+      "location": "Brasov, Romania",
+      "ownerName": "Sofia Marin",
+      "url": "https://openstaff.eu/professionals/3a040790-eb1d-4a73-92f6-e3b242cf15bb",
+      "pendingPublicStatus": 403,
+      "media": {
+        "id": "76d028eb-bd6b-43f6-906d-161950a47c22",
+        "type": "IMAGE",
+        "role": "GALLERY",
+        "url": "https://api.openstaff.eu/public-posts/media/76d028eb-bd6b-43f6-906d-161950a47c22",
+        "publicReadStatus": 200
+      },
+      "document": {
+        "id": "c4381140-6a6d-4322-aae0-e004561df11e",
+        "fileName": "marketplace-document.pdf",
+        "status": "PENDING",
+        "url": "https://api.openstaff.eu/public-posts/documents/c4381140-6a6d-4322-aae0-e004561df11e",
+        "publicReadStatus": 200,
+        "moderationOutcome": "APPROVED_PUBLIC"
+      },
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "43.22"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ],
+        "languageCodes": [
+          "ro",
+          "en"
+        ]
+      }
+    },
+    {
+      "id": "173b5a41-8c05-41a2-b4ec-76b880d97383",
+      "slug": "radu-constantinescu-mmpjop5ry-availability",
+      "type": "PROFESSIONAL",
+      "title": "Civil engineer for infrastructure works",
+      "domain": "CIVIL ENGINEER FOR INFRASTRUCTURE WORKS",
+      "location": "Timisoara, Romania",
+      "ownerName": "Radu Constantinescu",
+      "url": "https://openstaff.eu/professionals/173b5a41-8c05-41a2-b4ec-76b880d97383",
+      "pendingPublicStatus": 403,
+      "media": {
+        "id": "afc73138-da8a-4e69-8892-69951564acfa",
+        "type": "IMAGE",
+        "role": "GALLERY",
+        "url": "https://api.openstaff.eu/public-posts/media/afc73138-da8a-4e69-8892-69951564acfa",
+        "publicReadStatus": 200
+      },
+      "document": {
+        "id": "77bf1fc9-2711-4ab8-89a2-d2e8989b910d",
+        "fileName": "marketplace-document.pdf",
+        "status": "PENDING",
+        "url": "https://api.openstaff.eu/public-posts/documents/77bf1fc9-2711-4ab8-89a2-d2e8989b910d",
+        "publicReadStatus": 200,
+        "moderationOutcome": "APPROVED_PUBLIC"
+      },
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "42.11"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ],
+        "languageCodes": [
+          "ro",
+          "en"
+        ]
+      }
+    },
+    {
+      "id": "0812a911-828d-41ca-9db9-42d0490805fd",
+      "slug": "irina-pavel-mmpjop5ry-availability",
+      "type": "PROFESSIONAL",
+      "title": "Project coordinator for multilingual site teams",
+      "domain": "PROJECT COORDINATOR FOR MULTILINGUAL SITE TEAMS",
+      "location": "Bucharest, Romania",
+      "ownerName": "Irina Pavel",
+      "url": "https://openstaff.eu/professionals/0812a911-828d-41ca-9db9-42d0490805fd",
+      "pendingPublicStatus": 403,
+      "media": {
+        "id": "a6590e5c-a3ff-4039-903a-4032edc6331f",
+        "type": "IMAGE",
+        "role": "GALLERY",
+        "url": "https://api.openstaff.eu/public-posts/media/a6590e5c-a3ff-4039-903a-4032edc6331f",
+        "publicReadStatus": 200
+      },
+      "document": {
+        "id": "8393ebaf-30f0-454d-aab1-bd5e5665b949",
+        "fileName": "marketplace-document.pdf",
+        "status": "PENDING",
+        "url": "https://api.openstaff.eu/public-posts/documents/8393ebaf-30f0-454d-aab1-bd5e5665b949",
+        "publicReadStatus": 200,
+        "moderationOutcome": "APPROVED_PUBLIC"
+      },
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "70.22"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ],
+        "languageCodes": [
+          "ro",
+          "en"
+        ]
+      }
+    }
+  ],
+  "companyPosts": [
+    {
+      "id": "8e9bab53-8ff5-4de6-bd1f-3d5ab689949b",
+      "slug": "northgate-construct-srl-mmpjop5ry-capability-pool",
+      "type": "SUBCONTRACTOR_POOL",
+      "title": "Northgate Construct SRL capability pool",
+      "domain": "GENERAL CONTRACTING",
+      "location": "Bucharest, Romania",
+      "ownerName": "Northgate Construct SRL",
+      "url": "https://openstaff.eu/professionals/8e9bab53-8ff5-4de6-bd1f-3d5ab689949b",
+      "pendingPublicStatus": 403,
+      "media": {
+        "id": "47be2a67-835a-4f3b-bba8-b16a05eaadcf",
+        "type": "IMAGE",
+        "role": "BANNER",
+        "url": "https://api.openstaff.eu/public-posts/media/47be2a67-835a-4f3b-bba8-b16a05eaadcf",
+        "publicReadStatus": 200
+      },
+      "document": {
+        "id": "e7d92fdb-5f6c-475e-8db2-8c18b1883482",
+        "fileName": "marketplace-document.pdf",
+        "status": "PENDING",
+        "url": "https://api.openstaff.eu/public-posts/documents/e7d92fdb-5f6c-475e-8db2-8c18b1883482",
+        "publicReadStatus": 403,
+        "moderationOutcome": "HIDDEN_BY_MODERATION"
+      },
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "43.99",
+          "41.20"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ],
+        "languageCodes": [
+          "ro",
+          "en"
+        ]
+      }
+    },
+    {
+      "id": "704830de-fe71-4352-bebb-e79a17417a2a",
+      "slug": "danube-engineering-studio-srl-mmpjop5ry-capability-pool",
+      "type": "SUBCONTRACTOR_POOL",
+      "title": "Danube Engineering Studio SRL capability pool",
+      "domain": "ENGINEERING CONSULTANCY",
+      "location": "Cluj-Napoca, Romania",
+      "ownerName": "Danube Engineering Studio SRL",
+      "url": "https://openstaff.eu/professionals/704830de-fe71-4352-bebb-e79a17417a2a",
+      "pendingPublicStatus": 403,
+      "media": {
+        "id": "8998c0ce-e060-4393-abbc-9306288de10b",
+        "type": "IMAGE",
+        "role": "BANNER",
+        "url": "https://api.openstaff.eu/public-posts/media/8998c0ce-e060-4393-abbc-9306288de10b",
+        "publicReadStatus": 200
+      },
+      "document": {
+        "id": "435ba666-1c23-40c9-b5fc-6d4f85054293",
+        "fileName": "marketplace-document.pdf",
+        "status": "PENDING",
+        "url": "https://api.openstaff.eu/public-posts/documents/435ba666-1c23-40c9-b5fc-6d4f85054293",
+        "publicReadStatus": 200,
+        "moderationOutcome": "APPROVED_PUBLIC"
+      },
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "43.99",
+          "41.20"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ],
+        "languageCodes": [
+          "ro",
+          "en"
+        ]
+      }
+    },
+    {
+      "id": "1550d23f-6d24-45d3-bd73-bd46eca6341b",
+      "slug": "carpathia-facility-services-srl-mmpjop5ry-capability-pool",
+      "type": "SUBCONTRACTOR_POOL",
+      "title": "Carpathia Facility Services SRL capability pool",
+      "domain": "FACILITY MANAGEMENT",
+      "location": "Brasov, Romania",
+      "ownerName": "Carpathia Facility Services SRL",
+      "url": "https://openstaff.eu/professionals/1550d23f-6d24-45d3-bd73-bd46eca6341b",
+      "pendingPublicStatus": 403,
+      "media": {
+        "id": "e6044cf0-b29f-445b-b63b-5a2a2c577392",
+        "type": "IMAGE",
+        "role": "BANNER",
+        "url": "https://api.openstaff.eu/public-posts/media/e6044cf0-b29f-445b-b63b-5a2a2c577392",
+        "publicReadStatus": 200
+      },
+      "document": {
+        "id": "dcf2519b-e4a9-420d-99a8-e161f440afa8",
+        "fileName": "marketplace-document.pdf",
+        "status": "PENDING",
+        "url": "https://api.openstaff.eu/public-posts/documents/dcf2519b-e4a9-420d-99a8-e161f440afa8",
+        "publicReadStatus": 200,
+        "moderationOutcome": "APPROVED_PUBLIC"
+      },
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "43.99",
+          "41.20"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ],
+        "languageCodes": [
+          "ro",
+          "en"
+        ]
+      }
+    },
+    {
+      "id": "e44d1b3b-c03e-4e98-82f1-54a69502c871",
+      "slug": "electromontaj-partners-srl-mmpjop5ry-capability-pool",
+      "type": "SUBCONTRACTOR_POOL",
+      "title": "ElectroMontaj Partners SRL capability pool",
+      "domain": "SUBCONTRACTOR POOL",
+      "location": "Timisoara, Romania",
+      "ownerName": "ElectroMontaj Partners SRL",
+      "url": "https://openstaff.eu/professionals/e44d1b3b-c03e-4e98-82f1-54a69502c871",
+      "pendingPublicStatus": 403,
+      "media": {
+        "id": "93c14dcd-c5ed-4ae2-9c78-2883df6c62f2",
+        "type": "IMAGE",
+        "role": "BANNER",
+        "url": "https://api.openstaff.eu/public-posts/media/93c14dcd-c5ed-4ae2-9c78-2883df6c62f2",
+        "publicReadStatus": 200
+      },
+      "document": {
+        "id": "06351bf4-f9ef-4ef6-8a00-ef64a274bbd3",
+        "fileName": "marketplace-document.pdf",
+        "status": "PENDING",
+        "url": "https://api.openstaff.eu/public-posts/documents/06351bf4-f9ef-4ef6-8a00-ef64a274bbd3",
+        "publicReadStatus": 200,
+        "moderationOutcome": "APPROVED_PUBLIC"
+      },
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "43.99",
+          "41.20"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ],
+        "languageCodes": [
+          "ro",
+          "en"
+        ]
+      }
+    }
+  ],
+  "projectPosts": [
+    {
+      "id": "8f7ac48b-d097-4286-be5f-9638513cbc06",
+      "slug": "bucharest-residential-structure-envelope-mmpjop5ry",
+      "type": "PROJECT",
+      "title": "Bucharest residential structure and envelope coordination",
+      "domain": "CONSTRUCTION",
+      "location": "Bucharest, Romania",
+      "ownerName": "Northgate Construct SRL",
+      "url": "https://openstaff.eu/jobs/8f7ac48b-d097-4286-be5f-9638513cbc06",
+      "pendingPublicStatus": 403,
+      "media": {
+        "id": "5187c65c-6647-4b3d-92e3-5cb8bad9b2d2",
+        "type": "IMAGE",
+        "role": "BANNER",
+        "url": "https://api.openstaff.eu/public-posts/media/5187c65c-6647-4b3d-92e3-5cb8bad9b2d2",
+        "publicReadStatus": 200
+      },
+      "document": {
+        "id": "7ac72ac6-17a1-4a44-b13f-f1f4d35f3803",
+        "fileName": "marketplace-document.pdf",
+        "status": "PENDING",
+        "url": "https://api.openstaff.eu/public-posts/documents/7ac72ac6-17a1-4a44-b13f-f1f4d35f3803",
+        "publicReadStatus": 200,
+        "moderationOutcome": "APPROVED_PUBLIC"
+      },
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "41.20"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ],
+        "languageCodes": [
+          "ro",
+          "en"
+        ]
+      }
+    },
+    {
+      "id": "78e98afe-653a-482c-8c56-d733f35cda63",
+      "slug": "cluj-industrial-retrofit-electrical-mmpjop5ry",
+      "type": "PROJECT",
+      "title": "Cluj industrial retrofit electrical package",
+      "domain": "CONSTRUCTION INDUSTRIAL RETROFIT",
+      "location": "Cluj-Napoca, Romania",
+      "ownerName": "Danube Engineering Studio SRL",
+      "url": "https://openstaff.eu/jobs/78e98afe-653a-482c-8c56-d733f35cda63",
+      "pendingPublicStatus": 403,
+      "media": {
+        "id": "36cbd2b5-36c9-45c2-bbd8-0b3242cddfd4",
+        "type": "IMAGE",
+        "role": "BANNER",
+        "url": "https://api.openstaff.eu/public-posts/media/36cbd2b5-36c9-45c2-bbd8-0b3242cddfd4",
+        "publicReadStatus": 200
+      },
+      "document": {
+        "id": "8f637d12-22fe-496a-a119-03c41453faab",
+        "fileName": "marketplace-document.pdf",
+        "status": "PENDING",
+        "url": "https://api.openstaff.eu/public-posts/documents/8f637d12-22fe-496a-a119-03c41453faab",
+        "publicReadStatus": 200,
+        "moderationOutcome": "APPROVED_PUBLIC"
+      },
+      "taxonomy": {
+        "escoCodes": [
+          "2152.1",
+          "7411.1"
+        ],
+        "naceCodes": [
+          "43.21"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ],
+        "languageCodes": [
+          "ro",
+          "en"
+        ]
+      }
+    },
+    {
+      "id": "1a1d3b84-30fb-4d32-a6f2-b29923f2b1f5",
+      "slug": "timis-public-infrastructure-drainage-mmpjop5ry",
+      "type": "PROJECT",
+      "title": "Timis public infrastructure drainage and civil works",
+      "domain": "CONSTRUCTION PUBLIC INFRASTRUCTURE",
+      "location": "Timisoara, Romania",
+      "ownerName": "Northgate Construct SRL",
+      "url": "https://openstaff.eu/jobs/1a1d3b84-30fb-4d32-a6f2-b29923f2b1f5",
+      "pendingPublicStatus": 403,
+      "media": {
+        "id": "d7959314-94fd-4982-ac79-036924c26976",
+        "type": "IMAGE",
+        "role": "BANNER",
+        "url": "https://api.openstaff.eu/public-posts/media/d7959314-94fd-4982-ac79-036924c26976",
+        "publicReadStatus": 200
+      },
+      "document": {
+        "id": "a0ee2a4e-699f-466b-88b4-aa73c912cf88",
+        "fileName": "marketplace-document.pdf",
+        "status": "PENDING",
+        "url": "https://api.openstaff.eu/public-posts/documents/a0ee2a4e-699f-466b-88b4-aa73c912cf88",
+        "publicReadStatus": 200,
+        "moderationOutcome": "APPROVED_PUBLIC"
+      },
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "42.11"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ],
+        "languageCodes": [
+          "ro",
+          "en"
+        ]
+      }
+    },
+    {
+      "id": "d964c922-181f-44b5-8dc6-511103332727",
+      "slug": "brasov-logistics-hvac-upgrade-mmpjop5ry",
+      "type": "PROJECT",
+      "title": "Brasov logistics facility HVAC upgrade",
+      "domain": "CONSTRUCTION HVAC",
+      "location": "Brasov, Romania",
+      "ownerName": "Carpathia Facility Services SRL",
+      "url": "https://openstaff.eu/jobs/d964c922-181f-44b5-8dc6-511103332727",
+      "pendingPublicStatus": 403,
+      "media": {
+        "id": "6c7c0380-c763-4841-bc1a-ab3b55c9ae0c",
+        "type": "VIDEO",
+        "role": "GALLERY",
+        "url": "https://api.openstaff.eu/public-posts/media/6c7c0380-c763-4841-bc1a-ab3b55c9ae0c",
+        "publicReadStatus": 200
+      },
+      "document": {
+        "id": "b459e643-6b04-4ba4-892e-155d10addf23",
+        "fileName": "marketplace-document.pdf",
+        "status": "PENDING",
+        "url": "https://api.openstaff.eu/public-posts/documents/b459e643-6b04-4ba4-892e-155d10addf23",
+        "publicReadStatus": 200,
+        "moderationOutcome": "APPROVED_PUBLIC"
+      },
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "43.22"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ],
+        "languageCodes": [
+          "ro",
+          "en"
+        ]
+      }
+    },
+    {
+      "id": "c2ee202a-7d78-42ee-aba3-1da04b7495f1",
+      "slug": "bucharest-bim-coordination-fitout-mmpjop5ry",
+      "type": "PROJECT",
+      "title": "Bucharest BIM coordination for mixed-use fit-out",
+      "domain": "CONSTRUCTION BIM COORDINATION",
+      "location": "Bucharest, Romania",
+      "ownerName": "Danube Engineering Studio SRL",
+      "url": "https://openstaff.eu/jobs/c2ee202a-7d78-42ee-aba3-1da04b7495f1",
+      "pendingPublicStatus": 403,
+      "media": {
+        "id": "d4db608c-66ce-4f52-9c7c-4a3a1255396e",
+        "type": "IMAGE",
+        "role": "BANNER",
+        "url": "https://api.openstaff.eu/public-posts/media/d4db608c-66ce-4f52-9c7c-4a3a1255396e",
+        "publicReadStatus": 200
+      },
+      "document": {
+        "id": "ed2aacdf-7b50-495c-8c5e-acb5c9ed766d",
+        "fileName": "marketplace-document.pdf",
+        "status": "PENDING",
+        "url": "https://api.openstaff.eu/public-posts/documents/ed2aacdf-7b50-495c-8c5e-acb5c9ed766d",
+        "publicReadStatus": 200,
+        "moderationOutcome": "APPROVED_PUBLIC"
+      },
+      "taxonomy": {
+        "escoCodes": [
+          "7411.1",
+          "3112.1"
+        ],
+        "naceCodes": [
+          "71.12"
+        ],
+        "uniclassCodes": [
+          "Ss_25_30_95"
+        ],
+        "languageCodes": [
+          "ro",
+          "en"
+        ]
+      }
+    }
+  ],
+  "hiddenModerationProof": {
+    "pendingPostId": "8c31834d-8c25-4414-8618-f9e0553d9ee5",
+    "pendingPublicStatus": 403,
+    "rejectedPostId": "f228fd6f-05c1-4a2b-b20c-60ba1ba6234a",
+    "rejectedPublicStatus": 403
+  },
+  "publicChecks": [
+    {
+      "id": "f580dab2-7433-484f-afb9-dba0b08632ff",
+      "title": "Construction manager for residential delivery",
+      "type": "PROFESSIONAL",
+      "detailStatus": 200,
+      "mediaStatus": 200,
+      "documentStatus": 200
+    },
+    {
+      "id": "1287ebae-6e3b-41ef-a3f8-f9826e9ddc4f",
+      "title": "Electrical engineer for industrial packages",
+      "type": "PROFESSIONAL",
+      "detailStatus": 200,
+      "mediaStatus": 200,
+      "documentStatus": 200
+    },
+    {
+      "id": "a09799e8-78e2-448e-b7ed-0d28e67b564a",
+      "title": "BIM/Revit specialist for coordinated models",
+      "type": "PROFESSIONAL",
+      "detailStatus": 200,
+      "mediaStatus": 200,
+      "documentStatus": 200
+    },
+    {
+      "id": "3a040790-eb1d-4a73-92f6-e3b242cf15bb",
+      "title": "HVAC technician for retrofit and balancing",
+      "type": "PROFESSIONAL",
+      "detailStatus": 200,
+      "mediaStatus": 200,
+      "documentStatus": 200
+    },
+    {
+      "id": "173b5a41-8c05-41a2-b4ec-76b880d97383",
+      "title": "Civil engineer for infrastructure works",
+      "type": "PROFESSIONAL",
+      "detailStatus": 200,
+      "mediaStatus": 200,
+      "documentStatus": 200
+    },
+    {
+      "id": "0812a911-828d-41ca-9db9-42d0490805fd",
+      "title": "Project coordinator for multilingual site teams",
+      "type": "PROFESSIONAL",
+      "detailStatus": 200,
+      "mediaStatus": 200,
+      "documentStatus": 200
+    },
+    {
+      "id": "8e9bab53-8ff5-4de6-bd1f-3d5ab689949b",
+      "title": "Northgate Construct SRL capability pool",
+      "type": "SUBCONTRACTOR_POOL",
+      "detailStatus": 200,
+      "mediaStatus": 200,
+      "documentStatus": 403
+    },
+    {
+      "id": "704830de-fe71-4352-bebb-e79a17417a2a",
+      "title": "Danube Engineering Studio SRL capability pool",
+      "type": "SUBCONTRACTOR_POOL",
+      "detailStatus": 200,
+      "mediaStatus": 200,
+      "documentStatus": 200
+    },
+    {
+      "id": "1550d23f-6d24-45d3-bd73-bd46eca6341b",
+      "title": "Carpathia Facility Services SRL capability pool",
+      "type": "SUBCONTRACTOR_POOL",
+      "detailStatus": 200,
+      "mediaStatus": 200,
+      "documentStatus": 200
+    },
+    {
+      "id": "e44d1b3b-c03e-4e98-82f1-54a69502c871",
+      "title": "ElectroMontaj Partners SRL capability pool",
+      "type": "SUBCONTRACTOR_POOL",
+      "detailStatus": 200,
+      "mediaStatus": 200,
+      "documentStatus": 200
+    },
+    {
+      "id": "8f7ac48b-d097-4286-be5f-9638513cbc06",
+      "title": "Bucharest residential structure and envelope coordination",
+      "type": "PROJECT",
+      "detailStatus": 200,
+      "mediaStatus": 200,
+      "documentStatus": 200
+    },
+    {
+      "id": "78e98afe-653a-482c-8c56-d733f35cda63",
+      "title": "Cluj industrial retrofit electrical package",
+      "type": "PROJECT",
+      "detailStatus": 200,
+      "mediaStatus": 200,
+      "documentStatus": 200
+    },
+    {
+      "id": "1a1d3b84-30fb-4d32-a6f2-b29923f2b1f5",
+      "title": "Timis public infrastructure drainage and civil works",
+      "type": "PROJECT",
+      "detailStatus": 200,
+      "mediaStatus": 200,
+      "documentStatus": 200
+    },
+    {
+      "id": "d964c922-181f-44b5-8dc6-511103332727",
+      "title": "Brasov logistics facility HVAC upgrade",
+      "type": "PROJECT",
+      "detailStatus": 200,
+      "mediaStatus": 200,
+      "documentStatus": 200
+    },
+    {
+      "id": "c2ee202a-7d78-42ee-aba3-1da04b7495f1",
+      "title": "Bucharest BIM coordination for mixed-use fit-out",
+      "type": "PROJECT",
+      "detailStatus": 200,
+      "mediaStatus": 200,
+      "documentStatus": 200
+    }
+  ],
+  "discovery": {
+    "durationMs": 154,
+    "totals": {
+      "feed": 29,
+      "projects": 15,
+      "professionals": 9,
+      "pools": 5
+    },
+    "createdVisible": {
+      "projectPosts": true,
+      "professionalPosts": true,
+      "companyPoolPosts": true,
+      "anyInternalLabelPublic": false,
+      "internalLabelScanPattern": "\\bexec(?:[-\\s]?\\d+)?\\b|\\btest\\b|\\bproof\\b",
+      "internalLabelScanNote": "Word-boundary scan avoids false positives from normal terms such as site execution."
+    },
+    "filters": {
+      "qHvacCount": 1,
+      "qBucharestCount": 2,
+      "qElectricalCount": 2,
+      "categoryConstructionCount": 5,
+      "geographyBucharestCount": 10,
+      "nace4321Count": 5,
+      "escoPresenceCount": 6,
+      "uniclassPresenceCount": 6,
+      "multilingualPresenceCount": 6
+    }
+  },
+  "assets": {
+    "approvedMediaStatus": 200,
+    "approvedDocumentStatus": 200,
+    "rejectedDocumentStatus": 403,
+    "publicProfileStatus": 200,
+    "identityProfileStatus": 200
+  },
+  "relu": {
+    "actorsValidated": 10,
+    "fallbackContinuityCount": 0,
+    "nonDestructiveCount": 10,
+    "summaries": [
+      {
+        "key": "constructionManager",
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      },
+      {
+        "key": "electricalEngineer",
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      },
+      {
+        "key": "bimSpecialist",
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      },
+      {
+        "key": "hvacTechnician",
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      },
+      {
+        "key": "civilEngineer",
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      },
+      {
+        "key": "projectCoordinator",
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      },
+      {
+        "key": "generalContractor",
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      },
+      {
+        "key": "engineeringConsultancy",
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      },
+      {
+        "key": "facilityManagement",
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      },
+      {
+        "key": "subcontractorPool",
+        "assistantStatus": 201,
+        "assistantMode": "ok",
+        "resultCounts": {
+          "classifications": 2,
+          "recommendations": 0
+        },
+        "nonDestructive": {
+          "displayNameKept": true,
+          "summaryKept": true
+        }
+      }
+    ]
+  },
+  "stress": {
+    "durationMs": 573,
+    "requestCount": 12,
+    "statuses": [
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      201,
+      201,
+      201
+    ],
+    "allSuccessful": true
+  },
+  "relogins": [
+    {
+      "key": "constructionManager",
+      "status": 200,
+      "profileStatus": 200
+    },
+    {
+      "key": "electricalEngineer",
+      "status": 200,
+      "profileStatus": 200
+    },
+    {
+      "key": "generalContractor",
+      "status": 200,
+      "profileStatus": 200
+    }
+  ],
+  "browserProof": {
+    "execution": "EXEC-62",
+    "generatedAt": "2026-05-24T11:33:37.827Z",
+    "webBaseUrl": "https://openstaff.eu",
+    "runtimeProofPath": "docs/proof/exec62/runtime-live.json",
+    "results": [
+      {
+        "browser": "Desktop Chrome",
+        "kind": "desktop",
+        "pages": [
+          {
+            "route": "/",
+            "url": "https://openstaff.eu/",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Real companies": true,
+              "Bucharest residential structure and envelope coordination": true
+            },
+            "metrics": {
+              "viewportWidth": 1440,
+              "viewportHeight": 1200,
+              "scrollWidth": 1440,
+              "scrollHeight": 2810,
+              "horizontalOverflow": false,
+              "bodyTextLength": 3775,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 6,
+              "h1": "Real companies, approved professionals, and live project demand in one marketplace."
+            }
+          },
+          {
+            "route": "/professionals",
+            "url": "https://openstaff.eu/professionals",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Construction manager for residential delivery": true,
+              "Northgate Construct SRL capability pool": true
+            },
+            "metrics": {
+              "viewportWidth": 1440,
+              "viewportHeight": 1200,
+              "scrollWidth": 1440,
+              "scrollHeight": 2014,
+              "horizontalOverflow": false,
+              "bodyTextLength": 3136,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 10,
+              "h1": "Professionals and subcontractors"
+            }
+          },
+          {
+            "route": "/professionals/f580dab2-7433-484f-afb9-dba0b08632ff",
+            "url": "https://openstaff.eu/professionals/f580dab2-7433-484f-afb9-dba0b08632ff",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Construction manager for residential delivery": true
+            },
+            "metrics": {
+              "viewportWidth": 1440,
+              "viewportHeight": 1200,
+              "scrollWidth": 1440,
+              "scrollHeight": 1904,
+              "horizontalOverflow": false,
+              "bodyTextLength": 1717,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 4,
+              "h1": "Construction manager for residential delivery"
+            }
+          },
+          {
+            "route": "/jobs",
+            "url": "https://openstaff.eu/jobs",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Bucharest residential structure and envelope coordination": true
+            },
+            "metrics": {
+              "viewportWidth": 1440,
+              "viewportHeight": 1200,
+              "scrollWidth": 1440,
+              "scrollHeight": 2023,
+              "horizontalOverflow": false,
+              "bodyTextLength": 2574,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 1,
+              "h1": "Project filters"
+            }
+          },
+          {
+            "route": "/jobs?category=CONSTRUCTION&region=Bucharest&nace=41.20",
+            "url": "https://openstaff.eu/jobs?category=CONSTRUCTION&region=Bucharest&nace=41.20",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Bucharest residential structure and envelope coordination": true
+            },
+            "metrics": {
+              "viewportWidth": 1440,
+              "viewportHeight": 1200,
+              "scrollWidth": 1440,
+              "scrollHeight": 1200,
+              "horizontalOverflow": false,
+              "bodyTextLength": 1147,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 1,
+              "h1": "Project filters"
+            }
+          },
+          {
+            "route": "/jobs/8f7ac48b-d097-4286-be5f-9638513cbc06",
+            "url": "https://openstaff.eu/jobs/8f7ac48b-d097-4286-be5f-9638513cbc06",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Bucharest residential structure and envelope coordination": true,
+              "Northgate Construct SRL": true
+            },
+            "metrics": {
+              "viewportWidth": 1440,
+              "viewportHeight": 1200,
+              "scrollWidth": 1440,
+              "scrollHeight": 2201,
+              "horizontalOverflow": false,
+              "bodyTextLength": 2150,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 3,
+              "h1": "Bucharest residential structure and envelope coordination"
+            }
+          },
+          {
+            "route": "/jobs/d964c922-181f-44b5-8dc6-511103332727",
+            "url": "https://openstaff.eu/jobs/d964c922-181f-44b5-8dc6-511103332727",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Brasov logistics facility HVAC upgrade": true
+            },
+            "metrics": {
+              "viewportWidth": 1440,
+              "viewportHeight": 1200,
+              "scrollWidth": 1440,
+              "scrollHeight": 1974,
+              "horizontalOverflow": false,
+              "bodyTextLength": 2096,
+              "mediaNodeCount": 2,
+              "videoNodeCount": 2,
+              "backgroundImageNodeCount": 1,
+              "h1": "Brasov logistics facility HVAC upgrade"
+            }
+          },
+          {
+            "route": "/profiles/andrei-popescu-mmpjop5ry",
+            "url": "https://openstaff.eu/profiles/andrei-popescu-mmpjop5ry",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Andrei Popescu": true
+            },
+            "metrics": {
+              "viewportWidth": 1440,
+              "viewportHeight": 1200,
+              "scrollWidth": 1440,
+              "scrollHeight": 1200,
+              "horizontalOverflow": false,
+              "bodyTextLength": 1307,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 2,
+              "h1": "Andrei Popescu"
+            }
+          },
+          {
+            "route": "/pools",
+            "url": "https://openstaff.eu/pools",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "subcontracting capacity": true
+            },
+            "metrics": {
+              "viewportWidth": 1440,
+              "viewportHeight": 1200,
+              "scrollWidth": 1440,
+              "scrollHeight": 1608,
+              "horizontalOverflow": false,
+              "bodyTextLength": 1442,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 2,
+              "h1": "Subcontracting pools built for repeatable delivery, not one-off searching."
+            }
+          }
+        ],
+        "assetChecks": [
+          {
+            "url": "https://api.openstaff.eu/public-posts/media/5187c65c-6647-4b3d-92e3-5cb8bad9b2d2",
+            "status": 200,
+            "contentType": "image/jpeg"
+          },
+          {
+            "url": "https://api.openstaff.eu/public-posts/documents/7ac72ac6-17a1-4a44-b13f-f1f4d35f3803",
+            "status": 200,
+            "contentType": "application/pdf"
+          },
+          {
+            "url": "https://api.openstaff.eu/public-posts/media/6c7c0380-c763-4841-bc1a-ab3b55c9ae0c",
+            "status": 200,
+            "contentType": "video/mp4"
+          },
+          {
+            "url": "https://api.openstaff.eu/public-posts/media/8bb26738-2ecf-4b9e-a592-6d7e83a25145",
+            "status": 200,
+            "contentType": "image/jpeg"
+          }
+        ],
+        "consoleErrors": [],
+        "pageErrors": [],
+        "badResponses": [],
+        "failedRequests": [],
+        "unauthorizedResponses": [],
+        "horizontalOverflowPages": []
+      },
+      {
+        "browser": "Android Chrome simulation",
+        "kind": "mobile",
+        "pages": [
+          {
+            "route": "/",
+            "url": "https://openstaff.eu/",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Real companies": true,
+              "Bucharest residential structure and envelope coordination": true
+            },
+            "metrics": {
+              "viewportWidth": 412,
+              "viewportHeight": 839,
+              "scrollWidth": 412,
+              "scrollHeight": 7311,
+              "horizontalOverflow": false,
+              "bodyTextLength": 3763,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 6,
+              "h1": "Real companies, approved professionals, and live project demand in one marketplace."
+            }
+          },
+          {
+            "route": "/professionals",
+            "url": "https://openstaff.eu/professionals",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Construction manager for residential delivery": true,
+              "Northgate Construct SRL capability pool": true
+            },
+            "metrics": {
+              "viewportWidth": 412,
+              "viewportHeight": 839,
+              "scrollWidth": 412,
+              "scrollHeight": 5905,
+              "horizontalOverflow": false,
+              "bodyTextLength": 3124,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 10,
+              "h1": "Professionals and subcontractors"
+            }
+          },
+          {
+            "route": "/professionals/f580dab2-7433-484f-afb9-dba0b08632ff",
+            "url": "https://openstaff.eu/professionals/f580dab2-7433-484f-afb9-dba0b08632ff",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Construction manager for residential delivery": true
+            },
+            "metrics": {
+              "viewportWidth": 412,
+              "viewportHeight": 839,
+              "scrollWidth": 412,
+              "scrollHeight": 3820,
+              "horizontalOverflow": false,
+              "bodyTextLength": 1705,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 4,
+              "h1": "Construction manager for residential delivery"
+            }
+          },
+          {
+            "route": "/jobs",
+            "url": "https://openstaff.eu/jobs",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Bucharest residential structure and envelope coordination": true
+            },
+            "metrics": {
+              "viewportWidth": 648,
+              "viewportHeight": 1320,
+              "scrollWidth": 648,
+              "scrollHeight": 4432,
+              "horizontalOverflow": false,
+              "bodyTextLength": 2562,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 1,
+              "h1": "Project filters"
+            }
+          },
+          {
+            "route": "/jobs?category=CONSTRUCTION&region=Bucharest&nace=41.20",
+            "url": "https://openstaff.eu/jobs?category=CONSTRUCTION&region=Bucharest&nace=41.20",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Bucharest residential structure and envelope coordination": true
+            },
+            "metrics": {
+              "viewportWidth": 648,
+              "viewportHeight": 1320,
+              "scrollWidth": 648,
+              "scrollHeight": 1820,
+              "horizontalOverflow": false,
+              "bodyTextLength": 1135,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 1,
+              "h1": "Project filters"
+            }
+          },
+          {
+            "route": "/jobs/8f7ac48b-d097-4286-be5f-9638513cbc06",
+            "url": "https://openstaff.eu/jobs/8f7ac48b-d097-4286-be5f-9638513cbc06",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Bucharest residential structure and envelope coordination": true,
+              "Northgate Construct SRL": true
+            },
+            "metrics": {
+              "viewportWidth": 412,
+              "viewportHeight": 839,
+              "scrollWidth": 412,
+              "scrollHeight": 4863,
+              "horizontalOverflow": false,
+              "bodyTextLength": 2138,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 3,
+              "h1": "Bucharest residential structure and envelope coordination"
+            }
+          },
+          {
+            "route": "/jobs/d964c922-181f-44b5-8dc6-511103332727",
+            "url": "https://openstaff.eu/jobs/d964c922-181f-44b5-8dc6-511103332727",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Brasov logistics facility HVAC upgrade": true
+            },
+            "metrics": {
+              "viewportWidth": 412,
+              "viewportHeight": 839,
+              "scrollWidth": 412,
+              "scrollHeight": 4598,
+              "horizontalOverflow": false,
+              "bodyTextLength": 2084,
+              "mediaNodeCount": 2,
+              "videoNodeCount": 2,
+              "backgroundImageNodeCount": 1,
+              "h1": "Brasov logistics facility HVAC upgrade"
+            }
+          },
+          {
+            "route": "/profiles/andrei-popescu-mmpjop5ry",
+            "url": "https://openstaff.eu/profiles/andrei-popescu-mmpjop5ry",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Andrei Popescu": true
+            },
+            "metrics": {
+              "viewportWidth": 412,
+              "viewportHeight": 839,
+              "scrollWidth": 412,
+              "scrollHeight": 2199,
+              "horizontalOverflow": false,
+              "bodyTextLength": 1295,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 2,
+              "h1": "Andrei Popescu"
+            }
+          },
+          {
+            "route": "/pools",
+            "url": "https://openstaff.eu/pools",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "subcontracting capacity": true
+            },
+            "metrics": {
+              "viewportWidth": 412,
+              "viewportHeight": 839,
+              "scrollWidth": 412,
+              "scrollHeight": 2301,
+              "horizontalOverflow": false,
+              "bodyTextLength": 1430,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 2,
+              "h1": "Subcontracting pools built for repeatable delivery, not one-off searching."
+            }
+          }
+        ],
+        "assetChecks": [
+          {
+            "url": "https://api.openstaff.eu/public-posts/media/5187c65c-6647-4b3d-92e3-5cb8bad9b2d2",
+            "status": 200,
+            "contentType": "image/jpeg"
+          },
+          {
+            "url": "https://api.openstaff.eu/public-posts/documents/7ac72ac6-17a1-4a44-b13f-f1f4d35f3803",
+            "status": 200,
+            "contentType": "application/pdf"
+          },
+          {
+            "url": "https://api.openstaff.eu/public-posts/media/6c7c0380-c763-4841-bc1a-ab3b55c9ae0c",
+            "status": 200,
+            "contentType": "video/mp4"
+          },
+          {
+            "url": "https://api.openstaff.eu/public-posts/media/8bb26738-2ecf-4b9e-a592-6d7e83a25145",
+            "status": 200,
+            "contentType": "image/jpeg"
+          }
+        ],
+        "consoleErrors": [],
+        "pageErrors": [],
+        "badResponses": [],
+        "failedRequests": [],
+        "unauthorizedResponses": [],
+        "horizontalOverflowPages": []
+      },
+      {
+        "browser": "iPhone Safari simulation",
+        "kind": "mobile",
+        "pages": [
+          {
+            "route": "/",
+            "url": "https://openstaff.eu/",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Real companies": true,
+              "Bucharest residential structure and envelope coordination": true
+            },
+            "metrics": {
+              "viewportWidth": 390,
+              "viewportHeight": 664,
+              "scrollWidth": 390,
+              "scrollHeight": 7718,
+              "horizontalOverflow": false,
+              "bodyTextLength": 3763,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 6,
+              "h1": "Real companies, approved professionals, and live project demand in one marketplace."
+            }
+          },
+          {
+            "route": "/professionals",
+            "url": "https://openstaff.eu/professionals",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Construction manager for residential delivery": true,
+              "Northgate Construct SRL capability pool": true
+            },
+            "metrics": {
+              "viewportWidth": 390,
+              "viewportHeight": 664,
+              "scrollWidth": 390,
+              "scrollHeight": 6037,
+              "horizontalOverflow": false,
+              "bodyTextLength": 3124,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 10,
+              "h1": "Professionals and subcontractors"
+            }
+          },
+          {
+            "route": "/professionals/f580dab2-7433-484f-afb9-dba0b08632ff",
+            "url": "https://openstaff.eu/professionals/f580dab2-7433-484f-afb9-dba0b08632ff",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Construction manager for residential delivery": true
+            },
+            "metrics": {
+              "viewportWidth": 390,
+              "viewportHeight": 664,
+              "scrollWidth": 390,
+              "scrollHeight": 3871,
+              "horizontalOverflow": false,
+              "bodyTextLength": 1705,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 4,
+              "h1": "Construction manager for residential delivery"
+            }
+          },
+          {
+            "route": "/jobs",
+            "url": "https://openstaff.eu/jobs",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Bucharest residential structure and envelope coordination": true
+            },
+            "metrics": {
+              "viewportWidth": 648,
+              "viewportHeight": 1104,
+              "scrollWidth": 648,
+              "scrollHeight": 4432,
+              "horizontalOverflow": false,
+              "bodyTextLength": 2562,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 1,
+              "h1": "Project filters"
+            }
+          },
+          {
+            "route": "/jobs?category=CONSTRUCTION&region=Bucharest&nace=41.20",
+            "url": "https://openstaff.eu/jobs?category=CONSTRUCTION&region=Bucharest&nace=41.20",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Bucharest residential structure and envelope coordination": true
+            },
+            "metrics": {
+              "viewportWidth": 648,
+              "viewportHeight": 1104,
+              "scrollWidth": 648,
+              "scrollHeight": 1820,
+              "horizontalOverflow": false,
+              "bodyTextLength": 1135,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 1,
+              "h1": "Project filters"
+            }
+          },
+          {
+            "route": "/jobs/8f7ac48b-d097-4286-be5f-9638513cbc06",
+            "url": "https://openstaff.eu/jobs/8f7ac48b-d097-4286-be5f-9638513cbc06",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Bucharest residential structure and envelope coordination": true,
+              "Northgate Construct SRL": true
+            },
+            "metrics": {
+              "viewportWidth": 390,
+              "viewportHeight": 664,
+              "scrollWidth": 390,
+              "scrollHeight": 4863,
+              "horizontalOverflow": false,
+              "bodyTextLength": 2138,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 3,
+              "h1": "Bucharest residential structure and envelope coordination"
+            }
+          },
+          {
+            "route": "/jobs/d964c922-181f-44b5-8dc6-511103332727",
+            "url": "https://openstaff.eu/jobs/d964c922-181f-44b5-8dc6-511103332727",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Brasov logistics facility HVAC upgrade": true
+            },
+            "metrics": {
+              "viewportWidth": 390,
+              "viewportHeight": 664,
+              "scrollWidth": 390,
+              "scrollHeight": 4598,
+              "horizontalOverflow": false,
+              "bodyTextLength": 2084,
+              "mediaNodeCount": 2,
+              "videoNodeCount": 2,
+              "backgroundImageNodeCount": 1,
+              "h1": "Brasov logistics facility HVAC upgrade"
+            }
+          },
+          {
+            "route": "/profiles/andrei-popescu-mmpjop5ry",
+            "url": "https://openstaff.eu/profiles/andrei-popescu-mmpjop5ry",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "Andrei Popescu": true
+            },
+            "metrics": {
+              "viewportWidth": 390,
+              "viewportHeight": 664,
+              "scrollWidth": 390,
+              "scrollHeight": 2297,
+              "horizontalOverflow": false,
+              "bodyTextLength": 1295,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 2,
+              "h1": "Andrei Popescu"
+            }
+          },
+          {
+            "route": "/pools",
+            "url": "https://openstaff.eu/pools",
+            "httpStatus": 200,
+            "expectedTexts": {
+              "subcontracting capacity": true
+            },
+            "metrics": {
+              "viewportWidth": 390,
+              "viewportHeight": 664,
+              "scrollWidth": 390,
+              "scrollHeight": 2357,
+              "horizontalOverflow": false,
+              "bodyTextLength": 1430,
+              "mediaNodeCount": 0,
+              "videoNodeCount": 0,
+              "backgroundImageNodeCount": 2,
+              "h1": "Subcontracting pools built for repeatable delivery, not one-off searching."
+            }
+          }
+        ],
+        "assetChecks": [
+          {
+            "url": "https://api.openstaff.eu/public-posts/media/5187c65c-6647-4b3d-92e3-5cb8bad9b2d2",
+            "status": 200,
+            "contentType": "image/jpeg"
+          },
+          {
+            "url": "https://api.openstaff.eu/public-posts/documents/7ac72ac6-17a1-4a44-b13f-f1f4d35f3803",
+            "status": 200,
+            "contentType": "application/pdf"
+          },
+          {
+            "url": "https://api.openstaff.eu/public-posts/media/6c7c0380-c763-4841-bc1a-ab3b55c9ae0c",
+            "status": 200,
+            "contentType": "video/mp4"
+          },
+          {
+            "url": "https://api.openstaff.eu/public-posts/media/8bb26738-2ecf-4b9e-a592-6d7e83a25145",
+            "status": 200,
+            "contentType": "image/jpeg"
+          }
+        ],
+        "consoleErrors": [],
+        "pageErrors": [],
+        "badResponses": [],
+        "failedRequests": [],
+        "unauthorizedResponses": [],
+        "horizontalOverflowPages": []
+      }
+    ],
+    "summary": {
+      "pass": true,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "unauthorizedResponses": [],
+      "horizontalOverflowPages": [],
+      "failedRequests": [],
+      "missingTexts": [],
+      "failedAssetChecks": [],
+      "checkedBrowsers": [
+        "Desktop Chrome",
+        "Android Chrome simulation",
+        "iPhone Safari simulation"
+      ],
+      "checkedRoutes": [
+        "/",
+        "/professionals",
+        "/professionals/f580dab2-7433-484f-afb9-dba0b08632ff",
+        "/jobs",
+        "/jobs?category=CONSTRUCTION&region=Bucharest&nace=41.20",
+        "/jobs/8f7ac48b-d097-4286-be5f-9638513cbc06",
+        "/jobs/d964c922-181f-44b5-8dc6-511103332727",
+        "/profiles/andrei-popescu-mmpjop5ry",
+        "/pools"
+      ]
+    }
+  },
+  "cleanup": {
+    "completed": true,
+    "completedAt": "2026-05-24T11:35:36.421Z",
+    "method": "recover-partial-after-expired-session-token",
+    "deletedPosts": [
+      {
+        "id": "f228fd6f-05c1-4a2b-b20c-60ba1ba6234a",
+        "slug": "rejected-duplicate-electrical-maintenance-mmpjop5ry",
+        "status": 200
+      },
+      {
+        "id": "8c31834d-8c25-4414-8618-f9e0553d9ee5",
+        "slug": "pre-moderation-office-fitout-mmpjop5ry",
+        "status": 200
+      },
+      {
+        "id": "c2ee202a-7d78-42ee-aba3-1da04b7495f1",
+        "slug": "bucharest-bim-coordination-fitout-mmpjop5ry",
+        "status": 200
+      },
+      {
+        "id": "d964c922-181f-44b5-8dc6-511103332727",
+        "slug": "brasov-logistics-hvac-upgrade-mmpjop5ry",
+        "status": 200
+      },
+      {
+        "id": "1a1d3b84-30fb-4d32-a6f2-b29923f2b1f5",
+        "slug": "timis-public-infrastructure-drainage-mmpjop5ry",
+        "status": 200
+      },
+      {
+        "id": "78e98afe-653a-482c-8c56-d733f35cda63",
+        "slug": "cluj-industrial-retrofit-electrical-mmpjop5ry",
+        "status": 200
+      },
+      {
+        "id": "8f7ac48b-d097-4286-be5f-9638513cbc06",
+        "slug": "bucharest-residential-structure-envelope-mmpjop5ry",
+        "status": 200
+      },
+      {
+        "id": "e44d1b3b-c03e-4e98-82f1-54a69502c871",
+        "slug": "electromontaj-partners-srl-mmpjop5ry-capability-pool",
+        "status": 200
+      },
+      {
+        "id": "1550d23f-6d24-45d3-bd73-bd46eca6341b",
+        "slug": "carpathia-facility-services-srl-mmpjop5ry-capability-pool",
+        "status": 200
+      },
+      {
+        "id": "704830de-fe71-4352-bebb-e79a17417a2a",
+        "slug": "danube-engineering-studio-srl-mmpjop5ry-capability-pool",
+        "status": 200
+      },
+      {
+        "id": "8e9bab53-8ff5-4de6-bd1f-3d5ab689949b",
+        "slug": "northgate-construct-srl-mmpjop5ry-capability-pool",
+        "status": 200
+      },
+      {
+        "id": "0812a911-828d-41ca-9db9-42d0490805fd",
+        "slug": "irina-pavel-mmpjop5ry-availability",
+        "status": 200
+      },
+      {
+        "id": "173b5a41-8c05-41a2-b4ec-76b880d97383",
+        "slug": "radu-constantinescu-mmpjop5ry-availability",
+        "status": 200
+      },
+      {
+        "id": "3a040790-eb1d-4a73-92f6-e3b242cf15bb",
+        "slug": "sofia-marin-mmpjop5ry-availability",
+        "status": 200
+      },
+      {
+        "id": "a09799e8-78e2-448e-b7ed-0d28e67b564a",
+        "slug": "mihai-radu-mmpjop5ry-availability",
+        "status": 200
+      },
+      {
+        "id": "1287ebae-6e3b-41ef-a3f8-f9826e9ddc4f",
+        "slug": "elena-ionescu-mmpjop5ry-availability",
+        "status": 200
+      },
+      {
+        "id": "f580dab2-7433-484f-afb9-dba0b08632ff",
+        "slug": "andrei-popescu-mmpjop5ry-availability",
+        "status": 200
+      }
+    ],
+    "hiddenProfiles": [
+      {
+        "userId": "42527e0c-6159-488b-859a-123564eccf80",
+        "slug": "electromontaj-partners-srl-mmpjop5ry",
+        "profileModerationStatus": 200,
+        "accountStatus": 200
+      },
+      {
+        "userId": "03cecc28-e047-4b23-b44c-977962644fd0",
+        "slug": "carpathia-facility-services-srl-mmpjop5ry",
+        "profileModerationStatus": 200,
+        "accountStatus": 200
+      },
+      {
+        "userId": "31119237-d094-4c63-a5b8-85c6ccd7f6aa",
+        "slug": "danube-engineering-studio-srl-mmpjop5ry",
+        "profileModerationStatus": 200,
+        "accountStatus": 200
+      },
+      {
+        "userId": "19a0188f-291b-41b3-b5a6-515eca0a04d4",
+        "slug": "northgate-construct-srl-mmpjop5ry",
+        "profileModerationStatus": 200,
+        "accountStatus": 200
+      },
+      {
+        "userId": "c1038578-321e-4972-aa00-c060cbfc346a",
+        "slug": "irina-pavel-mmpjop5ry",
+        "profileModerationStatus": 200,
+        "accountStatus": 200
+      },
+      {
+        "userId": "0b1269b6-20da-411b-aa0f-31cb990f027d",
+        "slug": "radu-constantinescu-mmpjop5ry",
+        "profileModerationStatus": 200,
+        "accountStatus": 200
+      },
+      {
+        "userId": "f8b6d385-f3f8-4be4-a442-277d4a1afe4e",
+        "slug": "sofia-marin-mmpjop5ry",
+        "profileModerationStatus": 200,
+        "accountStatus": 200
+      },
+      {
+        "userId": "212ca78e-ec98-4154-8b65-2d892be6b96b",
+        "slug": "mihai-radu-mmpjop5ry",
+        "profileModerationStatus": 200,
+        "accountStatus": 200
+      },
+      {
+        "userId": "586d84ce-128a-47ec-b6e8-4511d435fff0",
+        "slug": "elena-ionescu-mmpjop5ry",
+        "profileModerationStatus": 200,
+        "accountStatus": 200
+      },
+      {
+        "userId": "9fbc8192-bd5b-4803-a96c-17e3030e11c0",
+        "slug": "andrei-popescu-mmpjop5ry",
+        "profileModerationStatus": 200,
+        "accountStatus": 200
+      }
+    ],
+    "archivedIdentitySlugs": [
+      {
+        "key": "constructionManager",
+        "oldSlug": "andrei-popescu-mmpjop5ry",
+        "archiveSlug": "private-record-mmpjop5ry-constructionManager",
+        "loginStatus": 200,
+        "archiveStatus": 200,
+        "oldIdentityStatus": 404
+      },
+      {
+        "key": "electricalEngineer",
+        "oldSlug": "elena-ionescu-mmpjop5ry",
+        "archiveSlug": "private-record-mmpjop5ry-electricalEngineer",
+        "loginStatus": 200,
+        "archiveStatus": 200,
+        "oldIdentityStatus": 404
+      },
+      {
+        "key": "bimSpecialist",
+        "oldSlug": "mihai-radu-mmpjop5ry",
+        "archiveSlug": "private-record-mmpjop5ry-bimSpecialist",
+        "loginStatus": 200,
+        "archiveStatus": 200,
+        "oldIdentityStatus": 404
+      },
+      {
+        "key": "hvacTechnician",
+        "oldSlug": "sofia-marin-mmpjop5ry",
+        "archiveSlug": "private-record-mmpjop5ry-hvacTechnician",
+        "loginStatus": 200,
+        "archiveStatus": 200,
+        "oldIdentityStatus": 404
+      },
+      {
+        "key": "civilEngineer",
+        "oldSlug": "radu-constantinescu-mmpjop5ry",
+        "archiveSlug": "private-record-mmpjop5ry-civilEngineer",
+        "loginStatus": 200,
+        "archiveStatus": 200,
+        "oldIdentityStatus": 404
+      },
+      {
+        "key": "projectCoordinator",
+        "oldSlug": "irina-pavel-mmpjop5ry",
+        "archiveSlug": "private-record-mmpjop5ry-projectCoordinator",
+        "loginStatus": 200,
+        "archiveStatus": 200,
+        "oldIdentityStatus": 404
+      },
+      {
+        "key": "generalContractor",
+        "oldSlug": "northgate-construct-srl-mmpjop5ry",
+        "archiveSlug": "private-record-mmpjop5ry-generalContractor",
+        "loginStatus": 200,
+        "archiveStatus": 200,
+        "oldIdentityStatus": 404
+      },
+      {
+        "key": "engineeringConsultancy",
+        "oldSlug": "danube-engineering-studio-srl-mmpjop5ry",
+        "archiveSlug": "private-record-mmpjop5ry-engineeringConsultancy",
+        "loginStatus": 200,
+        "archiveStatus": 200,
+        "oldIdentityStatus": 404
+      },
+      {
+        "key": "facilityManagement",
+        "oldSlug": "carpathia-facility-services-srl-mmpjop5ry",
+        "archiveSlug": "private-record-mmpjop5ry-facilityManagement",
+        "loginStatus": 200,
+        "archiveStatus": 200,
+        "oldIdentityStatus": 404
+      },
+      {
+        "key": "subcontractorPool",
+        "oldSlug": "electromontaj-partners-srl-mmpjop5ry",
+        "archiveSlug": "private-record-mmpjop5ry-subcontractorPool",
+        "loginStatus": 200,
+        "archiveStatus": 200,
+        "oldIdentityStatus": 404
+      }
+    ],
+    "cleanupPass": true,
+    "note": "Initial session-token cleanup attempt expired; recovery used fresh admin login and actor credentials, then verified old identity slugs returned 404.",
+    "spotCheck": {
+      "checkedAt": "2026-05-24T11:50:46.019Z",
+      "publicPostStatuses": [
+        404,
+        404
+      ],
+      "oldIdentityStatuses": [
+        404,
+        404
+      ],
+      "note": "Sampled deleted project posts and old identity slugs after recovery cleanup."
+    }
+  },
+  "readiness": {
+    "classification": "BETA_READY",
+    "blockers": [
+      "No dedicated public company listing page exists; company discovery is currently via projects and subcontractor pools.",
+      "Public ESCO/Uniclass filtering is data-backed but not exposed as first-class public filter controls.",
+      "Video upload/readback was exercised, but full media decode quality remains browser/player dependent.",
+      "Public web card-link/mobile UX fixes are built locally, but production deploy was blocked by Cloud Build source staging IAM (storage.objects.get 403); latest live web revision remains openstaff-web-00023-6b6."
+    ]
+  },
+  "deployAttempt": {
+    "attemptedAt": "2026-05-24T11:56:39.369Z",
+    "component": "openstaff-web",
+    "result": "FAILED",
+    "reason": "Cloud Build source staging failed with storage.objects.get 403 for compute service account on the uploaded source object.",
+    "latestReadyRevision": "openstaff-web-00023-6b6"
+  }
+}

@@ -1,0 +1,313 @@
+{
+  "execution": "EXEC-62 partial recovery",
+  "runKey": "mmpjnudzw",
+  "generatedAt": "2026-05-24T11:17:03.424Z",
+  "baseUrl": "https://api.openstaff.eu",
+  "matchingUsers": [
+    {
+      "id": "b7c3194c-d7ba-4ab5-b4f7-763cb6d4fe51",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "electromontaj-partners-srl-mmpjnudzw",
+      "displayName": "ElectroMontaj Partners SRL"
+    },
+    {
+      "id": "bc233178-3575-4812-85a0-3d45cd0faf67",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "carpathia-facility-services-srl-mmpjnudzw",
+      "displayName": "Marketplace profile unavailable"
+    },
+    {
+      "id": "04123ddc-3ed8-41f1-9856-59ac57ed442e",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "danube-engineering-studio-srl-mmpjnudzw",
+      "displayName": "Marketplace profile unavailable"
+    },
+    {
+      "id": "343ed176-0e61-43c2-977f-b7701a5c332f",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "northgate-construct-srl-mmpjnudzw",
+      "displayName": "Marketplace profile unavailable"
+    },
+    {
+      "id": "f04d71d3-941b-48da-9f28-341cbd1f6caa",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "irina-pavel-mmpjnudzw",
+      "displayName": "Marketplace profile unavailable"
+    },
+    {
+      "id": "ddfa694b-79e8-411f-8468-5d7cadd0af2a",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "radu-constantinescu-mmpjnudzw",
+      "displayName": "Marketplace profile unavailable"
+    },
+    {
+      "id": "a7d79853-b4cc-42d8-be64-69bccbea51d5",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "sofia-marin-mmpjnudzw",
+      "displayName": "Marketplace profile unavailable"
+    },
+    {
+      "id": "1309cafe-18df-4319-9995-8a50439c2201",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "mihai-radu-mmpjnudzw",
+      "displayName": "Marketplace profile unavailable"
+    },
+    {
+      "id": "ea10b62a-41aa-43ed-b0d6-1543fd618847",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "elena-ionescu-mmpjnudzw",
+      "displayName": "Marketplace profile unavailable"
+    },
+    {
+      "id": "910441df-0dbd-4e5d-8c44-1cc1d0dccf1f",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "andrei-popescu-mmpjnudzw",
+      "displayName": "Marketplace profile unavailable"
+    }
+  ],
+  "matchingPosts": [
+    {
+      "id": "8cd1ca73-36eb-4994-9ef3-f56d2e5e9091",
+      "slug": "danube-engineering-studio-srl-mmpjnudzw-capability-pool",
+      "title": "Danube Engineering Studio SRL capability pool",
+      "status": "PENDING_MODERATION",
+      "moderationStatus": "PENDING"
+    },
+    {
+      "id": "c75d463d-cf6d-440a-aff1-12eafd6ee9f0",
+      "slug": "northgate-construct-srl-mmpjnudzw-capability-pool",
+      "title": "Northgate Construct SRL capability pool",
+      "status": "PENDING_MODERATION",
+      "moderationStatus": "PENDING"
+    },
+    {
+      "id": "7b3fe092-c6db-48f0-aff0-a75a16f147b0",
+      "slug": "irina-pavel-mmpjnudzw-availability",
+      "title": "Project coordinator for multilingual site teams",
+      "status": "PENDING_MODERATION",
+      "moderationStatus": "PENDING"
+    },
+    {
+      "id": "32241e7a-4490-4fdd-81dc-74d62b351d08",
+      "slug": "radu-constantinescu-mmpjnudzw-availability",
+      "title": "Civil engineer for infrastructure works",
+      "status": "PENDING_MODERATION",
+      "moderationStatus": "PENDING"
+    },
+    {
+      "id": "5226088f-feb2-463f-8289-78cce0651c7f",
+      "slug": "sofia-marin-mmpjnudzw-availability",
+      "title": "HVAC technician for retrofit and balancing",
+      "status": "PENDING_MODERATION",
+      "moderationStatus": "PENDING"
+    },
+    {
+      "id": "0b9da216-d4ff-4170-b94b-a6a56053563e",
+      "slug": "mihai-radu-mmpjnudzw-availability",
+      "title": "BIM/Revit specialist for coordinated models",
+      "status": "PENDING_MODERATION",
+      "moderationStatus": "PENDING"
+    },
+    {
+      "id": "6ad07655-0b4b-4c89-81b5-e9ed4ba2f2f3",
+      "slug": "elena-ionescu-mmpjnudzw-availability",
+      "title": "Electrical engineer for industrial packages",
+      "status": "PENDING_MODERATION",
+      "moderationStatus": "PENDING"
+    },
+    {
+      "id": "acd1e28f-5883-438c-9ce1-969281a34e46",
+      "slug": "andrei-popescu-mmpjnudzw-availability",
+      "title": "Construction manager for residential delivery",
+      "status": "PENDING_MODERATION",
+      "moderationStatus": "PENDING"
+    }
+  ],
+  "deletedPosts": [
+    {
+      "id": "8cd1ca73-36eb-4994-9ef3-f56d2e5e9091",
+      "slug": "danube-engineering-studio-srl-mmpjnudzw-capability-pool",
+      "status": 200
+    },
+    {
+      "id": "c75d463d-cf6d-440a-aff1-12eafd6ee9f0",
+      "slug": "northgate-construct-srl-mmpjnudzw-capability-pool",
+      "status": 200
+    },
+    {
+      "id": "7b3fe092-c6db-48f0-aff0-a75a16f147b0",
+      "slug": "irina-pavel-mmpjnudzw-availability",
+      "status": 200
+    },
+    {
+      "id": "32241e7a-4490-4fdd-81dc-74d62b351d08",
+      "slug": "radu-constantinescu-mmpjnudzw-availability",
+      "status": 200
+    },
+    {
+      "id": "5226088f-feb2-463f-8289-78cce0651c7f",
+      "slug": "sofia-marin-mmpjnudzw-availability",
+      "status": 200
+    },
+    {
+      "id": "0b9da216-d4ff-4170-b94b-a6a56053563e",
+      "slug": "mihai-radu-mmpjnudzw-availability",
+      "status": 200
+    },
+    {
+      "id": "6ad07655-0b4b-4c89-81b5-e9ed4ba2f2f3",
+      "slug": "elena-ionescu-mmpjnudzw-availability",
+      "status": 200
+    },
+    {
+      "id": "acd1e28f-5883-438c-9ce1-969281a34e46",
+      "slug": "andrei-popescu-mmpjnudzw-availability",
+      "status": 200
+    }
+  ],
+  "hiddenUsers": [
+    {
+      "userId": "b7c3194c-d7ba-4ab5-b4f7-763cb6d4fe51",
+      "slug": "electromontaj-partners-srl-mmpjnudzw",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "bc233178-3575-4812-85a0-3d45cd0faf67",
+      "slug": "carpathia-facility-services-srl-mmpjnudzw",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "04123ddc-3ed8-41f1-9856-59ac57ed442e",
+      "slug": "danube-engineering-studio-srl-mmpjnudzw",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "343ed176-0e61-43c2-977f-b7701a5c332f",
+      "slug": "northgate-construct-srl-mmpjnudzw",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "f04d71d3-941b-48da-9f28-341cbd1f6caa",
+      "slug": "irina-pavel-mmpjnudzw",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "ddfa694b-79e8-411f-8468-5d7cadd0af2a",
+      "slug": "radu-constantinescu-mmpjnudzw",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "a7d79853-b4cc-42d8-be64-69bccbea51d5",
+      "slug": "sofia-marin-mmpjnudzw",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "1309cafe-18df-4319-9995-8a50439c2201",
+      "slug": "mihai-radu-mmpjnudzw",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "ea10b62a-41aa-43ed-b0d6-1543fd618847",
+      "slug": "elena-ionescu-mmpjnudzw",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "910441df-0dbd-4e5d-8c44-1cc1d0dccf1f",
+      "slug": "andrei-popescu-mmpjnudzw",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    }
+  ],
+  "archivedIdentities": [
+    {
+      "key": "constructionManager",
+      "oldSlug": "andrei-popescu-mmpjnudzw",
+      "archiveSlug": "private-record-mmpjnudzw-constructionManager",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "electricalEngineer",
+      "oldSlug": "elena-ionescu-mmpjnudzw",
+      "archiveSlug": "private-record-mmpjnudzw-electricalEngineer",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "bimSpecialist",
+      "oldSlug": "mihai-radu-mmpjnudzw",
+      "archiveSlug": "private-record-mmpjnudzw-bimSpecialist",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "hvacTechnician",
+      "oldSlug": "sofia-marin-mmpjnudzw",
+      "archiveSlug": "private-record-mmpjnudzw-hvacTechnician",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "civilEngineer",
+      "oldSlug": "radu-constantinescu-mmpjnudzw",
+      "archiveSlug": "private-record-mmpjnudzw-civilEngineer",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "projectCoordinator",
+      "oldSlug": "irina-pavel-mmpjnudzw",
+      "archiveSlug": "private-record-mmpjnudzw-projectCoordinator",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "generalContractor",
+      "oldSlug": "northgate-construct-srl-mmpjnudzw",
+      "archiveSlug": "private-record-mmpjnudzw-generalContractor",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "engineeringConsultancy",
+      "oldSlug": "danube-engineering-studio-srl-mmpjnudzw",
+      "archiveSlug": "private-record-mmpjnudzw-engineeringConsultancy",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "facilityManagement",
+      "oldSlug": "carpathia-facility-services-srl-mmpjnudzw",
+      "archiveSlug": "private-record-mmpjnudzw-facilityManagement",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "subcontractorPool",
+      "oldSlug": "electromontaj-partners-srl-mmpjnudzw",
+      "archiveSlug": "private-record-mmpjnudzw-subcontractorPool",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    }
+  ],
+  "cleanupPass": true
+}

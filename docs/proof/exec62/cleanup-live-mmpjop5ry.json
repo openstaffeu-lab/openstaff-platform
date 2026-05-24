@@ -1,0 +1,421 @@
+{
+  "execution": "EXEC-62 partial recovery",
+  "runKey": "mmpjop5ry",
+  "generatedAt": "2026-05-24T11:35:36.421Z",
+  "baseUrl": "https://api.openstaff.eu",
+  "matchingUsers": [
+    {
+      "id": "42527e0c-6159-488b-859a-123564eccf80",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "electromontaj-partners-srl-mmpjop5ry",
+      "displayName": "ElectroMontaj Partners SRL"
+    },
+    {
+      "id": "03cecc28-e047-4b23-b44c-977962644fd0",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "carpathia-facility-services-srl-mmpjop5ry",
+      "displayName": "Carpathia Facility Services SRL"
+    },
+    {
+      "id": "31119237-d094-4c63-a5b8-85c6ccd7f6aa",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "danube-engineering-studio-srl-mmpjop5ry",
+      "displayName": "Danube Engineering Studio SRL"
+    },
+    {
+      "id": "19a0188f-291b-41b3-b5a6-515eca0a04d4",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "northgate-construct-srl-mmpjop5ry",
+      "displayName": "Northgate Construct SRL"
+    },
+    {
+      "id": "c1038578-321e-4972-aa00-c060cbfc346a",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "irina-pavel-mmpjop5ry",
+      "displayName": "Irina Pavel"
+    },
+    {
+      "id": "0b1269b6-20da-411b-aa0f-31cb990f027d",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "radu-constantinescu-mmpjop5ry",
+      "displayName": "Radu Constantinescu"
+    },
+    {
+      "id": "f8b6d385-f3f8-4be4-a442-277d4a1afe4e",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "sofia-marin-mmpjop5ry",
+      "displayName": "Sofia Marin"
+    },
+    {
+      "id": "212ca78e-ec98-4154-8b65-2d892be6b96b",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "mihai-radu-mmpjop5ry",
+      "displayName": "Mihai Radu"
+    },
+    {
+      "id": "586d84ce-128a-47ec-b6e8-4511d435fff0",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "elena-ionescu-mmpjop5ry",
+      "displayName": "Elena Ionescu"
+    },
+    {
+      "id": "9fbc8192-bd5b-4803-a96c-17e3030e11c0",
+      "maskedEmail": "ma***@openstaff.eu",
+      "profileSlug": "andrei-popescu-mmpjop5ry",
+      "displayName": "Andrei Popescu"
+    }
+  ],
+  "matchingPosts": [
+    {
+      "id": "f228fd6f-05c1-4a2b-b20c-60ba1ba6234a",
+      "slug": "rejected-duplicate-electrical-maintenance-mmpjop5ry",
+      "title": "Rejected duplicate electrical maintenance package",
+      "status": "REJECTED",
+      "moderationStatus": "REJECTED"
+    },
+    {
+      "id": "8c31834d-8c25-4414-8618-f9e0553d9ee5",
+      "slug": "pre-moderation-office-fitout-mmpjop5ry",
+      "title": "Pre-moderation office fit-out package",
+      "status": "PENDING_MODERATION",
+      "moderationStatus": "PENDING"
+    },
+    {
+      "id": "c2ee202a-7d78-42ee-aba3-1da04b7495f1",
+      "slug": "bucharest-bim-coordination-fitout-mmpjop5ry",
+      "title": "Bucharest BIM coordination for mixed-use fit-out",
+      "status": "LIVE",
+      "moderationStatus": "APPROVED"
+    },
+    {
+      "id": "d964c922-181f-44b5-8dc6-511103332727",
+      "slug": "brasov-logistics-hvac-upgrade-mmpjop5ry",
+      "title": "Brasov logistics facility HVAC upgrade",
+      "status": "LIVE",
+      "moderationStatus": "APPROVED"
+    },
+    {
+      "id": "1a1d3b84-30fb-4d32-a6f2-b29923f2b1f5",
+      "slug": "timis-public-infrastructure-drainage-mmpjop5ry",
+      "title": "Timis public infrastructure drainage and civil works",
+      "status": "LIVE",
+      "moderationStatus": "APPROVED"
+    },
+    {
+      "id": "78e98afe-653a-482c-8c56-d733f35cda63",
+      "slug": "cluj-industrial-retrofit-electrical-mmpjop5ry",
+      "title": "Cluj industrial retrofit electrical package",
+      "status": "LIVE",
+      "moderationStatus": "APPROVED"
+    },
+    {
+      "id": "8f7ac48b-d097-4286-be5f-9638513cbc06",
+      "slug": "bucharest-residential-structure-envelope-mmpjop5ry",
+      "title": "Bucharest residential structure and envelope coordination",
+      "status": "LIVE",
+      "moderationStatus": "APPROVED"
+    },
+    {
+      "id": "e44d1b3b-c03e-4e98-82f1-54a69502c871",
+      "slug": "electromontaj-partners-srl-mmpjop5ry-capability-pool",
+      "title": "ElectroMontaj Partners SRL capability pool",
+      "status": "LIVE",
+      "moderationStatus": "APPROVED"
+    },
+    {
+      "id": "1550d23f-6d24-45d3-bd73-bd46eca6341b",
+      "slug": "carpathia-facility-services-srl-mmpjop5ry-capability-pool",
+      "title": "Carpathia Facility Services SRL capability pool",
+      "status": "LIVE",
+      "moderationStatus": "APPROVED"
+    },
+    {
+      "id": "704830de-fe71-4352-bebb-e79a17417a2a",
+      "slug": "danube-engineering-studio-srl-mmpjop5ry-capability-pool",
+      "title": "Danube Engineering Studio SRL capability pool",
+      "status": "LIVE",
+      "moderationStatus": "APPROVED"
+    },
+    {
+      "id": "8e9bab53-8ff5-4de6-bd1f-3d5ab689949b",
+      "slug": "northgate-construct-srl-mmpjop5ry-capability-pool",
+      "title": "Northgate Construct SRL capability pool",
+      "status": "LIVE",
+      "moderationStatus": "APPROVED"
+    },
+    {
+      "id": "0812a911-828d-41ca-9db9-42d0490805fd",
+      "slug": "irina-pavel-mmpjop5ry-availability",
+      "title": "Project coordinator for multilingual site teams",
+      "status": "LIVE",
+      "moderationStatus": "APPROVED"
+    },
+    {
+      "id": "173b5a41-8c05-41a2-b4ec-76b880d97383",
+      "slug": "radu-constantinescu-mmpjop5ry-availability",
+      "title": "Civil engineer for infrastructure works",
+      "status": "LIVE",
+      "moderationStatus": "APPROVED"
+    },
+    {
+      "id": "3a040790-eb1d-4a73-92f6-e3b242cf15bb",
+      "slug": "sofia-marin-mmpjop5ry-availability",
+      "title": "HVAC technician for retrofit and balancing",
+      "status": "LIVE",
+      "moderationStatus": "APPROVED"
+    },
+    {
+      "id": "a09799e8-78e2-448e-b7ed-0d28e67b564a",
+      "slug": "mihai-radu-mmpjop5ry-availability",
+      "title": "BIM/Revit specialist for coordinated models",
+      "status": "LIVE",
+      "moderationStatus": "APPROVED"
+    },
+    {
+      "id": "1287ebae-6e3b-41ef-a3f8-f9826e9ddc4f",
+      "slug": "elena-ionescu-mmpjop5ry-availability",
+      "title": "Electrical engineer for industrial packages",
+      "status": "LIVE",
+      "moderationStatus": "APPROVED"
+    },
+    {
+      "id": "f580dab2-7433-484f-afb9-dba0b08632ff",
+      "slug": "andrei-popescu-mmpjop5ry-availability",
+      "title": "Construction manager for residential delivery",
+      "status": "LIVE",
+      "moderationStatus": "APPROVED"
+    }
+  ],
+  "deletedPosts": [
+    {
+      "id": "f228fd6f-05c1-4a2b-b20c-60ba1ba6234a",
+      "slug": "rejected-duplicate-electrical-maintenance-mmpjop5ry",
+      "status": 200
+    },
+    {
+      "id": "8c31834d-8c25-4414-8618-f9e0553d9ee5",
+      "slug": "pre-moderation-office-fitout-mmpjop5ry",
+      "status": 200
+    },
+    {
+      "id": "c2ee202a-7d78-42ee-aba3-1da04b7495f1",
+      "slug": "bucharest-bim-coordination-fitout-mmpjop5ry",
+      "status": 200
+    },
+    {
+      "id": "d964c922-181f-44b5-8dc6-511103332727",
+      "slug": "brasov-logistics-hvac-upgrade-mmpjop5ry",
+      "status": 200
+    },
+    {
+      "id": "1a1d3b84-30fb-4d32-a6f2-b29923f2b1f5",
+      "slug": "timis-public-infrastructure-drainage-mmpjop5ry",
+      "status": 200
+    },
+    {
+      "id": "78e98afe-653a-482c-8c56-d733f35cda63",
+      "slug": "cluj-industrial-retrofit-electrical-mmpjop5ry",
+      "status": 200
+    },
+    {
+      "id": "8f7ac48b-d097-4286-be5f-9638513cbc06",
+      "slug": "bucharest-residential-structure-envelope-mmpjop5ry",
+      "status": 200
+    },
+    {
+      "id": "e44d1b3b-c03e-4e98-82f1-54a69502c871",
+      "slug": "electromontaj-partners-srl-mmpjop5ry-capability-pool",
+      "status": 200
+    },
+    {
+      "id": "1550d23f-6d24-45d3-bd73-bd46eca6341b",
+      "slug": "carpathia-facility-services-srl-mmpjop5ry-capability-pool",
+      "status": 200
+    },
+    {
+      "id": "704830de-fe71-4352-bebb-e79a17417a2a",
+      "slug": "danube-engineering-studio-srl-mmpjop5ry-capability-pool",
+      "status": 200
+    },
+    {
+      "id": "8e9bab53-8ff5-4de6-bd1f-3d5ab689949b",
+      "slug": "northgate-construct-srl-mmpjop5ry-capability-pool",
+      "status": 200
+    },
+    {
+      "id": "0812a911-828d-41ca-9db9-42d0490805fd",
+      "slug": "irina-pavel-mmpjop5ry-availability",
+      "status": 200
+    },
+    {
+      "id": "173b5a41-8c05-41a2-b4ec-76b880d97383",
+      "slug": "radu-constantinescu-mmpjop5ry-availability",
+      "status": 200
+    },
+    {
+      "id": "3a040790-eb1d-4a73-92f6-e3b242cf15bb",
+      "slug": "sofia-marin-mmpjop5ry-availability",
+      "status": 200
+    },
+    {
+      "id": "a09799e8-78e2-448e-b7ed-0d28e67b564a",
+      "slug": "mihai-radu-mmpjop5ry-availability",
+      "status": 200
+    },
+    {
+      "id": "1287ebae-6e3b-41ef-a3f8-f9826e9ddc4f",
+      "slug": "elena-ionescu-mmpjop5ry-availability",
+      "status": 200
+    },
+    {
+      "id": "f580dab2-7433-484f-afb9-dba0b08632ff",
+      "slug": "andrei-popescu-mmpjop5ry-availability",
+      "status": 200
+    }
+  ],
+  "hiddenUsers": [
+    {
+      "userId": "42527e0c-6159-488b-859a-123564eccf80",
+      "slug": "electromontaj-partners-srl-mmpjop5ry",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "03cecc28-e047-4b23-b44c-977962644fd0",
+      "slug": "carpathia-facility-services-srl-mmpjop5ry",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "31119237-d094-4c63-a5b8-85c6ccd7f6aa",
+      "slug": "danube-engineering-studio-srl-mmpjop5ry",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "19a0188f-291b-41b3-b5a6-515eca0a04d4",
+      "slug": "northgate-construct-srl-mmpjop5ry",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "c1038578-321e-4972-aa00-c060cbfc346a",
+      "slug": "irina-pavel-mmpjop5ry",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "0b1269b6-20da-411b-aa0f-31cb990f027d",
+      "slug": "radu-constantinescu-mmpjop5ry",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "f8b6d385-f3f8-4be4-a442-277d4a1afe4e",
+      "slug": "sofia-marin-mmpjop5ry",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "212ca78e-ec98-4154-8b65-2d892be6b96b",
+      "slug": "mihai-radu-mmpjop5ry",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "586d84ce-128a-47ec-b6e8-4511d435fff0",
+      "slug": "elena-ionescu-mmpjop5ry",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    },
+    {
+      "userId": "9fbc8192-bd5b-4803-a96c-17e3030e11c0",
+      "slug": "andrei-popescu-mmpjop5ry",
+      "profileModerationStatus": 200,
+      "accountStatus": 200
+    }
+  ],
+  "archivedIdentities": [
+    {
+      "key": "constructionManager",
+      "oldSlug": "andrei-popescu-mmpjop5ry",
+      "archiveSlug": "private-record-mmpjop5ry-constructionManager",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "electricalEngineer",
+      "oldSlug": "elena-ionescu-mmpjop5ry",
+      "archiveSlug": "private-record-mmpjop5ry-electricalEngineer",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "bimSpecialist",
+      "oldSlug": "mihai-radu-mmpjop5ry",
+      "archiveSlug": "private-record-mmpjop5ry-bimSpecialist",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "hvacTechnician",
+      "oldSlug": "sofia-marin-mmpjop5ry",
+      "archiveSlug": "private-record-mmpjop5ry-hvacTechnician",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "civilEngineer",
+      "oldSlug": "radu-constantinescu-mmpjop5ry",
+      "archiveSlug": "private-record-mmpjop5ry-civilEngineer",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "projectCoordinator",
+      "oldSlug": "irina-pavel-mmpjop5ry",
+      "archiveSlug": "private-record-mmpjop5ry-projectCoordinator",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "generalContractor",
+      "oldSlug": "northgate-construct-srl-mmpjop5ry",
+      "archiveSlug": "private-record-mmpjop5ry-generalContractor",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "engineeringConsultancy",
+      "oldSlug": "danube-engineering-studio-srl-mmpjop5ry",
+      "archiveSlug": "private-record-mmpjop5ry-engineeringConsultancy",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "facilityManagement",
+      "oldSlug": "carpathia-facility-services-srl-mmpjop5ry",
+      "archiveSlug": "private-record-mmpjop5ry-facilityManagement",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    },
+    {
+      "key": "subcontractorPool",
+      "oldSlug": "electromontaj-partners-srl-mmpjop5ry",
+      "archiveSlug": "private-record-mmpjop5ry-subcontractorPool",
+      "loginStatus": 200,
+      "archiveStatus": 200,
+      "oldIdentityStatus": 404
+    }
+  ],
+  "cleanupPass": true
+}
