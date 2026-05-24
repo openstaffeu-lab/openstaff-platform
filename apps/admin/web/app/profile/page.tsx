@@ -1,10 +1,13 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
+import EscoMultiSelect from "@/components/EscoMultiSelect";
+import NaceSearchInput from "@/components/NaceSearchInput";
+import UniclassMultiSelect from "@/components/UniclassMultiSelect";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
-import { ApiError, apiRequest, apiRequestBlob } from "../../lib/api";
+import { ApiError, apiRequest, apiRequestBlob, getLanguages, resolveAssetUrl } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 
 type ProfileType =
@@ -29,6 +32,12 @@ type TaxonomyOption = {
   code: string;
   title: string;
   description?: string | null;
+};
+
+type LanguageOption = {
+  id: string;
+  code: string;
+  name: string;
 };
 
 type CountryOption = {
@@ -102,6 +111,10 @@ type ProfileResponse = {
   escoSkills: TaxonomyOption[];
   naceCodes: TaxonomyOption[];
   uniclassCodes: TaxonomyOption[];
+  languageCodes: string[];
+  escoCodes: string[];
+  naceCodeValues: string[];
+  uniclassCodeValues: string[];
   assets: {
     logoUrl: string | null;
     photoUrl: string | null;
@@ -135,6 +148,10 @@ type FormState = {
   supportedEngagementModels: string[];
   certificationsText: string;
   availabilityStatus: ProfileAvailabilityStatus;
+  languageCodes: string[];
+  escoCodes: string[];
+  naceCodes: string[];
+  uniclassCodes: string[];
   contractorProfile: {
     tradeFocus: string;
     teamSize: string;
@@ -195,9 +212,13 @@ const EMPTY_FORM: FormState = {
   regionId: "",
   cityId: "",
   supportedEngagementModels: ["B2B"],
-  certificationsText: "",
-  availabilityStatus: "AVAILABLE",
-  contractorProfile: {
+    certificationsText: "",
+    availabilityStatus: "AVAILABLE",
+    languageCodes: [],
+    escoCodes: [],
+    naceCodes: [],
+    uniclassCodes: [],
+    contractorProfile: {
     tradeFocus: "",
     teamSize: "",
     serviceArea: "",
@@ -243,6 +264,10 @@ function syncForm(profile: ProfileResponse): FormState {
     supportedEngagementModels: profile.supportedEngagementModels,
     certificationsText: profile.certificationsText ?? "",
     availabilityStatus: profile.availabilityStatus,
+    languageCodes: profile.languages.map((item) => item.code),
+    escoCodes: profile.escoSkills.map((item) => item.code),
+    naceCodes: profile.naceCodes.map((item) => item.code),
+    uniclassCodes: profile.uniclassCodes.map((item) => item.code),
     contractorProfile: {
       tradeFocus: profile.contractorProfile?.tradeFocus ?? "",
       teamSize: profile.contractorProfile?.teamSize?.toString() ?? "",
@@ -261,6 +286,7 @@ export default function ProfilePage() {
   const { token, isReady, logout, user } = useAuth();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [countries, setCountries] = useState<CountryOption[]>([]);
+  const [languages, setLanguages] = useState<LanguageOption[]>([]);
   const [escoSkills, setEscoSkills] = useState<TaxonomyOption[]>([]);
   const [naceCodes, setNaceCodes] = useState<TaxonomyOption[]>([]);
   const [uniclassCodes, setUniclassCodes] = useState<TaxonomyOption[]>([]);
@@ -287,10 +313,11 @@ export default function ProfilePage() {
     setError(null);
 
     try {
-      const [profileResponse, countriesResponse, escoResponse, naceResponse, uniclassResponse] =
+      const [profileResponse, countriesResponse, languagesResponse, escoResponse, naceResponse, uniclassResponse] =
         await Promise.all([
           apiRequest<ProfileResponse | null>("/profile", { token: authToken }),
           apiRequest<CountryOption[]>("/countries", { token: authToken }),
+          getLanguages(),
           apiRequest<TaxonomyOption[]>("/esco", { token: authToken }),
           apiRequest<TaxonomyOption[]>("/nace", { token: authToken }),
           apiRequest<TaxonomyOption[]>("/uniclass", { token: authToken }),
@@ -305,6 +332,7 @@ export default function ProfilePage() {
       }
 
       setCountries(countriesResponse);
+      setLanguages(languagesResponse);
       setEscoSkills(escoResponse);
       setNaceCodes(naceResponse);
       setUniclassCodes(uniclassResponse);
@@ -340,6 +368,15 @@ export default function ProfilePage() {
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function toggleLanguage(code: string) {
+    setForm((current) => ({
+      ...current,
+      languageCodes: current.languageCodes.includes(code)
+        ? current.languageCodes.filter((entry) => entry !== code)
+        : [...current.languageCodes, code],
+    }));
   }
 
   function toggleArrayValue(key: "supportedEngagementModels", value: string) {
@@ -381,9 +418,18 @@ export default function ProfilePage() {
         countryId: form.countryId || null,
         regionId: form.regionId || null,
         cityId: form.cityId || null,
+        countryName: selectedCountry?.name ?? null,
+        countryCode: selectedCountry?.code ?? null,
+        regionName: selectedRegion?.name ?? null,
+        cityName:
+          selectedRegion?.cities.find((city) => city.id === form.cityId)?.name ?? null,
         supportedEngagementModels: form.supportedEngagementModels,
         certificationsText: form.certificationsText || null,
         availabilityStatus: form.availabilityStatus,
+        languageCodes: form.languageCodes,
+        escoCodes: form.escoCodes,
+        naceCodes: form.naceCodes,
+        uniclassCodes: form.uniclassCodes,
         contractorProfile: !usesProfessionalFields(form.profileType)
           ? {
               tradeFocus: form.contractorProfile.tradeFocus || undefined,
@@ -638,7 +684,18 @@ export default function ProfilePage() {
             <Panel title="Location & Commercial Scope" description="Geography and engagement models used in discovery and matching.">
               <div className="grid gap-4 md:grid-cols-3">
                 <Field label="Country">
-                  <select className={inputClassName} value={form.countryId} onChange={(event) => updateField("countryId", event.target.value)}>
+                  <select
+                    className={inputClassName}
+                    value={form.countryId}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        countryId: event.target.value,
+                        regionId: "",
+                        cityId: "",
+                      }))
+                    }
+                  >
                     <option value="">Select country</option>
                     {countries.map((country) => (
                       <option key={country.id} value={country.id}>
@@ -648,7 +705,17 @@ export default function ProfilePage() {
                   </select>
                 </Field>
                 <Field label="Region">
-                  <select className={inputClassName} value={form.regionId} onChange={(event) => updateField("regionId", event.target.value)}>
+                  <select
+                    className={inputClassName}
+                    value={form.regionId}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        regionId: event.target.value,
+                        cityId: "",
+                      }))
+                    }
+                  >
                     <option value="">Select region</option>
                     {selectedCountry?.regions.map((region) => (
                       <option key={region.id} value={region.id}>
@@ -687,6 +754,70 @@ export default function ProfilePage() {
                     </button>
                   ))}
                 </div>
+              </div>
+            </Panel>
+
+            <Panel title="Classification & Languages" description="Choose the public taxonomy and language metadata that should follow your profile.">
+              <div className="space-y-6">
+                <Field label="Languages">
+                  <div className="flex flex-wrap gap-3">
+                    {languages.map((language) => {
+                      const selected = form.languageCodes.includes(language.code);
+                      return (
+                        <button
+                          key={language.id}
+                          type="button"
+                          onClick={() => toggleLanguage(language.code)}
+                          className={`rounded-full px-4 py-2 text-sm font-medium ${
+                            selected
+                              ? "bg-brand-navy text-white"
+                              : "border border-slate-200 bg-white text-slate-700"
+                          }`}
+                        >
+                          {language.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+
+                <Field label="NACE">
+                  <div className="space-y-3">
+                    <NaceSearchInput
+                      value={form.naceCodes.join(", ")}
+                      onChange={(code) =>
+                        setForm((current) => ({
+                          ...current,
+                          naceCodes: current.naceCodes.includes(code)
+                            ? current.naceCodes
+                            : [...current.naceCodes, code],
+                        }))
+                      }
+                    />
+                    <TagGroup
+                      label="Selected NACE"
+                      items={form.naceCodes.map((code) => {
+                        const match = naceCodes.find((item) => item.code === code);
+                        return match ? `${match.code} ${match.title}` : code;
+                      })}
+                      onRemove={(item) => {
+                        const code = item.split(" ")[0];
+                        setForm((current) => ({
+                          ...current,
+                          naceCodes: current.naceCodes.filter((entry) => entry !== code),
+                        }));
+                      }}
+                    />
+                  </div>
+                </Field>
+
+                <Field label="ESCO">
+                  <EscoMultiSelect value={form.escoCodes} onChange={(escoCodes) => updateField("escoCodes", escoCodes)} />
+                </Field>
+
+                <Field label="Uniclass">
+                  <UniclassMultiSelect value={form.uniclassCodes} onChange={(uniclassCodes) => updateField("uniclassCodes", uniclassCodes)} />
+                </Field>
               </div>
             </Panel>
 
@@ -905,12 +1036,14 @@ function StatusCard({
 }
 
 function AssetPreview({ label, url }: { label: string; url: string | null }) {
+  const resolvedUrl = resolveAssetUrl(url);
+
   return (
     <div className="rounded-[1.4rem] border border-slate-200 bg-white p-4">
       <div className="text-sm font-semibold text-brand-charcoal">{label}</div>
-      {url ? (
-        <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-          Uploaded and linked.
+      {resolvedUrl ? (
+        <div className="mt-3 overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50">
+          <img src={resolvedUrl} alt={label} className="h-32 w-full object-cover" />
         </div>
       ) : (
         <div className="mt-3 flex h-32 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400">
@@ -921,16 +1054,30 @@ function AssetPreview({ label, url }: { label: string; url: string | null }) {
   );
 }
 
-function TagGroup({ label, items }: { label: string; items: string[] }) {
+function TagGroup({
+  label,
+  items,
+  onRemove,
+}: {
+  label: string;
+  items: string[];
+  onRemove?: (item: string) => void;
+}) {
   return (
     <div className="mt-4">
       <div className="text-sm font-medium text-slate-600">{label}</div>
       <div className="mt-3 flex flex-wrap gap-2">
         {items.length ? (
           items.map((item) => (
-            <span key={item} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700">
+            <button
+              key={item}
+              type="button"
+              onClick={onRemove ? () => onRemove(item) : undefined}
+              className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700"
+            >
               {item}
-            </span>
+              {onRemove ? " x" : ""}
+            </button>
           ))
         ) : (
           <span className="text-sm text-slate-400">No items yet.</span>

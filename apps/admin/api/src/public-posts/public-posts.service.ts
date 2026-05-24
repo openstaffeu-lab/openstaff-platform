@@ -699,10 +699,30 @@ export class PublicPostsService {
         '',
       ),
       visibility: this.normalizeVisibility(body.visibility, existing?.visibility),
-      escoCodesJson: JSON.stringify(this.arrayOfStrings(body.escoCodesJson, existing?.escoCodesJson)),
-      naceCodesJson: JSON.stringify(this.arrayOfStrings(body.naceCodesJson, existing?.naceCodesJson)),
-      uniclassCodesJson: JSON.stringify(this.arrayOfStrings(body.uniclassCodesJson, existing?.uniclassCodesJson)),
-      languageCodesJson: JSON.stringify(this.arrayOfStrings(body.languageCodesJson, existing?.languageCodesJson)),
+      escoCodesJson: JSON.stringify(
+        this.arrayOfStringsFromMany(
+          [body.escoCodes, body.escoCodesJson],
+          existing?.escoCodesJson,
+        ),
+      ),
+      naceCodesJson: JSON.stringify(
+        this.arrayOfStringsFromMany(
+          [body.naceCodes, body.naceCodesJson],
+          existing?.naceCodesJson,
+        ),
+      ),
+      uniclassCodesJson: JSON.stringify(
+        this.arrayOfStringsFromMany(
+          [body.uniclassCodes, body.uniclassCodesJson],
+          existing?.uniclassCodesJson,
+        ),
+      ),
+      languageCodesJson: JSON.stringify(
+        this.arrayOfStringsFromMany(
+          [body.languageCodes, body.languageCodesJson],
+          existing?.languageCodesJson,
+        ),
+      ),
       documentsJson: JSON.stringify(this.arrayOfObjects(body.documentsJson, existing?.documentsJson)),
       countryId: this.nullableStringValue(body.countryId, existing?.countryId ?? null),
       regionId: this.nullableStringValue(body.regionId, existing?.regionId ?? null),
@@ -1068,6 +1088,19 @@ export class PublicPostsService {
     }
 
     return [];
+  }
+
+  private arrayOfStringsFromMany(
+    values: unknown[],
+    fallback: string | null | undefined,
+  ) {
+    for (const value of values) {
+      if (Array.isArray(value) && value.length > 0) {
+        return this.arrayOfStrings(value, fallback);
+      }
+    }
+
+    return this.arrayOfStrings(values[0], fallback);
   }
 
   private arrayOfObjects(value: unknown, fallback: string | null | undefined) {

@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 import { searchEsco } from "@/lib/api";
 
+type EscoResult = {
+  id?: string;
+  code: string;
+  label?: string;
+};
+
 export default function EscoMultiSelect({
   value,
   onChange,
@@ -11,7 +17,7 @@ export default function EscoMultiSelect({
   onChange: (next: string[]) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<EscoResult[]>([]);
 
   useEffect(() => {
     if (query.trim().length < 2) {
@@ -32,7 +38,7 @@ export default function EscoMultiSelect({
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Caută ocupații ESCO"
+        placeholder="Cauta ocupatii ESCO"
         style={{
           width: "100%",
           padding: "10px 12px",
@@ -50,6 +56,7 @@ export default function EscoMultiSelect({
           {value.map((item) => (
             <button
               key={item}
+              type="button"
               onClick={() => onChange(value.filter((entry) => entry !== item))}
               style={{
                 border: "1px solid #00E87A",
@@ -61,7 +68,7 @@ export default function EscoMultiSelect({
                 fontWeight: 700,
               }}
             >
-              {item} ✕
+              {item} x
             </button>
           ))}
         </div>
@@ -71,14 +78,15 @@ export default function EscoMultiSelect({
         <div style={{ border: "1px solid #E8EBF5", borderRadius: 10, overflow: "hidden" }}>
           {results.map((result) => {
             const label = result.label || result.code;
-            const selected = value.includes(label);
+            const selected = value.includes(result.code);
 
             return (
               <button
                 key={result.id || result.code}
+                type="button"
                 onClick={() => {
                   if (!selected) {
-                    onChange([...value, label]);
+                    onChange([...value, result.code]);
                   }
                 }}
                 style={{
@@ -92,7 +100,7 @@ export default function EscoMultiSelect({
                   fontSize: 13,
                 }}
               >
-                <strong>{result.code}</strong> — {label}
+                <strong>{result.code}</strong> - {label}
               </button>
             );
           })}

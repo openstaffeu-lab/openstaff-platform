@@ -529,6 +529,51 @@ export type PublicIdentityProfile = {
   };
 };
 
+export type PublicProfile = {
+  id: string;
+  slug: string;
+  profileType: string;
+  displayName: string;
+  companyName: string | null;
+  publicHeadline: string | null;
+  summary: string | null;
+  description: string | null;
+  websiteUrl: string | null;
+  publicEmail: string | null;
+  publicPhone: string | null;
+  visibility: string;
+  moderationStatus: string;
+  status: string;
+  availabilityStatus: string;
+  geography: {
+    country: { id: string; code?: string | null; name: string } | null;
+    region: { id: string; name: string } | null;
+    city: { id: string; name: string } | null;
+  };
+  languages: Array<{ id: string; code: string; name: string }>;
+  escoSkills: Array<{ id: string; code: string; title: string; description?: string | null }>;
+  naceCodes: Array<{ id: string; code: string; title: string; description?: string | null }>;
+  uniclassCodes: Array<{ id: string; code: string; title: string; description?: string | null }>;
+  contractorProfile: {
+    tradeFocus: string | null;
+    teamSize: number | null;
+    serviceArea: string | null;
+  } | null;
+  professionalProfile: {
+    headline: string | null;
+    yearsExperience: number | null;
+    portfolioFocus: string | null;
+  } | null;
+  assets: {
+    logoUrl: string | null;
+    photoUrl: string | null;
+    bannerUrl: string | null;
+    portfolioUrls: string[];
+  };
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type MarketplacePostType =
   | "PROJECT"
   | "PROFESSIONAL"
@@ -639,6 +684,26 @@ type OperationalFeedbackType =
 
 export function getApiUrl() {
   return API_URL;
+}
+
+export function buildApiUrl(path: string) {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  if (path.startsWith("/")) {
+    return `${API_URL}${path}`;
+  }
+
+  return `${API_URL}/${path}`;
+}
+
+export function resolveAssetUrl(path: string | null | undefined) {
+  if (!path) {
+    return null;
+  }
+
+  return buildApiUrl(path);
 }
 
 export function getStoredToken() {
@@ -1102,7 +1167,15 @@ export async function updateOnboardingStep(
 }
 
 export async function getPublicIdentityProfile(slug: string) {
-  return apiRequest<PublicIdentityProfile>(`/profiles/${encodeURIComponent(slug)}`);
+  return apiRequest<PublicProfile>(`/profiles/public/${encodeURIComponent(slug)}`);
+}
+
+export async function getPublicProfile(slug: string) {
+  return apiRequest<PublicProfile>(`/profiles/public/${encodeURIComponent(slug)}`);
+}
+
+export async function getLanguages() {
+  return apiRequest<Array<{ id: string; code: string; name: string }>>("/languages");
 }
 
 export async function getVerificationMe(token?: string | null) {

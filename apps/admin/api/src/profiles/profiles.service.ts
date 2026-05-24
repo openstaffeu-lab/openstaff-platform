@@ -657,6 +657,8 @@ export class ProfilesService {
   }
 
   private toPublicProfileResponse(profile: any) {
+    const ownedAssetUrls = this.resolveOwnedAssetUrls(profile);
+
     return {
       id: profile.id,
       slug: profile.slug,
@@ -684,12 +686,7 @@ export class ProfilesService {
       uniclassCodes: profile.uniclassClassifications.map((item: any) => item.uniclass),
       contractorProfile: profile.contractorProfile,
       professionalProfile: profile.professionalProfile,
-      assets: {
-        logoUrl: profile.logoUrl,
-        photoUrl: profile.photoUrl,
-        bannerUrl: profile.bannerUrl,
-        portfolioUrls: this.parseStringArray(profile.portfolioUrlsJson),
-      },
+      assets: ownedAssetUrls,
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
     };

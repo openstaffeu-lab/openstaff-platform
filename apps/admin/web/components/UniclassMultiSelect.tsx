@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 import { searchUniclass } from "@/lib/api";
 
+type UniclassResult = {
+  id?: string;
+  code: string;
+  label?: string;
+};
+
 export default function UniclassMultiSelect({
   value,
   onChange,
@@ -11,7 +17,7 @@ export default function UniclassMultiSelect({
   onChange: (next: string[]) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<UniclassResult[]>([]);
 
   useEffect(() => {
     if (query.trim().length < 2) {
@@ -72,8 +78,7 @@ export default function UniclassMultiSelect({
         <div style={{ border: "1px solid #E8EBF5", borderRadius: 10, overflow: "hidden" }}>
           {results.map((result) => {
             const label = result.label || result.code;
-            const itemValue = `${result.code} - ${label}`;
-            const selected = value.includes(itemValue);
+            const selected = value.includes(result.code);
 
             return (
               <button
@@ -81,7 +86,7 @@ export default function UniclassMultiSelect({
                 type="button"
                 onClick={() => {
                   if (!selected) {
-                    onChange([...value, itemValue]);
+                    onChange([...value, result.code]);
                   }
                 }}
                 style={{
