@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-import { getPublicProfile, resolveAssetUrl } from "@/lib/api";
+import { ApiError, getPublicProfile, resolveAssetUrl, type PublicProfile } from "@/lib/api";
 
 type PageProps = {
   params: Promise<{
@@ -7,10 +7,66 @@ type PageProps = {
   }>;
 };
 
+type PublicProfilePageState =
+  | { kind: "available"; profile: PublicProfile }
+  | { kind: "unavailable" };
+
+async function loadPublicProfileState(slug: string): Promise<PublicProfilePageState> {
+  try {
+    const profile = await getPublicProfile(slug);
+    return { kind: "available", profile };
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 403 || error.status === 404)) {
+      return { kind: "unavailable" };
+    }
+
+    throw error;
+  }
+}
+
 export default async function PublicIdentityProfilePage({ params }: PageProps) {
   const { slug } = await params;
-  const profile = await getPublicProfile(slug);
-  const heroImage = resolveAssetUrl(profile.assets.bannerUrl || profile.assets.photoUrl || profile.assets.logoUrl);
+  const state = await loadPublicProfileState(slug);
+
+  if (state.kind === "unavailable") {
+    return (
+      <main style={{ maxWidth: 860, margin: "0 auto", padding: "64px 24px 96px" }}>
+        <section
+          style={{
+            borderRadius: 28,
+            border: "1px solid #D7E0F4",
+            background: "white",
+            padding: 32,
+            color: "#0F172A",
+          }}
+        >
+          <div
+            style={{
+              color: "#0F766E",
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: "0.24em",
+              textTransform: "uppercase",
+            }}
+          >
+            OpenStaff Public Identity
+          </div>
+          <h1 style={{ fontSize: 34, lineHeight: 1.15, margin: "14px 0 12px" }}>
+            This profile is not publicly available yet.
+          </h1>
+          <p style={{ maxWidth: 640, color: "#475569", lineHeight: 1.8 }}>
+            The account may still be pending approval, under moderation, private, or offline.
+            Ask the owner to complete approval in backoffice before sharing this public link.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
+  const { profile } = state;
+  const heroImage = resolveAssetUrl(
+    profile.assets.bannerUrl || profile.assets.photoUrl || profile.assets.logoUrl,
+  );
   const logoUrl = resolveAssetUrl(profile.assets.logoUrl);
   const photoUrl = resolveAssetUrl(profile.assets.photoUrl);
 
@@ -26,7 +82,9 @@ export default async function PublicIdentityProfilePage({ params }: PageProps) {
         }}
       >
         {heroImage ? (
-          <div style={{ height: 220, background: `center / cover no-repeat url("${heroImage}")` }} />
+          <div
+            style={{ height: 220, background: `center / cover no-repeat url("${heroImage}")` }}
+          />
         ) : (
           <div
             style={{
@@ -78,15 +136,29 @@ export default async function PublicIdentityProfilePage({ params }: PageProps) {
             )}
 
             <div style={{ flex: "1 1 420px" }}>
-              <div style={{ color: "#67E8F9", fontSize: 12, fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase" }}>
+              <div
+                style={{
+                  color: "#67E8F9",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: "0.24em",
+                  textTransform: "uppercase",
+                }}
+              >
                 OpenStaff Public Identity
               </div>
-              <h1 style={{ fontSize: 40, lineHeight: 1.1, margin: "14px 0 10px" }}>{profile.displayName}</h1>
+              <h1 style={{ fontSize: 40, lineHeight: 1.1, margin: "14px 0 10px" }}>
+                {profile.displayName}
+              </h1>
               {profile.publicHeadline ? (
-                <div style={{ fontSize: 18, fontWeight: 600, color: "#E2E8F0" }}>{profile.publicHeadline}</div>
+                <div style={{ fontSize: 18, fontWeight: 600, color: "#E2E8F0" }}>
+                  {profile.publicHeadline}
+                </div>
               ) : null}
               <p style={{ maxWidth: 760, marginTop: 14, color: "#E2E8F0", lineHeight: 1.8 }}>
-                {profile.summary || profile.description || "Acest profil public este in curs de completare. Informatiile afisate aici reflecta doar datele aprobate pentru vizibilitate publica."}
+                {profile.summary ||
+                  profile.description ||
+                  "Acest profil public este in curs de completare. Informatiile afisate aici reflecta doar datele aprobate pentru vizibilitate publica."}
               </p>
 
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 24 }}>
@@ -95,7 +167,11 @@ export default async function PublicIdentityProfilePage({ params }: PageProps) {
                 <Pill label={`Status ${profile.status}`} />
                 <Pill label={`Moderation ${profile.moderationStatus}`} />
                 {profile.websiteUrl ? <Pill label={profile.websiteUrl} /> : null}
-                {profile.languages[0] ? <Pill label={profile.languages.map((item) => item.code.toUpperCase()).join(", ")} /> : null}
+                {profile.languages[0] ? (
+                  <Pill
+                    label={profile.languages.map((item) => item.code.toUpperCase()).join(", ")}
+                  />
+                ) : null}
               </div>
             </div>
           </div>
@@ -125,21 +201,47 @@ export default async function PublicIdentityProfilePage({ params }: PageProps) {
           <div>Website: {profile.websiteUrl || "-"}</div>
           <div>Trade focus: {profile.contractorProfile?.tradeFocus || "-"}</div>
           <div>Service area: {profile.contractorProfile?.serviceArea || "-"}</div>
-          <div>Experience: {profile.professionalProfile?.yearsExperience ?? "-"} </div>
+          <div>Experience: {profile.professionalProfile?.yearsExperience ?? "-"}</div>
         </Card>
 
         <Card title="Taxonomy">
-          <div>ESCO: {profile.escoSkills.length ? profile.escoSkills.map((item) => item.code).join(", ") : "-"}</div>
-          <div>NACE: {profile.naceCodes.length ? profile.naceCodes.map((item) => item.code).join(", ") : "-"}</div>
-          <div>Uniclass: {profile.uniclassCodes.length ? profile.uniclassCodes.map((item) => item.code).join(", ") : "-"}</div>
-          <div>Languages: {profile.languages.length ? profile.languages.map((item) => item.name).join(", ") : "-"}</div>
+          <div>
+            ESCO:{" "}
+            {profile.escoSkills.length
+              ? profile.escoSkills.map((item) => item.code).join(", ")
+              : "-"}
+          </div>
+          <div>
+            NACE:{" "}
+            {profile.naceCodes.length
+              ? profile.naceCodes.map((item) => item.code).join(", ")
+              : "-"}
+          </div>
+          <div>
+            Uniclass:{" "}
+            {profile.uniclassCodes.length
+              ? profile.uniclassCodes.map((item) => item.code).join(", ")
+              : "-"}
+          </div>
+          <div>
+            Languages:{" "}
+            {profile.languages.length
+              ? profile.languages.map((item) => item.name).join(", ")
+              : "-"}
+          </div>
         </Card>
       </section>
 
       {profile.assets.portfolioUrls.length ? (
         <section style={{ marginTop: 20 }}>
           <Card title="Portfolio media">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gap: 16,
+              }}
+            >
               {profile.assets.portfolioUrls.map((assetUrl) => {
                 const resolvedUrl = resolveAssetUrl(assetUrl);
                 return resolvedUrl ? (
@@ -160,7 +262,12 @@ export default async function PublicIdentityProfilePage({ params }: PageProps) {
                     <img
                       src={resolvedUrl}
                       alt={`${profile.displayName} portfolio`}
-                      style={{ width: "100%", height: 180, objectFit: "cover", display: "block" }}
+                      style={{
+                        width: "100%",
+                        height: 180,
+                        objectFit: "cover",
+                        display: "block",
+                      }}
                     />
                   </a>
                 ) : null;
@@ -191,7 +298,16 @@ function Card({
         lineHeight: 1.8,
       }}
     >
-      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "#0F766E", marginBottom: 10 }}>
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: "#0F766E",
+          marginBottom: 10,
+        }}
+      >
         {title}
       </div>
       {children}

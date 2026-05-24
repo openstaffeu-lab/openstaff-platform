@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import EscoMultiSelect from "@/components/EscoMultiSelect";
 import NaceSearchInput from "@/components/NaceSearchInput";
@@ -132,14 +132,12 @@ export default function PublishMarketplacePage() {
   );
 
   useEffect(() => {
-    void loadReferences();
-  }, []);
-
-  useEffect(() => {
     if (!token) {
       setLoading(false);
       return;
     }
+
+    void loadReferences(token);
 
     void trackRolloutFunnelEvent({
       eventType: "PUBLISH_STARTED",
@@ -195,10 +193,12 @@ export default function PublishMarketplacePage() {
     });
   }, [selectedPost]);
 
-  async function loadReferences() {
+  async function loadReferences(activeToken: string) {
     try {
       const [countriesResponse, languagesResponse] = await Promise.all([
-        apiRequest<CountryOption[]>("/countries"),
+        apiRequest<CountryOption[]>("/countries", {
+          token: activeToken,
+        }),
         getLanguages(),
       ]);
       setCountries(countriesResponse);

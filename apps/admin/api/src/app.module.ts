@@ -15,6 +15,7 @@ import { ExternalLinksModule } from './external-links/external-links.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { HiringModule } from './hiring/hiring.module';
 import { JobsModule } from './jobs/jobs.module';
+import { LanguagesModule } from './languages/languages.module';
 import { NaceModule } from './nace/nace.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { NotificationModule } from './notifications/notification.module';
@@ -56,6 +57,7 @@ import { WorkforceModule } from './workforce/workforce.module';
     ComplianceModule,
     ProfilesModule,
     CountriesModule,
+    LanguagesModule,
     EscoModule,
     NaceModule,
     MessagingModule,
