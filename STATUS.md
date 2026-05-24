@@ -2,6 +2,42 @@
 
 Last updated: 2026-05-24
 
+## EXEC-63 Release Hardening, CI Stabilization & Production Readiness Closure
+
+Verdict: `BETA_READY - the high-severity release blockers identified on 2026-05-23 are now closed for dependency audit, API tests, lint execution, repo hygiene, and deployment-readiness validation, but the platform is not yet honestly PRODUCTION_READY because auth tokens still persist in localStorage, a small set of moderate dependency advisories remain upstream, and EXEC-63 validated recent successful deploy pipelines and live production health rather than shipping this exact hardening commit to production.`
+
+### EXEC-63 Closure Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| dependency hardening | PASS with accepted exceptions | `npm audit --omit=dev --audit-level=high` now exits cleanly in root, `apps/admin`, `apps/admin/web`, and `apps/admin/api`; high-severity Next.js, `fast-xml-builder`, and `xlsx` findings are no longer active blockers |
+| Next.js patching | PASS | `apps/admin` and `apps/admin/web` were updated to `next@16.2.6` / `eslint-config-next@16.2.6`, then rebuilt and relinted successfully |
+| XLSX risk closure | PASS | `xlsx` was removed from `apps/admin/api`, taxonomy imports were reduced to CSV-only, and upload validation now rejects `.xls` / `.xlsx` with structured JSON instead of parsing unsafe workbook input |
+| API test stabilization | PASS | `npm.cmd test -- --runInBand` now passes in `apps/admin/api` with `14/14` suites and `26/26` tests after introducing a reusable test module factory and replacing incomplete provider setup in failing specs |
+| lint closure | PASS with warnings | `npm.cmd run lint` now exits `0` in `apps/admin/api`, `apps/admin`, and `apps/admin/web`; CI-safe read-only scripts were standardized alongside `lint:fix`, `format:check`, and `format:write` |
+| repo hygiene | PASS with follow-up notes | `apps/admin/api/prisma/dev.db` and tracked sample uploads were removed from the Git index, ignored secret files remain untracked locally, and secret-scanning / hygiene guidance is now documented |
+| production security hardening | PARTIAL PASS | `/dev-files` is now development-only and unsafe XLSX parsing was removed, but the current auth session model still stores tokens in `localStorage`, so the highest remaining product-security TODO is refresh-token migration to `HttpOnly` cookies |
+| Cloud Build / deploy reliability | PASS for pipeline posture | recent successful Cloud Build deploys from `2026-05-23`, healthy production `/health` and `/status`, valid Cloud Build bucket access, and build service-account IAM confirm the earlier `storage.objects.get 403` staging issue is no longer an active platform blocker |
+| smoke / regression confidence | PASS | build, lint, test, audit, live `/health`, live `/status`, and previously validated EXEC-62 product smoke remain consistent with no newly introduced regressions from EXEC-63 hardening |
+
+### EXEC-63 Exact Remaining Blockers For `PRODUCTION_READY`
+
+1. Both frontends still persist auth tokens in `window.localStorage`; this remains a real XSS blast-radius concern until the refresh flow is migrated to `HttpOnly` cookies.
+2. A small set of moderate-only dependency advisories remain accepted because they are currently upstream/transitive:
+   - `postcss` through the current patched Next.js line
+   - `uuid` through Firebase / Google Cloud transitive packages
+3. EXEC-63 validated recent successful deploy pipelines, current IAM, and healthy live services, but it did not promote this exact hardening commit to production in this turn.
+
+### EXEC-63 Artifacts
+
+- Review: `docs/PRODUCTION_HARDENING_REVIEW.md`
+- Dependency review: `docs/DEPENDENCY_SECURITY_REVIEW.md`
+- API test stabilization: `docs/API_TEST_STABILIZATION.md`
+- Release gates: `docs/CI_RELEASE_GATES.md`
+- Secret hygiene: `docs/SECRET_HYGIENE_REVIEW.md`
+- Deployment validation: `docs/PRODUCTION_DEPLOYMENT_VALIDATION.md`
+- Proof index: `docs/proof/exec63/README.md`
+
 ## EXEC-62 Real Marketplace Simulation & End-to-End User Product Validation
 
 Verdict: `BETA_READY - realistic marketplace usage works end-to-end for actor onboarding, public posts, moderation, discovery, media/documents, RELU assistance, anonymous browsing, and mobile rendering, but the product is not PRODUCTION_READY because public company discovery is still indirect, ESCO/Uniclass filters are not first-class public controls, video decode quality is not fully proven, and the local web UX fixes could not be promoted because Cloud Build source staging returned storage.objects.get 403.`

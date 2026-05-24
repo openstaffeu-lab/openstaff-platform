@@ -7,7 +7,6 @@ import { Prisma, TaxonomyType } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import { extname, join } from 'path';
-import * as XLSX from 'xlsx';
 import {
   buildErrorResponse,
   buildSuccessResponse,
@@ -111,17 +110,20 @@ const SUPPORTED_IMPORT_TYPES: Array<{
   {
     value: 'ESCO',
     label: 'ESCO',
-    description: 'Import ESCO code, label, labelEn, and optional parentCode rows.',
+    description:
+      'Import ESCO code, label, labelEn, and optional parentCode rows.',
   },
   {
     value: 'NACE',
     label: 'NACE',
-    description: 'Import NACE code, label, labelEn, and optional parentCode rows.',
+    description:
+      'Import NACE code, label, labelEn, and optional parentCode rows.',
   },
   {
     value: 'UNICLASS',
     label: 'Uniclass',
-    description: 'Import Uniclass code, label, labelEn, and optional parentCode rows.',
+    description:
+      'Import Uniclass code, label, labelEn, and optional parentCode rows.',
   },
   {
     value: 'COUNTRIES',
@@ -151,12 +153,14 @@ const SUPPORTED_IMPORT_TYPES: Array<{
   {
     value: 'PROFESSIONS',
     label: 'Professions',
-    description: 'Import profession key, slug, name, industrySlug, categorySlug, and mappings.',
+    description:
+      'Import profession key, slug, name, industrySlug, categorySlug, and mappings.',
   },
   {
     value: 'CERTIFICATIONS',
     label: 'Certifications',
-    description: 'Import certification code, name, issuer, category, and description.',
+    description:
+      'Import certification code, name, issuer, category, and description.',
   },
   {
     value: 'INDUSTRIES',
@@ -196,9 +200,15 @@ export class TaxonomyService {
             profession.category.toLowerCase().includes(normalizedQuery) ||
             profession.labels.en.toLowerCase().includes(normalizedQuery) ||
             profession.labels.ro?.toLowerCase().includes(normalizedQuery) ||
-            profession.descriptions.en.toLowerCase().includes(normalizedQuery) ||
-            profession.descriptions.ro?.toLowerCase().includes(normalizedQuery) ||
-            profession.tags.some((tag) => tag.toLowerCase().includes(normalizedQuery)) ||
+            profession.descriptions.en
+              .toLowerCase()
+              .includes(normalizedQuery) ||
+            profession.descriptions.ro
+              ?.toLowerCase()
+              .includes(normalizedQuery) ||
+            profession.tags.some((tag) =>
+              tag.toLowerCase().includes(normalizedQuery),
+            ) ||
             profession.skills.some((skill) =>
               skill.name.toLowerCase().includes(normalizedQuery),
             ) ||
@@ -228,7 +238,8 @@ export class TaxonomyService {
   async byIndustry(industrySlug: string) {
     const catalog = await this.getCatalog();
     const industry =
-      catalog.data.industries.find((item) => item.slug === industrySlug) ?? null;
+      catalog.data.industries.find((item) => item.slug === industrySlug) ??
+      null;
     const categories = catalog.data.categories.filter(
       (category) => category.industry === industrySlug,
     );
@@ -379,7 +390,7 @@ export class TaxonomyService {
   async getImportOptions() {
     return buildSuccessResponse({
       supportedTypes: SUPPORTED_IMPORT_TYPES,
-      acceptedFileTypes: ['.csv', '.xls', '.xlsx'],
+      acceptedFileTypes: ['.csv'],
     });
   }
 
@@ -396,15 +407,15 @@ export class TaxonomyService {
     }
 
     if (!file) {
-      return buildErrorResponse('Missing file', 'A CSV or Excel file is required.');
+      return buildErrorResponse('Missing file', 'A CSV file is required.');
     }
 
     const extension = extname(file.originalname).toLowerCase();
 
-    if (!['.csv', '.xls', '.xlsx'].includes(extension)) {
+    if (extension !== '.csv') {
       return buildErrorResponse(
         'Unsupported file format',
-        'Only .csv, .xls, and .xlsx files are supported.',
+        'Only .csv files are supported in production-hardened mode.',
       );
     }
 
@@ -469,7 +480,8 @@ export class TaxonomyService {
     const batch = await this.getImportBatchRecord(batchId);
     const parsedRows = await this.ensureParsedRows(batch);
     const validation = await this.validateRows(batch.entityType, parsedRows);
-    const nextStatus = validation.errors.length > 0 ? 'FAILED' : 'READY_TO_COMMIT';
+    const nextStatus =
+      validation.errors.length > 0 ? 'FAILED' : 'READY_TO_COMMIT';
 
     const updated = await this.prisma.taxonomyImportBatch.update({
       where: { id: batchId },
@@ -555,7 +567,9 @@ export class TaxonomyService {
         },
       });
 
-      return buildSuccessResponse(batches.map((batch) => this.mapImportBatch(batch)));
+      return buildSuccessResponse(
+        batches.map((batch) => this.mapImportBatch(batch)),
+      );
     } catch (error) {
       logEndpointError('TaxonomyService.listImportBatches', error);
 
@@ -757,7 +771,8 @@ export class TaxonomyService {
 
   private hasPersistedTaxonomyModels() {
     return (
-      typeof this.prisma.taxonomySourceDocumentRecord?.findMany === 'function' &&
+      typeof this.prisma.taxonomySourceDocumentRecord?.findMany ===
+        'function' &&
       typeof this.prisma.taxonomyIndustryRecord?.findMany === 'function' &&
       typeof this.prisma.taxonomyCategoryRecord?.findMany === 'function' &&
       typeof this.prisma.taxonomyProfessionRecord?.findMany === 'function'
@@ -768,14 +783,21 @@ export class TaxonomyService {
     body: Record<string, unknown>,
     allowPartial = false,
   ) {
-    const key = this.stringFromRow(body, ['key']) || this.slugify(this.stringFromRow(body, ['slug', 'name']));
-    const slug = this.stringFromRow(body, ['slug']) || this.slugify(this.stringFromRow(body, ['name']));
+    const key =
+      this.stringFromRow(body, ['key']) ||
+      this.slugify(this.stringFromRow(body, ['slug', 'name']));
+    const slug =
+      this.stringFromRow(body, ['slug']) ||
+      this.slugify(this.stringFromRow(body, ['name']));
     const name = this.stringFromRow(body, ['name']);
     const industrySlug = this.stringFromRow(body, ['industrySlug', 'industry']);
     const categorySlug = this.stringFromRow(body, ['categorySlug', 'category']);
     const source = this.stringFromRow(body, ['source']) || 'manual-import';
 
-    if (!allowPartial && (!key || !slug || !name || !industrySlug || !categorySlug)) {
+    if (
+      !allowPartial &&
+      (!key || !slug || !name || !industrySlug || !categorySlug)
+    ) {
       throw new BadRequestException(
         'Profession key, slug, name, industrySlug, and categorySlug are required.',
       );
@@ -828,7 +850,9 @@ export class TaxonomyService {
     return payload;
   }
 
-  private isSupportedImportType(value: string): value is TaxonomyImportEntityTypeValue {
+  private isSupportedImportType(
+    value: string,
+  ): value is TaxonomyImportEntityTypeValue {
     return SUPPORTED_IMPORT_TYPES.some((item) => item.value === value);
   }
 
@@ -859,7 +883,10 @@ export class TaxonomyService {
   }
 
   private async ensureParsedRows(batch: any): Promise<ParsedImportRow[]> {
-    if (Array.isArray(batch.parsedRowsJson) && batch.parsedRowsJson.length > 0) {
+    if (
+      Array.isArray(batch.parsedRowsJson) &&
+      batch.parsedRowsJson.length > 0
+    ) {
       return batch.parsedRowsJson as ParsedImportRow[];
     }
 
@@ -877,23 +904,99 @@ export class TaxonomyService {
     return parsedRows;
   }
 
-  private async readSpreadsheetRows(storageKey: string): Promise<ParsedImportRow[]> {
-    const buffer = await readFile(this.resolveImportFilePath(storageKey));
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-
-    if (!firstSheet) {
-      throw new BadRequestException('The spreadsheet does not contain any worksheets.');
+  private async readSpreadsheetRows(
+    storageKey: string,
+  ): Promise<ParsedImportRow[]> {
+    const extension = extname(storageKey).toLowerCase();
+    if (extension !== '.csv') {
+      throw new BadRequestException(
+        'Spreadsheet imports are restricted to CSV files in production-hardened mode.',
+      );
     }
 
-    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(firstSheet, {
-      defval: '',
-    });
+    const buffer = await readFile(this.resolveImportFilePath(storageKey));
+    const rows = this.parseCsvBuffer(buffer);
 
     return rows.map((row, index) => ({
       rowNumber: index + 2,
       raw: row,
     }));
+  }
+
+  private parseCsvBuffer(buffer: Buffer) {
+    const text = buffer.toString('utf8').replace(/^\uFEFF/, '');
+    const rows = this.parseDelimitedText(text);
+
+    if (rows.length === 0) {
+      return [];
+    }
+
+    const [headerRow, ...dataRows] = rows;
+    const headers = headerRow.map((value) => value.trim());
+
+    return dataRows
+      .filter((row) => row.some((value) => value.trim().length > 0))
+      .map<Record<string, unknown>>((row) => {
+        const entry: Record<string, unknown> = {};
+
+        headers.forEach((header, index) => {
+          if (!header) {
+            return;
+          }
+
+          entry[header] = row[index] ?? '';
+        });
+
+        return entry;
+      });
+  }
+
+  private parseDelimitedText(input: string) {
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentCell = '';
+    let insideQuotes = false;
+
+    for (let index = 0; index < input.length; index += 1) {
+      const char = input[index];
+      const nextChar = input[index + 1];
+
+      if (char === '"') {
+        if (insideQuotes && nextChar === '"') {
+          currentCell += '"';
+          index += 1;
+        } else {
+          insideQuotes = !insideQuotes;
+        }
+        continue;
+      }
+
+      if (char === ',' && !insideQuotes) {
+        currentRow.push(currentCell);
+        currentCell = '';
+        continue;
+      }
+
+      if ((char === '\n' || char === '\r') && !insideQuotes) {
+        if (char === '\r' && nextChar === '\n') {
+          index += 1;
+        }
+        currentRow.push(currentCell);
+        rows.push(currentRow);
+        currentRow = [];
+        currentCell = '';
+        continue;
+      }
+
+      currentCell += char;
+    }
+
+    if (currentCell.length > 0 || currentRow.length > 0) {
+      currentRow.push(currentCell);
+      rows.push(currentRow);
+    }
+
+    return rows;
   }
 
   private async validateRows(
@@ -949,7 +1052,11 @@ export class TaxonomyService {
         continue;
       }
 
-      const existing = await this.findExistingRecord(entityType, row.key, row.payload);
+      const existing = await this.findExistingRecord(
+        entityType,
+        row.key,
+        row.payload,
+      );
       normalizedRows.push({
         ...row,
         action: existing ? 'update' : 'create',
@@ -963,8 +1070,12 @@ export class TaxonomyService {
       ...row.payload,
     }));
 
-    const createCount = normalizedRows.filter((row) => row.action === 'create').length;
-    const updateCount = normalizedRows.filter((row) => row.action === 'update').length;
+    const createCount = normalizedRows.filter(
+      (row) => row.action === 'create',
+    ).length;
+    const updateCount = normalizedRows.filter(
+      (row) => row.action === 'update',
+    ).length;
 
     return {
       normalizedRows,
@@ -1046,9 +1157,15 @@ export class TaxonomyService {
         };
       }
       case 'COUNTRIES': {
-        const code = this.stringFromRow(raw, ['code', 'countryCode'])?.toUpperCase();
+        const code = this.stringFromRow(raw, [
+          'code',
+          'countryCode',
+        ])?.toUpperCase();
         const name = this.stringFromRow(raw, ['name', 'countryName']);
-        const currency = this.stringFromRow(raw, ['currency', 'currencyCode'])?.toUpperCase();
+        const currency = this.stringFromRow(raw, [
+          'currency',
+          'currencyCode',
+        ])?.toUpperCase();
         const vatRate = this.numberFromRow(raw, ['vatRate', 'vat']);
 
         if (!code || !name) {
@@ -1077,7 +1194,9 @@ export class TaxonomyService {
         };
       }
       case 'REGIONS': {
-        const countryCode = this.stringFromRow(raw, ['countryCode'])?.toUpperCase();
+        const countryCode = this.stringFromRow(raw, [
+          'countryCode',
+        ])?.toUpperCase();
         const name = this.stringFromRow(raw, ['name', 'regionName']);
 
         if (!countryCode || !name) {
@@ -1122,7 +1241,9 @@ export class TaxonomyService {
         };
       }
       case 'CITIES': {
-        const countryCode = this.stringFromRow(raw, ['countryCode'])?.toUpperCase();
+        const countryCode = this.stringFromRow(raw, [
+          'countryCode',
+        ])?.toUpperCase();
         const regionName = this.stringFromRow(raw, ['regionName', 'region']);
         const name = this.stringFromRow(raw, ['name', 'cityName']);
 
@@ -1177,7 +1298,9 @@ export class TaxonomyService {
         };
       }
       case 'VAT': {
-        const countryCode = this.stringFromRow(raw, ['countryCode'])?.toUpperCase();
+        const countryCode = this.stringFromRow(raw, [
+          'countryCode',
+        ])?.toUpperCase();
         const vatRate = this.numberFromRow(raw, ['vatRate', 'vat']);
 
         if (!countryCode || typeof vatRate !== 'number') {
@@ -1187,7 +1310,8 @@ export class TaxonomyService {
                 rowNumber: row.rowNumber,
                 key: countryCode || null,
                 code: 'MISSING_VAT_FIELDS',
-                message: 'countryCode and vatRate are required for VAT imports.',
+                message:
+                  'countryCode and vatRate are required for VAT imports.',
               },
             ],
           };
@@ -1221,7 +1345,10 @@ export class TaxonomyService {
         };
       }
       case 'CURRENCIES': {
-        const code = this.stringFromRow(raw, ['code', 'currencyCode'])?.toUpperCase();
+        const code = this.stringFromRow(raw, [
+          'code',
+          'currencyCode',
+        ])?.toUpperCase();
         const name = this.stringFromRow(raw, ['name', 'currencyName']);
         const symbol = this.stringFromRow(raw, ['symbol']) || code || '';
 
@@ -1341,7 +1468,10 @@ export class TaxonomyService {
         const name = this.stringFromRow(raw, ['name']);
         const slug = this.stringFromRow(raw, ['slug']) || this.slugify(name);
         const key = this.stringFromRow(raw, ['key']) || slug;
-        const industrySlug = this.stringFromRow(raw, ['industrySlug', 'industry']);
+        const industrySlug = this.stringFromRow(raw, [
+          'industrySlug',
+          'industry',
+        ]);
 
         if (!name || !slug || !key || !industrySlug) {
           return {
@@ -1453,7 +1583,11 @@ export class TaxonomyService {
     let updated = 0;
 
     for (const row of rows) {
-      if (entityType === 'ESCO' || entityType === 'NACE' || entityType === 'UNICLASS') {
+      if (
+        entityType === 'ESCO' ||
+        entityType === 'NACE' ||
+        entityType === 'UNICLASS'
+      ) {
         const parentCode = this.nullableString(row.payload.parentCode);
         let parentId: string | null = null;
 
@@ -1688,9 +1822,18 @@ export class TaxonomyService {
             ...(normalizedQuery
               ? {
                   OR: [
-                    { code: { contains: normalizedQuery, mode: 'insensitive' } },
-                    { label: { contains: normalizedQuery, mode: 'insensitive' } },
-                    { labelEn: { contains: normalizedQuery, mode: 'insensitive' } },
+                    {
+                      code: { contains: normalizedQuery, mode: 'insensitive' },
+                    },
+                    {
+                      label: { contains: normalizedQuery, mode: 'insensitive' },
+                    },
+                    {
+                      labelEn: {
+                        contains: normalizedQuery,
+                        mode: 'insensitive',
+                      },
+                    },
                   ],
                 }
               : {}),
@@ -1725,7 +1868,11 @@ export class TaxonomyService {
             ? {
                 OR: [
                   { name: { contains: normalizedQuery, mode: 'insensitive' } },
-                  { country: { code: { contains: normalizedQuery, mode: 'insensitive' } } },
+                  {
+                    country: {
+                      code: { contains: normalizedQuery, mode: 'insensitive' },
+                    },
+                  },
                 ],
               }
             : undefined,
@@ -1742,7 +1889,11 @@ export class TaxonomyService {
             ? {
                 OR: [
                   { name: { contains: normalizedQuery, mode: 'insensitive' } },
-                  { region: { name: { contains: normalizedQuery, mode: 'insensitive' } } },
+                  {
+                    region: {
+                      name: { contains: normalizedQuery, mode: 'insensitive' },
+                    },
+                  },
                 ],
               }
             : undefined,
@@ -1763,7 +1914,9 @@ export class TaxonomyService {
                 OR: [
                   { code: { contains: normalizedQuery, mode: 'insensitive' } },
                   { name: { contains: normalizedQuery, mode: 'insensitive' } },
-                  { symbol: { contains: normalizedQuery, mode: 'insensitive' } },
+                  {
+                    symbol: { contains: normalizedQuery, mode: 'insensitive' },
+                  },
                 ],
               }
             : undefined,
@@ -1778,8 +1931,18 @@ export class TaxonomyService {
                   { key: { contains: normalizedQuery, mode: 'insensitive' } },
                   { slug: { contains: normalizedQuery, mode: 'insensitive' } },
                   { name: { contains: normalizedQuery, mode: 'insensitive' } },
-                  { industrySlug: { contains: normalizedQuery, mode: 'insensitive' } },
-                  { categorySlug: { contains: normalizedQuery, mode: 'insensitive' } },
+                  {
+                    industrySlug: {
+                      contains: normalizedQuery,
+                      mode: 'insensitive',
+                    },
+                  },
+                  {
+                    categorySlug: {
+                      contains: normalizedQuery,
+                      mode: 'insensitive',
+                    },
+                  },
                 ],
               }
             : undefined,
@@ -1794,7 +1957,12 @@ export class TaxonomyService {
                   { code: { contains: normalizedQuery, mode: 'insensitive' } },
                   { slug: { contains: normalizedQuery, mode: 'insensitive' } },
                   { name: { contains: normalizedQuery, mode: 'insensitive' } },
-                  { category: { contains: normalizedQuery, mode: 'insensitive' } },
+                  {
+                    category: {
+                      contains: normalizedQuery,
+                      mode: 'insensitive',
+                    },
+                  },
                 ],
               }
             : undefined,
@@ -1823,7 +1991,12 @@ export class TaxonomyService {
                   { key: { contains: normalizedQuery, mode: 'insensitive' } },
                   { slug: { contains: normalizedQuery, mode: 'insensitive' } },
                   { name: { contains: normalizedQuery, mode: 'insensitive' } },
-                  { industrySlug: { contains: normalizedQuery, mode: 'insensitive' } },
+                  {
+                    industrySlug: {
+                      contains: normalizedQuery,
+                      mode: 'insensitive',
+                    },
+                  },
                 ],
               }
             : undefined,
@@ -1938,7 +2111,9 @@ export class TaxonomyService {
           },
         });
       default:
-        throw new BadRequestException(`Unsupported entry type "${entityType}".`);
+        throw new BadRequestException(
+          `Unsupported entry type "${entityType}".`,
+        );
     }
   }
 
@@ -1954,11 +2129,13 @@ export class TaxonomyService {
       preview: Array.isArray(batch.previewJson) ? batch.previewJson : [],
       errors: Array.isArray(batch.errorsJson) ? batch.errorsJson : [],
       duplicateSummary:
-        batch.duplicateSummaryJson && typeof batch.duplicateSummaryJson === 'object'
+        batch.duplicateSummaryJson &&
+        typeof batch.duplicateSummaryJson === 'object'
           ? batch.duplicateSummaryJson
           : null,
       validationSummary:
-        batch.validationSummaryJson && typeof batch.validationSummaryJson === 'object'
+        batch.validationSummaryJson &&
+        typeof batch.validationSummaryJson === 'object'
           ? batch.validationSummaryJson
           : null,
       commitSummary:
@@ -1996,7 +2173,10 @@ export class TaxonomyService {
     return '';
   }
 
-  private nullableStringFromRow(row: Record<string, unknown>, candidates: string[]) {
+  private nullableStringFromRow(
+    row: Record<string, unknown>,
+    candidates: string[],
+  ) {
     const value = this.stringFromRow(row, candidates);
     return value || null;
   }

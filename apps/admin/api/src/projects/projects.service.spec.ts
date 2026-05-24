@@ -1,13 +1,21 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { ProjectsService } from './projects.service';
+import { PrismaService } from '../prisma/prisma.service';
+import {
+  createPrismaServiceMock,
+  createTestingModule,
+} from '../test/testing-module.factory';
+import { ProjectAccessPolicy } from './project-access.policy';
+import { ProjectResponseMapper } from './project-response.mapper';
 
 describe('ProjectsService', () => {
   let service: ProjectsService;
+  const prismaMock = createPrismaServiceMock();
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [ProjectsService],
-    }).compile();
+    const module = await createTestingModule({
+      providers: [ProjectsService, ProjectAccessPolicy, ProjectResponseMapper],
+      extraProviders: [{ provide: PrismaService, useValue: prismaMock }],
+    });
 
     service = module.get<ProjectsService>(ProjectsService);
   });

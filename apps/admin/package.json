@@ -6,11 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint app components lib next.config.ts tsconfig.json eslint.config.mjs --ext .ts --ext .tsx --ext .mjs --no-warn-ignored"
+    "lint": "eslint app components lib next.config.ts tsconfig.json eslint.config.mjs --ext .ts --ext .tsx --ext .mjs --no-warn-ignored",
+    "lint:fix": "npm run lint -- --fix",
+    "format:check": "prettier --check \"app/**/*.{ts,tsx}\" \"components/**/*.{ts,tsx}\" \"lib/**/*.{ts,tsx}\" \"context/**/*.{ts,tsx}\"",
+    "format:write": "prettier --write \"app/**/*.{ts,tsx}\" \"components/**/*.{ts,tsx}\" \"lib/**/*.{ts,tsx}\" \"context/**/*.{ts,tsx}\""
   },
   "dependencies": {
     "firebase": "^12.12.1",
-    "next": "16.2.3",
+    "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -20,7 +23,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.3",
+    "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

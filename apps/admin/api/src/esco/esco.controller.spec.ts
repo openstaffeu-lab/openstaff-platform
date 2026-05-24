@@ -1,20 +1,36 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { EscoController } from './esco.controller';
 import { EscoService } from './esco.service';
+import { createTestingModule } from '../test/testing-module.factory';
 
-@Controller('esco')
-export class EscoController {
-  constructor(private readonly escoService: EscoService) {}
+describe('EscoController', () => {
+  let controller: EscoController;
+  const escoServiceMock = {
+    findAll: jest.fn().mockResolvedValue({ status: 'ok', data: [] }),
+    create: jest.fn().mockResolvedValue({ id: 'esco-1', code: '7411.1' }),
+  };
 
-  @Get()
-  async findAll() {
-    return this.escoService.findAll();
-  }
+  beforeEach(async () => {
+    const module = await createTestingModule({
+      controllers: [EscoController],
+      extraProviders: [{ provide: EscoService, useValue: escoServiceMock }],
+    });
 
-  @Post()
-  async create(
-    @Body()
-    body: { code: string; title: string; description?: string },
-  ) {
-    return this.escoService.create(body);
-  }
-}
+    controller = module.get<EscoController>(EscoController);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+
+  it('should return the service response', async () => {
+    await expect(controller.findAll()).resolves.toEqual({
+      status: 'ok',
+      data: [],
+    });
+    expect(escoServiceMock.findAll).toHaveBeenCalledTimes(1);
+  });
+});

@@ -13,6 +13,6 @@
     "dev:all": "powershell -ExecutionPolicy Bypass -File ./scripts/dev-all.ps1"
   },
   "dependencies": {
-    "firebase-admin": "^13.8.0"
+    "firebase-admin": "^13.10.0"
   }
 }

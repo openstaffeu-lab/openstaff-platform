@@ -57,7 +57,12 @@ async function bootstrap() {
   });
   app.useGlobalFilters(new HttpExceptionFilter(app.get(AuditService)));
   app.useGlobalInterceptors(new StructuredLoggingInterceptor(runtimeConfig));
-  app.use('/dev-files', express.static(join(process.cwd(), 'uploads', 'actors')));
+  if (runtimeConfig.isDevelopment) {
+    app.use(
+      '/dev-files',
+      express.static(join(process.cwd(), 'uploads', 'actors')),
+    );
+  }
 
   const port = process.env.PORT || 8080;
   await app.listen(port, '0.0.0.0');

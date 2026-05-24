@@ -4,6 +4,47 @@ Data audit: 2026-05-23
 Branch: `feature/work-in-progress`  
 Workspace: `C:\Users\admin\Desktop\openstaff-platform`
 
+## EXEC-63 Delta - 2026-05-24
+
+This section records what changed after the original 2026-05-23 audit and should be read as the current closure delta for release engineering and production hardening.
+
+### Closed since the original audit
+
+- `npm audit --omit=dev --audit-level=high` now exits cleanly in root, `apps/admin`, `apps/admin/web`, and `apps/admin/api`.
+- Both frontend apps were patched to `next@16.2.6` and rebuilt successfully.
+- `fast-xml-builder` is no longer a high-severity API blocker after dependency refresh.
+- `xlsx` has been removed from `apps/admin/api`; taxonomy imports now operate in CSV-only hardened mode and reject `.xls` / `.xlsx` before parse.
+- API test stability is closed:
+  - `npm.cmd test -- --runInBand` in `apps/admin/api` now passes
+  - `14/14` suites pass
+  - `26/26` tests pass
+- Public web lint now exits `0`.
+- API lint now exits `0` using read-only scripts and a documented accepted warning baseline.
+- `apps/admin/api/prisma/dev.db` and tracked sample uploads have been removed from the Git index.
+- `/dev-files` static serving is now gated to development only.
+- Cloud Build staging reliability is no longer an active blocker; current GCP IAM and the Cloud Build staging bucket permissions support recent successful deploy pipelines from `2026-05-23`.
+
+### Still open after EXEC-63
+
+- Auth tokens still persist in `window.localStorage` in both frontends.
+- Moderate-only dependency advisories remain accepted upstream:
+  - `postcss` via the current patched Next.js line
+  - `uuid` via Firebase / Google transitive dependencies
+- EXEC-63 validated recent deploy success and current production health, but did not deploy this exact hardening commit.
+
+### Updated classification
+
+- Build readiness: `OK`
+- CI readiness: `OK`
+- Release readiness: `BETA_READY`
+- Production readiness: `NOT YET`
+
+### Why not `PRODUCTION_READY` yet
+
+1. The current token persistence model still relies on `localStorage`.
+2. Accepted moderate dependency exceptions remain and must stay tracked.
+3. Same-turn promotion proof for the exact EXEC-63 commit is not included in this execution.
+
 ## 1. Rezumat executiv
 
 Proiectul este intr-o stare buna pentru compilare, dar nu este inca pregatit pentru release fara remedierea unor probleme de securitate, testare si igiena repository.

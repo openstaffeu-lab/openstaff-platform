@@ -161,7 +161,7 @@ export default function AdminImportsPage() {
                 </span>
                 <input
                   type="file"
-                  accept=".csv,.xls,.xlsx"
+                  accept=".csv"
                   onChange={(event) => setFile(event.target.files?.[0] ?? null)}
                   className="rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-white"
                 />
