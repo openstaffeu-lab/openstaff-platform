@@ -1,5 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module';
+import { AuthModule } from '../auth/auth.module';
 import { NotificationModule } from '../notifications/notification.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { TrustAdminController, TrustController } from './trust.controller';
@@ -8,6 +9,7 @@ import { TrustService } from './trust.service';
 @Module({
   imports: [
     PrismaModule,
+    forwardRef(() => AuthModule),
     forwardRef(() => AuditModule),
     forwardRef(() => NotificationModule),
   ],
