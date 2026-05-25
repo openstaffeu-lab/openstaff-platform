@@ -34,3 +34,20 @@ Reason:
 
 - code and local validation are ready
 - production deployment and real mailbox proof are not yet fully closed in this execution
+
+## EXEC-67 Follow-up
+
+EXEC-67 closed several EXEC-66 blockers:
+
+- push recovery completed
+- production Prisma migration completed
+- public web and backoffice were redeployed successfully
+- API startup issues were diagnosed and fixed
+- API now runs live on `openstaff-api-00033-ssp`
+
+Remaining closure items are now narrower:
+
+- real OTP mailbox proof
+- recovery-code live proof
+- authenticated admin 2FA proof
+- cross-browser proof for the new 2FA UX

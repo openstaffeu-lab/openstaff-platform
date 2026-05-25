@@ -70,3 +70,17 @@ For EXEC-66, OTP and recovery-email events additionally rely on:
 - short-lived expiry windows
 - resend throttling
 - per-challenge attempt ceilings
+
+## EXEC-67 Delivery Status
+
+EXEC-67 closed the deployment/runtime blockers for these trust events:
+
+- the migration backing 2FA trust events is live in production
+- the new API revision is healthy in production
+- public web and backoffice now run the matching trust/2FA UI revisions
+
+Still required for final proof:
+
+- operator-confirmed receipt of setup OTP email
+- operator-confirmed receipt of login OTP email
+- live proof for recovery-code regeneration notification

@@ -2,6 +2,42 @@
 
 Last updated: 2026-05-25
 
+## EXEC-67 API Startup Fix, Production Migration, Push Recovery & Live 2FA Proof
+
+Verdict: `IN PROGRESS - push recovery is closed, the EXEC-66 production Prisma migration was applied successfully through a Cloud Run job, public web and backoffice were redeployed successfully, and the API startup failure was fixed after two concrete NestJS module wiring corrections. Production is now healthy again on the new API revision and the branch is aligned with origin/feature/work-in-progress. Final PASS is still not honest in this execution because real mailbox-delivered OTP proof, recovery-code live proof, authenticated admin 2FA visibility proof, and browser proof across Chrome/Edge/mobile for the new 2FA routes were not fully captured end-to-end.`
+
+### EXEC-67 Closure Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| push recovery | PASS | local `HEAD` and `origin/feature/work-in-progress` now both resolve to `d2caaddb16dad833cd6b32ec81884396423e93cd` |
+| first API startup blocker | PASS | Cloud Run logs for `openstaff-api-00031-ksb` showed `UndefinedModuleException` in `TrustModule`; fixed with `forwardRef()` imports between `TrustModule`, `AuditModule`, `NotificationModule`, and `AuthModule` |
+| second API startup blocker | PASS | Cloud Run logs for `openstaff-api-00032-g4j` showed `JwtGuard` dependency resolution failure because `TrustModule` did not import `AuthModule`; fixed and redeployed |
+| production migration | PASS | Cloud Run job execution `openstaff-api-migrate-exec67-4kvcb` completed successfully with `prisma migrate deploy` against production Cloud SQL |
+| API live rollout | PASS | direct Cloud Run deploy promoted `openstaff-api-00033-ssp` and routed `100%` traffic successfully |
+| public web rollout | PASS | Cloud Build `b3911721-c499-4d31-a234-95e799f14032` succeeded; latest ready revision is `openstaff-web-00027-dvj` |
+| backoffice rollout | PASS | Cloud Build `e37aeaa2-c824-4c3a-95e5-e4c86f929340` succeeded; latest ready revision is `openstaff-admin-00022-58q` |
+| live health/status | PASS | `https://api.openstaff.eu/health` returns `ok`; `https://api.openstaff.eu/status` returns `ok` with `db=healthy` and no readiness errors |
+| final 2FA mailbox/browser proof | NOT YET | live OTP receipt, recovery-code use, and multi-browser interactive proof still need operator-side authenticated execution |
+
+### EXEC-67 Exact Remaining Blockers
+
+1. No real operator mailbox proof was captured yet for:
+   - setup OTP received
+   - login OTP received
+   - wrong/expired/reused OTP rejection
+   - recovery code single-use proof
+2. No authenticated backoffice proof was captured yet for:
+   - 2FA enabled/admin-enforced visibility
+   - failed-attempt/lockout visibility
+   - trust/security timeline updates after real 2FA actions
+3. No complete browser proof was captured yet across Chrome desktop, Edge desktop, and mobile Chrome for:
+   - `/login`
+   - `/two-factor`
+   - `/security`
+   - `/profile`
+   - `/admin/users`
+
 ## EXEC-66 Two-Factor Authentication / 2FA Trust Layer & Live Deployment Closure
 
 Verdict: `IN PROGRESS - the codebase now contains a working email-based 2FA baseline on top of the EXEC-65 trust layer, including short-lived one-time email OTP challenges, recovery codes, admin-enforced 2FA flags, suspicious-login escalation linkage, public-web security UX, and backoffice trust visibility. Local schema validation, Prisma generation, API tests, and all three application builds now pass. Production closure is not yet honest in this execution because EXEC-65 still needed same-turn live promotion, EXEC-66 introduces a new Prisma migration that must be applied safely to production before API rollout, and real end-to-end live mailbox proof for OTP delivery and recovery-code use has not yet been captured in this turn.`

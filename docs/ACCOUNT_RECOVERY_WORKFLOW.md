@@ -65,3 +65,12 @@ EXEC-66 does not replace password reset or account recovery with 2FA. Instead:
 - account recovery remains the higher-trust remediation flow
 - recovery codes provide a constrained 2FA fallback after successful primary credential entry
 - suspicious-login confirmation remains a parallel trust-control path for unfamiliar devices
+
+## EXEC-67 Runtime Note
+
+EXEC-67 successfully promoted the supporting migration/runtime layer for this workflow:
+
+- production schema now includes the 2FA persistence tables required for recovery-code support
+- the healthy live API revision is `openstaff-api-00033-ssp`
+
+What still remains for final operational closure is live mailbox/browser proof for the full user journey, not the core recovery architecture itself.

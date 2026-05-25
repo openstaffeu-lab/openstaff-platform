@@ -47,3 +47,13 @@ EXEC-66 adds email-based 2FA on top of the trust layer, but it does not change t
 - 2FA OTP email does not replace password reset
 - account recovery remains the stronger remediation flow for compromised or locked accounts
 - final production closure for both reset and 2FA still depends on real delivered-email proof
+
+## EXEC-67 Runtime Update
+
+EXEC-67 closed the infrastructure/runtime blockers around the new 2FA layer:
+
+- the EXEC-66 migration was applied in production
+- the API startup failure was fixed
+- the current live API revision is healthy and reports `db=healthy`
+
+Password-reset posture is therefore no longer blocked by the 2FA rollout mechanics themselves. The remaining proof gap is still real delivered-email validation and authenticated browser/operator confirmation.

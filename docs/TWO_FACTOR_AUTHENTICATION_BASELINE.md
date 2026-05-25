@@ -65,3 +65,13 @@ Backoffice:
 
 - `/two-factor`
 - admin users trust controls and 2FA visibility
+
+## EXEC-67 Rollout Status
+
+EXEC-67 moved the 2FA baseline from local-only readiness to production runtime readiness:
+
+- the EXEC-66 Prisma migration was applied successfully in production
+- the API startup blockers were fixed and the healthy live API revision is now `openstaff-api-00033-ssp`
+- public web and backoffice were also redeployed successfully
+
+Final end-to-end 2FA product proof is still `IN PROGRESS` until a real mailbox-backed OTP journey, recovery-code journey, and authenticated browser proof are captured.
