@@ -598,6 +598,12 @@ export default function ProfilePage() {
                   Send ownership verification email
                 </button>
                 <Link
+                  href="/security"
+                  className="rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-3 text-sm font-semibold text-brand-navy"
+                >
+                  Security & 2FA
+                </Link>
+                <Link
                   href={`/profiles/${profile.slug}`}
                   className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-brand-navy"
                 >

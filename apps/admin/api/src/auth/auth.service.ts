@@ -4,6 +4,7 @@ import {
   AccountLifecycleStatus,
   ActorType,
   NotificationChannel,
+  Prisma,
   ProfileLifecycleStatus,
   ProfileModerationStatus,
   ProfileType,
@@ -21,7 +22,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes, randomInt } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { NotificationCategory } from '@prisma/client';
@@ -42,6 +43,22 @@ type RegisterPayload = {
 type LoginPayload = {
   email: string;
   password: string;
+};
+
+type TwoFactorChallengePurpose =
+  | 'SETUP'
+  | 'LOGIN'
+  | 'DISABLE'
+  | 'RECOVERY_CODES_REGENERATION'
+  | 'SUSPICIOUS_LOGIN';
+
+type TwoFactorChallengeResponse = {
+  challengeRequired: true;
+  challengeId: string;
+  purpose: 'LOGIN';
+  deliveryChannel: 'EMAIL';
+  maskedDestination: string;
+  expiresInSeconds: number;
 };
 
 type PasswordResetEligibilityStatus =
@@ -218,7 +235,10 @@ export class AuthService {
     const normalizedEmail = data.email.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
-      include: { profile: true },
+      include: {
+        profile: true,
+        twoFactorSettings: true,
+      },
     });
 
     if (!user) {
@@ -275,6 +295,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    const settings = await this.ensureTwoFactorSettings(user.id);
+    if (this.requiresTwoFactorChallenge(settings)) {
+      return this.issueLoginTwoFactorChallenge(user, settings, request);
+    }
+
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
@@ -321,6 +346,334 @@ export class AuthService {
 
   async completeAccountRecovery(token: string, nextPassword: string, request?: any) {
     return this.trustService.completeAccountRecovery(token, nextPassword, request);
+  }
+
+  async getTwoFactorStatus(userId: string) {
+    const settings = await this.ensureTwoFactorSettings(userId);
+
+    return {
+      enabled: settings.enabled,
+      emailOtpEnabled: settings.emailOtpEnabled,
+      adminEnforced: settings.adminEnforced,
+      lockedUntil: settings.lockoutUntil?.toISOString() ?? null,
+      lastChallengeVerifiedAt: settings.lastChallengeVerifiedAt?.toISOString() ?? null,
+      lastRecoveryCodesRegeneratedAt:
+        settings.lastRecoveryCodesRegeneratedAt?.toISOString() ?? null,
+      recoveryCodesRemaining: this.countRemainingRecoveryCodes(settings.recoveryCodesJson),
+      failedAttemptCount: settings.failedAttemptCount,
+    };
+  }
+
+  async setupTwoFactor(userId: string, request?: any) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { twoFactorSettings: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const settings = await this.ensureTwoFactorSettings(user.id);
+    const challenge = await this.createTwoFactorChallenge(
+      user.id,
+      settings.id,
+      user.email,
+      'SETUP',
+      request,
+    );
+
+    await this.sendTwoFactorEmail(user.email, {
+      eventType: 'TWO_FACTOR_SETUP_CONFIRMATION',
+      sourceId: challenge.id,
+      userId: user.id,
+      subjectRo: 'Confirmare activare autentificare in doi pasi',
+      subjectEn: 'Confirm your two-factor authentication setup',
+      title: 'Two-factor authentication setup',
+      message: 'Use the short-lived one-time code from this message to enable two-factor authentication.',
+      code: challenge.plainCode,
+      expiresAt: challenge.expiresAt,
+      metadata: {
+        purpose: 'SETUP',
+      },
+    });
+
+    await this.auditService.logSecurityEvent({
+      userId: user.id,
+      type: 'MFA_EVENT',
+      category: 'AUTH',
+      sourceType: 'TWO_FACTOR_SETUP',
+      sourceId: challenge.id,
+      message: 'Two-factor authentication setup challenge issued',
+      request,
+    });
+
+    return {
+      success: true,
+      challengeId: challenge.id,
+      deliveryChannel: 'EMAIL',
+      maskedDestination: this.maskEmail(user.email),
+      expiresInSeconds: this.getTwoFactorOtpTtlSeconds(),
+    };
+  }
+
+  async verifyTwoFactorSetup(userId: string, challengeId: string, code: string, request?: any) {
+    const settings = await this.ensureTwoFactorSettings(userId);
+    await this.verifyTwoFactorOtp({
+      userId,
+      challengeId,
+      code,
+      expectedPurpose: 'SETUP',
+      settings,
+      request,
+    });
+
+    const recoveryCodes = this.generateRecoveryCodes();
+    await this.prisma.userTwoFactorSettings.update({
+      where: { userId },
+      data: {
+        enabled: true,
+        emailOtpEnabled: true,
+        setupVerifiedAt: new Date(),
+        lastChallengeVerifiedAt: new Date(),
+        failedAttemptCount: 0,
+        lockoutUntil: null,
+        recoveryCodesJson: this.toRecoveryCodesJson(recoveryCodes),
+        lastRecoveryCodesRegeneratedAt: new Date(),
+      },
+    });
+
+    await this.auditService.logSecurityEvent({
+      userId,
+      type: 'MFA_EVENT',
+      category: 'AUTH',
+      sourceType: 'TWO_FACTOR_SETUP',
+      sourceId: challengeId,
+      message: 'Two-factor authentication enabled successfully',
+      request,
+    });
+
+    return {
+      success: true,
+      message: 'Two-factor authentication is now enabled.',
+      recoveryCodes,
+    };
+  }
+
+  async disableTwoFactor(userId: string, password: string, request?: any) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { twoFactorSettings: true },
+    });
+
+    if (!user || !user.twoFactorSettings) {
+      throw new NotFoundException('Two-factor settings not found');
+    }
+
+    if (user.twoFactorSettings.adminEnforced) {
+      throw new ForbiddenException('Two-factor authentication is required by an administrator');
+    }
+
+    const matches = await bcrypt.compare(password, user.password);
+    if (!matches) {
+      throw new UnauthorizedException('Current password confirmation failed');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.userTwoFactorChallenge.updateMany({
+        where: {
+          userId,
+          consumedAt: null,
+          invalidatedAt: null,
+        },
+        data: {
+          invalidatedAt: new Date(),
+        },
+      }),
+      this.prisma.userTwoFactorSettings.update({
+        where: { userId },
+        data: {
+          enabled: false,
+          recoveryCodesJson: Prisma.JsonNull,
+          lockoutUntil: null,
+          failedAttemptCount: 0,
+        },
+      }),
+    ]);
+
+    await this.auditService.logSecurityEvent({
+      userId,
+      type: 'MFA_EVENT',
+      category: 'AUTH',
+      sourceType: 'TWO_FACTOR_DISABLE',
+      sourceId: userId,
+      message: 'Two-factor authentication disabled by user',
+      request,
+    });
+
+    return {
+      success: true,
+      message: 'Two-factor authentication was disabled.',
+    };
+  }
+
+  async regenerateRecoveryCodes(userId: string, request?: any) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { twoFactorSettings: true },
+    });
+
+    if (!user || !user.twoFactorSettings?.enabled) {
+      throw new ForbiddenException('Two-factor authentication is not enabled for this account');
+    }
+
+    const recoveryCodes = this.generateRecoveryCodes();
+    await this.prisma.userTwoFactorSettings.update({
+      where: { userId },
+      data: {
+        recoveryCodesJson: this.toRecoveryCodesJson(recoveryCodes),
+        lastRecoveryCodesRegeneratedAt: new Date(),
+      },
+    });
+
+    await this.sendTwoFactorEmail(user.email, {
+      eventType: 'TWO_FACTOR_RECOVERY_CODES_REGENERATED',
+      sourceId: userId,
+      userId,
+      subjectRo: 'Codurile de recuperare OpenStaff au fost regenerate',
+      subjectEn: 'Your OpenStaff recovery codes were regenerated',
+      title: 'Recovery codes regenerated',
+      message: 'Your previous recovery codes are no longer valid. Review the new set in your account security settings.',
+      metadata: {
+        purpose: 'RECOVERY_CODES_REGENERATION',
+      },
+    });
+
+    await this.auditService.logSecurityEvent({
+      userId,
+      type: 'MFA_EVENT',
+      category: 'AUTH',
+      sourceType: 'TWO_FACTOR_RECOVERY_CODES',
+      sourceId: userId,
+      message: 'Recovery codes regenerated',
+      request,
+    });
+
+    return {
+      success: true,
+      message: 'New recovery codes were generated successfully.',
+      recoveryCodes,
+    };
+  }
+
+  async verifyTwoFactorChallenge(challengeId: string, code: string, request?: any) {
+    const challenge = await this.prisma.userTwoFactorChallenge.findUnique({
+      where: { id: challengeId },
+      include: {
+        settings: true,
+        user: true,
+      },
+    });
+
+    if (!challenge || !challenge.settings) {
+      throw new UnauthorizedException('This two-factor challenge is invalid or has expired');
+    }
+
+    if (challenge.purpose !== 'LOGIN') {
+      throw new UnauthorizedException('This two-factor challenge is invalid or has expired');
+    }
+
+    await this.verifyTwoFactorOtp({
+      userId: challenge.userId,
+      challengeId,
+      code,
+      expectedPurpose: 'LOGIN',
+      settings: challenge.settings,
+      request,
+    });
+
+    await this.prisma.user.update({
+      where: { id: challenge.userId },
+      data: {
+        accountStatus: AccountLifecycleStatus.LIVE,
+        lastLoginAt: new Date(),
+      },
+    });
+
+    await this.auditService.logSecurityEvent({
+      userId: challenge.userId,
+      type: 'MFA_EVENT',
+      category: 'AUTH',
+      sourceType: 'TWO_FACTOR_LOGIN',
+      sourceId: challengeId,
+      message: 'Two-factor login challenge completed successfully',
+      request,
+    });
+
+    return this.buildAuthResponse(challenge.userId, request);
+  }
+
+  async resendTwoFactorChallenge(challengeId: string, request?: any) {
+    const existing = await this.prisma.userTwoFactorChallenge.findUnique({
+      where: { id: challengeId },
+      include: {
+        settings: true,
+        user: true,
+      },
+    });
+
+    if (!existing || !existing.settings || !existing.user) {
+      throw new UnauthorizedException('This two-factor challenge is invalid or has expired');
+    }
+
+    if (existing.consumedAt || existing.invalidatedAt || existing.expiresAt.getTime() < Date.now()) {
+      throw new UnauthorizedException('This two-factor challenge is invalid or has expired');
+    }
+
+    if (existing.resendCount >= 3) {
+      throw new ForbiddenException('Two-factor resend limit reached. Start login again.');
+    }
+
+    await this.prisma.userTwoFactorChallenge.update({
+      where: { id: existing.id },
+      data: {
+        invalidatedAt: new Date(),
+        resendCount: {
+          increment: 1,
+        },
+      },
+    });
+
+    const nextChallenge = await this.createTwoFactorChallenge(
+      existing.userId,
+      existing.settings.id,
+      existing.user.email,
+      'LOGIN',
+      request,
+    );
+
+    await this.sendTwoFactorEmail(existing.user.email, {
+      eventType: 'TWO_FACTOR_LOGIN_OTP_SENT',
+      sourceId: nextChallenge.id,
+      userId: existing.userId,
+      subjectRo: 'Cod de autentificare OpenStaff',
+      subjectEn: 'Your OpenStaff login code',
+      title: 'Two-factor login code',
+      message: 'Use this short-lived code to complete your login.',
+      code: nextChallenge.plainCode,
+      expiresAt: nextChallenge.expiresAt,
+      metadata: {
+        purpose: 'LOGIN',
+      },
+    });
+
+    return {
+      success: true,
+      challengeId: nextChallenge.id,
+      deliveryChannel: 'EMAIL',
+      maskedDestination: this.maskEmail(existing.user.email),
+      expiresInSeconds: this.getTwoFactorOtpTtlSeconds(),
+    };
   }
 
   async refresh(refreshToken: string, request?: any) {
@@ -746,6 +1099,504 @@ export class AuthService {
 
       throw new UnauthorizedException('Invalid refresh token');
     }
+  }
+
+  private async ensureTwoFactorSettings(userId: string) {
+    return this.prisma.userTwoFactorSettings.upsert({
+      where: { userId },
+      update: {},
+      create: {
+        userId,
+        enabled: false,
+        emailOtpEnabled: true,
+        adminEnforced: false,
+      },
+    });
+  }
+
+  private requiresTwoFactorChallenge(settings: {
+    enabled: boolean;
+    adminEnforced: boolean;
+    lockoutUntil: Date | null;
+  }) {
+    if (settings.lockoutUntil && settings.lockoutUntil.getTime() > Date.now()) {
+      throw new ForbiddenException('Two-factor authentication is temporarily locked. Please try again later.');
+    }
+
+    return settings.enabled || settings.adminEnforced;
+  }
+
+  private async issueLoginTwoFactorChallenge(
+    user: {
+      id: string;
+      email: string;
+      twoFactorSettings?: {
+        id: string;
+        enabled: boolean;
+        adminEnforced: boolean;
+      } | null;
+    },
+    settings: {
+      id: string;
+      enabled: boolean;
+      adminEnforced: boolean;
+    },
+    request?: any,
+  ): Promise<TwoFactorChallengeResponse> {
+    const challenge = await this.createTwoFactorChallenge(
+      user.id,
+      settings.id,
+      user.email,
+      'LOGIN',
+      request,
+    );
+
+    const isSuspicious = await this.isSuspiciousLoginAttempt(user.id, request);
+    if (isSuspicious) {
+      const securityEvent = await this.auditService.logSecurityEvent({
+        userId: user.id,
+        type: 'SUSPICIOUS_ACTIVITY',
+        category: 'AUTH',
+        sourceType: 'TWO_FACTOR_LOGIN',
+        sourceId: challenge.id,
+        message: 'Suspicious login attempt requires two-factor confirmation',
+        severity: 'WARNING',
+        request,
+      });
+
+      await this.trustService.requestSuspiciousLoginConfirmation(user.id, securityEvent.id, request);
+    }
+
+    await this.sendTwoFactorEmail(user.email, {
+      eventType: 'TWO_FACTOR_LOGIN_OTP_SENT',
+      sourceId: challenge.id,
+      userId: user.id,
+      subjectRo: 'Cod de autentificare OpenStaff',
+      subjectEn: 'Your OpenStaff login code',
+      title: 'Two-factor login code',
+      message: 'Use this short-lived one-time code to complete your OpenStaff login.',
+      code: challenge.plainCode,
+      expiresAt: challenge.expiresAt,
+      metadata: {
+        purpose: 'LOGIN',
+        suspiciousLogin: isSuspicious,
+      },
+    });
+
+    await this.auditService.logSecurityEvent({
+      userId: user.id,
+      type: 'MFA_EVENT',
+      category: 'AUTH',
+      sourceType: 'TWO_FACTOR_LOGIN',
+      sourceId: challenge.id,
+      message: 'Two-factor login challenge issued',
+      metadata: {
+        suspiciousLogin: isSuspicious,
+      },
+      request,
+    });
+
+    return {
+      challengeRequired: true,
+      challengeId: challenge.id,
+      purpose: 'LOGIN',
+      deliveryChannel: 'EMAIL',
+      maskedDestination: this.maskEmail(user.email),
+      expiresInSeconds: this.getTwoFactorOtpTtlSeconds(),
+    };
+  }
+
+  private async createTwoFactorChallenge(
+    userId: string,
+    settingsId: string,
+    email: string,
+    purpose: TwoFactorChallengePurpose,
+    request?: any,
+  ) {
+    const code = this.generateOtpCode();
+    const codeHash = this.hashTwoFactorCode(code);
+    const expiresAt = new Date(Date.now() + this.getTwoFactorOtpTtlSeconds() * 1000);
+
+    await this.prisma.userTwoFactorChallenge.updateMany({
+      where: {
+        userId,
+        purpose,
+        consumedAt: null,
+        invalidatedAt: null,
+      },
+      data: {
+        invalidatedAt: new Date(),
+      },
+    });
+
+    const challenge = await this.prisma.userTwoFactorChallenge.create({
+      data: {
+        userId,
+        settingsId,
+        purpose,
+        codeHash,
+        emailAddress: email,
+        expiresAt,
+        maxAttempts: this.getTwoFactorMaxAttempts(),
+        metadata: {
+          ttlSeconds: this.getTwoFactorOtpTtlSeconds(),
+        },
+      },
+    });
+
+    await this.auditService.log({
+      actorUserId: userId,
+      targetUserId: userId,
+      entityType: 'TWO_FACTOR_CHALLENGE',
+      entityId: challenge.id,
+      action: `ISSUED_${purpose}`,
+      category: 'AUTH',
+      metadata: {
+        purpose,
+        expiresAt: expiresAt.toISOString(),
+      },
+      request,
+    });
+
+    return {
+      id: challenge.id,
+      expiresAt,
+      plainCode: code,
+    };
+  }
+
+  private async verifyTwoFactorOtp(input: {
+    userId: string;
+    challengeId: string;
+    code: string;
+    expectedPurpose: TwoFactorChallengePurpose;
+    settings: {
+      id: string;
+      userId: string;
+      failedAttemptCount: number;
+      lockoutUntil: Date | null;
+      recoveryCodesJson: Prisma.JsonValue | null;
+    };
+    request?: any;
+  }) {
+    const challenge = await this.prisma.userTwoFactorChallenge.findUnique({
+      where: { id: input.challengeId },
+    });
+
+    if (!challenge || challenge.userId !== input.userId || challenge.purpose !== input.expectedPurpose) {
+      throw new UnauthorizedException('This two-factor challenge is invalid or has expired');
+    }
+
+    if (input.settings.lockoutUntil && input.settings.lockoutUntil.getTime() > Date.now()) {
+      throw new ForbiddenException('Two-factor authentication is temporarily locked. Please try again later.');
+    }
+
+    if (challenge.invalidatedAt || challenge.consumedAt || challenge.expiresAt.getTime() < Date.now()) {
+      await this.auditService.logSecurityEvent({
+        userId: input.userId,
+        type: 'MFA_EVENT',
+        category: 'AUTH',
+        sourceType: 'TWO_FACTOR_VERIFY',
+        sourceId: input.challengeId,
+        message: 'Two-factor challenge verification failed because the code was expired or already used',
+        severity: 'WARNING',
+        request: input.request,
+      });
+      throw new UnauthorizedException('This two-factor challenge is invalid or has expired');
+    }
+
+    const codeNormalized = input.code.trim().replace(/\s+/g, '').toUpperCase();
+    const otpMatches = this.hashTwoFactorCode(codeNormalized) === challenge.codeHash;
+
+    if (otpMatches) {
+      await this.prisma.$transaction([
+        this.prisma.userTwoFactorChallenge.update({
+          where: { id: challenge.id },
+          data: {
+            consumedAt: new Date(),
+          },
+        }),
+        this.prisma.userTwoFactorSettings.update({
+          where: { userId: input.userId },
+          data: {
+            failedAttemptCount: 0,
+            lockoutUntil: null,
+            lastChallengeVerifiedAt: new Date(),
+          },
+        }),
+      ]);
+      return;
+    }
+
+    const recoveryCodeConsumed = await this.tryConsumeRecoveryCode(
+      input.userId,
+      input.settings.recoveryCodesJson,
+      codeNormalized,
+    );
+
+    if (recoveryCodeConsumed) {
+      await this.prisma.$transaction([
+        this.prisma.userTwoFactorChallenge.update({
+          where: { id: challenge.id },
+          data: {
+            consumedAt: new Date(),
+          },
+        }),
+        this.prisma.userTwoFactorSettings.update({
+          where: { userId: input.userId },
+          data: {
+            failedAttemptCount: 0,
+            lockoutUntil: null,
+            lastChallengeVerifiedAt: new Date(),
+            lastRecoveryCodeUsedAt: new Date(),
+          },
+        }),
+      ]);
+      return;
+    }
+
+    const nextAttemptCount = challenge.attemptCount + 1;
+    const nextFailedAttemptCount = input.settings.failedAttemptCount + 1;
+    const maxAttempts = challenge.maxAttempts || this.getTwoFactorMaxAttempts();
+    const shouldLock = nextAttemptCount >= maxAttempts || nextFailedAttemptCount >= this.getTwoFactorMaxAttempts();
+    const lockoutUntil = shouldLock ? new Date(Date.now() + this.getTwoFactorLockoutMinutes() * 60_000) : null;
+
+    await this.prisma.$transaction([
+      this.prisma.userTwoFactorChallenge.update({
+        where: { id: challenge.id },
+        data: {
+          attemptCount: {
+            increment: 1,
+          },
+          ...(shouldLock ? { invalidatedAt: new Date() } : {}),
+        },
+      }),
+      this.prisma.userTwoFactorSettings.update({
+        where: { userId: input.userId },
+        data: {
+          failedAttemptCount: {
+            increment: 1,
+          },
+          ...(shouldLock ? { lockoutUntil } : {}),
+        },
+      }),
+    ]);
+
+    await this.auditService.logSecurityEvent({
+      userId: input.userId,
+      type: shouldLock ? 'RATE_LIMIT_TRIGGERED' : 'MFA_EVENT',
+      category: 'AUTH',
+      sourceType: 'TWO_FACTOR_VERIFY',
+      sourceId: input.challengeId,
+      message: shouldLock
+        ? 'Two-factor verification lockout triggered after repeated failures'
+        : 'Two-factor verification failed because code did not match',
+      severity: shouldLock ? 'CRITICAL' : 'WARNING',
+      metadata: {
+        attemptCount: nextAttemptCount,
+        failedAttemptCount: nextFailedAttemptCount,
+        lockoutUntil: lockoutUntil?.toISOString() ?? null,
+      },
+      request: input.request,
+    });
+
+    if (shouldLock) {
+      throw new ForbiddenException('Too many invalid two-factor attempts. Please try again later.');
+    }
+
+    throw new UnauthorizedException('Invalid two-factor code');
+  }
+
+  private async tryConsumeRecoveryCode(
+    userId: string,
+    recoveryCodesJson: Prisma.JsonValue | null,
+    code: string,
+  ) {
+    const recoveryCodes = this.parseRecoveryCodes(recoveryCodesJson);
+    const codeHash = this.hashTwoFactorCode(code);
+    const index = recoveryCodes.findIndex((item) => item.codeHash === codeHash && !item.usedAt);
+
+    if (index < 0) {
+      return false;
+    }
+
+    recoveryCodes[index] = {
+      ...recoveryCodes[index],
+      usedAt: new Date().toISOString(),
+    };
+
+    await this.prisma.userTwoFactorSettings.update({
+      where: { userId },
+      data: {
+        recoveryCodesJson: recoveryCodes as Prisma.InputJsonValue,
+      },
+    });
+
+    return true;
+  }
+
+  private parseRecoveryCodes(value: Prisma.JsonValue | null) {
+    if (!Array.isArray(value)) {
+      return [] as Array<{ label: string; codeHash: string; usedAt: string | null }>;
+    }
+
+    return value
+      .filter((item) => item && typeof item === 'object' && !Array.isArray(item))
+      .map((item) => {
+        const candidate = item as Record<string, unknown>;
+        return {
+          label: typeof candidate.label === 'string' ? candidate.label : 'Recovery code',
+          codeHash: typeof candidate.codeHash === 'string' ? candidate.codeHash : '',
+          usedAt: typeof candidate.usedAt === 'string' ? candidate.usedAt : null,
+        };
+      })
+      .filter((item) => Boolean(item.codeHash));
+  }
+
+  private toRecoveryCodesJson(codes: string[]) {
+    return codes.map((code, index) => ({
+      label: `RC-${index + 1}`,
+      codeHash: this.hashTwoFactorCode(code),
+      usedAt: null,
+    })) as Prisma.InputJsonValue;
+  }
+
+  private countRemainingRecoveryCodes(value: Prisma.JsonValue | null) {
+    return this.parseRecoveryCodes(value).filter((item) => !item.usedAt).length;
+  }
+
+  private generateRecoveryCodes() {
+    return Array.from({ length: 8 }, () =>
+      `${randomBytes(2).toString('hex').toUpperCase()}-${randomBytes(2).toString('hex').toUpperCase()}`,
+    );
+  }
+
+  private generateOtpCode() {
+    return String(randomInt(100000, 999999));
+  }
+
+  private hashTwoFactorCode(code: string) {
+    return createHash('sha256')
+      .update(`${this.getTwoFactorPepper()}::${code.trim().replace(/\s+/g, '').toUpperCase()}`)
+      .digest('hex');
+  }
+
+  private async sendTwoFactorEmail(
+    email: string,
+    input: {
+      eventType: string;
+      sourceId: string;
+      userId: string;
+      subjectRo: string;
+      subjectEn: string;
+      title: string;
+      message: string;
+      code?: string;
+      expiresAt?: Date;
+      metadata?: Record<string, unknown>;
+    },
+  ) {
+    const expiresLabel = input.expiresAt?.toISOString() ?? null;
+    const emailText = input.code
+      ? [
+          `${input.title}`,
+          '',
+          `Romanian: Foloseste codul ${input.code} pentru a continua. Codul expira la ${expiresLabel}.`,
+          `English: Use code ${input.code} to continue. This code expires at ${expiresLabel}.`,
+        ].join('\n')
+      : [
+          `${input.title}`,
+          '',
+          'Romanian: Acesta este un mesaj operational OpenStaff legat de securitatea contului tau.',
+          'English: This is an OpenStaff operational security message for your account.',
+        ].join('\n');
+    const emailHtml = input.code
+      ? `
+        <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.6">
+          <h1 style="font-size:22px;margin-bottom:16px">${input.title}</h1>
+          <p><strong>RO:</strong> Foloseste codul <span style="font-size:22px;letter-spacing:4px">${input.code}</span> pentru a continua.</p>
+          <p><strong>EN:</strong> Use code <span style="font-size:22px;letter-spacing:4px">${input.code}</span> to continue.</p>
+          ${expiresLabel ? `<p>Expires / Expira: <strong>${expiresLabel}</strong></p>` : ''}
+        </div>
+      `.trim()
+      : `
+        <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.6">
+          <h1 style="font-size:22px;margin-bottom:16px">${input.title}</h1>
+          <p>RO: Acesta este un mesaj operational OpenStaff legat de securitatea contului tau.</p>
+          <p>EN: This is an OpenStaff operational security message for your account.</p>
+        </div>
+      `.trim();
+
+    await this.notificationService.emitEvent({
+      key: `2fa-email:${input.eventType}:${input.sourceId}`,
+      eventType: input.eventType,
+      sourceType: 'TWO_FACTOR',
+      sourceId: input.sourceId,
+      userId: input.userId,
+      category: NotificationCategory.ACCOUNT,
+      channel: NotificationChannel.EMAIL,
+      channels: [NotificationChannel.EMAIL, NotificationChannel.IN_APP],
+      title: input.title,
+      message: input.message,
+      relatedEntityType: 'UserTwoFactorChallenge',
+      relatedEntityId: input.sourceId,
+      metadata: {
+        ...(input.metadata ?? {}),
+        email,
+        emailSubject: `${input.subjectRo} / ${input.subjectEn}`,
+        emailText,
+        emailHtml,
+      },
+    });
+  }
+
+  private async isSuspiciousLoginAttempt(userId: string, request?: any) {
+    const context = this.auditService.extractRequestContext(request);
+    const fingerprintHash = createHash('sha256')
+      .update(`${context.userAgent ?? 'unknown'}|${context.ipAddress ?? 'unknown'}`)
+      .digest('hex');
+
+    const known = await this.prisma.userDeviceFingerprint.findUnique({
+      where: {
+        userId_fingerprintHash: {
+          userId,
+          fingerprintHash,
+        },
+      },
+      select: { id: true },
+    });
+
+    return !known;
+  }
+
+  private maskEmail(value: string) {
+    const [localPart, domain] = value.split('@');
+    if (!domain) {
+      return 'hidden';
+    }
+    const first = localPart?.slice(0, 1) ?? '*';
+    const tail = localPart && localPart.length > 1 ? localPart.slice(-1) : '*';
+    return `${first}***${tail}@${domain}`;
+  }
+
+  private getTwoFactorOtpTtlSeconds() {
+    return Number(process.env.TWO_FACTOR_OTP_TTL_SECONDS ?? 600);
+  }
+
+  private getTwoFactorMaxAttempts() {
+    return Number(process.env.TWO_FACTOR_MAX_ATTEMPTS ?? 5);
+  }
+
+  private getTwoFactorLockoutMinutes() {
+    return Number(process.env.TWO_FACTOR_LOCKOUT_MINUTES ?? 15);
+  }
+
+  private getTwoFactorPepper() {
+    return (
+      process.env.TWO_FACTOR_PEPPER?.trim() ||
+      process.env.JWT_SECRET?.trim() ||
+      'openstaff-two-factor-dev-pepper'
+    );
   }
 
   private getJwtSecret() {

@@ -25,7 +25,22 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await login(email, password);
+      const response = await login(email, password);
+      if ("challengeRequired" in response) {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(
+            "openstaff_web_2fa_challenge",
+            JSON.stringify({
+              challengeId: response.challengeId,
+              maskedDestination: response.maskedDestination,
+              expiresInSeconds: response.expiresInSeconds,
+              email,
+            }),
+          );
+        }
+        router.push("/two-factor");
+        return;
+      }
       router.push("/profile");
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "Login failed.");

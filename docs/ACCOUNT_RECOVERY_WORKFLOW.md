@@ -12,6 +12,7 @@ Supported flows:
 - full account recovery
 - email ownership verification
 - suspicious login confirmation
+- two-factor challenge recovery through one-time recovery codes
 
 ## Recovery Entry Points
 
@@ -37,6 +38,8 @@ Trust endpoints:
 - replay prevention through consumption tracking
 - session revocation on password reset / account recovery
 - security-event logging on suspicious recovery cases
+- recovery-code invalidation after single use
+- 2FA challenge lockout after repeated invalid attempts
 
 ## Abuse Controls
 
@@ -53,3 +56,12 @@ Public web now supports:
 - trust confirmation landing page
 
 Profile owners can request a new email ownership verification message directly from the profile workspace.
+
+## Relationship To 2FA
+
+EXEC-66 does not replace password reset or account recovery with 2FA. Instead:
+
+- password reset remains the credential-recovery entry point
+- account recovery remains the higher-trust remediation flow
+- recovery codes provide a constrained 2FA fallback after successful primary credential entry
+- suspicious-login confirmation remains a parallel trust-control path for unfamiliar devices

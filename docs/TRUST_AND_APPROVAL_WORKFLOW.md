@@ -27,6 +27,9 @@ The trust layer now covers:
 - full account recovery
 - email ownership verification
 - suspicious login/device confirmation
+- email-based two-factor authentication
+- admin-enforced two-factor requirements
+- recovery-code regeneration
 - account approval signaling
 - profile approval signaling
 - moderation escalation
@@ -61,6 +64,8 @@ Backoffice trust actions:
 - `SUSPEND_PROFILE`
 - `REACTIVATE_PROFILE`
 - `ESCALATE_REVIEW`
+- `REQUIRE_2FA`
+- `CLEAR_2FA_LOCK`
 
 Every action:
 
@@ -82,5 +87,24 @@ The public route does not expose:
 - escalation reasons
 - security-event details
 - private approval history
+- raw OTP values
+- recovery code hashes
+- internal 2FA lock reasoning
 
 Unavailable profiles still render a moderation-safe fallback instead of leaking internal state.
+
+## 2FA Extension
+
+EXEC-66 extends the trust layer with:
+
+- short-lived email OTP setup and login challenges
+- backup recovery codes
+- suspicious-login escalation linkage
+- admin-enforced 2FA
+- 2FA lockout and replay protection
+
+2FA final actions remain human or user controlled:
+
+- users enable/disable their own 2FA
+- admins can require 2FA or clear a stuck lock
+- RELU can only advise and summarize

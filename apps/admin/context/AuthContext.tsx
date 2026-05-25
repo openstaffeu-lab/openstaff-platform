@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
   AdminAuthUser,
+  AdminAuthFlowResponse,
   clearAccessToken,
   fetchCurrentAdmin,
   getAccessToken,
@@ -30,7 +31,7 @@ type AuthContextType = {
   token: string | null;
   hasFeature: (feature: SubscriptionFeatureKey) => boolean;
   remainingPrivateContacts: number | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AdminAuthFlowResponse>;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -44,7 +45,9 @@ const AuthContext = createContext<AuthContextType>({
   token: null,
   hasFeature: () => false,
   remainingPrivateContacts: null,
-  login: async () => {},
+  login: async () => {
+    throw new Error("Auth context not initialized.");
+  },
   refresh: async () => {},
   logout: async () => {},
 });
@@ -141,6 +144,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login: async (email: string, password: string) => {
           const response = await loginAdmin({ email, password });
 
+          if ("challengeRequired" in response) {
+            return response;
+          }
+
           if (response.user.role !== "ADMIN" && response.user.role !== "SUPERADMIN") {
             throw new Error("This account does not have backoffice access.");
           }
@@ -150,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setToken(response.accessToken);
           setUser(response.user);
           setIsAdmin(true);
+          return response;
         },
         refresh: async () => {
           const refreshToken = getRefreshToken();

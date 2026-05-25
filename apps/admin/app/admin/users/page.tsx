@@ -12,6 +12,14 @@ type AdminUser = {
   createdAt: string;
   approvedAt: string | null;
   lastLoginAt: string | null;
+  twoFactor: {
+    enabled: boolean;
+    adminEnforced: boolean;
+    emailOtpEnabled: boolean;
+    lastChallengeVerifiedAt: string | null;
+    failedAttemptCount: number;
+    lockoutUntil: string | null;
+  } | null;
   profile: {
     id: string;
     slug: string;
@@ -24,6 +32,14 @@ type AdminUser = {
   } | null;
   trustSummary?: {
     trustLifecycle: "PENDING_REVIEW" | "VERIFIED" | "APPROVED" | "SUSPENDED" | "REJECTED";
+    twoFactor?: {
+      enabled: boolean;
+      adminEnforced: boolean;
+      failedAttemptCount: number;
+      lockoutUntil: string | null;
+      lastChallengeVerifiedAt: string | null;
+      recoveryCodesRemaining: number;
+    } | null;
     moderationTimeline: Array<{
       id: string;
       action: string;
@@ -164,7 +180,9 @@ export default function AdminUsersPage() {
       | "REJECT_PROFILE"
       | "SUSPEND_PROFILE"
       | "REACTIVATE_PROFILE"
-      | "ESCALATE_REVIEW",
+      | "ESCALATE_REVIEW"
+      | "REQUIRE_2FA"
+      | "CLEAR_2FA_LOCK",
   ) {
     setSavingKey(`${userId}:trust:${action}`);
     setMessage(null);
@@ -183,6 +201,7 @@ export default function AdminUsersPage() {
                 ...summary.user,
                 trustSummary: {
                   trustLifecycle: summary.trustLifecycle,
+                  twoFactor: summary.twoFactor,
                   moderationTimeline: summary.moderationTimeline.slice(0, 5).map((item) => ({
                     id: item.id,
                     action: item.action,
@@ -269,6 +288,9 @@ export default function AdminUsersPage() {
                       </div>
                       <div className="mt-1">
                         Slug: <span className="text-cyan-300">{user.profile.slug}</span>
+                      </div>
+                      <div className="mt-2 text-xs uppercase tracking-[0.2em] text-slate-500">
+                        2FA {user.twoFactor?.enabled ? "enabled" : "disabled"} · enforced {user.twoFactor?.adminEnforced ? "yes" : "no"}
                       </div>
                     </div>
                   ) : (
@@ -418,12 +440,46 @@ export default function AdminUsersPage() {
                             onClick={() => void handleTrustAction(user.id, "ESCALATE_REVIEW")}
                             label="Escalate"
                           />
+                          <ActionButton
+                            disabled={savingKey?.startsWith(`${user.id}:trust:`)}
+                            onClick={() => void handleTrustAction(user.id, "REQUIRE_2FA")}
+                            label="Require 2FA"
+                          />
+                          <ActionButton
+                            disabled={savingKey?.startsWith(`${user.id}:trust:`)}
+                            onClick={() => void handleTrustAction(user.id, "CLEAR_2FA_LOCK")}
+                            label="Clear 2FA lock"
+                          />
                         </div>
                         {user.trustSummary ? (
                           <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3 text-sm text-slate-300">
                             <div className="font-medium text-white">
                               Lifecycle: {user.trustSummary.trustLifecycle}
                             </div>
+                            {user.trustSummary.twoFactor ? (
+                              <div className="mt-2 space-y-1">
+                                <div>
+                                  2FA: {user.trustSummary.twoFactor.enabled ? "ENABLED" : "DISABLED"} · enforced{" "}
+                                  {user.trustSummary.twoFactor.adminEnforced ? "YES" : "NO"}
+                                </div>
+                                <div>
+                                  Failed attempts: {user.trustSummary.twoFactor.failedAttemptCount} · recovery codes left{" "}
+                                  {user.trustSummary.twoFactor.recoveryCodesRemaining}
+                                </div>
+                                <div>
+                                  Last verification:{" "}
+                                  {user.trustSummary.twoFactor.lastChallengeVerifiedAt
+                                    ? new Date(user.trustSummary.twoFactor.lastChallengeVerifiedAt).toLocaleString()
+                                    : "never"}
+                                </div>
+                                <div>
+                                  Lockout:{" "}
+                                  {user.trustSummary.twoFactor.lockoutUntil
+                                    ? new Date(user.trustSummary.twoFactor.lockoutUntil).toLocaleString()
+                                    : "clear"}
+                                </div>
+                              </div>
+                            ) : null}
                             <div className="mt-2 space-y-1">
                               {user.trustSummary.moderationTimeline.map((item) => (
                                 <div key={item.id}>

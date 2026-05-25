@@ -62,6 +62,28 @@ export type AdminAuthResponse = {
   user: AdminAuthUser;
 };
 
+export type AdminAuthChallengeResponse = {
+  challengeRequired: true;
+  challengeId: string;
+  purpose: "LOGIN";
+  deliveryChannel: "EMAIL";
+  maskedDestination: string;
+  expiresInSeconds: number;
+};
+
+export type AdminAuthFlowResponse = AdminAuthResponse | AdminAuthChallengeResponse;
+
+export type TwoFactorStatus = {
+  enabled: boolean;
+  emailOtpEnabled: boolean;
+  adminEnforced: boolean;
+  lockedUntil: string | null;
+  lastChallengeVerifiedAt: string | null;
+  lastRecoveryCodesRegeneratedAt: string | null;
+  recoveryCodesRemaining: number;
+  failedAttemptCount: number;
+};
+
 export type UpgradeRequest = {
   id: string;
   createdAt: string;
@@ -714,7 +736,7 @@ export async function loginAdmin(payload: { email: string; password: string }) {
     );
   }
 
-  return data as AdminAuthResponse;
+  return data as AdminAuthFlowResponse;
 }
 
 export async function refreshAdminToken(refreshToken?: string | null) {
@@ -740,6 +762,58 @@ export async function refreshAdminToken(refreshToken?: string | null) {
   }
 
   return data as AdminAuthResponse;
+}
+
+export async function verifyAdminTwoFactorChallenge(challengeId: string, code: string) {
+  const response = await fetch(buildApiUrl("/auth/2fa/challenge/verify"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ challengeId, code }),
+    cache: "no-store",
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      data && typeof data === "object" && "message" in data
+        ? String(data.message)
+        : "Two-factor verification failed.",
+    );
+  }
+
+  return data as AdminAuthResponse;
+}
+
+export async function resendAdminTwoFactorChallenge(challengeId: string) {
+  const response = await fetch(buildApiUrl("/auth/2fa/challenge/resend"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ challengeId }),
+    cache: "no-store",
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      data && typeof data === "object" && "message" in data
+        ? String(data.message)
+        : "Two-factor resend failed.",
+    );
+  }
+
+  return data as {
+    success: boolean;
+    challengeId: string;
+    deliveryChannel: "EMAIL";
+    maskedDestination: string;
+    expiresInSeconds: number;
+  };
 }
 
 export async function logoutAdmin(accessToken?: string | null) {
@@ -969,7 +1043,9 @@ export const adminApi = {
         | "REJECT_PROFILE"
         | "SUSPEND_PROFILE"
         | "REACTIVATE_PROFILE"
-        | "ESCALATE_REVIEW";
+        | "ESCALATE_REVIEW"
+        | "REQUIRE_2FA"
+        | "CLEAR_2FA_LOCK";
       note?: string;
     },
   ) =>
@@ -1387,6 +1463,14 @@ export type AdminTrustSummary = {
     suspendedAt: string | null;
     createdAt: string;
     lastLoginAt: string | null;
+    twoFactor: {
+      enabled: boolean;
+      adminEnforced: boolean;
+      emailOtpEnabled: boolean;
+      lastChallengeVerifiedAt: string | null;
+      failedAttemptCount: number;
+      lockoutUntil: string | null;
+    } | null;
     profile: {
       id: string;
       slug: string;
@@ -1400,6 +1484,15 @@ export type AdminTrustSummary = {
     } | null;
   };
   trustLifecycle: "PENDING_REVIEW" | "VERIFIED" | "APPROVED" | "SUSPENDED" | "REJECTED";
+  twoFactor: {
+    enabled: boolean;
+    adminEnforced: boolean;
+    emailOtpEnabled: boolean;
+    lastChallengeVerifiedAt: string | null;
+    failedAttemptCount: number;
+    lockoutUntil: string | null;
+    recoveryCodesRemaining: number;
+  };
   notificationSender: string;
   moderationTimeline: Array<{
     id: string;

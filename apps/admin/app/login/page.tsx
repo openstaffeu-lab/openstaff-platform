@@ -29,7 +29,22 @@ export default function LoginPage() {
     setMessage(null);
 
     try {
-      await login(email.trim(), password);
+      const response = await login(email.trim(), password);
+      if ("challengeRequired" in response) {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(
+            "openstaff_admin_2fa_challenge",
+            JSON.stringify({
+              challengeId: response.challengeId,
+              maskedDestination: response.maskedDestination,
+              expiresInSeconds: response.expiresInSeconds,
+              email: email.trim(),
+            }),
+          );
+        }
+        router.push("/two-factor");
+        return;
+      }
       router.push("/dashboard");
     } catch (error) {
       setState("error");

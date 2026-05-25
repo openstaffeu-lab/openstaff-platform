@@ -9,6 +9,8 @@ const TRUST_ACTIONS = [
   'SUSPEND_PROFILE',
   'REACTIVATE_PROFILE',
   'ESCALATE_REVIEW',
+  'REQUIRE_2FA',
+  'CLEAR_2FA_LOCK',
 ] as const;
 
 export type AdminTrustAction =
@@ -19,7 +21,9 @@ export type AdminTrustAction =
   | 'REJECT_PROFILE'
   | 'SUSPEND_PROFILE'
   | 'REACTIVATE_PROFILE'
-  | 'ESCALATE_REVIEW';
+  | 'ESCALATE_REVIEW'
+  | 'REQUIRE_2FA'
+  | 'CLEAR_2FA_LOCK';
 
 export class AdminTrustActionDto {
   @IsIn(TRUST_ACTIONS)

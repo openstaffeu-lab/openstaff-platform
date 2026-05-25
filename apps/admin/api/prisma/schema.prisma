@@ -155,6 +155,8 @@ model User {
   identityProfile                    IdentityProfile?
   identityCompanyProfiles            IdentityCompanyProfile[]
   onboardingSession                  OnboardingSession?
+  twoFactorSettings                  UserTwoFactorSettings?
+  twoFactorChallenges                UserTwoFactorChallenge[]
   verificationCases                  VerificationCase[]
   reviewedVerificationCases          VerificationCase[]             @relation("VerificationCaseReviewedBy")
   verificationDecisions              VerificationDecision[]         @relation("VerificationDecisionActorUser")
@@ -1812,6 +1814,56 @@ model UserSession {
   @@index([userId, lastActivityAt])
   @@index([userDeviceFingerprintId, lastActivityAt])
   @@index([revokedAt, lastActivityAt])
+}
+
+model UserTwoFactorSettings {
+  id                             String   @id @default(uuid())
+  userId                         String   @unique
+  enabled                        Boolean  @default(false)
+  emailOtpEnabled                Boolean  @default(true)
+  adminEnforced                  Boolean  @default(false)
+  setupVerifiedAt                DateTime?
+  lastChallengeVerifiedAt        DateTime?
+  lastRecoveryCodeUsedAt         DateTime?
+  lastRecoveryCodesRegeneratedAt DateTime?
+  failedAttemptCount             Int      @default(0)
+  lockoutUntil                   DateTime?
+  recoveryCodesJson              Json?
+  createdAt                      DateTime @default(now())
+  updatedAt                      DateTime @updatedAt
+
+  user       User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenges UserTwoFactorChallenge[]
+
+  @@index([enabled, adminEnforced])
+  @@index([lockoutUntil])
+}
+
+model UserTwoFactorChallenge {
+  id                 String                    @id @default(uuid())
+  userId             String
+  settingsId         String?
+  purpose            TwoFactorChallengePurpose
+  deliveryChannel    NotificationChannel       @default(EMAIL)
+  codeHash           String
+  emailAddress       String?
+  expiresAt          DateTime
+  consumedAt         DateTime?
+  invalidatedAt      DateTime?
+  lastSentAt         DateTime                  @default(now())
+  resendCount        Int                       @default(0)
+  attemptCount       Int                       @default(0)
+  maxAttempts        Int                       @default(5)
+  metadata           Json?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  user     User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  settings UserTwoFactorSettings?  @relation(fields: [settingsId], references: [id], onDelete: SetNull)
+
+  @@index([userId, purpose, createdAt])
+  @@index([settingsId, createdAt])
+  @@index([expiresAt, consumedAt])
 }
 
 model ComplianceRequest {
@@ -4041,6 +4093,14 @@ enum SecurityEventType {
   ADMIN_OVERRIDE
   DATA_EXPORT
   ACCOUNT_DELETE_REQUEST
+}
+
+enum TwoFactorChallengePurpose {
+  SETUP
+  LOGIN
+  DISABLE
+  RECOVERY_CODES_REGENERATION
+  SUSPICIOUS_LOGIN
 }
 
 enum SecurityEventStatus {

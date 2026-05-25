@@ -18,11 +18,15 @@ import { RateLimitGuard } from '../common/rate-limit.guard';
 import { FirebaseExchangeDto } from './dto/firebase-exchange.dto';
 import { LoginDto } from './dto/login.dto';
 import { CompleteAccountRecoveryDto } from './dto/complete-account-recovery.dto';
+import { DisableTwoFactorDto } from './dto/disable-two-factor.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
 import { RequestAccountRecoveryDto } from './dto/request-account-recovery.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ResendTwoFactorChallengeDto } from './dto/resend-two-factor-challenge.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyTwoFactorChallengeDto } from './dto/verify-two-factor-challenge.dto';
+import { VerifyTwoFactorSetupDto } from './dto/verify-two-factor-setup.dto';
 import { JwtGuard } from './jwt.guard';
 import { Public } from './public.decorator';
 
@@ -103,6 +107,36 @@ export class AuthController {
     return this.authService.getCurrentUser(req.user.sub);
   }
 
+  @UseGuards(JwtGuard)
+  @Get('2fa/status')
+  async getTwoFactorStatus(@Req() req: any) {
+    return this.authService.getTwoFactorStatus(req.user.sub);
+  }
+
+  @UseGuards(JwtGuard)
+  @Post('2fa/setup')
+  async setupTwoFactor(@Req() req: any) {
+    return this.authService.setupTwoFactor(req.user.sub, req);
+  }
+
+  @UseGuards(JwtGuard)
+  @Post('2fa/verify-setup')
+  async verifyTwoFactorSetup(@Req() req: any, @Body() body: VerifyTwoFactorSetupDto) {
+    return this.authService.verifyTwoFactorSetup(req.user.sub, body.challengeId, body.code, req);
+  }
+
+  @UseGuards(JwtGuard)
+  @Post('2fa/disable')
+  async disableTwoFactor(@Req() req: any, @Body() body: DisableTwoFactorDto) {
+    return this.authService.disableTwoFactor(req.user.sub, body.password, req);
+  }
+
+  @UseGuards(JwtGuard)
+  @Post('2fa/recovery-codes/regenerate')
+  async regenerateRecoveryCodes(@Req() req: any) {
+    return this.authService.regenerateRecoveryCodes(req.user.sub, req);
+  }
+
   @Public()
   @UseGuards(RateLimitGuard)
   @RateLimit({ key: 'auth-refresh', maxRequests: 20 })
@@ -110,6 +144,30 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async refresh(@Body() body: RefreshDto, @Req() req: any) {
     return this.authService.refresh(body.refreshToken, req);
+  }
+
+  @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'auth-2fa-challenge-verify', maxRequests: 15 })
+  @Post('2fa/challenge/verify')
+  @HttpCode(HttpStatus.OK)
+  async verifyTwoFactorChallenge(
+    @Body() body: VerifyTwoFactorChallengeDto,
+    @Req() req: any,
+  ) {
+    return this.authService.verifyTwoFactorChallenge(body.challengeId, body.code, req);
+  }
+
+  @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'auth-2fa-challenge-resend', maxRequests: 10 })
+  @Post('2fa/challenge/resend')
+  @HttpCode(HttpStatus.OK)
+  async resendTwoFactorChallenge(
+    @Body() body: ResendTwoFactorChallengeDto,
+    @Req() req: any,
+  ) {
+    return this.authService.resendTwoFactorChallenge(body.challengeId, req);
   }
 
   @UseGuards(JwtGuard)

@@ -57,6 +57,28 @@ export type AuthResponse = {
   user: AuthUser;
 };
 
+export type AuthChallengeResponse = {
+  challengeRequired: true;
+  challengeId: string;
+  purpose: "LOGIN";
+  deliveryChannel: "EMAIL";
+  maskedDestination: string;
+  expiresInSeconds: number;
+};
+
+export type AuthFlowResponse = AuthResponse | AuthChallengeResponse;
+
+export type TwoFactorStatus = {
+  enabled: boolean;
+  emailOtpEnabled: boolean;
+  adminEnforced: boolean;
+  lockedUntil: string | null;
+  lastChallengeVerifiedAt: string | null;
+  lastRecoveryCodesRegeneratedAt: string | null;
+  recoveryCodesRemaining: number;
+  failedAttemptCount: number;
+};
+
 export type SubscriptionPlan = {
   code: "BASIC" | "BRONZE" | "GOLD" | "ENTERPRISE";
   name: string;
@@ -967,9 +989,83 @@ export async function loginAccount(payload: {
   email: string;
   password: string;
 }) {
-  return apiRequest<AuthResponse>("/auth/login", {
+  return apiRequest<AuthFlowResponse>("/auth/login", {
     method: "POST",
     body: payload,
+  });
+}
+
+export async function getTwoFactorStatus(token?: string | null) {
+  return apiRequestWithRefresh<TwoFactorStatus>("/auth/2fa/status", {
+    token,
+  });
+}
+
+export async function setupTwoFactor(token?: string | null) {
+  return apiRequestWithRefresh<{
+    success: boolean;
+    challengeId: string;
+    deliveryChannel: "EMAIL";
+    maskedDestination: string;
+    expiresInSeconds: number;
+  }>("/auth/2fa/setup", {
+    method: "POST",
+    token,
+  });
+}
+
+export async function verifyTwoFactorSetup(
+  challengeId: string,
+  code: string,
+  token?: string | null,
+) {
+  return apiRequestWithRefresh<{
+    success: boolean;
+    message: string;
+    recoveryCodes: string[];
+  }>("/auth/2fa/verify-setup", {
+    method: "POST",
+    token,
+    body: { challengeId, code },
+  });
+}
+
+export async function disableTwoFactor(password: string, token?: string | null) {
+  return apiRequestWithRefresh<{ success: boolean; message: string }>("/auth/2fa/disable", {
+    method: "POST",
+    token,
+    body: { password },
+  });
+}
+
+export async function regenerateRecoveryCodes(token?: string | null) {
+  return apiRequestWithRefresh<{
+    success: boolean;
+    message: string;
+    recoveryCodes: string[];
+  }>("/auth/2fa/recovery-codes/regenerate", {
+    method: "POST",
+    token,
+  });
+}
+
+export async function verifyTwoFactorChallenge(challengeId: string, code: string) {
+  return apiRequest<AuthResponse>("/auth/2fa/challenge/verify", {
+    method: "POST",
+    body: { challengeId, code },
+  });
+}
+
+export async function resendTwoFactorChallenge(challengeId: string) {
+  return apiRequest<{
+    success: boolean;
+    challengeId: string;
+    deliveryChannel: "EMAIL";
+    maskedDestination: string;
+    expiresInSeconds: number;
+  }>("/auth/2fa/challenge/resend", {
+    method: "POST",
+    body: { challengeId },
   });
 }
 

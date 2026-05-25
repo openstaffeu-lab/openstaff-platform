@@ -38,3 +38,12 @@ EXEC-59 still cannot close password-reset security from a production-user perspe
 
 So the remaining issue is no longer eligibility ambiguity or public enumeration safety. It is the
 live SMTP authentication blocker and the missing real delivery proof.
+
+## EXEC-66 Relationship
+
+EXEC-66 adds email-based 2FA on top of the trust layer, but it does not change the core password-reset posture:
+
+- password reset still uses one-time trust links
+- 2FA OTP email does not replace password reset
+- account recovery remains the stronger remediation flow for compromised or locked accounts
+- final production closure for both reset and 2FA still depends on real delivered-email proof

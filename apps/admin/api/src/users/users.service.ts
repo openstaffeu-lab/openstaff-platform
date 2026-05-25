@@ -25,6 +25,7 @@ export class UsersService {
     const users = await this.prisma.user.findMany({
       include: {
         profile: true,
+        twoFactorSettings: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -41,6 +42,16 @@ export class UsersService {
       suspendedAt: user.suspendedAt,
       createdAt: user.createdAt,
       lastLoginAt: user.lastLoginAt,
+      twoFactor: user.twoFactorSettings
+        ? {
+            enabled: user.twoFactorSettings.enabled,
+            adminEnforced: user.twoFactorSettings.adminEnforced,
+            emailOtpEnabled: user.twoFactorSettings.emailOtpEnabled,
+            lastChallengeVerifiedAt: user.twoFactorSettings.lastChallengeVerifiedAt,
+            failedAttemptCount: user.twoFactorSettings.failedAttemptCount,
+            lockoutUntil: user.twoFactorSettings.lockoutUntil,
+          }
+        : null,
       profile: user.profile
         ? {
             id: user.profile.id,

@@ -2,6 +2,47 @@
 
 Last updated: 2026-05-25
 
+## EXEC-66 Two-Factor Authentication / 2FA Trust Layer & Live Deployment Closure
+
+Verdict: `IN PROGRESS - the codebase now contains a working email-based 2FA baseline on top of the EXEC-65 trust layer, including short-lived one-time email OTP challenges, recovery codes, admin-enforced 2FA flags, suspicious-login escalation linkage, public-web security UX, and backoffice trust visibility. Local schema validation, Prisma generation, API tests, and all three application builds now pass. Production closure is not yet honest in this execution because EXEC-65 still needed same-turn live promotion, EXEC-66 introduces a new Prisma migration that must be applied safely to production before API rollout, and real end-to-end live mailbox proof for OTP delivery and recovery-code use has not yet been captured in this turn.`
+
+### EXEC-66 Implementation Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| email OTP 2FA model | PASS locally | `UserTwoFactorSettings` and `UserTwoFactorChallenge` were added to Prisma with hashed codes, single-use challenge state, expiry, resend/attempt counters, and lockout support |
+| login challenge orchestration | PASS locally | `POST /auth/login` now returns `challengeRequired` when 2FA is enabled or admin-enforced, and `POST /auth/2fa/challenge/verify` completes login only after a valid OTP or recovery code |
+| recovery codes | PASS locally | setup generates one-time recovery codes, regeneration invalidates prior codes, and used codes are marked spent in persistent state |
+| abuse / brute-force controls | PASS locally | 2FA verification now increments attempt counters, applies lockout windows, invalidates exhausted challenges, and records security events for repeated failures |
+| trust/email integration | PASS locally | 2FA setup, login OTP, recovery-code regeneration, and suspicious-login confirmation now reuse `NotificationEvent` / `NotificationDelivery` with `no-reply@openstaff.eu` sender metadata |
+| public web UX | PASS locally | `/two-factor` and `/security` now support login challenge completion, 2FA setup, recovery-code visibility, regeneration, and disable flows |
+| backoffice visibility | PASS locally | admin users now surface 2FA enabled/enforced state, last verification time, failed attempts, lockout status, and trust-action buttons for `REQUIRE_2FA` and `CLEAR_2FA_LOCK` |
+| RELU boundary | PASS locally | no automatic 2FA enable/disable or account-bypass logic was introduced; RELU remains advisory-only |
+| validation gates | PASS locally with release-window blocker | `prisma validate`, `prisma generate`, API build, API tests, public web build, backoffice build, and both frontend lint gates passed; production migration + live mailbox proof remain open |
+
+### EXEC-66 Exact Blockers
+
+1. EXEC-65 live promotion required same-turn Cloud Build submissions; builds were created successfully after switching to the dedicated build service account, but this turn still needs final same-turn revision confirmation for those submissions.
+2. EXEC-66 introduces a new Prisma migration for 2FA persistence. Production rollout requires an explicit safe `prisma migrate deploy` step before the new API revision can be declared deployable.
+3. Real end-to-end production proof still needs an operator-controlled mailbox and account to verify:
+   - OTP email received
+   - wrong OTP rejected
+   - expired OTP rejected
+   - reused OTP rejected
+   - recovery code consumed once
+   - regenerated recovery codes invalidate older ones
+4. Browser proof across Chrome desktop, Edge desktop, and mobile Chrome is not yet fully recaptured for the new 2FA routes in this turn.
+
+### EXEC-66 Artifacts
+
+- 2FA baseline: `docs/TWO_FACTOR_AUTHENTICATION_BASELINE.md`
+- 2FA security review: `docs/2FA_SECURITY_REVIEW.md`
+- trust workflow: `docs/TRUST_AND_APPROVAL_WORKFLOW.md`
+- recovery workflow: `docs/ACCOUNT_RECOVERY_WORKFLOW.md`
+- email trust events: `docs/EMAIL_TRUST_EVENTS.md`
+- password reset review: `docs/PASSWORD_RESET_SECURITY_REVIEW.md`
+- proof index: `docs/proof/exec66/README.md`
+
 ## EXEC-65 Unified Trust, Approval & Recovery Workflow
 
 Verdict: `PASS FOR BETA OPERATIONS - OpenStaff now has a unified trust workflow centered on no-reply@openstaff.eu for password reset, account recovery, email ownership verification, account/profile approval signaling, moderation escalation, auditability, and human-controlled RELU moderation assistance. This materially improves onboarding reliability and trust operations without changing the earlier security truth that localStorage token persistence remains a separate production-hardening gap.`

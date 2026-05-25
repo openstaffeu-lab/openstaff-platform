@@ -379,6 +379,74 @@ export class TrustService {
     };
   }
 
+  async requestSuspiciousLoginConfirmation(
+    userId: string,
+    securityEventId?: string | null,
+    request?: any,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { identityProfile: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const trustToken = await this.issueTrustToken({
+      userId: user.id,
+      email: user.email,
+      purpose: 'SUSPICIOUS_LOGIN_CONFIRMATION',
+      expiresInMinutes: 20,
+      linkPath: '/trust-action',
+      linkParams: { flow: 'suspicious-login' },
+      metadata: {
+        locale: user.identityProfile?.language ?? 'ro',
+        securityEventId: securityEventId ?? null,
+      },
+    });
+
+    const actionUrl = trustToken.link;
+    const template = this.buildGenericTrustTemplate(
+      'Suspicious login confirmation requested',
+      'We detected a sign-in attempt that needs confirmation. If this was you, confirm the device from this secure link.',
+      actionUrl,
+      null,
+    );
+
+    await this.dispatchTrustEmail({
+      userId: user.id,
+      email: user.email,
+      eventType: 'SUSPICIOUS_LOGIN_DETECTED',
+      title: 'Suspicious login detected',
+      message: 'A suspicious login/device confirmation request was issued for your account.',
+      relatedEntityId: trustToken.id,
+      purpose: trustToken.purpose,
+      template,
+      metadata: trustToken.metadata,
+    });
+
+    await this.auditService.logSecurityEvent({
+      userId: user.id,
+      type: 'SUSPICIOUS_ACTIVITY',
+      category: 'AUTH',
+      sourceType: trustToken.purpose,
+      sourceId: trustToken.id,
+      message: 'Suspicious login confirmation email issued',
+      severity: 'WARNING',
+      metadata: {
+        securityEventId: securityEventId ?? null,
+        expiresAt: trustToken.expiresAt,
+      },
+      request,
+    });
+
+    return {
+      success: true,
+      expiresInMinutes: 20,
+    };
+  }
+
   async performAdminTrustAction(
     userId: string,
     actorUserId: string,
@@ -389,6 +457,7 @@ export class TrustService {
       where: { id: userId },
       include: {
         profile: true,
+        twoFactorSettings: true,
       },
     });
 
@@ -474,6 +543,34 @@ export class TrustService {
           break;
         case 'ESCALATE_REVIEW':
           break;
+        case 'REQUIRE_2FA':
+          await tx.userTwoFactorSettings.upsert({
+            where: { userId },
+            update: {
+              adminEnforced: true,
+              emailOtpEnabled: true,
+            },
+            create: {
+              userId,
+              adminEnforced: true,
+              emailOtpEnabled: true,
+            },
+          });
+          break;
+        case 'CLEAR_2FA_LOCK':
+          await tx.userTwoFactorSettings.upsert({
+            where: { userId },
+            update: {
+              failedAttemptCount: 0,
+              lockoutUntil: null,
+            },
+            create: {
+              userId,
+              failedAttemptCount: 0,
+              lockoutUntil: null,
+            },
+          });
+          break;
         default:
           break;
       }
@@ -515,6 +612,7 @@ export class TrustService {
         where: { id: userId },
         include: {
           profile: true,
+          twoFactorSettings: true,
         },
       });
     });
@@ -559,6 +657,7 @@ export class TrustService {
       where: { id: userId },
       include: {
         profile: true,
+        twoFactorSettings: true,
         identityProfile: true,
         identityCompanyProfiles: {
           orderBy: { createdAt: 'asc' },
@@ -618,6 +717,18 @@ export class TrustService {
     return {
       user: this.toAdminUserState(user),
       trustLifecycle: this.deriveTrustLifecycleState(user),
+      twoFactor: {
+        enabled: user.twoFactorSettings?.enabled ?? false,
+        adminEnforced: user.twoFactorSettings?.adminEnforced ?? false,
+        emailOtpEnabled: user.twoFactorSettings?.emailOtpEnabled ?? true,
+        lastChallengeVerifiedAt:
+          user.twoFactorSettings?.lastChallengeVerifiedAt?.toISOString() ?? null,
+        failedAttemptCount: user.twoFactorSettings?.failedAttemptCount ?? 0,
+        lockoutUntil: user.twoFactorSettings?.lockoutUntil?.toISOString() ?? null,
+        recoveryCodesRemaining: this.countRecoveryCodesRemaining(
+          user.twoFactorSettings?.recoveryCodesJson ?? null,
+        ),
+      },
       notificationSender: 'OpenStaff <no-reply@openstaff.eu>',
       moderationTimeline: auditLogs.map((item) => ({
         id: item.id,
@@ -829,6 +940,8 @@ export class TrustService {
       SUSPEND_PROFILE: 'Profile suspended',
       REACTIVATE_PROFILE: 'Profile reactivated',
       ESCALATE_REVIEW: 'Moderation escalation opened',
+      REQUIRE_2FA: 'Two-factor authentication required',
+      CLEAR_2FA_LOCK: 'Two-factor access reset',
     };
 
     const messageMap: Record<AdminTrustActionDto['action'], string> = {
@@ -841,6 +954,10 @@ export class TrustService {
       SUSPEND_PROFILE: 'Your public profile was suspended from public visibility.',
       REACTIVATE_PROFILE: 'Your public profile was reactivated.',
       ESCALATE_REVIEW: 'Your account or profile was escalated for deeper moderation review.',
+      REQUIRE_2FA:
+        'Two-factor authentication is now required for your account before future logins can complete.',
+      CLEAR_2FA_LOCK:
+        'A stuck two-factor lock was cleared by OpenStaff operations. Please sign in again and complete the new challenge.',
     };
 
     const actionUrl =
@@ -908,6 +1025,20 @@ export class TrustService {
     };
   }
 
+  private countRecoveryCodesRemaining(value: Prisma.JsonValue | null) {
+    if (!Array.isArray(value)) {
+      return 0;
+    }
+
+    return value.filter((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        return false;
+      }
+      const candidate = item as Record<string, unknown>;
+      return !candidate.usedAt;
+    }).length;
+  }
+
   private deriveTrustLifecycleState(user: {
     approvalStatus: AccountApprovalStatus;
     accountStatus: AccountLifecycleStatus;
@@ -943,6 +1074,16 @@ export class TrustService {
       suspendedAt: user.suspendedAt,
       createdAt: user.createdAt,
       lastLoginAt: user.lastLoginAt,
+      twoFactor: user.twoFactorSettings
+        ? {
+            enabled: user.twoFactorSettings.enabled,
+            adminEnforced: user.twoFactorSettings.adminEnforced,
+            emailOtpEnabled: user.twoFactorSettings.emailOtpEnabled,
+            lastChallengeVerifiedAt: user.twoFactorSettings.lastChallengeVerifiedAt,
+            failedAttemptCount: user.twoFactorSettings.failedAttemptCount,
+            lockoutUntil: user.twoFactorSettings.lockoutUntil,
+          }
+        : null,
       profile: user.profile
         ? {
             id: user.profile.id,
@@ -975,6 +1116,10 @@ export class TrustService {
         return 'ACCOUNT_SUSPENDED';
       case 'REACTIVATE_PROFILE':
         return 'PROFILE_REACTIVATED';
+      case 'REQUIRE_2FA':
+        return 'VERIFICATION_REQUESTED';
+      case 'CLEAR_2FA_LOCK':
+        return 'VERIFICATION_REQUESTED';
       default:
         return 'MODERATION_ESCALATED';
     }

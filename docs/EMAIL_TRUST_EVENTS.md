@@ -23,6 +23,10 @@ Implemented or supported trust-oriented email events:
 - `ACCOUNT_SUSPENDED`
 - `PROFILE_REACTIVATED`
 - `MODERATION_ESCALATED`
+- `SUSPICIOUS_LOGIN_DETECTED`
+- `TWO_FACTOR_SETUP_CONFIRMATION`
+- `TWO_FACTOR_LOGIN_OTP_SENT`
+- `TWO_FACTOR_RECOVERY_CODES_REGENERATED`
 
 ## Template Classes
 
@@ -32,6 +36,8 @@ Current template groups:
 - account recovery
 - email ownership verification
 - generic approval / moderation notices
+- email OTP setup / login
+- recovery-code regeneration
 
 ## Delivery Guarantees
 
@@ -57,3 +63,10 @@ Email links are:
 - consumption-tracked
 
 This protects password reset, account recovery, ownership confirmation, and suspicious-login confirmation flows from replay after successful use.
+
+For EXEC-66, OTP and recovery-email events additionally rely on:
+
+- hashed OTP values at rest
+- short-lived expiry windows
+- resend throttling
+- per-challenge attempt ceilings

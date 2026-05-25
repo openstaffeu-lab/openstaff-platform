@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
+  AuthFlowResponse,
   AuthUser,
   clearStoredToken,
   fetchCurrentUser,
@@ -33,7 +34,7 @@ type AuthContextType = {
   canCreateProjects: boolean;
   canStartPrivateChat: boolean;
   remainingPrivateContacts: number | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthFlowResponse>;
   register: (payload: {
     email: string;
     password: string;
@@ -56,7 +57,9 @@ const AuthContext = createContext<AuthContextType>({
   canCreateProjects: false,
   canStartPrivateChat: false,
   remainingPrivateContacts: null,
-  login: async () => {},
+  login: async () => {
+    throw new Error("Auth context not initialized.");
+  },
   register: async () => {},
   refresh: async () => {},
   logout: async () => {},
@@ -150,10 +153,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         remainingPrivateContacts,
         login: async (email: string, password: string) => {
           const response = await loginAccount({ email, password });
+          if ("challengeRequired" in response) {
+            return response;
+          }
           setStoredToken(response.accessToken);
           setStoredRefreshToken(response.refreshToken);
           setToken(response.accessToken);
           setUser(response.user);
+          return response;
         },
         register: async (payload) => {
           const response = await registerAccount(payload);
