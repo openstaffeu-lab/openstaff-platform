@@ -30,7 +30,7 @@ function resolveJwtSecret() {
     PrismaModule,
     forwardRef(() => AuditModule),
     forwardRef(() => NotificationModule),
-    TrustModule,
+    forwardRef(() => TrustModule),
     JwtModule.register({
       secret: resolveJwtSecret(),
       signOptions: {
