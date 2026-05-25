@@ -1472,7 +1472,7 @@ export class AuthService {
   }
 
   private generateOtpCode() {
-    return String(randomInt(100000, 999999));
+    return randomInt(0, 1_000_000).toString().padStart(6, '0');
   }
 
   private hashTwoFactorCode(code: string) {

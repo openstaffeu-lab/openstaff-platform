@@ -1,14 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { PasswordField } from "@/components/PasswordField";
 import { useAuth } from "../../context/AuthContext";
+import { resolveAuthenticatedRoute } from "@/lib/auth-redirect";
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, isAuthenticated, loading, user } = useAuth();
+  const nextPath = useMemo(() => searchParams.get("next"), [searchParams]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -16,9 +27,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      router.replace("/profile");
+      router.replace(user ? resolveAuthenticatedRoute(user, nextPath) : "/profile");
     }
-  }, [isAuthenticated, loading, router]);
+  }, [isAuthenticated, loading, nextPath, router, user]);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -29,21 +40,22 @@ export default function LoginPage() {
       const response = await login(email, password);
       if ("challengeRequired" in response) {
         if (typeof window !== "undefined") {
-              window.sessionStorage.setItem(
-                "openstaff_web_2fa_challenge",
-                JSON.stringify({
-                  challengeId: response.challengeId,
-                  maskedDestination: response.maskedDestination,
-                  expiresInSeconds: response.expiresInSeconds,
-                  expiresAt: Date.now() + response.expiresInSeconds * 1000,
-                  email,
-                }),
-              );
+          window.sessionStorage.setItem(
+            "openstaff_web_2fa_challenge",
+            JSON.stringify({
+              challengeId: response.challengeId,
+              maskedDestination: response.maskedDestination,
+              expiresInSeconds: response.expiresInSeconds,
+              expiresAt: Date.now() + response.expiresInSeconds * 1000,
+              redirectTo: nextPath,
+              email,
+            }),
+          );
         }
         router.push("/two-factor");
         return;
       }
-      router.push("/profile");
+      router.push(resolveAuthenticatedRoute(response.user, nextPath));
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "Login failed.");
     } finally {

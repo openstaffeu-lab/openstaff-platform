@@ -67,3 +67,19 @@ The remaining live-security closure gap is now narrower:
 Date: 2026-05-25
 
 The login OTP flow now rejects expired locally stored challenges, resends into a fresh challenge id/expiry, clears pending challenges on logout, and refreshes the active public/backoffice auth contexts before redirecting to protected pages. Remaining 2FA risk: tokens still persist in localStorage for reload continuity and should be migrated to secure httpOnly cookies in a later hardening pass.
+
+## EXEC-69C Security Review Addendum
+
+Date: 2026-05-25
+
+EXEC-69C tightens the OTP surface to six numeric digits at the DTO and UI layers. OTP generation now pads leading zeroes and always returns a six-digit numeric string.
+
+The post-OTP session race is addressed by `completeSession(...)` in public and backoffice `AuthContext`, which stores the access token, refresh token, and user before route navigation. Pending challenge state is cleared only after session hydration succeeds.
+
+Backoffice `/two-factor` is now excluded from admin guard protection so active challenges do not bounce back to `/login`.
+
+Residual risks:
+
+- Real mailbox OTP delivery and reused/expired OTP proof still require a supplied test mailbox.
+- Tokens still persist in localStorage.
+- Recovery-code sign-in should be exposed through a separate recovery-code endpoint/UI if required after OTP DTO strictness.

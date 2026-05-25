@@ -10,6 +10,7 @@ import { ProjectExecutionPanel } from "../../../components/projects/ProjectExecu
 import { ProjectTimesheetsPanel } from "../../../components/projects/ProjectTimesheetsPanel";
 import { ProjectWorkerAssignmentsPanel } from "../../../components/projects/ProjectWorkerAssignmentsPanel";
 import { useAuth } from "../../../context/AuthContext";
+import { loginPathForCurrentLocation } from "../../../lib/auth-redirect";
 import { ApiError, apiRequest, apiRequestBlob } from "../../../lib/api";
 import {
   AIInterpretationPayload,
@@ -823,7 +824,7 @@ export default function ProjectDetailPage() {
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) {
         logout();
-        router.push("/login");
+        router.push(loginPathForCurrentLocation());
         return;
       }
 
@@ -841,7 +842,7 @@ export default function ProjectDetailPage() {
     }
 
     if (!token) {
-      router.push("/login");
+      router.push(loginPathForCurrentLocation());
       return;
     }
 

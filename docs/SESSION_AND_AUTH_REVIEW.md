@@ -29,3 +29,21 @@ Date: 2026-05-25
 - Mobile admin navigation is not yet a complete parity surface.
 - Full browser/device validation requires live credentials and running services.
 
+## EXEC-69C Update
+
+Date: 2026-05-25
+
+Implemented session hardening:
+
+- Public and backoffice auth contexts expose `completeSession(...)`.
+- OTP verify hydrates in-memory auth state before redirect.
+- Challenge state persists across reload with absolute expiry and is removed after successful session completion.
+- Public `?next=` and stored intended routes are resolved through safe local path guards.
+- Backoffice intended routes are preserved through `rememberAdminAuthRedirect(...)`.
+- Admin `/two-factor` is public to the guard, fixing the backoffice OTP redirect loop.
+
+Validation:
+
+- Local browser proof showed post-OTP public refresh persistence and logout cleanup.
+- Local backoffice proof showed post-OTP `/dashboard` redirect with access and refresh tokens present.
+- No OTPs, tokens, passwords, or secrets were added to documentation.

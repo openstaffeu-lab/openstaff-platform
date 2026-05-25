@@ -4,10 +4,11 @@ import { KeyboardEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PasswordField } from "@/components/PasswordField";
 import { useAuth } from "@/context/AuthContext";
+import { resolveAdminAuthenticatedRoute } from "@/lib/auth-redirect";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, isAdmin, loading } = useAuth();
+  const { login, isAuthenticated, isAdmin, loading, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [state, setState] = useState<"idle" | "submitting" | "error">("idle");
@@ -15,9 +16,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated && isAdmin) {
-      router.replace("/dashboard");
+      router.replace(user ? resolveAdminAuthenticatedRoute(user) : "/dashboard");
     }
-  }, [isAdmin, isAuthenticated, loading, router]);
+  }, [isAdmin, isAuthenticated, loading, router, user]);
 
   async function handleSubmit() {
     if (!email.trim() || !password.trim()) {
@@ -33,21 +34,24 @@ export default function LoginPage() {
       const response = await login(email.trim(), password);
       if ("challengeRequired" in response) {
         if (typeof window !== "undefined") {
-              window.sessionStorage.setItem(
-                "openstaff_admin_2fa_challenge",
-                JSON.stringify({
-                  challengeId: response.challengeId,
-                  maskedDestination: response.maskedDestination,
-                  expiresInSeconds: response.expiresInSeconds,
-                  expiresAt: Date.now() + response.expiresInSeconds * 1000,
-                  email: email.trim(),
-                }),
-              );
+          window.sessionStorage.setItem(
+            "openstaff_admin_2fa_challenge",
+            JSON.stringify({
+              challengeId: response.challengeId,
+              maskedDestination: response.maskedDestination,
+              expiresInSeconds: response.expiresInSeconds,
+              expiresAt: Date.now() + response.expiresInSeconds * 1000,
+              redirectTo: "/dashboard",
+              email: email.trim(),
+            }),
+          );
+          window.location.assign("/two-factor");
+          return;
         }
         router.push("/two-factor");
         return;
       }
-      router.push("/dashboard");
+      router.push(resolveAdminAuthenticatedRoute(response.user));
     } catch (error) {
       setState("error");
       setMessage(error instanceof Error ? error.message : "Login failed.");

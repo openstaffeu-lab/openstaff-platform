@@ -5,17 +5,17 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import {
   resendAdminTwoFactorChallenge,
-  setAccessToken,
-  setRefreshToken,
   verifyAdminTwoFactorChallenge,
 } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { resolveAdminAuthenticatedRoute } from "@/lib/auth-redirect";
 
 type PendingChallenge = {
   challengeId: string;
   maskedDestination: string;
   expiresInSeconds: number;
   expiresAt?: number;
+  redirectTo?: string | null;
   email?: string;
 };
 
@@ -23,7 +23,7 @@ const STORAGE_KEY = "openstaff_admin_2fa_challenge";
 
 export default function AdminTwoFactorPage() {
   const router = useRouter();
-  const { refresh } = useAuth();
+  const { completeSession } = useAuth();
   const [pending, setPending] = useState<PendingChallenge | null>(null);
   const [code, setCode] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -57,18 +57,20 @@ export default function AdminTwoFactorPage() {
       setError("No active backoffice 2FA challenge.");
       return;
     }
+    if (!/^\d{6}$/.test(code.trim())) {
+      setError("Enter the 6-digit code from your admin email.");
+      return;
+    }
     setBusy("verify");
     setError(null);
     setMessage(null);
     try {
       const auth = await verifyAdminTwoFactorChallenge(pending.challengeId, code);
-      setAccessToken(auth.accessToken);
-      setRefreshToken(auth.refreshToken);
+      completeSession(auth);
       if (typeof window !== "undefined") {
         window.sessionStorage.removeItem(STORAGE_KEY);
       }
-      await refresh();
-      router.replace("/dashboard");
+      router.replace(resolveAdminAuthenticatedRoute(auth.user, pending.redirectTo));
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "Two-factor verification failed.");
     } finally {
@@ -90,6 +92,7 @@ export default function AdminTwoFactorPage() {
         maskedDestination: response.maskedDestination,
         expiresInSeconds: response.expiresInSeconds,
         expiresAt: Date.now() + response.expiresInSeconds * 1000,
+        redirectTo: pending.redirectTo,
         email: pending.email,
       };
       setPending(next);
@@ -117,9 +120,12 @@ export default function AdminTwoFactorPage() {
           <input
             type="text"
             value={code}
-            onChange={(event) => setCode(event.target.value)}
+            onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
             className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-center text-2xl tracking-[0.35em] text-white outline-none transition focus:border-cyan-500"
             autoComplete="one-time-code"
+            inputMode="numeric"
+            maxLength={6}
+            pattern="[0-9]{6}"
             placeholder="123456"
           />
 

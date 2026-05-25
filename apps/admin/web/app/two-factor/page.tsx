@@ -7,17 +7,17 @@ import {
   ApiError,
   clearStoredToken,
   resendTwoFactorChallenge,
-  setStoredRefreshToken,
-  setStoredToken,
   verifyTwoFactorChallenge,
 } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { resolveAuthenticatedRoute } from "@/lib/auth-redirect";
 
 type PendingChallenge = {
   challengeId: string;
   maskedDestination: string;
   expiresInSeconds: number;
   expiresAt?: number;
+  redirectTo?: string | null;
   email?: string;
 };
 
@@ -25,7 +25,7 @@ const STORAGE_KEY = "openstaff_web_2fa_challenge";
 
 export default function TwoFactorPage() {
   const router = useRouter();
-  const { refresh } = useAuth();
+  const { completeSession } = useAuth();
   const [pending, setPending] = useState<PendingChallenge | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -74,19 +74,22 @@ export default function TwoFactorPage() {
       return;
     }
 
+    if (!/^\d{6}$/.test(code.trim())) {
+      setError("Enter the 6-digit code from your email.");
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
     setMessage(null);
 
     try {
       const auth = await verifyTwoFactorChallenge(pending.challengeId, code);
-      setStoredToken(auth.accessToken);
-      setStoredRefreshToken(auth.refreshToken);
+      completeSession(auth);
       if (typeof window !== "undefined") {
         window.sessionStorage.removeItem(STORAGE_KEY);
       }
-      await refresh();
-      router.replace("/profile");
+      router.replace(resolveAuthenticatedRoute(auth.user, pending.redirectTo));
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "Two-factor verification failed.");
       if (submissionError instanceof ApiError && submissionError.status === 401) {
@@ -113,6 +116,7 @@ export default function TwoFactorPage() {
         maskedDestination: response.maskedDestination,
         expiresInSeconds: response.expiresInSeconds,
         expiresAt: Date.now() + response.expiresInSeconds * 1000,
+        redirectTo: pending.redirectTo,
         email: pending.email,
       };
       setPending(next);
@@ -157,9 +161,11 @@ export default function TwoFactorPage() {
               <input
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-xl tracking-[0.35em] text-slate-700 outline-none"
                 value={code}
-                onChange={(event) => setCode(event.target.value)}
+                onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
                 inputMode="numeric"
                 autoComplete="one-time-code"
+                maxLength={6}
+                pattern="[0-9]{6}"
                 placeholder="123456"
               />
             </label>

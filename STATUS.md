@@ -3625,3 +3625,17 @@ Date: 2026-05-25
 - Added absolute OTP challenge expiry handling and resend expiry refresh for public and backoffice 2FA pages.
 - Generated EXEC-68 backoffice audit, functional gap list, live/backoffice alignment matrix, session/auth review, logout proof, 2FA proof, CRUD/save proof, mobile review, and proof README.
 - Verdict: EXEC-68 auth/UX fixes are implemented, but the final production PASS is withheld because backoffice company/profile/project full CRUD parity and media/document replace/delete remain partial.
+
+## EXEC-69C - Finish 2FA Session Fix
+
+Date: 2026-05-25
+
+- Standardized login/setup OTP validation to exactly six numeric digits in backend DTOs and frontend inputs.
+- Updated OTP generation to preserve leading zeroes with a six-digit numeric range.
+- Added `completeSession(...)` to public and backoffice auth contexts so OTP verification hydrates access token, refresh token, and user state before redirect.
+- Preserved safe intended-route redirects for public protected routes and backoffice admin routes.
+- Fixed the backoffice `/two-factor` loop by adding it to `AdminAuthGuard` public paths.
+- Local browser proof passed for Chrome desktop, Edge desktop user agent, Mobile Chrome, and backoffice admin OTP redirect.
+- Validation passed for Prisma validate/generate, API build/test, public build/lint, backoffice build/lint, and EXEC-26 production ops check.
+- EXEC-13 release check remains blocked by the pre-existing dirty worktree outside the EXEC-69C file set.
+- Verdict: EXEC-69C is implemented locally and browser-proven with mocked API, but remains `IN PROGRESS` for production PASS until real mailbox credentials are available and live deploy/browser OTP proof is captured.

@@ -16,6 +16,7 @@ import {
   resolveAssetUrl,
 } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
+import { loginPathForCurrentLocation } from "@/lib/auth-redirect";
 
 type ProfileType =
   | "CONTRACTOR"
@@ -346,7 +347,7 @@ export default function ProfilePage() {
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) {
         await logout();
-        router.push("/login");
+        router.push(loginPathForCurrentLocation());
         return;
       }
 
@@ -366,7 +367,7 @@ export default function ProfilePage() {
     }
 
     if (!token) {
-      router.push("/login");
+      router.push(loginPathForCurrentLocation());
       return;
     }
 

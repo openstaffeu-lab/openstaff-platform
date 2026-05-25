@@ -80,3 +80,13 @@ Final end-to-end 2FA product proof is still `IN PROGRESS` until a real mailbox-b
 Date: 2026-05-25
 
 The public and backoffice two-factor login challenge now carries an absolute `expiresAt` value in sessionStorage, clears stale token state when a challenge is required, refreshes the active auth context after OTP verification, and clears pending challenge state on logout or successful verification. This closes the broken redirect where password login succeeded, OTP verification stored tokens, but the protected page guard still saw an unauthenticated in-memory context.
+
+## EXEC-69C Update - OTP and Session Hydration
+
+Date: 2026-05-25
+
+OTP challenge and setup verification now require exactly six numeric digits. Backend challenge generation always returns six digits, including leading zeroes.
+
+The public and backoffice clients now complete the session directly after OTP verification by storing the access token, refresh token, and authenticated user into the active auth context before redirecting. This removes the previous race where the protected route could see an unauthenticated state and send the user back to `/login`.
+
+Backoffice `/two-factor` is included in guard public paths, so active admin OTP challenges can render before an admin session exists.

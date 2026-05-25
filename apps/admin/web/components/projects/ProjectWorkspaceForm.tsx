@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { loginPathForCurrentLocation } from "../../lib/auth-redirect";
 import { ApiError, apiRequest, apiRequestBlob } from "../../lib/api";
 import {
   AIInterpretationStatus,
@@ -292,7 +293,7 @@ export default function ProjectWorkspaceForm({
 
   useEffect(() => {
     if (isReady && !token) {
-      router.push("/login");
+      router.push(loginPathForCurrentLocation());
     }
   }, [isReady, router, token]);
 
@@ -379,7 +380,7 @@ export default function ProjectWorkspaceForm({
       } catch (requestError) {
         if (requestError instanceof ApiError && requestError.status === 401) {
           logout();
-          router.push("/login");
+          router.push(loginPathForCurrentLocation());
           return;
         }
 

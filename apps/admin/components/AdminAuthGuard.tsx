@@ -3,8 +3,9 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { rememberAdminAuthRedirect } from "@/lib/auth-redirect";
 
-const PUBLIC_PATHS = new Set(["/login", "/status", "/unauthorized"]);
+const PUBLIC_PATHS = new Set(["/login", "/two-factor", "/status", "/unauthorized"]);
 
 export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -21,6 +22,7 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     }
 
     if (!user) {
+      rememberAdminAuthRedirect(pathname);
       router.replace("/login");
       return;
     }

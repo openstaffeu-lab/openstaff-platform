@@ -206,7 +206,10 @@ export default function SecurityPage() {
                 <input
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-xl tracking-[0.35em] text-slate-700 outline-none"
                   value={code}
-                  onChange={(event) => setCode(event.target.value)}
+                  onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                  inputMode="numeric"
+                  maxLength={6}
+                  pattern="[0-9]{6}"
                   placeholder="123456"
                 />
                 <button

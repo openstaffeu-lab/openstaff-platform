@@ -1,10 +1,10 @@
-import { IsString, Length } from 'class-validator';
+import { IsString, Matches } from 'class-validator';
 
 export class VerifyTwoFactorChallengeDto {
   @IsString()
   challengeId!: string;
 
   @IsString()
-  @Length(4, 32)
+  @Matches(/^\d{6}$/, { message: 'Two-factor code must be exactly 6 numeric digits' })
   code!: string;
 }

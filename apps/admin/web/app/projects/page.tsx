@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { loginPathForCurrentLocation } from "@/lib/auth-redirect";
 import { ApiError, apiRequest } from "../../lib/api";
 import {
   EngagementModel,
@@ -75,7 +76,7 @@ export default function ProjectsPage() {
     }
 
     if (!token) {
-      router.push("/login");
+      router.push(loginPathForCurrentLocation());
       return;
     }
 
@@ -95,7 +96,7 @@ export default function ProjectsPage() {
       } catch (requestError) {
         if (requestError instanceof ApiError && requestError.status === 401) {
           logout();
-          router.push("/login");
+          router.push(loginPathForCurrentLocation());
           return;
         }
 
@@ -158,7 +159,7 @@ export default function ProjectsPage() {
               <button
                 onClick={() => {
                   logout();
-                  router.push("/login");
+                  router.push(loginPathForCurrentLocation());
                 }}
                 className="rounded-2xl border border-white/10 bg-slate-900/80 px-5 py-3 font-semibold text-slate-100"
               >

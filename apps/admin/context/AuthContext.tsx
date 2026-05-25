@@ -32,6 +32,7 @@ type AuthContextType = {
   hasFeature: (feature: SubscriptionFeatureKey) => boolean;
   remainingPrivateContacts: number | null;
   login: (email: string, password: string) => Promise<AdminAuthFlowResponse>;
+  completeSession: (response: Exclude<AdminAuthFlowResponse, { challengeRequired: true }>) => void;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -48,6 +49,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => {
     throw new Error("Auth context not initialized.");
   },
+  completeSession: () => {},
   refresh: async () => {},
   logout: async () => {},
 });
@@ -162,6 +164,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(response.user);
           setIsAdmin(true);
           return response;
+        },
+        completeSession: (response) => {
+          if (response.user.role !== "ADMIN" && response.user.role !== "SUPERADMIN") {
+            throw new Error("This account does not have backoffice access.");
+          }
+
+          setAccessToken(response.accessToken);
+          setRefreshToken(response.refreshToken);
+          setToken(response.accessToken);
+          setUser(response.user);
+          setIsAdmin(true);
         },
         refresh: async () => {
           const refreshToken = getRefreshToken();

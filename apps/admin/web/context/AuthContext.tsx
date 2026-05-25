@@ -35,6 +35,7 @@ type AuthContextType = {
   canStartPrivateChat: boolean;
   remainingPrivateContacts: number | null;
   login: (email: string, password: string) => Promise<AuthFlowResponse>;
+  completeSession: (response: Exclude<AuthFlowResponse, { challengeRequired: true }>) => void;
   register: (payload: {
     email: string;
     password: string;
@@ -60,6 +61,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => {
     throw new Error("Auth context not initialized.");
   },
+  completeSession: () => {},
   register: async () => {},
   refresh: async () => {},
   logout: async () => {},
@@ -164,6 +166,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setToken(response.accessToken);
           setUser(response.user);
           return response;
+        },
+        completeSession: (response) => {
+          setStoredToken(response.accessToken);
+          setStoredRefreshToken(response.refreshToken);
+          setToken(response.accessToken);
+          setUser(response.user);
         },
         register: async (payload) => {
           const response = await registerAccount(payload);
