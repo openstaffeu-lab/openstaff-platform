@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
+import { PasswordField } from "@/components/PasswordField";
 import { useAuth } from "@/context/AuthContext";
 import {
   disableTwoFactor,
@@ -248,12 +249,12 @@ export default function SecurityPage() {
             ) : null}
 
             <form className="mt-6 space-y-4" onSubmit={handleDisable}>
-              <input
-                type="password"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none"
+              <PasswordField
+                label="Current password / Parola curenta"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={setPassword}
                 placeholder="Current password / Parola curenta"
+                autoComplete="current-password"
               />
               <button
                 type="submit"

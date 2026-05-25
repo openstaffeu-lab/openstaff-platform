@@ -74,3 +74,8 @@ EXEC-67 successfully promoted the supporting migration/runtime layer for this wo
 - the healthy live API revision is `openstaff-api-00033-ssp`
 
 What still remains for final operational closure is live mailbox/browser proof for the full user journey, not the core recovery architecture itself.
+## EXEC-68 Update - Recovery UX
+
+Date: 2026-05-25
+
+Password reset and account recovery password entry now use accessible visibility toggles with secure hidden defaults, fixed control dimensions, and keyboard-accessible buttons. Logout also clears any stale 2FA challenge state so recovery or reset users do not re-enter an old OTP path after signing out.

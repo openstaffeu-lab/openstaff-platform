@@ -154,6 +154,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login: async (email: string, password: string) => {
           const response = await loginAccount({ email, password });
           if ("challengeRequired" in response) {
+            clearStoredToken();
+            setToken(null);
+            setUser(null);
             return response;
           }
           setStoredToken(response.accessToken);

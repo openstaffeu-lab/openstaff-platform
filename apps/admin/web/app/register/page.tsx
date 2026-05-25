@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { PasswordField } from "@/components/PasswordField";
 import { getRegistrationDefaults, trackRolloutFunnelEvent } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useOnboardingState } from "@/lib/onboarding";
@@ -180,16 +181,13 @@ export default function RegisterPage() {
                 />
               </label>
 
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-600">Password</span>
-                <input
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none"
-                  placeholder="Minimum 8 characters"
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                />
-              </label>
+              <PasswordField
+                label="Password"
+                placeholder="Minimum 8 characters"
+                value={password}
+                onChange={setPassword}
+                autoComplete="new-password"
+              />
 
               <button
                 type="button"

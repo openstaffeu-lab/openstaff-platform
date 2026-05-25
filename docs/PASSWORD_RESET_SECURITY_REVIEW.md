@@ -57,3 +57,8 @@ EXEC-67 closed the infrastructure/runtime blockers around the new 2FA layer:
 - the current live API revision is healthy and reports `db=healthy`
 
 Password-reset posture is therefore no longer blocked by the 2FA rollout mechanics themselves. The remaining proof gap is still real delivered-email validation and authenticated browser/operator confirmation.
+## EXEC-68 Addendum - Password Field Visibility
+
+Date: 2026-05-25
+
+Login, register, reset-password/account-recovery completion, public 2FA disable, and admin login password fields now include accessible eye-toggle controls. The default state remains hidden, the toggle is keyboard reachable, and right-side input padding prevents layout shift on mobile.

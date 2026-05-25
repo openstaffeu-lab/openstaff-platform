@@ -75,3 +75,8 @@ EXEC-67 moved the 2FA baseline from local-only readiness to production runtime r
 - public web and backoffice were also redeployed successfully
 
 Final end-to-end 2FA product proof is still `IN PROGRESS` until a real mailbox-backed OTP journey, recovery-code journey, and authenticated browser proof are captured.
+## EXEC-68 Update - Login Challenge Continuity
+
+Date: 2026-05-25
+
+The public and backoffice two-factor login challenge now carries an absolute `expiresAt` value in sessionStorage, clears stale token state when a challenge is required, refreshes the active auth context after OTP verification, and clears pending challenge state on logout or successful verification. This closes the broken redirect where password login succeeded, OTP verification stored tokens, but the protected page guard still saw an unauthenticated in-memory context.

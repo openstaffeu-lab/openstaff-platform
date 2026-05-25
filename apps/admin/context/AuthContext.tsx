@@ -145,6 +145,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const response = await loginAdmin({ email, password });
 
           if ("challengeRequired" in response) {
+            clearAccessToken();
+            setToken(null);
+            setUser(null);
+            setIsAdmin(false);
             return response;
           }
 

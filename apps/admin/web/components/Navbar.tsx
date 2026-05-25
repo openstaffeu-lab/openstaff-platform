@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { OpenStaffLogo } from "./OpenStaffLogo";
 import { brand } from "../lib/brand";
+import { useAuth } from "../context/AuthContext";
 
 const links = [
   { href: "/jobs", label: "Jobs" },
@@ -16,6 +18,14 @@ const links = [
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const { isAuthenticated, logout, user } = useAuth();
+
+  async function handleLogout() {
+    await logout();
+    setOpen(false);
+    router.replace("/login");
+  }
 
   return (
     <div
@@ -61,22 +71,46 @@ export function Navbar() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Link
-            href="/login"
-            prefetch={false}
-            className="rounded-full border px-4 py-2 text-sm font-bold"
-            style={{ borderColor: brand.green, color: brand.green }}
-          >
-            Login
-          </Link>
-          <Link
-            href="/register"
-            prefetch={false}
-            className="rounded-full px-4 py-2 text-sm font-black"
-            style={{ backgroundColor: brand.green, color: brand.navy }}
-          >
-            Register
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <Link
+                href="/profile"
+                prefetch={false}
+                className="max-w-40 truncate rounded-full border px-4 py-2 text-sm font-bold"
+                style={{ borderColor: brand.green, color: brand.green }}
+                title={user?.email ?? "Profile"}
+              >
+                Profile
+              </Link>
+              <button
+                type="button"
+                onClick={() => void handleLogout()}
+                className="rounded-full px-4 py-2 text-sm font-black"
+                style={{ backgroundColor: brand.green, color: brand.navy }}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                prefetch={false}
+                className="rounded-full border px-4 py-2 text-sm font-bold"
+                style={{ borderColor: brand.green, color: brand.green }}
+              >
+                Login
+              </Link>
+              <Link
+                href="/register"
+                prefetch={false}
+                className="rounded-full px-4 py-2 text-sm font-black"
+                style={{ backgroundColor: brand.green, color: brand.navy }}
+              >
+                Register
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -106,22 +140,45 @@ export function Navbar() {
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/login"
-              prefetch={false}
-              className="rounded-2xl border px-4 py-3 text-sm font-bold"
-              style={{ borderColor: brand.green, color: brand.green }}
-            >
-              Login
-            </Link>
-            <Link
-              href="/register"
-              prefetch={false}
-              className="rounded-2xl px-4 py-3 text-sm font-black"
-              style={{ backgroundColor: brand.green, color: brand.navy }}
-            >
-              Register
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/profile"
+                  prefetch={false}
+                  className="rounded-2xl border px-4 py-3 text-sm font-bold"
+                  style={{ borderColor: brand.green, color: brand.green }}
+                >
+                  Profile
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => void handleLogout()}
+                  className="rounded-2xl px-4 py-3 text-left text-sm font-black"
+                  style={{ backgroundColor: brand.green, color: brand.navy }}
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  prefetch={false}
+                  className="rounded-2xl border px-4 py-3 text-sm font-bold"
+                  style={{ borderColor: brand.green, color: brand.green }}
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  prefetch={false}
+                  className="rounded-2xl px-4 py-3 text-sm font-black"
+                  style={{ backgroundColor: brand.green, color: brand.navy }}
+                >
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </div>
       ) : null}

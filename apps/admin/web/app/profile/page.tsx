@@ -572,6 +572,11 @@ export default function ProfilePage() {
     }
   }
 
+  async function handleLogout() {
+    await logout();
+    router.replace("/login");
+  }
+
   if (isLoading) {
     return <main className="px-6 py-10 text-slate-600">Loading profile workspace...</main>;
   }
@@ -609,6 +614,13 @@ export default function ProfilePage() {
                 >
                   Open public page
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => void handleLogout()}
+                  className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-700"
+                >
+                  Logout
+                </button>
               </div>
             ) : null}
           </div>

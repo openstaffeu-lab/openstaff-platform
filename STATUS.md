@@ -3614,3 +3614,14 @@ Consecinta:
 
 
 
+## EXEC-68 - Live 2FA, UX Alignment, Backoffice Parity & Account Management Closure
+
+Date: 2026-05-25
+
+- Added visible logout actions to the public desktop navbar, public mobile navigation, profile/account page, backoffice sidebar, and backoffice header.
+- Logout now clears access tokens, refresh tokens, and pending 2FA challenge state on public and backoffice surfaces.
+- Added password visibility controls for public login/register/reset/security password entry and admin login.
+- Fixed the post-password 2FA redirect loop by refreshing `AuthContext` after OTP verification before routing to `/profile` or `/dashboard`.
+- Added absolute OTP challenge expiry handling and resend expiry refresh for public and backoffice 2FA pages.
+- Generated EXEC-68 backoffice audit, functional gap list, live/backoffice alignment matrix, session/auth review, logout proof, 2FA proof, CRUD/save proof, mobile review, and proof README.
+- Verdict: EXEC-68 auth/UX fixes are implemented, but the final production PASS is withheld because backoffice company/profile/project full CRUD parity and media/document replace/delete remain partial.

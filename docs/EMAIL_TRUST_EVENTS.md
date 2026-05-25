@@ -84,3 +84,8 @@ Still required for final proof:
 - operator-confirmed receipt of setup OTP email
 - operator-confirmed receipt of login OTP email
 - live proof for recovery-code regeneration notification
+## EXEC-68 Update - Trust Event Continuity
+
+Date: 2026-05-25
+
+Email OTP login, resend, password reset, account recovery, ownership verification, and admin trust actions remain separate flows, but EXEC-68 aligns their session behavior: stale 2FA challenge data is cleared on logout, expired OTP challenges are rejected locally, and verified OTP sessions are propagated before routing to protected public or backoffice pages.

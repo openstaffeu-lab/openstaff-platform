@@ -12,6 +12,7 @@ const API_URL =
 
 const AUTH_TOKEN_KEY = "openstaff_web_access_token";
 const REFRESH_TOKEN_KEY = "openstaff_web_refresh_token";
+const TWO_FACTOR_CHALLENGE_KEY = "openstaff_web_2fa_challenge";
 
 type StructuredSuccessResponse<T> = {
   status: "ok";
@@ -771,6 +772,7 @@ export function clearStoredToken() {
 
   window.localStorage.removeItem(AUTH_TOKEN_KEY);
   window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+  window.sessionStorage.removeItem(TWO_FACTOR_CHALLENGE_KEY);
 }
 
 export function getAuthToken() {

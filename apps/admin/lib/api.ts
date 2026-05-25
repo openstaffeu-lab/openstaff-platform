@@ -2,6 +2,7 @@ const LOCAL_API_URL = "http://localhost:8080";
 const PRODUCTION_API_URL = "https://api.openstaff.eu";
 const ACCESS_TOKEN_KEY = "openstaff_admin_access_token";
 const REFRESH_TOKEN_KEY = "openstaff_admin_refresh_token";
+const TWO_FACTOR_CHALLENGE_KEY = "openstaff_admin_2fa_challenge";
 
 export type ApiFetchResult<T> =
   | { ok: true; status: number; data: T }
@@ -609,6 +610,7 @@ export function clearAccessToken() {
 
   window.localStorage.removeItem(ACCESS_TOKEN_KEY);
   window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+  window.sessionStorage.removeItem(TWO_FACTOR_CHALLENGE_KEY);
 }
 
 export function redirectToLogin() {

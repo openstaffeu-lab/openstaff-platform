@@ -62,3 +62,8 @@ The remaining live-security closure gap is now narrower:
 - real delivered OTP proof
 - real recovery-code consumption proof
 - authenticated admin/browser proof for the new 2FA UX
+## EXEC-68 Security Review Addendum
+
+Date: 2026-05-25
+
+The login OTP flow now rejects expired locally stored challenges, resends into a fresh challenge id/expiry, clears pending challenges on logout, and refreshes the active public/backoffice auth contexts before redirecting to protected pages. Remaining 2FA risk: tokens still persist in localStorage for reload continuity and should be migrated to secure httpOnly cookies in a later hardening pass.

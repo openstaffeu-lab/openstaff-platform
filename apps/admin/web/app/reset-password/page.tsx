@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useMemo, useState } from "react";
+import { PasswordField } from "@/components/PasswordField";
 import { completeAccountRecovery, confirmPasswordReset } from "@/lib/api";
 
 export default function ResetPasswordPage() {
@@ -93,29 +94,21 @@ function ResetPasswordForm() {
 
         <section className="openstaff-card rounded-[2.2rem] p-8 md:p-10">
           <form className="space-y-5" onSubmit={handleSubmit}>
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-slate-600">New password</span>
-              <input
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none"
-                type="password"
-                placeholder="Minimum 8 characters"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </label>
+            <PasswordField
+              label="New password"
+              placeholder="Minimum 8 characters"
+              value={password}
+              onChange={setPassword}
+              autoComplete="new-password"
+            />
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-slate-600">
-                Confirm new password
-              </span>
-              <input
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none"
-                type="password"
-                placeholder="Repeat the new password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-              />
-            </label>
+            <PasswordField
+              label="Confirm new password"
+              placeholder="Repeat the new password"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              autoComplete="new-password"
+            />
 
             {message ? (
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">

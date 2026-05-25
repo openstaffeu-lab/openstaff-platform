@@ -2,6 +2,7 @@
 
 import { KeyboardEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PasswordField } from "@/components/PasswordField";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
@@ -32,15 +33,16 @@ export default function LoginPage() {
       const response = await login(email.trim(), password);
       if ("challengeRequired" in response) {
         if (typeof window !== "undefined") {
-          window.sessionStorage.setItem(
-            "openstaff_admin_2fa_challenge",
-            JSON.stringify({
-              challengeId: response.challengeId,
-              maskedDestination: response.maskedDestination,
-              expiresInSeconds: response.expiresInSeconds,
-              email: email.trim(),
-            }),
-          );
+              window.sessionStorage.setItem(
+                "openstaff_admin_2fa_challenge",
+                JSON.stringify({
+                  challengeId: response.challengeId,
+                  maskedDestination: response.maskedDestination,
+                  expiresInSeconds: response.expiresInSeconds,
+                  expiresAt: Date.now() + response.expiresInSeconds * 1000,
+                  email: email.trim(),
+                }),
+              );
         }
         router.push("/two-factor");
         return;
@@ -86,20 +88,14 @@ export default function LoginPage() {
             />
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm text-slate-300" htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              onKeyDown={handleKeyDown}
-              className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-500"
-              autoComplete="current-password"
-            />
-          </div>
+          <PasswordField
+            id="password"
+            label="Password"
+            value={password}
+            onChange={setPassword}
+            onKeyDown={handleKeyDown}
+            autoComplete="current-password"
+          />
 
           {message ? (
             <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">

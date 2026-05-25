@@ -1,13 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "../../context/AuthContext";
 import { useUiConfig } from "../../context/UiConfigContext";
 
 export function MobileNavigation() {
   const pathname = usePathname();
+  const router = useRouter();
   const { config } = useUiConfig();
-  const navItems = config.header.menu.slice(0, 4);
+  const { isAuthenticated, logout } = useAuth();
+  const navItems = config.header.menu.slice(0, isAuthenticated ? 3 : 4);
+
+  async function handleLogout() {
+    await logout();
+    router.replace("/login");
+  }
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-300/80 bg-white/95 backdrop-blur md:hidden">
@@ -33,6 +41,15 @@ export function MobileNavigation() {
             </Link>
           );
         })}
+        {isAuthenticated ? (
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+            className="rounded-2xl bg-slate-100 px-3 py-3 text-center text-xs font-semibold text-slate-600"
+          >
+            Logout
+          </button>
+        ) : null}
       </div>
     </nav>
   );

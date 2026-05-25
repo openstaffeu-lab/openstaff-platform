@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
+import { PasswordField } from "@/components/PasswordField";
 import { useAuth } from "../../context/AuthContext";
 
 export default function LoginPage() {
@@ -28,15 +29,16 @@ export default function LoginPage() {
       const response = await login(email, password);
       if ("challengeRequired" in response) {
         if (typeof window !== "undefined") {
-          window.sessionStorage.setItem(
-            "openstaff_web_2fa_challenge",
-            JSON.stringify({
-              challengeId: response.challengeId,
-              maskedDestination: response.maskedDestination,
-              expiresInSeconds: response.expiresInSeconds,
-              email,
-            }),
-          );
+              window.sessionStorage.setItem(
+                "openstaff_web_2fa_challenge",
+                JSON.stringify({
+                  challengeId: response.challengeId,
+                  maskedDestination: response.maskedDestination,
+                  expiresInSeconds: response.expiresInSeconds,
+                  expiresAt: Date.now() + response.expiresInSeconds * 1000,
+                  email,
+                }),
+              );
         }
         router.push("/two-factor");
         return;
@@ -89,16 +91,13 @@ export default function LoginPage() {
               />
             </label>
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-slate-600">Password</span>
-              <input
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none"
-                placeholder="Minimum 6 characters"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </label>
+            <PasswordField
+              label="Password"
+              placeholder="Minimum 6 characters"
+              value={password}
+              onChange={setPassword}
+              autoComplete="current-password"
+            />
 
             <div className="flex justify-end">
               <Link href="/forgot-password" className="text-sm font-semibold text-brand-navy">

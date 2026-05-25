@@ -11,11 +11,13 @@ import {
   setStoredToken,
   verifyTwoFactorChallenge,
 } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 type PendingChallenge = {
   challengeId: string;
   maskedDestination: string;
   expiresInSeconds: number;
+  expiresAt?: number;
   email?: string;
 };
 
@@ -23,6 +25,7 @@ const STORAGE_KEY = "openstaff_web_2fa_challenge";
 
 export default function TwoFactorPage() {
   const router = useRouter();
+  const { refresh } = useAuth();
   const [pending, setPending] = useState<PendingChallenge | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +45,14 @@ export default function TwoFactorPage() {
     }
 
     try {
-      setPending(JSON.parse(raw) as PendingChallenge);
+      const parsed = JSON.parse(raw) as PendingChallenge;
+      if (parsed.expiresAt && parsed.expiresAt <= Date.now()) {
+        window.sessionStorage.removeItem(STORAGE_KEY);
+        setError("This two-factor code expired. Please sign in again.");
+        setPending(null);
+        return;
+      }
+      setPending(parsed);
     } catch {
       window.sessionStorage.removeItem(STORAGE_KEY);
       setPending(null);
@@ -75,6 +85,7 @@ export default function TwoFactorPage() {
       if (typeof window !== "undefined") {
         window.sessionStorage.removeItem(STORAGE_KEY);
       }
+      await refresh();
       router.replace("/profile");
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "Two-factor verification failed.");
@@ -101,6 +112,7 @@ export default function TwoFactorPage() {
         challengeId: response.challengeId,
         maskedDestination: response.maskedDestination,
         expiresInSeconds: response.expiresInSeconds,
+        expiresAt: Date.now() + response.expiresInSeconds * 1000,
         email: pending.email,
       };
       setPending(next);

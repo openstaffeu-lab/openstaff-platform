@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AdminAuthGuard } from "@/components/AdminAuthGuard";
+import { useAuth } from "@/context/AuthContext";
 
 const menu = [
   { name: "Dashboard", path: "/dashboard" },
@@ -42,9 +43,16 @@ const PUBLIC_PATHS = new Set(["/login", "/status", "/unauthorized"]);
 
 export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { logout, user } = useAuth();
 
   if (PUBLIC_PATHS.has(pathname)) {
     return <>{children}</>;
+  }
+
+  async function handleLogout() {
+    await logout();
+    router.replace("/login");
   }
 
   return (
@@ -73,6 +81,13 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
               Persistent public interaction services and moderation views are available for
               review.
             </div>
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              className="mt-4 w-full rounded-xl border border-cyan-400/40 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/10"
+            >
+              Logout
+            </button>
           </div>
         </aside>
 
@@ -88,8 +103,17 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
                 </h1>
               </div>
 
-              <div className="rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950">
-                Super Admin
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <div className="max-w-56 truncate rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950">
+                  {user?.email ?? "Super Admin"}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void handleLogout()}
+                  className="rounded-2xl border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:bg-slate-800"
+                >
+                  Logout
+                </button>
               </div>
             </div>
           </header>
