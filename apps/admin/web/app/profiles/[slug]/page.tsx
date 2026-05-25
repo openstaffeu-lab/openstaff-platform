@@ -166,6 +166,7 @@ export default async function PublicIdentityProfilePage({ params }: PageProps) {
                 <Pill label={`Visibility ${profile.visibility}`} />
                 <Pill label={`Status ${profile.status}`} />
                 <Pill label={`Moderation ${profile.moderationStatus}`} />
+                {profile.trust ? <Pill label={`Trust ${profile.trust.status}`} /> : null}
                 {profile.websiteUrl ? <Pill label={profile.websiteUrl} /> : null}
                 {profile.languages[0] ? (
                   <Pill

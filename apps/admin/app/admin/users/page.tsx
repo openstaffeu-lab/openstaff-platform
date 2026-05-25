@@ -22,6 +22,14 @@ type AdminUser = {
     moderationStatus: string;
     status: string;
   } | null;
+  trustSummary?: {
+    trustLifecycle: "PENDING_REVIEW" | "VERIFIED" | "APPROVED" | "SUSPENDED" | "REJECTED";
+    moderationTimeline: Array<{
+      id: string;
+      action: string;
+      createdAt: string;
+    }>;
+  } | null;
 };
 
 type LoadState = "loading" | "success" | "unauthorized" | "error";
@@ -37,6 +45,7 @@ export default function AdminUsersPage() {
   const [state, setState] = useState<LoadState>("loading");
   const [message, setMessage] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [trustNotes, setTrustNotes] = useState<Record<string, string>>({});
 
   async function loadUsers() {
     setState("loading");
@@ -140,6 +149,54 @@ export default function AdminUsersPage() {
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to moderate profile.");
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  async function handleTrustAction(
+    userId: string,
+    action:
+      | "APPROVE_ACCOUNT"
+      | "REJECT_ACCOUNT"
+      | "REQUEST_MORE_INFO"
+      | "APPROVE_PROFILE"
+      | "REJECT_PROFILE"
+      | "SUSPEND_PROFILE"
+      | "REACTIVATE_PROFILE"
+      | "ESCALATE_REVIEW",
+  ) {
+    setSavingKey(`${userId}:trust:${action}`);
+    setMessage(null);
+
+    try {
+      const summary = await adminApi.performTrustAction(userId, {
+        action,
+        note: trustNotes[userId]?.trim() || undefined,
+      });
+
+      setUsers((current) =>
+        current.map((user) =>
+          user.id === userId
+            ? {
+                ...user,
+                ...summary.user,
+                trustSummary: {
+                  trustLifecycle: summary.trustLifecycle,
+                  moderationTimeline: summary.moderationTimeline.slice(0, 5).map((item) => ({
+                    id: item.id,
+                    action: item.action,
+                    createdAt: item.createdAt,
+                  })),
+                },
+              }
+            : user,
+        ),
+      );
+
+      setMessage(`Trust action ${action} completed. Sender: ${summary.notificationSender}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to execute trust action.");
     } finally {
       setSavingKey(null);
     }
@@ -314,6 +371,71 @@ export default function AdminUsersPage() {
                       ))}
                     </select>
                   </ControlCard>
+
+                  <div className="md:col-span-2">
+                    <ControlCard label="Trust Workflow">
+                      <div className="space-y-3">
+                        <textarea
+                          value={trustNotes[user.id] ?? ""}
+                          onChange={(event) =>
+                            setTrustNotes((current) => ({
+                              ...current,
+                              [user.id]: event.target.value,
+                            }))
+                          }
+                          rows={3}
+                          placeholder="Internal moderation note, recovery context, or additional info request"
+                          className="w-full rounded-2xl border border-slate-800 bg-slate-900 px-3 py-3 text-sm text-white"
+                        />
+                        <div className="flex flex-wrap gap-2">
+                          <ActionButton
+                            disabled={savingKey?.startsWith(`${user.id}:trust:`)}
+                            onClick={() => void handleTrustAction(user.id, "APPROVE_ACCOUNT")}
+                            label="Approve account"
+                          />
+                          <ActionButton
+                            disabled={savingKey?.startsWith(`${user.id}:trust:`)}
+                            onClick={() => void handleTrustAction(user.id, "APPROVE_PROFILE")}
+                            label="Approve profile"
+                          />
+                          <ActionButton
+                            disabled={savingKey?.startsWith(`${user.id}:trust:`)}
+                            onClick={() => void handleTrustAction(user.id, "REQUEST_MORE_INFO")}
+                            label="Request info"
+                          />
+                          <ActionButton
+                            disabled={savingKey?.startsWith(`${user.id}:trust:`)}
+                            onClick={() => void handleTrustAction(user.id, "SUSPEND_PROFILE")}
+                            label="Suspend profile"
+                          />
+                          <ActionButton
+                            disabled={savingKey?.startsWith(`${user.id}:trust:`)}
+                            onClick={() => void handleTrustAction(user.id, "REACTIVATE_PROFILE")}
+                            label="Reactivate"
+                          />
+                          <ActionButton
+                            disabled={savingKey?.startsWith(`${user.id}:trust:`)}
+                            onClick={() => void handleTrustAction(user.id, "ESCALATE_REVIEW")}
+                            label="Escalate"
+                          />
+                        </div>
+                        {user.trustSummary ? (
+                          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3 text-sm text-slate-300">
+                            <div className="font-medium text-white">
+                              Lifecycle: {user.trustSummary.trustLifecycle}
+                            </div>
+                            <div className="mt-2 space-y-1">
+                              {user.trustSummary.moderationTimeline.map((item) => (
+                                <div key={item.id}>
+                                  {item.action} · {new Date(item.createdAt).toLocaleString()}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    </ControlCard>
+                  </div>
                 </div>
               </div>
             </article>
@@ -367,3 +489,24 @@ function Shell({
 
 const selectClassName =
   "w-full rounded-2xl border border-slate-800 bg-slate-900 px-3 py-3 text-sm text-white";
+
+function ActionButton({
+  label,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {label}
+    </button>
+  );
+}

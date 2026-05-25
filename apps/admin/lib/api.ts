@@ -956,6 +956,28 @@ export const adminApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ moderationStatus, status }),
     }),
+  getUserTrustSummary: (userId: string) =>
+    adminFetch<AdminTrustSummary>(`/admin/users/${userId}/trust-summary`),
+  performTrustAction: (
+    userId: string,
+    input: {
+      action:
+        | "APPROVE_ACCOUNT"
+        | "REJECT_ACCOUNT"
+        | "REQUEST_MORE_INFO"
+        | "APPROVE_PROFILE"
+        | "REJECT_PROFILE"
+        | "SUSPEND_PROFILE"
+        | "REACTIVATE_PROFILE"
+        | "ESCALATE_REVIEW";
+      note?: string;
+    },
+  ) =>
+    adminFetch<AdminTrustSummary>(`/admin/users/${userId}/trust-action`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }),
   getJobStats: () => adminFetch<Record<string, unknown>>("/jobs/stats"),
   getActorStats: () => adminFetch<Record<string, unknown>>("/actors/stats"),
   getReluConfig: () => adminFetch<ReluAgent[]>("/relu/config"),
@@ -1352,6 +1374,71 @@ export type AdminVerificationCase = {
   }>;
   createdAt: string;
   updatedAt: string;
+};
+
+export type AdminTrustSummary = {
+  user: {
+    id: string;
+    email: string;
+    role: string;
+    approvalStatus: string;
+    accountStatus: string;
+    approvedAt: string | null;
+    suspendedAt: string | null;
+    createdAt: string;
+    lastLoginAt: string | null;
+    profile: {
+      id: string;
+      slug: string;
+      displayName: string;
+      companyName: string | null;
+      profileType: string;
+      visibility: string;
+      moderationStatus: string;
+      status: string;
+      approvedAt: string | null;
+    } | null;
+  };
+  trustLifecycle: "PENDING_REVIEW" | "VERIFIED" | "APPROVED" | "SUSPENDED" | "REJECTED";
+  notificationSender: string;
+  moderationTimeline: Array<{
+    id: string;
+    action: string;
+    category: string | null;
+    entityType: string;
+    entityId: string;
+    createdAt: string;
+    metadata: unknown;
+  }>;
+  trustEvents: Array<{
+    id: string;
+    type: string;
+    status: string;
+    severity: string;
+    message: string;
+    createdAt: string;
+  }>;
+  notificationHistory: Array<{
+    id: string;
+    eventType: string;
+    sourceType: string;
+    status: string;
+    createdAt: string;
+  }>;
+  approvalHistory: AdminVerificationCase[];
+  internalNotes: Array<{
+    id: string;
+    action: string;
+    metadata: unknown;
+    createdAt: string;
+  }>;
+  reluModerationAssistant: {
+    scope: string;
+    capabilities: string[];
+    prohibitedActions: string[];
+    classifications: Array<Record<string, unknown>>;
+    recommendations: Array<Record<string, unknown>>;
+  };
 };
 
 export type HiringStage =

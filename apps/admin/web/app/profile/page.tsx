@@ -7,7 +7,14 @@ import UniclassMultiSelect from "@/components/UniclassMultiSelect";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
-import { ApiError, apiRequest, apiRequestBlob, getLanguages, resolveAssetUrl } from "../../lib/api";
+import {
+  ApiError,
+  apiRequest,
+  apiRequestBlob,
+  getLanguages,
+  requestEmailOwnershipVerification,
+  resolveAssetUrl,
+} from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 
 type ProfileType =
@@ -548,6 +555,23 @@ export default function ProfilePage() {
     }
   }
 
+  async function handleRequestOwnershipVerification() {
+    if (!token) {
+      setError("Authentication required.");
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+
+    try {
+      const response = await requestEmailOwnershipVerification(token);
+      setMessage(response.message);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Verification email failed.");
+    }
+  }
+
   if (isLoading) {
     return <main className="px-6 py-10 text-slate-600">Loading profile workspace...</main>;
   }
@@ -565,12 +589,21 @@ export default function ProfilePage() {
               </p>
             </div>
             {profile?.slug ? (
-              <Link
-                href={`/profiles/${profile.slug}`}
-                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-brand-navy"
-              >
-                Open public page
-              </Link>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => void handleRequestOwnershipVerification()}
+                  className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-800"
+                >
+                  Send ownership verification email
+                </button>
+                <Link
+                  href={`/profiles/${profile.slug}`}
+                  className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-brand-navy"
+                >
+                  Open public page
+                </Link>
+              </div>
             ) : null}
           </div>
 

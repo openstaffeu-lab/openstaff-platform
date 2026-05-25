@@ -570,6 +570,10 @@ export type PublicProfile = {
     bannerUrl: string | null;
     portfolioUrls: string[];
   };
+  trust?: {
+    status: "PENDING_REVIEW" | "VERIFIED" | "APPROVED" | "SUSPENDED" | "REJECTED";
+    verificationStatus: VerificationStatus;
+  };
   createdAt?: string;
   updatedAt?: string;
 };
@@ -987,6 +991,54 @@ export async function confirmPasswordReset(token: string, password: string) {
       body: { token, password },
     },
   );
+}
+
+export async function requestAccountRecovery(input: {
+  email: string;
+  reason?: "GENERAL" | "LOCKED" | "COMPROMISED";
+  note?: string;
+}) {
+  return apiRequest<{ success: boolean; message: string; expiresInMinutes: number }>(
+    "/auth/account-recovery/request",
+    {
+      method: "POST",
+      body: input,
+    },
+  );
+}
+
+export async function completeAccountRecovery(token: string, password: string) {
+  return apiRequest<{ success: boolean; message: string }>(
+    "/auth/account-recovery/complete",
+    {
+      method: "POST",
+      body: { token, password },
+    },
+  );
+}
+
+export async function requestEmailOwnershipVerification(token?: string | null) {
+  return apiRequestWithRefresh<{ success: boolean; message: string; expiresInMinutes: number }>(
+    "/trust/email-ownership/request",
+    {
+      method: "POST",
+      token,
+    },
+  );
+}
+
+export async function confirmEmailOwnership(token: string) {
+  return apiRequest<{ success: boolean; message: string }>("/trust/email-ownership/confirm", {
+    method: "POST",
+    body: { token },
+  });
+}
+
+export async function confirmSuspiciousLogin(token: string) {
+  return apiRequest<{ success: boolean; message: string }>("/trust/suspicious-login/confirm", {
+    method: "POST",
+    body: { token },
+  });
 }
 
 export async function refreshAuthToken(refreshToken?: string | null) {

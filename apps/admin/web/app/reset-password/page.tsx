@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useMemo, useState } from "react";
-import { confirmPasswordReset } from "@/lib/api";
+import { completeAccountRecovery, confirmPasswordReset } from "@/lib/api";
 
 export default function ResetPasswordPage() {
   return (
@@ -25,6 +25,7 @@ function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = useMemo(() => searchParams.get("token") ?? "", [searchParams]);
+  const mode = useMemo(() => searchParams.get("mode") ?? "reset", [searchParams]);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -48,7 +49,10 @@ function ResetPasswordForm() {
     setMessage(null);
 
     try {
-      const response = await confirmPasswordReset(token, password);
+      const response =
+        mode === "recovery"
+          ? await completeAccountRecovery(token, password)
+          : await confirmPasswordReset(token, password);
       setMessage(response.message);
       setTimeout(() => {
         router.push("/login");
@@ -69,12 +73,15 @@ function ResetPasswordForm() {
       <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[0.95fr_1.05fr]">
         <section className="openstaff-surface rounded-[2.2rem] p-8 md:p-10">
           <div className="text-xs font-semibold uppercase tracking-[0.4em] text-brand-navy/70">
-            Secure Reset
+            {mode === "recovery" ? "Account Recovery" : "Secure Reset"}
           </div>
-          <h1 className="mt-4 text-4xl font-bold text-brand-charcoal">Choose a new password</h1>
+          <h1 className="mt-4 text-4xl font-bold text-brand-charcoal">
+            {mode === "recovery" ? "Recover your account" : "Choose a new password"}
+          </h1>
           <p className="mt-4 text-slate-600">
-            Use a strong password that you do not reuse elsewhere. This reset invalidates the old
-            password and active signed-in sessions.
+            {mode === "recovery"
+              ? "Use a strong password to recover access. This flow revokes active sessions and helps contain suspicious access."
+              : "Use a strong password that you do not reuse elsewhere. This reset invalidates the old password and active signed-in sessions."}
           </p>
           <div className="mt-8 text-sm text-slate-500">
             Need a new link?{" "}

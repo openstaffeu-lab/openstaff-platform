@@ -31,6 +31,7 @@ import { ReluModule } from './relu/relu.module';
 import { RolloutIntelligenceModule } from './rollout-intelligence/rollout-intelligence.module';
 import { TaxonomyModule } from './taxonomy/taxonomy.module';
 import { TimesheetsModule } from './timesheets/timesheets.module';
+import { TrustModule } from './trust/trust.module';
 import { UiConfigModule } from './ui-config/ui-config.module';
 import { UniclassModule } from './uniclass/uniclass.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
@@ -69,6 +70,7 @@ import { WorkforceModule } from './workforce/workforce.module';
     VerificationModule,
     TaxonomyModule,
     TimesheetsModule,
+    TrustModule,
     PayrollModule,
     PublicPostsModule,
     ExternalLinksModule,

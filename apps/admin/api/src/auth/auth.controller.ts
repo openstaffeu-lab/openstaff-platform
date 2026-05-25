@@ -17,7 +17,9 @@ import { RateLimit } from '../common/rate-limit.decorator';
 import { RateLimitGuard } from '../common/rate-limit.guard';
 import { FirebaseExchangeDto } from './dto/firebase-exchange.dto';
 import { LoginDto } from './dto/login.dto';
+import { CompleteAccountRecoveryDto } from './dto/complete-account-recovery.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
+import { RequestAccountRecoveryDto } from './dto/request-account-recovery.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -64,6 +66,35 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() body: ResetPasswordDto, @Req() req: any) {
     return this.authService.resetPassword(body.token, body.password, req);
+  }
+
+  @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'auth-account-recovery-request', maxRequests: 5 })
+  @Post('account-recovery/request')
+  @HttpCode(HttpStatus.OK)
+  async requestAccountRecovery(
+    @Body() body: RequestAccountRecoveryDto,
+    @Req() req: any,
+  ) {
+    return this.authService.requestAccountRecovery(
+      body.email,
+      body.reason,
+      body.note,
+      req,
+    );
+  }
+
+  @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'auth-account-recovery-complete', maxRequests: 10 })
+  @Post('account-recovery/complete')
+  @HttpCode(HttpStatus.OK)
+  async completeAccountRecovery(
+    @Body() body: CompleteAccountRecoveryDto,
+    @Req() req: any,
+  ) {
+    return this.authService.completeAccountRecovery(body.token, body.password, req);
   }
 
   @UseGuards(JwtGuard)

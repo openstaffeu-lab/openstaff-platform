@@ -1,6 +1,40 @@
 ﻿# OpenStaff Platform Status
 
-Last updated: 2026-05-24
+Last updated: 2026-05-25
+
+## EXEC-65 Unified Trust, Approval & Recovery Workflow
+
+Verdict: `PASS FOR BETA OPERATIONS - OpenStaff now has a unified trust workflow centered on no-reply@openstaff.eu for password reset, account recovery, email ownership verification, account/profile approval signaling, moderation escalation, auditability, and human-controlled RELU moderation assistance. This materially improves onboarding reliability and trust operations without changing the earlier security truth that localStorage token persistence remains a separate production-hardening gap.`
+
+### EXEC-65 Closure Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| unified trust orchestration | PASS | `apps/admin/api/src/trust/trust.service.ts` now centralizes one-time signed token issuance/consumption, trust notifications, trust lifecycle derivation, admin trust actions, recovery logic, and moderation escalation support |
+| signed one-time token model | PASS | trust links now use signed HMAC-backed tokens with expiry, one-time consumption, replay prevention via `consumedAt`, and audit-backed event storage through `NotificationEvent` |
+| password reset unification | PASS | `AuthService` now delegates password reset issuance and confirmation to `TrustService`, preserving the live reset flow while consolidating token and notification logic |
+| account recovery expansion | PASS | new public auth endpoints support account recovery request and completion beyond password reset, including compromised-account style session revocation and security-event linkage |
+| email ownership verification | PASS | authenticated users can request a fresh ownership verification email from `no-reply@openstaff.eu`, and secure trust links now confirm email ownership through the public web |
+| admin trust actions | PASS | backoffice now exposes dedicated trust workflow actions for approve account, approve profile, request info, suspend/reactivate profile, and escalation with internal notes |
+| moderation timeline and history | PASS | admin trust summary now aggregates recent moderation timeline items, trust events, notification history, approval history, and internal notes for a targeted user |
+| public trust indicators | PASS | public profile responses now expose a public-safe trust badge state derived from approval, moderation, suspension, and verification posture without leaking private moderation detail |
+| RELU moderation assistance | PASS | trust summaries now include RELU moderation classifications/recommendations as advisory signals only; no automated approval, rejection, or banning was introduced |
+| trust UX | PASS | public web now supports password reset vs account recovery selection, secure trust-action confirmation pages, and owner-triggered email ownership verification from the profile workspace |
+| documentation | PASS | dedicated EXEC-65 workflow, recovery, moderation, trust-event, and proof documents were added and status was updated |
+
+### EXEC-65 Remaining Risks
+
+1. Auth tokens still persist in `window.localStorage`; EXEC-65 improves trust workflow orchestration but does not replace the existing session storage model.
+2. Approval and recovery emails now use secure one-time links, but final deliverability still depends on the configured production email provider path and sender-domain posture.
+3. RELU moderation support is intentionally advisory-only; human operators still need consistent review discipline for escalated or suspicious cases.
+
+### EXEC-65 Artifacts
+
+- Trust architecture: `docs/TRUST_AND_APPROVAL_WORKFLOW.md`
+- Recovery workflow: `docs/ACCOUNT_RECOVERY_WORKFLOW.md`
+- Moderation and verification: `docs/MODERATION_AND_VERIFICATION.md`
+- Email trust events: `docs/EMAIL_TRUST_EVENTS.md`
+- Proof index: `docs/proof/exec65/README.md`
 
 ## EXEC-63 Release Hardening, CI Stabilization & Production Readiness Closure
 

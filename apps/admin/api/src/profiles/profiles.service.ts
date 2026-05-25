@@ -20,6 +20,7 @@ import { mkdir, readFile, rm, writeFile } from 'fs/promises';
 import { extname, join } from 'path';
 import mammoth from 'mammoth';
 import { PrismaService } from '../prisma/prisma.service';
+import { TrustService } from '../trust/trust.service';
 import { UploadProfileDocumentDto } from './dto/upload-profile-document.dto';
 import { UpsertProfileDto } from './dto/upsert-profile.dto';
 
@@ -57,7 +58,10 @@ export class ProfilesService {
   private readonly storageBucket = process.env.STORAGE_BUCKET?.trim() ?? '';
   private readonly storage = this.storageBucket ? new Storage() : null;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly trustService: TrustService,
+  ) {}
 
   async getCurrentProfile(user: AuthenticatedUser) {
     const profile = await this.prisma.profile.findUnique({
@@ -658,6 +662,12 @@ export class ProfilesService {
 
   private toPublicProfileResponse(profile: any) {
     const ownedAssetUrls = this.resolveOwnedAssetUrls(profile);
+    const trustStatus = this.trustService.derivePublicTrustStatus({
+      user: profile.user ?? null,
+      moderationStatus: profile.moderationStatus,
+      status: profile.status,
+      identityProfile: profile.user?.identityProfile ?? null,
+    });
 
     return {
       id: profile.id,
@@ -687,6 +697,10 @@ export class ProfilesService {
       contractorProfile: profile.contractorProfile,
       professionalProfile: profile.professionalProfile,
       assets: ownedAssetUrls,
+      trust: {
+        status: trustStatus,
+        verificationStatus: profile.user?.identityProfile?.verificationStatus ?? 'UNVERIFIED',
+      },
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
     };
@@ -1288,6 +1302,11 @@ export class ProfilesService {
   }
 
   private readonly profileInclude = {
+    user: {
+      include: {
+        identityProfile: true,
+      },
+    },
     country: true,
     region: true,
     city: true,

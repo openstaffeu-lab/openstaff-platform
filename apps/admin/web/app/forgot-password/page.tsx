@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import { requestPasswordReset } from "@/lib/api";
+import { requestAccountRecovery, requestPasswordReset } from "@/lib/api";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [mode, setMode] = useState<"PASSWORD_RESET" | "ACCOUNT_RECOVERY">("PASSWORD_RESET");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -17,7 +18,10 @@ export default function ForgotPasswordPage() {
     setMessage(null);
 
     try {
-      const response = await requestPasswordReset(email);
+      const response =
+        mode === "ACCOUNT_RECOVERY"
+          ? await requestAccountRecovery({ email, reason: "GENERAL" })
+          : await requestPasswordReset(email);
       setMessage(response.message);
     } catch (submissionError) {
       setError(
@@ -42,6 +46,22 @@ export default function ForgotPasswordPage() {
             Enter the email address you use for OpenStaff. If an account matches it, OpenStaff
             will try to deliver a secure reset link shortly. Please also check Spam or Junk.
           </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setMode("PASSWORD_RESET")}
+              className={`rounded-full px-4 py-2 text-sm font-semibold ${mode === "PASSWORD_RESET" ? "bg-brand-navy text-white" : "border border-slate-200 bg-white text-slate-600"}`}
+            >
+              Password reset
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("ACCOUNT_RECOVERY")}
+              className={`rounded-full px-4 py-2 text-sm font-semibold ${mode === "ACCOUNT_RECOVERY" ? "bg-brand-navy text-white" : "border border-slate-200 bg-white text-slate-600"}`}
+            >
+              Full account recovery
+            </button>
+          </div>
           <div className="mt-8 rounded-[1.7rem] border border-slate-200 bg-white/80 p-5 text-sm leading-7 text-slate-700">
             For security, this page does not confirm whether a specific account exists.
           </div>
@@ -83,7 +103,11 @@ export default function ForgotPasswordPage() {
               disabled={submitting || !email.trim()}
               className="w-full rounded-2xl bg-brand-navy px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {submitting ? "Sending recovery request..." : "Send recovery request"}
+              {submitting
+                ? "Sending recovery request..."
+                : mode === "ACCOUNT_RECOVERY"
+                  ? "Send account recovery email"
+                  : "Send password reset email"}
             </button>
           </form>
         </section>

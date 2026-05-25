@@ -4,6 +4,7 @@ import { RateLimitGuard } from '../common/rate-limit.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { NotificationModule } from '../notifications/notification.module';
 import { PrismaModule } from '../prisma/prisma.module';
+import { TrustModule } from '../trust/trust.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { FirebaseAuthGuard } from './firebase-auth.guard';
@@ -29,6 +30,7 @@ function resolveJwtSecret() {
     PrismaModule,
     forwardRef(() => AuditModule),
     forwardRef(() => NotificationModule),
+    TrustModule,
     JwtModule.register({
       secret: resolveJwtSecret(),
       signOptions: {

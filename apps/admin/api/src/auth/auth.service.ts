@@ -28,6 +28,7 @@ import { NotificationCategory } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationService } from '../notifications/notification.service';
+import { TrustService } from '../trust/trust.service';
 import { getFirebaseAdminAuth } from './firebase-admin';
 
 type RegisterPayload = {
@@ -95,6 +96,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly auditService: AuditService,
     private readonly notificationService: NotificationService,
+    private readonly trustService: TrustService,
   ) {}
 
   async register(data: RegisterPayload, request?: any) {
@@ -301,258 +303,24 @@ export class AuthService {
   }
 
   async requestPasswordReset(email: string, request?: any) {
-    const normalizedEmail = email.trim().toLowerCase();
-    const user = await this.prisma.user.findUnique({
-      where: { email: normalizedEmail },
-      select: {
-        id: true,
-        email: true,
-        password: true,
-        firebaseUid: true,
-        approvalStatus: true,
-        accountStatus: true,
-        role: true,
-        identityProfile: {
-          select: {
-            language: true,
-          },
-        },
-      },
-    });
-
-    const eligibility = this.getPasswordResetEligibility(user);
-    this.logger.log(
-      `password reset eligibility email=${this.maskEmailForLogs(normalizedEmail)} status=${eligibility}`,
-    );
-
-    if (!user) {
-      await this.auditService.logSecurityEvent({
-        type: 'PASSWORD_RESET' as any,
-        category: 'AUTH',
-        sourceType: 'USER',
-        sourceId: normalizedEmail,
-        message: 'Password reset requested for unknown email address',
-        severity: 'WARNING' as any,
-        request,
-      });
-
-      return this.buildPasswordResetRequestResponse();
-    }
-
-    if (eligibility !== 'eligible_password_reset') {
-      await this.auditService.logSecurityEvent({
-        userId: user.id,
-        type: 'PASSWORD_RESET' as any,
-        category: 'AUTH',
-        sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
-        sourceId: normalizedEmail,
-        message: `Password reset requested for ineligible account (${eligibility})`,
-        severity: 'WARNING' as any,
-        metadata: {
-          eligibility,
-          role: user.role,
-          approvalStatus: user.approvalStatus,
-          accountStatus: user.accountStatus,
-          firebaseUidPresent: Boolean(user.firebaseUid),
-        },
-        request,
-      });
-
-      return this.buildPasswordResetRequestResponse();
-    }
-
-    const rawToken = randomBytes(32).toString('hex');
-    const tokenHash = this.hashPasswordResetToken(rawToken);
-    const expiresAt = new Date(
-      Date.now() + AuthService.PASSWORD_RESET_EXPIRY_MINUTES * 60_000,
-    );
-    const resetUrl = this.buildPasswordResetUrl(rawToken);
-
-    await this.prisma.notificationEvent.create({
-      data: {
-        key: `password-reset:${user.id}:${tokenHash}`,
-        eventType: AuthService.PASSWORD_RESET_EVENT_TYPE,
-        sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
-        sourceId: tokenHash,
-        userId: user.id,
-        category: NotificationCategory.ACCOUNT,
-        metadata: {
-          email: user.email,
-          expiresAt: expiresAt.toISOString(),
-          usedAt: null,
-          resetUrl,
-        } as any,
-      },
-    });
-
-    await this.auditService.logSecurityEvent({
-      userId: user.id,
-      type: 'PASSWORD_RESET' as any,
-      category: 'AUTH',
-      sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
-      sourceId: tokenHash,
-      message: 'Password reset token issued',
-      metadata: {
-        expiresAt: expiresAt.toISOString(),
-      },
-      request,
-    });
-
-    const delivery = await this.notificationService.emitEvent({
-      key: `password-reset:user:${user.id}:${tokenHash}`,
-      eventType: 'PASSWORD_RESET_AVAILABLE',
-      sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
-      sourceId: tokenHash,
-      userId: user.id,
-      category: NotificationCategory.ACCOUNT,
-      channel: NotificationChannel.EMAIL,
-      channels: [NotificationChannel.EMAIL, NotificationChannel.IN_APP],
-      title: 'Password reset requested',
-      message:
-        'A password reset was requested for your account. Use the secure reset link to choose a new password.',
-      metadata: {
-        email: user.email,
-        resetUrl,
-        expiresAt: expiresAt.toISOString(),
-        locale: user.identityProfile?.language ?? 'ro',
-        emailSubject: this.buildPasswordResetEmailSubject(user.identityProfile?.language),
-        emailText: this.buildPasswordResetEmailText({
-          locale: user.identityProfile?.language ?? 'ro',
-          resetUrl,
-          expiresAt,
-        }),
-        emailHtml: this.buildPasswordResetEmailHtml({
-          locale: user.identityProfile?.language ?? 'ro',
-          resetUrl,
-          expiresAt,
-        }),
-      },
-    });
-
-    const emailDelivery = delivery.deliveries.find(
-      (item) => item.channel === NotificationChannel.EMAIL,
-    );
-
-    if (emailDelivery) {
-      if (emailDelivery.status === 'SENT') {
-        this.logger.log(
-          `password reset email queued successfully for user=${user.id} delivery=${emailDelivery.id}`,
-        );
-      } else {
-        const failureReason =
-          typeof emailDelivery.metadata === 'object' &&
-          emailDelivery.metadata !== null &&
-          'failureReason' in emailDelivery.metadata
-            ? String((emailDelivery.metadata as Record<string, unknown>).failureReason ?? 'unknown')
-            : 'unknown';
-
-        this.logger.warn(
-          `password reset email delivery failed for user=${user.id} delivery=${emailDelivery.id} reason=${failureReason}`,
-        );
-      }
-    }
-
-    return this.buildPasswordResetRequestResponse();
+    return this.trustService.requestPasswordReset(email, request);
   }
 
   async resetPassword(token: string, nextPassword: string, request?: any) {
-    const trimmedToken = token.trim();
-    const tokenHash = this.hashPasswordResetToken(trimmedToken);
-    const resetEvent = await this.prisma.notificationEvent.findFirst({
-      where: {
-        eventType: AuthService.PASSWORD_RESET_EVENT_TYPE,
-        sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
-        sourceId: tokenHash,
-      },
-      orderBy: [{ createdAt: 'desc' }],
-    });
+    return this.trustService.resetPassword(token, nextPassword, request);
+  }
 
-    if (!resetEvent) {
-      await this.auditService.logSecurityEvent({
-        type: 'PASSWORD_RESET' as any,
-        category: 'AUTH',
-        sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
-        sourceId: tokenHash,
-        message: 'Password reset rejected because token was not found',
-        severity: 'WARNING' as any,
-        request,
-      });
-      throw new UnauthorizedException('This password reset link is invalid or has expired');
-    }
+  async requestAccountRecovery(
+    email: string,
+    reason?: 'GENERAL' | 'LOCKED' | 'COMPROMISED',
+    note?: string,
+    request?: any,
+  ) {
+    return this.trustService.requestAccountRecovery(email, reason, note, request);
+  }
 
-    const metadata = this.parsePasswordResetMetadata(resetEvent.metadata);
-    const expiresAt = metadata.expiresAt ? new Date(metadata.expiresAt) : null;
-    const usedAt = metadata.usedAt ? new Date(metadata.usedAt) : null;
-
-    if (!expiresAt || Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() < Date.now()) {
-      await this.auditService.logSecurityEvent({
-        userId: resetEvent.userId ?? null,
-        type: 'PASSWORD_RESET' as any,
-        category: 'AUTH',
-        sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
-        sourceId: tokenHash,
-        message: 'Password reset rejected because token expired',
-        severity: 'WARNING' as any,
-        request,
-      });
-      throw new UnauthorizedException('This password reset link is invalid or has expired');
-    }
-
-    if (usedAt) {
-      await this.auditService.logSecurityEvent({
-        userId: resetEvent.userId ?? null,
-        type: 'PASSWORD_RESET' as any,
-        category: 'AUTH',
-        sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
-        sourceId: tokenHash,
-        message: 'Password reset rejected because token was already used',
-        severity: 'WARNING' as any,
-        request,
-      });
-      throw new UnauthorizedException('This password reset link was already used');
-    }
-
-    if (!resetEvent.userId) {
-      throw new UnauthorizedException('This password reset link is invalid or has expired');
-    }
-
-    const passwordHash = await bcrypt.hash(nextPassword, 10);
-
-    await this.prisma.user.update({
-      where: { id: resetEvent.userId },
-      data: {
-        password: passwordHash,
-        refreshTokenHash: null,
-      },
-    });
-
-    await this.prisma.notificationEvent.update({
-      where: { id: resetEvent.id },
-      data: {
-        metadata: {
-          ...metadata,
-          usedAt: new Date().toISOString(),
-        } as any,
-        status: 'SENT' as any,
-        deliveredAt: new Date(),
-      },
-    });
-
-    await this.auditService.revokeAllSessionsForUser(resetEvent.userId);
-    await this.auditService.logSecurityEvent({
-      userId: resetEvent.userId,
-      type: 'PASSWORD_RESET' as any,
-      category: 'AUTH',
-      sourceType: AuthService.PASSWORD_RESET_SOURCE_TYPE,
-      sourceId: tokenHash,
-      message: 'Password reset completed and active sessions were revoked',
-      request,
-    });
-
-    return {
-      success: true,
-      message: 'Your password was updated successfully. Please sign in again.',
-    };
+  async completeAccountRecovery(token: string, nextPassword: string, request?: any) {
+    return this.trustService.completeAccountRecovery(token, nextPassword, request);
   }
 
   async refresh(refreshToken: string, request?: any) {
