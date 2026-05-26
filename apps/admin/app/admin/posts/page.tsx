@@ -266,7 +266,7 @@ export default function AdminPostsPage() {
               onChange={(event) =>
                 setFilters((current) => ({ ...current, search: event.target.value }))
               }
-              placeholder="Title, owner, slug, domain..."
+              placeholder="Title, owner, domain, location..."
               className="rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none placeholder:text-slate-500"
             />
           </label>
@@ -363,7 +363,6 @@ export default function AdminPostsPage() {
                       </div>
 
                       <div className="mt-5 flex flex-wrap gap-3 text-sm text-slate-400">
-                        {post.slug ? <span>Slug: {post.slug}</span> : null}
                         {post.certifications ? <span>Certifications: {post.certifications}</span> : null}
                         {post.externalLinks?.some((item) => item.securityStatus === 'APPROVED') ? (
                           <span>Approved external link available</span>

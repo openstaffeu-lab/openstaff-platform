@@ -13,7 +13,7 @@ type DashboardStats = {
 };
 
 export default function DashboardPage() {
-  const { subscription, remainingPrivateContacts } = useAuth();
+  const { subscription, remainingPrivateContacts, user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({});
   const [reluQueue, setReluQueue] = useState<ReluQueueSnapshot | null>(null);
 
@@ -83,10 +83,16 @@ export default function DashboardPage() {
         <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6">
           <h2 className="text-xl font-semibold text-white">Operational shortcuts</h2>
           <div className="mt-5 flex flex-wrap gap-3">
-            <QuickLink href="/ai-config" label="Relu AI config" />
-            <QuickLink href="/ai-control" label="Prompts and policies" />
-            <QuickLink href="/ai-queue" label="Relu queue" />
+            <QuickLink href="/admin/posts" label="Moderation" />
+            <QuickLink href="/admin/media" label="Media and documents" />
+            <QuickLink href="/admin/relu" label="RELU moderation" />
             <QuickLink href="/admin/users" label="Users and approvals" />
+            {user?.role === "SUPERADMIN" ? (
+              <>
+                <QuickLink href="/ai-config" label="AI technical settings" />
+                <QuickLink href="/ai-queue" label="AI diagnostics" />
+              </>
+            ) : null}
           </div>
         </div>
 

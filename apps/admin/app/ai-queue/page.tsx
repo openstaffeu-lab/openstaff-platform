@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { TechnicalModeGate } from "@/components/TechnicalModeGate";
 import {
   AiAuditLog,
   ReluQueueSnapshot,
@@ -11,6 +12,14 @@ import {
 type LoadState = "loading" | "ready" | "error";
 
 export default function AiQueuePage() {
+  return (
+    <TechnicalModeGate>
+      <AiQueueWorkspace />
+    </TechnicalModeGate>
+  );
+}
+
+function AiQueueWorkspace() {
   const [queue, setQueue] = useState<ReluQueueSnapshot | null>(null);
   const [logs, setLogs] = useState<AiAuditLog[]>([]);
   const [state, setState] = useState<LoadState>("loading");

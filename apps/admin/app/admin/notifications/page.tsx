@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { TechnicalModeGate } from "@/components/TechnicalModeGate";
 import {
   type AdminNotificationDelivery,
   type AdminNotificationEvent,
@@ -31,6 +32,14 @@ function statusClass(status: string) {
 }
 
 export default function AdminNotificationsPage() {
+  return (
+    <TechnicalModeGate>
+      <AdminNotificationsWorkspace />
+    </TechnicalModeGate>
+  );
+}
+
+function AdminNotificationsWorkspace() {
   const [events, setEvents] = useState<AdminNotificationEvent[]>([]);
   const [deliveries, setDeliveries] = useState<AdminNotificationDelivery[]>([]);
   const [runs, setRuns] = useState<WorkflowAutomationRun[]>([]);

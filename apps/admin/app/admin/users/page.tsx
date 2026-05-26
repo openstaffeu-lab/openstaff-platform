@@ -287,7 +287,7 @@ export default function AdminUsersPage() {
                         {user.profile.profileType.replaceAll("_", " ")} · {user.profile.visibility}
                       </div>
                       <div className="mt-1">
-                        Slug: <span className="text-cyan-300">{user.profile.slug}</span>
+                        Public profile: <span className="text-cyan-300">Configured</span>
                       </div>
                       <div className="mt-2 text-xs uppercase tracking-[0.2em] text-slate-500">
                         2FA {user.twoFactor?.enabled ? "enabled" : "disabled"} · enforced {user.twoFactor?.adminEnforced ? "yes" : "no"}

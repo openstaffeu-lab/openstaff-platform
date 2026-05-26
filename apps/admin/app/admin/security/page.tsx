@@ -46,6 +46,17 @@ function eventTone(event: AdminSecurityEvent) {
   return "cyan";
 }
 
+function securitySourceLabel(sourceType?: string | null) {
+  if (!sourceType) {
+    return "Security event";
+  }
+
+  return sourceType
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 export default function AdminSecurityPage() {
   const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
   const [securityEvents, setSecurityEvents] = useState<AdminSecurityEvent[]>([]);
@@ -144,10 +155,10 @@ export default function AdminSecurityPage() {
                     </div>
                     <div className="mt-2 text-sm text-slate-300">{event.message}</div>
                     <div className="mt-2 text-xs text-slate-500">
-                      {event.user?.email ?? "No user"} • {event.sourceType ?? "Unknown"} / {event.sourceId ?? "n/a"} • {formatDate(event.createdAt)}
+                      {event.user?.email ?? "No user"} - {securitySourceLabel(event.sourceType)} - {formatDate(event.createdAt)}
                     </div>
                     <div className="mt-1 text-xs text-slate-500">
-                      Request ID: {event.requestId ?? "n/a"} • IP: {event.ipAddress ?? "n/a"}
+                      Network context retained in audit trail
                     </div>
                   </div>
                   {event.status === "PENDING" ? (
@@ -223,7 +234,7 @@ export default function AdminSecurityPage() {
                       Actor: {log.actorUser?.email ?? log.actorUserId ?? "n/a"} • Target: {log.targetUser?.email ?? log.targetUserId ?? "n/a"}
                     </div>
                     <div className="mt-1 text-xs text-slate-500">
-                      Request ID: {log.requestId ?? "n/a"} • {formatDate(log.createdAt)}
+                      Audit context retained - {formatDate(log.createdAt)}
                     </div>
                   </div>
                   <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${badgeClass(log.category ? "cyan" : "slate")}`}>

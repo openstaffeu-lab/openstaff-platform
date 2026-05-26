@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { ChangeEvent, useEffect, useState } from "react";
+import { TechnicalModeGate } from "@/components/TechnicalModeGate";
 import { fetchApiJson } from "@/lib/api";
 
 type UiLink = {
@@ -94,6 +95,14 @@ const defaultConfig: UiConfig = {
 type Status = "loading" | "ready" | "saving" | "error";
 
 export default function UiConfigAdminPage() {
+  return (
+    <TechnicalModeGate>
+      <UiConfigAdminWorkspace />
+    </TechnicalModeGate>
+  );
+}
+
+function UiConfigAdminWorkspace() {
   const [config, setConfig] = useState<UiConfig>(defaultConfig);
   const [status, setStatus] = useState<Status>("loading");
   const [message, setMessage] = useState("");

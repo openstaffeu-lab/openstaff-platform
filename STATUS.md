@@ -3675,3 +3675,20 @@ Verdict: `PASS locally - RELU AI assistant outputs now persist to operational ru
 | real user journeys | PASS locally | `docs/EXEC72_REAL_USER_JOURNEYS.md` maps professional, contractor company/project, and subcontractor discovery flows to persisted entities; live credentialed rerun remains outside this execution |
 | browser/mobile proof | PASS | `docs/proof/exec72/browser-proof.json` shows Chrome desktop, Edge desktop, Android Chrome, and iPhone Safari simulation with `consoleErrors=[]`, `pageErrors=[]`, `badResponses=[]`, and no horizontal overflow |
 | validation | PASS | Prisma validate/generate, API build/tests, public web build/lint, backoffice build/lint, `exec-26-production-ops-check.ps1`, and clean-tree `exec-13-release-check.ps1` passed |
+
+## EXEC-73 Backoffice Operational Cleanup, Live UX Alignment & Admin Experience Simplification
+
+Date: 2026-05-26
+
+Verdict: `PASS locally - Backoffice now uses operational grouped navigation, hides technical infrastructure from normal admins, removes visible project/debug JSON flows, converts RELU moderation into a business-readable workflow, improves media/document previews, hardens Countries & VAT error states, and passes build/lint plus browser/mobile proof. Production deployment is not claimed in this execution.`
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| debug/developer cleanup | PASS | Removed layout console reporter, local-testing project copy, project raw JSON view, normal RELU JSON panes, raw media URL display, and raw taxonomy JSON editor workflow |
+| sidebar restructure | PASS | `AdminLayoutShell` groups Operations, Trust, and SuperAdmin-only Technical tooling |
+| role visibility | PASS | `TechnicalModeGate` blocks direct technical pages for non-superadmin users |
+| taxonomy moderation | PASS | Taxonomy page now presents category approval and label adjustment instead of a normal-workflow JSON editor |
+| RELU moderation UX | PASS | RELU page now shows source summary, AI interpretation, confidence, approve/reject/adjust actions, correction log, and audit trail |
+| media/document UX | PASS | Media page now renders image/video previews, document cards, clean file chips, and Preview/Open/Download actions without raw storage paths |
+| VAT/error states | PASS | Countries & VAT now keeps navigation and forms stable with inline warnings, retry, and compact empty states |
+| responsive proof | PASS | `docs/proof/exec73/browser-proof.json` passed Chrome desktop, Edge desktop, Android Chrome, and iPhone Safari simulation with no overflow |

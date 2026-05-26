@@ -9,6 +9,7 @@ import {
   IncidentAssistSummary,
   QueueAssistSummary,
 } from "@/app/components/operator-assist";
+import { TechnicalModeGate } from "@/components/TechnicalModeGate";
 import { buildApiUrl } from "@/lib/api";
 import { getAdminRuntimeConfigSummary } from "@/lib/runtime-config";
 
@@ -62,6 +63,14 @@ type StatusPayload = {
 };
 
 export default function ProductionReadinessPage() {
+  return (
+    <TechnicalModeGate>
+      <ProductionReadinessWorkspace />
+    </TechnicalModeGate>
+  );
+}
+
+function ProductionReadinessWorkspace() {
   const localRuntime = useMemo(() => getAdminRuntimeConfigSummary(), []);
   const [status, setStatus] = useState<StatusPayload | null>(null);
   const [loading, setLoading] = useState(true);

@@ -1,0 +1,243 @@
+{
+  "checkedAtUtc": "2026-05-26T16:34:45.997Z",
+  "apiBase": "http://127.0.0.1:18081",
+  "webBase": "http://127.0.0.1:3101",
+  "screenshotDir": "docs\\proof\\exec73\\screenshots",
+  "summary": {
+    "pass": true,
+    "checkedBrowsers": [
+      "Chrome desktop",
+      "Edge desktop",
+      "Android Chrome",
+      "iPhone Safari"
+    ],
+    "consoleErrors": [],
+    "pageErrors": [],
+    "badResponses": [],
+    "requestFailures": [],
+    "rawTextPages": [],
+    "horizontalOverflowPages": []
+  },
+  "results": [
+    {
+      "browser": "Chrome desktop",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "rawTextPages": [],
+      "horizontalOverflowPages": [],
+      "overflowDetails": [],
+      "requestFailures": [],
+      "routeChecks": [
+        {
+          "route": "/dashboard",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/admin/relu",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/admin/media",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/countries-vat",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/projects",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/admin/taxonomy",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/ai-control",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        }
+      ],
+      "pass": true
+    },
+    {
+      "browser": "Edge desktop",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "rawTextPages": [],
+      "horizontalOverflowPages": [],
+      "overflowDetails": [],
+      "requestFailures": [],
+      "routeChecks": [
+        {
+          "route": "/dashboard",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/admin/relu",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/admin/media",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/countries-vat",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/projects",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/admin/taxonomy",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/ai-control",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        }
+      ],
+      "pass": true
+    },
+    {
+      "browser": "Android Chrome",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "rawTextPages": [],
+      "horizontalOverflowPages": [],
+      "overflowDetails": [],
+      "requestFailures": [],
+      "routeChecks": [
+        {
+          "route": "/dashboard",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/admin/relu",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/admin/media",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/countries-vat",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/projects",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/admin/taxonomy",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/ai-control",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        }
+      ],
+      "pass": true
+    },
+    {
+      "browser": "iPhone Safari",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "rawTextPages": [],
+      "horizontalOverflowPages": [],
+      "overflowDetails": [],
+      "requestFailures": [],
+      "routeChecks": [
+        {
+          "route": "/dashboard",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/admin/relu",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/admin/media",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/countries-vat",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/projects",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/admin/taxonomy",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        },
+        {
+          "route": "/ai-control",
+          "title": "OpenStaff Backoffice",
+          "overflow": false,
+          "rawText": false
+        }
+      ],
+      "pass": true
+    }
+  ]
+}

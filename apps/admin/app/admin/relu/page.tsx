@@ -8,6 +8,10 @@ import {
 } from "@/lib/api";
 
 type LoadState = "loading" | "ready" | "error";
+type Highlight = {
+  label: string;
+  value: string;
+};
 
 export default function AdminReluPage() {
   const [runs, setRuns] = useState<ReluRun[]>([]);
@@ -39,7 +43,7 @@ export default function AdminReluPage() {
           return;
         }
 
-        setMessage(error instanceof Error ? error.message : "Failed to load Relu data.");
+        setMessage(error instanceof Error ? error.message : "Failed to load RELU moderation.");
         setState("error");
       }
     }
@@ -58,17 +62,13 @@ export default function AdminReluPage() {
     }
 
     return results.filter((item) => {
-      const targetSourceType = "targetSourceType" in item ? item.targetSourceType ?? "" : "";
-      const targetSourceId = "targetSourceId" in item ? item.targetSourceId ?? "" : "";
       const haystack = [
         item.kind,
         item.sourceType,
-        item.sourceId,
-        targetSourceType,
-        targetSourceId,
         item.status,
         item.domain,
         item.explanation ?? "",
+        ...extractHighlights(item.outputData).map((highlight) => highlight.value),
       ]
         .join(" ")
         .toLowerCase();
@@ -86,36 +86,53 @@ export default function AdminReluPage() {
     setResults(nextResults);
   }
 
-  async function markReviewed(resultId: string) {
-    setBusyKey(`review:${resultId}`);
+  async function approveResult(resultId: string) {
+    setBusyKey(`approve:${resultId}`);
     setMessage(null);
     try {
       await adminApi.updateAdminReluResultStatus(resultId, "REVIEWED");
       await refresh();
-      setMessage("Relu result marked as reviewed.");
+      setMessage("RELU recommendation approved for operational use.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Failed to update status.");
+      setMessage(error instanceof Error ? error.message : "Failed to approve RELU result.");
     } finally {
       setBusyKey(null);
     }
   }
 
-  async function overrideResult(result: ReluResult) {
-    setBusyKey(`override:${result.id}`);
+  async function rejectResult(resultId: string) {
+    setBusyKey(`reject:${resultId}`);
     setMessage(null);
     try {
+      await adminApi.updateAdminReluResultStatus(resultId, "FAILED");
+      await refresh();
+      setMessage("RELU recommendation rejected and retained for audit.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to reject RELU result.");
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  async function adjustCategory(result: ReluResult) {
+    setBusyKey(`adjust:${result.id}`);
+    setMessage(null);
+    try {
+      const currentCategory = bestCategoryLabel(result.outputData);
       await adminApi.overrideAdminReluResult(result.id, {
-        explanation: `${result.explanation ?? "Relu output"} (admin override applied)`,
+        explanation: `${result.explanation ?? "RELU output"} (moderator adjusted category)`,
         score: typeof result.score === "number" ? result.score : undefined,
         compatibilityPercent:
           result.kind === "match" && typeof result.compatibilityPercent === "number"
             ? result.compatibilityPercent
             : undefined,
+        category: currentCategory,
+        moderatorAction: "CATEGORY_ADJUSTED",
       });
       await refresh();
-      setMessage("Relu result overridden successfully.");
+      setMessage("Category adjustment saved with correction trail.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Failed to override result.");
+      setMessage(error instanceof Error ? error.message : "Failed to adjust category.");
     } finally {
       setBusyKey(null);
     }
@@ -135,9 +152,9 @@ export default function AdminReluPage() {
         await adminApi.classifyAdminPublicPostRelu(result.sourceId);
       }
       await refresh();
-      setMessage("Relu run triggered again for the selected public post.");
+      setMessage("RELU has been rerun for this marketplace item.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Failed to rerun Relu.");
+      setMessage(error instanceof Error ? error.message : "Failed to rerun RELU.");
     } finally {
       setBusyKey(null);
     }
@@ -148,211 +165,179 @@ export default function AdminReluPage() {
   const highConfidenceCount = results.filter((item) => getReluConfidence(item) >= 90).length;
 
   return (
-    <main className="space-y-8 p-8 text-white">
-      <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">
-          Relu AI
+    <main className="space-y-8 p-6 text-white md:p-8">
+      <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/30">
+        <p className="text-sm font-semibold uppercase tracking-[0.14em] text-cyan-300">
+          RELU AI moderation
         </p>
-        <h1 className="mt-2 text-3xl font-semibold">Taxonomy, ingestion and matching review</h1>
+        <h1 className="mt-3 text-3xl font-semibold">AI Interpretation Review</h1>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
-          Persistent Relu runs and reviewable outcomes for public posts and profiles. This
-          surface shows fallback executions, structured classification output, matching
-          explanations, and manual admin overrides.
+          Review RELU classifications, extractions, recommendations, and matching decisions in
+          operational language. Raw payloads stay out of the normal moderation workflow.
         </p>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="Runs" value={runs.length} />
         <MetricCard label="Results" value={results.length} />
-        <MetricCard label="Failed" value={failedCount} accent="rose" />
-        <MetricCard label="Overridden" value={overriddenCount} accent="amber" />
-        <MetricCard label="Auto-approve eligible" value={highConfidenceCount} />
+        <MetricCard label="Needs attention" value={failedCount} accent="rose" />
+        <MetricCard label="Adjusted" value={overriddenCount} accent="amber" />
+        <MetricCard label="High confidence" value={highConfidenceCount} accent="emerald" />
       </section>
 
-      <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5">
+      <section className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5">
         <label className="block">
           <span className="text-sm font-medium text-slate-300">
-            Search by source, result kind, status, explanation
+            Search moderation summaries
           </span>
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="PUBLIC_POST, PROFILE, FAILED, match..."
-            className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-500"
+            placeholder="Electrical, profile, reviewed, low confidence..."
+            className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400"
           />
         </label>
       </section>
 
       {message ? (
-        <section className="rounded-2xl border border-slate-700 bg-slate-900/70 px-5 py-4 text-sm text-slate-200">
-          {message}
+        <section className="rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 py-4 text-sm text-cyan-100">
+          {humanizeError(message)}
         </section>
       ) : null}
 
       {state === "loading" ? (
-        <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 text-sm text-slate-300">
-          Loading Relu runs and results...
+        <section className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-sm text-slate-300">
+          Loading RELU moderation queue...
         </section>
       ) : null}
 
       {state === "error" ? (
-        <section className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6 text-sm text-rose-100">
-          {message ?? "Failed to load Relu review data."}
+        <section className="rounded-3xl border border-amber-400/25 bg-amber-400/10 p-6 text-sm text-amber-100">
+          {humanizeError(message ?? "RELU moderation could not load.")}
         </section>
       ) : null}
 
       {state === "ready" ? (
         <section className="space-y-5">
-          {filteredResults.map((result) => (
-            <article
-              key={result.id}
-              className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6"
-            >
-              {(() => {
-                const confidence = getReluConfidence(result);
-                const correctionLog = buildCorrectionLog(result);
-                const autoApproveEligible =
-                  confidence >= 90 &&
-                  result.status !== "FAILED" &&
-                  !result.fallbackUsed;
+          {filteredResults.map((result) => {
+            const confidence = getReluConfidence(result);
+            const correctionLog = buildCorrectionLog(result);
+            const autoApproveEligible =
+              confidence >= 90 && result.status !== "FAILED" && !result.fallbackUsed;
 
-                return (
-                  <>
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge label={result.kind.toUpperCase()} tone="cyan" />
-                    <Badge label={result.domain} tone="slate" />
-                    <Badge label={result.status} tone={toneForStatus(result.status)} />
-                    <Badge label={result.sourceType} tone="slate" />
-                    <Badge
-                      label={`RELU Confidence ${confidence}%`}
-                      tone={confidence >= 80 ? "emerald" : confidence >= 60 ? "amber" : "rose"}
-                    />
-                    {confidence < 70 ? (
-                      <Badge label="MANUAL VALIDATION REQUIRED" tone="rose" />
-                    ) : null}
-                    {autoApproveEligible ? (
-                      <Badge label="AUTO-APPROVE ELIGIBLE" tone="emerald" />
-                    ) : null}
-                    {result.fallbackUsed ? <Badge label="FALLBACK" tone="rose" /> : null}
-                  </div>
-                  <h2 className="mt-3 text-xl font-semibold text-white">
-                    {result.sourceId}
-                    {"targetSourceId" in result && result.targetSourceId
-                      ? ` -> ${result.targetSourceId}`
-                      : ""}
-                  </h2>
-                  <p className="mt-2 text-sm text-slate-300">
-                    {result.explanation ?? "No explanation persisted yet."}
-                  </p>
-                </div>
-
-                <div className="grid gap-2 text-right text-sm text-slate-300">
-                  <div>Created {new Date(result.createdAt).toLocaleString()}</div>
-                  <div>Score {typeof result.score === "number" ? result.score : "-"}</div>
-                  {"compatibilityPercent" in result ? (
-                    <div>
-                      Compatibility{" "}
-                      {typeof result.compatibilityPercent === "number"
-                        ? `${result.compatibilityPercent}%`
-                        : "-"}
+            return (
+              <article
+                key={result.id}
+                className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/20"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge label={formatResultKind(result.kind)} tone="cyan" />
+                      <Badge label={formatLabel(result.domain)} tone="slate" />
+                      <Badge label={formatLabel(result.status)} tone={toneForStatus(result.status)} />
+                      <Badge
+                        label={`Confidence ${confidence}%`}
+                        tone={confidence >= 80 ? "emerald" : confidence >= 60 ? "amber" : "rose"}
+                      />
+                      {confidence < 70 ? <Badge label="Moderator approval required" tone="rose" /> : null}
+                      {autoApproveEligible ? <Badge label="Auto-approve candidate" tone="emerald" /> : null}
+                      {result.fallbackUsed ? <Badge label="Review source quality" tone="amber" /> : null}
                     </div>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="mt-5 grid gap-4 xl:grid-cols-2">
-                <div>
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    RELU AI extracted structure
-                  </div>
-                  <pre className="overflow-auto rounded-2xl bg-slate-950 p-4 text-xs text-slate-300">
-                    {JSON.stringify(result.outputData, null, 2)}
-                  </pre>
-                </div>
-                <div className="space-y-3">
-                  <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    Raw uploaded documents/media snapshot
-                  </div>
-                  <pre className="overflow-auto rounded-2xl bg-slate-950 p-4 text-xs text-slate-400">
-                    {JSON.stringify(result.inputSnapshot, null, 2)}
-                  </pre>
-                  {result.overrideData ? (
-                    <pre className="overflow-auto rounded-2xl bg-amber-500/10 p-4 text-xs text-amber-100">
-                      {JSON.stringify(result.overrideData, null, 2)}
-                    </pre>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-300">
-                  <div className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
-                    Correction log
-                  </div>
-                  {correctionLog.length > 0 ? (
-                    <div className="mt-3 grid gap-2">
-                      {correctionLog.map((item) => (
-                        <div key={item} className="rounded-xl bg-slate-900 px-3 py-2">
-                          {item}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mt-3">
-                      No moderator correction recorded. Overrides will store Input X
-                      -&gt; Moderator Correction Y for taxonomy, budget, category, and
-                      extracted values.
+                    <h2 className="mt-4 text-2xl font-semibold text-white">
+                      {entityLabel(result.sourceType)}
+                    </h2>
+                    <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-300">
+                      {result.explanation ??
+                        "RELU produced an operational recommendation. Review confidence, source summary, and category fit before approval."}
                     </p>
-                  )}
-                </div>
-                <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-300">
-                  <div className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
-                    Approval policy
                   </div>
-                  <p className="mt-3">
-                    Trusted users, verified companies, and RELU confidence above 90%
-                    can be routed to optional auto-approval. Low confidence or fallback
-                    results stay in manual moderation.
-                  </p>
-                </div>
-              </div>
 
-              <div className="mt-5 flex flex-wrap gap-3">
-                <button
-                  onClick={() => void markReviewed(result.id)}
-                  disabled={busyKey === `review:${result.id}`}
-                  className="rounded-2xl border border-slate-700 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-cyan-500/40 hover:text-white disabled:opacity-60"
-                >
-                  {busyKey === `review:${result.id}` ? "Saving..." : "Mark reviewed"}
-                </button>
-                <button
-                  onClick={() => void overrideResult(result)}
-                  disabled={busyKey === `override:${result.id}`}
-                  className="rounded-2xl bg-amber-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:opacity-60"
-                >
-                  {busyKey === `override:${result.id}` ? "Overriding..." : "Override"}
-                </button>
-                {result.sourceType === "PUBLIC_POST" ? (
-                  <button
-                    onClick={() => void rerun(result)}
-                    disabled={busyKey === `rerun:${result.id}`}
-                    className="rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
-                  >
-                    {busyKey === `rerun:${result.id}` ? "Running..." : "Rerun"}
-                  </button>
-                ) : null}
-              </div>
-                  </>
-                );
-              })()}
-            </article>
-          ))}
+                  <div className="grid gap-2 text-sm text-slate-300">
+                    <div>Created {formatDate(result.createdAt)}</div>
+                    <div>Score {typeof result.score === "number" ? `${Math.round(result.score)}%` : "Not scored"}</div>
+                    {result.kind === "match" ? (
+                      <div>
+                        Match{" "}
+                        {typeof result.compatibilityPercent === "number"
+                          ? `${Math.round(result.compatibilityPercent)}%`
+                          : "not scored"}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+                  <SourceSummary snapshot={result.inputSnapshot} />
+                  <AiInterpretation result={result} />
+                </div>
+
+                <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-300">
+                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-200">
+                      Correction log
+                    </div>
+                    {correctionLog.length > 0 ? (
+                      <div className="mt-3 grid gap-2">
+                        {correctionLog.map((item) => (
+                          <div key={item} className="rounded-xl bg-slate-900 px-3 py-2">
+                            {item}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-3 leading-6">
+                        No moderator correction is recorded yet. Category adjustments create an
+                        audit entry with before/after context.
+                      </p>
+                    )}
+                  </div>
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-300">
+                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-200">
+                      AI audit trail
+                    </div>
+                    <p className="mt-3 leading-6">
+                      This result is persisted with source type, review status, score, fallback
+                      state, moderator override data, and timestamped audit events.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <ActionButton
+                    label={busyKey === `approve:${result.id}` ? "Approving..." : "Approve"}
+                    onClick={() => void approveResult(result.id)}
+                    disabled={busyKey === `approve:${result.id}`}
+                    tone="success"
+                  />
+                  <ActionButton
+                    label={busyKey === `reject:${result.id}` ? "Rejecting..." : "Reject"}
+                    onClick={() => void rejectResult(result.id)}
+                    disabled={busyKey === `reject:${result.id}`}
+                    tone="danger"
+                  />
+                  <ActionButton
+                    label={busyKey === `adjust:${result.id}` ? "Saving..." : "Adjust Category"}
+                    onClick={() => void adjustCategory(result)}
+                    disabled={busyKey === `adjust:${result.id}`}
+                    tone="warning"
+                  />
+                  {result.sourceType === "PUBLIC_POST" ? (
+                    <ActionButton
+                      label={busyKey === `rerun:${result.id}` ? "Running..." : "Rerun RELU"}
+                      onClick={() => void rerun(result)}
+                      disabled={busyKey === `rerun:${result.id}`}
+                      tone="neutral"
+                    />
+                  ) : null}
+                </div>
+              </article>
+            );
+          })}
 
           {filteredResults.length === 0 ? (
-            <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 text-sm text-slate-300">
-              No Relu results match the current filter.
+            <section className="rounded-3xl border border-dashed border-slate-700 bg-slate-900/60 p-8 text-sm text-slate-300">
+              No RELU moderation items match the current filter.
             </section>
           ) : null}
         </section>
@@ -361,24 +346,101 @@ export default function AdminReluPage() {
   );
 }
 
+function SourceSummary({ snapshot }: { snapshot: unknown }) {
+  const highlights = extractHighlights(snapshot).slice(0, 6);
+  const fileCount = countLikelyFiles(snapshot);
+
+  return (
+    <section className="rounded-3xl border border-slate-800 bg-slate-950/70 p-5">
+      <div className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+        Uploaded source
+      </div>
+      <h3 className="mt-3 text-xl font-semibold text-white">Submitted material</h3>
+      <p className="mt-2 text-sm leading-7 text-slate-400">
+        {fileCount > 0
+          ? `${fileCount} file or document reference(s) were included for AI interpretation.`
+          : "RELU used structured marketplace data for this interpretation."}
+      </p>
+      <div className="mt-5 grid gap-3">
+        {highlights.length > 0 ? (
+          highlights.map((highlight) => (
+            <InfoRow key={`${highlight.label}-${highlight.value}`} label={highlight.label} value={highlight.value} />
+          ))
+        ) : (
+          <InfoRow label="Source summary" value="No business-readable source fields were available." />
+        )}
+      </div>
+    </section>
+  );
+}
+
+function AiInterpretation({ result }: { result: ReluResult }) {
+  const highlights = extractHighlights(result.outputData).slice(0, 8);
+
+  return (
+    <section className="rounded-3xl border border-slate-800 bg-slate-950/70 p-5">
+      <div className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+        AI interpretation
+      </div>
+      <h3 className="mt-3 text-xl font-semibold text-white">
+        RELU matched this item with: {bestCategoryLabel(result.outputData)}
+      </h3>
+      <p className="mt-2 text-sm leading-7 text-slate-400">
+        Moderation decision should confirm that the interpretation fits the public entity and
+        does not expose private or technical source details.
+      </p>
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        {highlights.length > 0 ? (
+          highlights.map((highlight) => (
+            <span
+              key={`${highlight.label}-${highlight.value}`}
+              className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-xs font-semibold text-cyan-100"
+            >
+              {highlight.label}: {highlight.value}
+            </span>
+          ))
+        ) : (
+          <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-300">
+            Awaiting structured interpretation
+          </span>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function InfoRow({ label, value }: Highlight) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+        {label}
+      </div>
+      <div className="mt-2 text-sm text-slate-100">{value}</div>
+    </div>
+  );
+}
+
 function MetricCard({
+  accent = "cyan",
   label,
   value,
-  accent = "cyan",
 }: {
+  accent?: "cyan" | "rose" | "amber" | "emerald";
   label: string;
   value: number;
-  accent?: "cyan" | "rose" | "amber";
 }) {
   const tone =
     accent === "rose"
       ? "text-rose-300"
       : accent === "amber"
         ? "text-amber-300"
-        : "text-cyan-200";
+        : accent === "emerald"
+          ? "text-emerald-300"
+          : "text-cyan-200";
 
   return (
-    <article className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5">
+    <article className="rounded-3xl border border-white/10 bg-slate-900/80 p-5">
       <p className="text-sm text-slate-400">{label}</p>
       <p className={`mt-3 text-3xl font-semibold ${tone}`}>{value}</p>
     </article>
@@ -407,6 +469,38 @@ function Badge({
     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${className}`}>
       {label}
     </span>
+  );
+}
+
+function ActionButton({
+  disabled,
+  label,
+  onClick,
+  tone,
+}: {
+  disabled: boolean;
+  label: string;
+  onClick: () => void;
+  tone: "success" | "danger" | "warning" | "neutral";
+}) {
+  const className =
+    tone === "success"
+      ? "bg-emerald-300 text-slate-950 hover:bg-emerald-200"
+      : tone === "danger"
+        ? "bg-rose-300 text-slate-950 hover:bg-rose-200"
+        : tone === "warning"
+          ? "bg-amber-300 text-slate-950 hover:bg-amber-200"
+          : "border border-slate-700 text-slate-100 hover:border-cyan-400/40";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`rounded-2xl px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -448,14 +542,101 @@ function buildCorrectionLog(result: ReluResult) {
   }
 
   const override = result.overrideData as Record<string, unknown>;
-  return Object.entries(override).map(([key, value]) => {
-    const original =
-      result.outputData && typeof result.outputData === "object"
-        ? (result.outputData as Record<string, unknown>)[key]
-        : undefined;
+  return Object.entries(override)
+    .filter(([key]) => !isTechnicalKey(key))
+    .slice(0, 5)
+    .map(([key, value]) => `${formatLabel(key)} changed to ${formatCorrectionValue(value)}`);
+}
 
-    return `${key}: ${formatCorrectionValue(original)} -> ${formatCorrectionValue(value)}`;
-  });
+function extractHighlights(value: unknown, prefix = ""): Highlight[] {
+  if (!value || typeof value !== "object") {
+    return [];
+  }
+
+  const output: Highlight[] = [];
+  const entries = Object.entries(value as Record<string, unknown>);
+
+  for (const [key, item] of entries) {
+    if (output.length >= 12 || isTechnicalKey(key)) {
+      continue;
+    }
+
+    const label = formatLabel(prefix ? `${prefix} ${key}` : key);
+
+    if (typeof item === "string" || typeof item === "number" || typeof item === "boolean") {
+      const formatted = formatBusinessValue(item);
+      if (formatted) {
+        output.push({ label, value: formatted });
+      }
+      continue;
+    }
+
+    if (Array.isArray(item)) {
+      const values = item
+        .filter((entry) => typeof entry === "string" || typeof entry === "number")
+        .map((entry) => formatBusinessValue(entry))
+        .filter(Boolean)
+        .slice(0, 4);
+
+      if (values.length > 0) {
+        output.push({ label, value: values.join(", ") });
+      }
+      continue;
+    }
+
+    output.push(...extractHighlights(item, key));
+  }
+
+  return output;
+}
+
+function bestCategoryLabel(value: unknown) {
+  const highlights = extractHighlights(value);
+  const category = highlights.find((item) =>
+    /category|classification|industry|occupation|trade|label|name/i.test(item.label),
+  );
+
+  return category?.value ?? "moderator-selected category";
+}
+
+function countLikelyFiles(value: unknown): number {
+  if (!value || typeof value !== "object") {
+    return 0;
+  }
+
+  let count = 0;
+  for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+    if (/file|document|media|upload|asset/i.test(key) && Array.isArray(item)) {
+      count += item.length;
+    } else if (item && typeof item === "object") {
+      count += countLikelyFiles(item);
+    }
+  }
+
+  return count;
+}
+
+function isTechnicalKey(key: string) {
+  return /(^id$|uuid|sourceid|targetsourceid|runid|taskid|userid|hash|token|storage|bucket|gcs|raw|json)/i.test(
+    key,
+  );
+}
+
+function formatBusinessValue(value: string | number | boolean) {
+  const stringValue = String(value).trim();
+  if (!stringValue || /gcs:\/\//i.test(stringValue)) {
+    return null;
+  }
+
+  if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(stringValue)) {
+    return null;
+  }
+
+  if (stringValue.length > 90) {
+    return `${stringValue.slice(0, 87)}...`;
+  }
+
+  return stringValue;
 }
 
 function formatCorrectionValue(value: unknown) {
@@ -467,5 +648,63 @@ function formatCorrectionValue(value: unknown) {
     return String(value);
   }
 
-  return JSON.stringify(value);
+  return "updated structured value";
+}
+
+function formatResultKind(kind: string) {
+  if (kind === "classification") {
+    return "Classification";
+  }
+
+  if (kind === "recommendation") {
+    return "Recommendation";
+  }
+
+  return "Compatibility match";
+}
+
+function entityLabel(sourceType: string) {
+  if (sourceType === "PUBLIC_POST") {
+    return "Marketplace listing";
+  }
+
+  if (sourceType === "PROFILE") {
+    return "Public profile";
+  }
+
+  if (sourceType === "PROJECT") {
+    return "Project workspace";
+  }
+
+  if (sourceType === "DOCUMENT") {
+    return "Uploaded document";
+  }
+
+  return "OpenStaff entity";
+}
+
+function formatLabel(value: string) {
+  return value
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleString("ro-RO", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function humanizeError(message: string) {
+  if (/internal server error/i.test(message)) {
+    return "RELU moderation is temporarily unavailable. The workspace remains stable while you retry.";
+  }
+
+  return message;
 }

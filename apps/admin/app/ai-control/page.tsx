@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { TechnicalModeGate } from "@/components/TechnicalModeGate";
 import { ReluAgent, adminApi } from "@/lib/api";
 
 type LoadState = "loading" | "ready" | "error";
@@ -13,6 +14,14 @@ type PromptDraft = {
 };
 
 export default function AIControlPage() {
+  return (
+    <TechnicalModeGate>
+      <AIControlWorkspace />
+    </TechnicalModeGate>
+  );
+}
+
+function AIControlWorkspace() {
   const [agents, setAgents] = useState<ReluAgent[]>([]);
   const [state, setState] = useState<LoadState>("loading");
   const [message, setMessage] = useState<string | null>(null);

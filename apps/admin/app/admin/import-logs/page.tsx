@@ -1,11 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TechnicalModeGate } from "@/components/TechnicalModeGate";
 import { adminApi, type TaxonomyImportBatch } from "@/lib/api";
 
 type LoadState = "loading" | "success" | "error";
 
 export default function AdminImportLogsPage() {
+  return (
+    <TechnicalModeGate>
+      <AdminImportLogsWorkspace />
+    </TechnicalModeGate>
+  );
+}
+
+function AdminImportLogsWorkspace() {
   const [batches, setBatches] = useState<TaxonomyImportBatch[]>([]);
   const [state, setState] = useState<LoadState>("loading");
   const [message, setMessage] = useState<string | null>(null);
@@ -112,16 +121,13 @@ export default function AdminImportLogsPage() {
                       Batch Summary
                     </div>
                     <div className="mt-4 grid gap-3 text-sm text-slate-300">
-                      <SummaryRow label="Batch ID" value={batch.id} />
-                      <SummaryRow label="Mime type" value={batch.fileMimeType} />
+                      <SummaryRow label="File record" value={batch.fileName} />
+                      <SummaryRow label="File type" value={formatFileType(batch.fileMimeType)} />
                       <SummaryRow
                         label="Committed at"
                         value={batch.committedAt ? formatDate(batch.committedAt) : "Not committed"}
                       />
-                      <SummaryRow
-                        label="Storage key"
-                        value={batch.storageKey}
-                      />
+                      <SummaryRow label="Storage" value="Stored securely" />
                     </div>
                   </div>
                 </div>
@@ -210,4 +216,16 @@ function statusTone(status: string): "success" | "warning" | "danger" | "neutral
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString();
+}
+
+function formatFileType(value: string) {
+  if (/csv/i.test(value)) {
+    return "CSV";
+  }
+
+  if (/json/i.test(value)) {
+    return "JSON import";
+  }
+
+  return "Import file";
 }

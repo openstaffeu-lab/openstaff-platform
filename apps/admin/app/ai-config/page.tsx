@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { TechnicalModeGate } from "@/components/TechnicalModeGate";
 import {
   ReluAccessMode,
   ReluAgent,
@@ -27,6 +28,14 @@ const ACCESS_MODE_LABELS: Record<ReluAccessMode, string> = {
 };
 
 export default function AiConfigPage() {
+  return (
+    <TechnicalModeGate>
+      <AiConfigWorkspace />
+    </TechnicalModeGate>
+  );
+}
+
+function AiConfigWorkspace() {
   const [agents, setAgents] = useState<ReluAgent[]>([]);
   const [state, setState] = useState<LoadState>("loading");
   const [message, setMessage] = useState<string | null>(null);
