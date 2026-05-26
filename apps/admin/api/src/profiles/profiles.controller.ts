@@ -48,6 +48,11 @@ export class ProfilesController {
     return this.profilesService.getPublicProfile(slug);
   }
 
+  @Get('companies/public/:slug')
+  async getPublicCompanyProfile(@Param('slug') slug: string) {
+    return this.profilesService.getPublicCompanyProfile(slug);
+  }
+
   @UseGuards(JwtGuard)
   @Get('profiles/restricted/:slug')
   async getRestrictedProfile(@Param('slug') slug: string, @Req() req: any) {

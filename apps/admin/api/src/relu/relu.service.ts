@@ -122,6 +122,23 @@ type ReluMatchRequest = {
   limit?: number;
 };
 
+type SecuredOperationalResultInput<T> = {
+  sourceType: ReluSourceType;
+  sourceId?: string | null;
+  userId?: string | null;
+  domain: ReluProcessingDomain;
+  resultKind: 'classification' | 'match' | 'recommendation';
+  targetSourceType?: ReluSourceType | null;
+  targetSourceId?: string | null;
+  inputSnapshot?: unknown;
+  outputData?: (result: T) => Record<string, unknown>;
+  explanation?: (result: T) => string | null;
+  score?: (result: T) => number | null;
+  compatibilityPercent?: (result: T) => number | null;
+  recommendedAction?: (result: T) => string | null;
+  auditAction?: string;
+};
+
 @Injectable()
 export class ReluService {
   constructor(
@@ -754,6 +771,9 @@ export class ReluService {
     }
 
     const delegate = target.delegate as any;
+    const before = await delegate.findUnique({
+      where: { id: resultId },
+    });
     const updated = await delegate.update({
       where: { id: resultId },
       data: {
@@ -769,11 +789,14 @@ export class ReluService {
       entityType: target.entityType,
       entityId: resultId,
       action: 'RELU_RESULT_STATUS_UPDATED',
+      before,
       after: {
         status,
+        reviewedByUserId: actor.sub,
       },
       metadata: {
         resultKind: target.kind,
+        correctionLog: true,
       },
     });
 
@@ -812,6 +835,9 @@ export class ReluService {
     }
 
     const delegate = target.delegate as any;
+    const before = await delegate.findUnique({
+      where: { id: resultId },
+    });
     const updated = await delegate.update({
       where: { id: resultId },
       data: patch,
@@ -823,9 +849,16 @@ export class ReluService {
       entityType: target.entityType,
       entityId: resultId,
       action: 'RELU_RESULT_OVERRIDDEN',
-      after: override,
+      before,
+      after: {
+        ...override,
+        status: ReluResultStatus.OVERRIDDEN,
+        reviewedByUserId: actor.sub,
+      },
       metadata: {
         resultKind: target.kind,
+        correctionLog: true,
+        correctionTrailPreserved: true,
       },
     });
 
@@ -995,6 +1028,17 @@ export class ReluService {
         completion,
         missingItems,
       }),
+      operationalResult: {
+        sourceType: ReluSourceType.PROFILE,
+        sourceId: profile.id,
+        userId: profile.userId,
+        domain: ReluProcessingDomain.INGESTION,
+        resultKind: 'classification',
+        inputSnapshot: this.toProfileSummary(profile),
+        score: (result) => result.completion.percentage,
+        explanation: (result) => result.response,
+        auditAction: 'RELU_ONBOARDING_ASSISTANT_RESULT_PERSISTED',
+      },
     });
   }
 
@@ -1031,6 +1075,21 @@ export class ReluService {
         publicReadiness,
         completion,
       }),
+      operationalResult: {
+        sourceType: ReluSourceType.PROFILE,
+        sourceId: profile.id,
+        userId: profile.userId,
+        domain: ReluProcessingDomain.RECOMMENDATION,
+        resultKind: 'recommendation',
+        inputSnapshot: this.toProfileSummary(profile),
+        score: (result) => result.completion.percentage,
+        explanation: (result) => result.response,
+        recommendedAction: (result) =>
+          result.publicReadiness.moderationStatus === ProfileModerationStatus.APPROVED
+            ? 'Keep public profile current and monitor marketplace response.'
+            : 'Complete missing readiness items before requesting approval.',
+        auditAction: 'RELU_PROFILE_COMPLETION_RESULT_PERSISTED',
+      },
     });
   }
 
@@ -1078,6 +1137,16 @@ export class ReluService {
         response,
         structuredContext,
       }),
+      operationalResult: {
+        sourceType: project ? ReluSourceType.PROJECT : ReluSourceType.DOCUMENT,
+        sourceId: project?.id ?? null,
+        userId: user.sub,
+        domain: ReluProcessingDomain.INGESTION,
+        resultKind: 'classification',
+        inputSnapshot: structuredContext,
+        explanation: (result) => result.response,
+        auditAction: 'RELU_PROJECT_INTERPRETATION_RESULT_PERSISTED',
+      },
     });
   }
 
@@ -1114,6 +1183,24 @@ export class ReluService {
         response,
         overlap,
       }),
+      operationalResult: {
+        sourceType: ReluSourceType.PROJECT,
+        sourceId: project.id,
+        userId: profile.userId,
+        domain: ReluProcessingDomain.MATCH,
+        resultKind: 'match',
+        targetSourceType: ReluSourceType.PROFILE,
+        targetSourceId: profile.id,
+        inputSnapshot: {
+          profile: this.toProfileSummary(profile),
+          project: this.toProjectSummary(project),
+          overlap,
+        },
+        score: () =>
+          overlap.escoMatches.length + overlap.naceMatches.length + overlap.uniclassMatches.length,
+        explanation: (result) => result.response,
+        auditAction: 'RELU_TAXONOMY_MATCH_RESULT_PERSISTED',
+      },
     });
   }
 
@@ -1153,6 +1240,24 @@ export class ReluService {
         response,
         eligibility,
       }),
+      operationalResult: {
+        sourceType: ReluSourceType.PROJECT,
+        sourceId: project.id,
+        userId: profile.userId,
+        domain: ReluProcessingDomain.MATCH,
+        resultKind: 'match',
+        targetSourceType: ReluSourceType.PROFILE,
+        targetSourceId: profile.id,
+        inputSnapshot: {
+          profile: this.toProfileSummary(profile),
+          project: this.toProjectSummary(project),
+          eligibility,
+        },
+        score: (result) => result.eligibility.percentage,
+        compatibilityPercent: (result) => result.eligibility.percentage,
+        explanation: (result) => result.response,
+        auditAction: 'RELU_ELIGIBILITY_RESULT_PERSISTED',
+      },
     });
   }
 
@@ -1191,6 +1296,30 @@ export class ReluService {
         response,
         gaps,
       }),
+      operationalResult: {
+        sourceType: ReluSourceType.PROJECT,
+        sourceId: project.id,
+        userId: profile.userId,
+        domain: ReluProcessingDomain.MODERATION,
+        resultKind: 'classification',
+        targetSourceType: ReluSourceType.PROFILE,
+        targetSourceId: profile.id,
+        inputSnapshot: {
+          profile: this.toProfileSummary(profile),
+          project: this.toProjectSummary(project),
+          gaps,
+        },
+        score: (result) =>
+          result.gaps.projectRequirements.length === 0
+            ? 100
+            : Math.round(
+                (result.gaps.satisfiedCertifications.length /
+                  result.gaps.projectRequirements.length) *
+                  100,
+              ),
+        explanation: (result) => result.response,
+        auditAction: 'RELU_CERTIFICATION_GAP_RESULT_PERSISTED',
+      },
     });
   }
 
@@ -1231,6 +1360,18 @@ export class ReluService {
         response,
         fallbackQuestions,
       }),
+      operationalResult: {
+        sourceType: ReluSourceType.PROJECT,
+        sourceId: project.id,
+        userId: project.createdById,
+        domain: ReluProcessingDomain.RECOMMENDATION,
+        resultKind: 'recommendation',
+        inputSnapshot: this.toProjectSummary(project),
+        score: (result) => result.fallbackQuestions.length,
+        explanation: (result) => result.response,
+        recommendedAction: () => 'Review generated screening questions before sending them to candidates.',
+        auditAction: 'RELU_TEST_GENERATOR_RESULT_PERSISTED',
+      },
     });
   }
 
@@ -1266,6 +1407,26 @@ export class ReluService {
         response,
         recommendations,
       }),
+      operationalResult: {
+        sourceType: ReluSourceType.PROFILE,
+        sourceId: profile.id,
+        userId: profile.userId,
+        domain: ReluProcessingDomain.RECOMMENDATION,
+        resultKind: 'recommendation',
+        targetSourceType: payload.projectId ? ReluSourceType.PROJECT : null,
+        targetSourceId: payload.projectId ?? null,
+        inputSnapshot: {
+          profile: this.toProfileSummary(profile),
+          recommendations,
+        },
+        score: (result) => result.recommendations[0]?.score ?? 0,
+        explanation: (result) => result.response,
+        recommendedAction: (result) =>
+          result.recommendations[0]
+            ? `Review recommended ${result.recommendations[0].entityType.toLowerCase()} ${result.recommendations[0].entityId}.`
+            : 'No eligible marketplace recommendation is available yet.',
+        auditAction: 'RELU_CANDIDATE_RECOMMENDATION_RESULT_PERSISTED',
+      },
     });
   }
 
@@ -1279,6 +1440,7 @@ export class ReluService {
 
     const contracts = await this.getAccessibleContracts(payload.contractId);
     const signals = this.buildContractSignals(contracts);
+    const primaryProjectId = contracts[0]?.project?.id ?? null;
 
     return this.runSecuredTask({
       user,
@@ -1314,6 +1476,26 @@ export class ReluService {
         response,
         signals,
       }),
+      operationalResult: {
+        sourceType: primaryProjectId ? ReluSourceType.PROJECT : ReluSourceType.DOCUMENT,
+        sourceId: primaryProjectId,
+        userId: user.sub,
+        domain: ReluProcessingDomain.MODERATION,
+        resultKind: 'recommendation',
+        inputSnapshot: {
+          contractId: payload.contractId ?? null,
+          signals,
+        },
+        score: (result) =>
+          result.signals.reduce(
+            (total, signal) =>
+              total + signal.overdueMilestones + signal.unpaidInvoices + signal.pendingPayments,
+            0,
+          ),
+        explanation: (result) => result.response,
+        recommendedAction: () => 'Review contract lifecycle risks and assign operational follow-up.',
+        auditAction: 'RELU_CONTRACT_LIFECYCLE_RESULT_PERSISTED',
+      },
     });
   }
 
@@ -1362,6 +1544,29 @@ export class ReluService {
         response,
         eventType,
       }),
+      operationalResult: {
+        sourceType:
+          payload.entityType === 'PROJECT' && payload.entityId
+            ? ReluSourceType.PROJECT
+            : payload.entityType === 'PROFILE' && payload.entityId
+              ? ReluSourceType.PROFILE
+              : payload.entityType === 'PUBLIC_POST' && payload.entityId
+                ? ReluSourceType.PUBLIC_POST
+                : ReluSourceType.DOCUMENT,
+        sourceId: payload.entityId ?? null,
+        userId: user.sub,
+        domain: ReluProcessingDomain.RECOMMENDATION,
+        resultKind: 'recommendation',
+        inputSnapshot: {
+          eventType,
+          eventSummary,
+          entityType: payload.entityType ?? null,
+          entityId: payload.entityId ?? null,
+        },
+        explanation: (result) => result.response,
+        recommendedAction: () => 'Review generated copy before sending a user-facing notification.',
+        auditAction: 'RELU_NOTIFICATION_GENERATOR_RESULT_PERSISTED',
+      },
     });
   }
 
@@ -1378,6 +1583,7 @@ export class ReluService {
     userMessage: string;
     resultTransformer: (response: string) => T;
     fallbackResult?: (error: unknown) => T;
+    operationalResult?: SecuredOperationalResultInput<T>;
   }) {
     const task = await this.createTask({
       capability: input.capability,
@@ -1388,6 +1594,17 @@ export class ReluService {
       contextEntityId: input.contextEntityId,
       inputSummary: input.inputSummary,
     });
+    const operationalRun = input.operationalResult
+      ? await this.createProcessingRun({
+          taskId: task.id,
+          sourceType: input.operationalResult.sourceType,
+          sourceId: input.operationalResult.sourceId ?? task.id,
+          userId: input.operationalResult.userId ?? input.user.sub,
+          triggeredByUserId: input.user.sub,
+          domain: input.operationalResult.domain,
+          inputSnapshot: input.operationalResult.inputSnapshot ?? input.inputSummary,
+        })
+      : null;
 
     try {
       const execution = await this.gemini.executeAgent({
@@ -1398,6 +1615,17 @@ export class ReluService {
 
       const result = input.resultTransformer(execution.response);
       await this.completeTask(task.id, result);
+      const persistedResult = operationalRun
+        ? await this.persistSecuredOperationalResult({
+            actor: input.user,
+            task,
+            run: operationalRun,
+            result,
+            capability: input.capability,
+            config: input.operationalResult!,
+            fallbackUsed: false,
+          })
+        : null;
       await this.audit.log({
         actorUserId: input.user.sub,
         projectId:
@@ -1410,14 +1638,32 @@ export class ReluService {
           accessMode: input.accessMode,
           contextEntityType: input.contextEntityType ?? null,
           contextEntityId: input.contextEntityId ?? null,
+          persistedResultId: persistedResult?.id ?? null,
+          persistedResultKind: input.operationalResult?.resultKind ?? null,
         },
       });
 
-      return { taskId: task.id, ...result };
+      return {
+        taskId: task.id,
+        persistedResultId: persistedResult?.id ?? null,
+        ...result,
+      };
     } catch (error) {
       if (input.fallbackResult) {
         const fallback = input.fallbackResult(error);
         await this.completeTask(task.id, fallback);
+        const persistedResult = operationalRun
+          ? await this.persistSecuredOperationalResult({
+              actor: input.user,
+              task,
+              run: operationalRun,
+              result: fallback,
+              capability: input.capability,
+              config: input.operationalResult!,
+              fallbackUsed: true,
+              errorMessage: this.getErrorMessage(error),
+            })
+          : null;
         await this.audit.log({
           actorUserId: input.user.sub,
           projectId:
@@ -1432,13 +1678,22 @@ export class ReluService {
             contextEntityType: input.contextEntityType ?? null,
             contextEntityId: input.contextEntityId ?? null,
             fallbackUsed: true,
+            persistedResultId: persistedResult?.id ?? null,
+            persistedResultKind: input.operationalResult?.resultKind ?? null,
           },
         });
 
-        return { taskId: task.id, ...fallback };
+        return {
+          taskId: task.id,
+          persistedResultId: persistedResult?.id ?? null,
+          ...fallback,
+        };
       }
 
       await this.failTask(task.id, error);
+      if (operationalRun) {
+        await this.failOperationalRun(operationalRun.id, error);
+      }
       await this.audit.log({
         actorUserId: input.user.sub,
         projectId:
@@ -2105,6 +2360,153 @@ export class ReluService {
           : Prisma.JsonNull,
       },
     });
+  }
+
+  private async failOperationalRun(runId: string, error: unknown) {
+    await this.prisma.reluProcessingRun.update({
+      where: { id: runId },
+      data: {
+        status: ReluResultStatus.FAILED,
+        errorMessage: this.getErrorMessage(error),
+        completedAt: new Date(),
+      },
+    });
+  }
+
+  private async persistSecuredOperationalResult<T>(input: {
+    actor: AuthenticatedUser;
+    task: { id: string; capability: string };
+    run: {
+      id: string;
+      sourceType: ReluSourceType;
+      sourceId: string;
+      userId?: string | null;
+      domain: ReluProcessingDomain;
+    };
+    result: T;
+    capability: string;
+    config: SecuredOperationalResultInput<T>;
+    fallbackUsed: boolean;
+    errorMessage?: string | null;
+  }) {
+    const outputData = input.config.outputData
+      ? input.config.outputData(input.result)
+      : (input.result as Record<string, unknown>);
+    const explanation =
+      input.config.explanation?.(input.result) ??
+      (typeof outputData.response === 'string'
+        ? outputData.response.slice(0, 500)
+        : `Relu ${input.capability} persisted operationally.`);
+    const score = input.config.score?.(input.result) ?? null;
+    const compatibilityPercent = input.config.compatibilityPercent?.(input.result) ?? null;
+    const recommendedAction = input.config.recommendedAction?.(input.result) ?? null;
+    const status = input.fallbackUsed ? ReluResultStatus.FAILED : ReluResultStatus.COMPLETED;
+
+    await this.prisma.reluProcessingRun.update({
+      where: { id: input.run.id },
+      data: {
+        status,
+        outputData: outputData as Prisma.InputJsonValue,
+        score,
+        explanation,
+        fallbackUsed: input.fallbackUsed,
+        errorMessage: input.errorMessage ?? null,
+        completedAt: new Date(),
+      },
+    });
+
+    let persistedResult: any;
+    if (input.config.resultKind === 'classification') {
+      persistedResult = await this.prisma.reluClassificationResult.create({
+        data: {
+          runId: input.run.id,
+          sourceType: input.run.sourceType,
+          sourceId: input.run.sourceId,
+          userId: input.run.userId ?? null,
+          domain: input.run.domain,
+          status,
+          inputSnapshot: (input.config.inputSnapshot ?? input.task) as Prisma.InputJsonValue,
+          outputData: outputData as Prisma.InputJsonValue,
+          score,
+          explanation,
+          fallbackUsed: input.fallbackUsed,
+          errorMessage: input.errorMessage ?? null,
+        },
+        include: this.classificationInclude,
+      });
+    } else if (input.config.resultKind === 'match') {
+      persistedResult = await this.prisma.reluMatchResult.create({
+        data: {
+          runId: input.run.id,
+          sourceType: input.run.sourceType,
+          sourceId: input.run.sourceId,
+          userId: input.run.userId ?? null,
+          targetSourceType: input.config.targetSourceType ?? null,
+          targetSourceId: input.config.targetSourceId ?? null,
+          domain: input.run.domain,
+          status,
+          inputSnapshot: (input.config.inputSnapshot ?? input.task) as Prisma.InputJsonValue,
+          outputData: outputData as Prisma.InputJsonValue,
+          score,
+          compatibilityPercent,
+          explanation,
+          fallbackUsed: input.fallbackUsed,
+          errorMessage: input.errorMessage ?? null,
+        },
+        include: this.matchInclude,
+      });
+    } else {
+      persistedResult = await this.prisma.reluRecommendation.create({
+        data: {
+          runId: input.run.id,
+          sourceType: input.run.sourceType,
+          sourceId: input.run.sourceId,
+          userId: input.run.userId ?? null,
+          targetSourceType: input.config.targetSourceType ?? null,
+          targetSourceId: input.config.targetSourceId ?? null,
+          domain: input.run.domain,
+          status,
+          inputSnapshot: (input.config.inputSnapshot ?? input.task) as Prisma.InputJsonValue,
+          outputData: outputData as Prisma.InputJsonValue,
+          score,
+          explanation,
+          recommendedAction,
+          fallbackUsed: input.fallbackUsed,
+          errorMessage: input.errorMessage ?? null,
+        },
+        include: this.recommendationInclude,
+      });
+    }
+
+    await this.audit.log({
+      actorUserId: input.actor.sub,
+      entityType:
+        input.config.resultKind === 'classification'
+          ? 'RELU_CLASSIFICATION_RESULT'
+          : input.config.resultKind === 'match'
+            ? 'RELU_MATCH_RESULT'
+            : 'RELU_RECOMMENDATION',
+      entityId: persistedResult.id,
+      action:
+        input.config.auditAction ??
+        `RELU_${input.capability.toUpperCase().replace(/-/g, '_')}_RESULT_PERSISTED`,
+      after: {
+        runId: input.run.id,
+        taskId: input.task.id,
+        status,
+        fallbackUsed: input.fallbackUsed,
+      },
+      metadata: {
+        correctionTrailPreserved: true,
+        sourceType: input.run.sourceType,
+        sourceId: input.run.sourceId,
+        targetSourceType: input.config.targetSourceType ?? null,
+        targetSourceId: input.config.targetSourceId ?? null,
+        domain: input.run.domain,
+      },
+    });
+
+    return persistedResult;
   }
 
   private async persistOperationalResult(input: {

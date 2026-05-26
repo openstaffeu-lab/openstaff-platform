@@ -3657,3 +3657,21 @@ Verdict: `PASS - RELU AI product positioning, smart discovery, publish wizard be
 | pricing/upsell | ✅ | pricing exposes BASIC/BRONZE/GOLD/ENTERPRISE RELU AI capabilities, contact limits, and predictive upgrade language |
 | documentation | ✅ | EXEC-71 docs and proof README created under `docs/` and `docs/proof/exec71/` |
 | validation gates | ✅ | Prisma validate/generate, API build/tests, public web build/lint, backoffice build/lint, TypeScript checks, and Playwright screenshot proof passed |
+
+## EXEC-72 Operational AI Lifecycle, Persistence Audit & Marketplace Entity Closure
+
+Date: 2026-05-26
+
+Verdict: `PASS locally - RELU AI assistant outputs now persist to operational run/result tables, moderation overrides/actions create durable before/after audit events, public company pages are implemented, repository junk was removed, browser/mobile proof is clean, and all requested local validation gates passed. Live credentialed multi-account journey proof and production deployment are not claimed in this execution.`
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| repo hygiene | PASS | Removed root `.tmp-exec65-live/`, `.tmp-exec67-live/`, `debug.log`, and ignored `.tmp-auth` API logs; see `docs/EXEC72_REPO_HYGIENE.md` |
+| AI persistence | PASS | Secured RELU assistants now persist runs and result rows; see `docs/AI_PERSISTENCE_AUDIT.md` |
+| moderation persistence | PASS | RELU overrides/status changes and public-post/media/document moderation actions now create before/after audit logs |
+| public company pages | PASS | Added `GET /companies/public/:slug` and public `/companies/:slug` page |
+| marketplace lifecycle | PASS | Professional/company/project lifecycle matrix documented in `docs/EXEC72_MARKETPLACE_LIFECYCLE.md` |
+| media/document persistence | PASS | Public post media/document moderation now logs before/after audit events; archive/delete logs stale reference counts; profile/company/project media persistence paths are documented |
+| real user journeys | PASS locally | `docs/EXEC72_REAL_USER_JOURNEYS.md` maps professional, contractor company/project, and subcontractor discovery flows to persisted entities; live credentialed rerun remains outside this execution |
+| browser/mobile proof | PASS | `docs/proof/exec72/browser-proof.json` shows Chrome desktop, Edge desktop, Android Chrome, and iPhone Safari simulation with `consoleErrors=[]`, `pageErrors=[]`, `badResponses=[]`, and no horizontal overflow |
+| validation | PASS | Prisma validate/generate, API build/tests, public web build/lint, backoffice build/lint, `exec-26-production-ops-check.ps1`, and clean-tree `exec-13-release-check.ps1` passed |

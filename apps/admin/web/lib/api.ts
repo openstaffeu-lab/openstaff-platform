@@ -601,6 +601,73 @@ export type PublicProfile = {
   updatedAt?: string;
 };
 
+export type PublicCompanyProfile = PublicProfile & {
+  companyPage: {
+    seo: {
+      title: string;
+      description: string;
+    };
+    bannerUrl: string | null;
+    logoUrl: string | null;
+    gallery: string[];
+    projects: Array<{
+      id: string;
+      slug: string;
+      title: string;
+      summary: string | null;
+      description: string;
+      domain: string;
+      location: string;
+      value: string;
+      status: string;
+      bannerUrl: string | null;
+      taxonomy: {
+        escoCodes: string[];
+        naceCodes: string[];
+        uniclassCodes: string[];
+      };
+      media: Array<{
+        id: string;
+        url: string;
+        type: string;
+        role: string;
+        alt: string | null;
+      }>;
+      documents: Array<{
+        id: string;
+        title: string;
+        fileName: string;
+        mimeType: string;
+        downloadUrl: string;
+      }>;
+    }>;
+    certifications: string[];
+    taxonomy: {
+      esco: PublicProfile["escoSkills"];
+      nace: PublicProfile["naceCodes"];
+      uniclass: PublicProfile["uniclassCodes"];
+    };
+    aiSummary: {
+      text: string;
+      sourceResultId: string | null;
+      status: string | null;
+      score: number | null;
+      fallbackUsed: boolean;
+    };
+    contactCta: {
+      email: string | null;
+      phone: string | null;
+      website: string | null;
+    };
+    moderation: {
+      visibility: string;
+      moderationStatus: string;
+      lifecycleStatus: string;
+      rule: string;
+    };
+  };
+};
+
 export type MarketplacePostType =
   | "PROJECT"
   | "PROFESSIONAL"
@@ -1322,6 +1389,10 @@ export async function getPublicIdentityProfile(slug: string) {
 
 export async function getPublicProfile(slug: string) {
   return apiRequest<PublicProfile>(`/profiles/public/${encodeURIComponent(slug)}`);
+}
+
+export async function getPublicCompanyProfile(slug: string) {
+  return apiRequest<PublicCompanyProfile>(`/companies/public/${encodeURIComponent(slug)}`);
 }
 
 export async function getLanguages() {

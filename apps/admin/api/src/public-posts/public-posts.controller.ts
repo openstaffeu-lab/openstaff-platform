@@ -273,13 +273,17 @@ export class PublicPostsController {
   @UseGuards(RateLimitGuard)
   @RateLimit({ key: 'admin-moderation-post', maxRequests: 60, windowMs: 60_000 })
   @Patch('admin/public-posts/:id/status')
-  async updatePostStatus(@Param('id') id: string, @Body() body: ModeratePublicPostDto) {
+  async updatePostStatus(
+    @Param('id') id: string,
+    @Body() body: ModeratePublicPostDto,
+    @Req() req: any,
+  ) {
     try {
       return await this.publicPostsService.updatePostStatus(id, {
         status: body.status,
         moderationStatus: body.moderationStatus,
         visibility: body.visibility,
-      });
+      }, req.user);
     } catch (error) {
       this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.updatePostStatus', error);
@@ -318,11 +322,16 @@ export class PublicPostsController {
   @UseGuards(RateLimitGuard)
   @RateLimit({ key: 'admin-moderation-media', maxRequests: 60, windowMs: 60_000 })
   @Patch('admin/public-post-media/:id/status')
-  async updateMediaStatus(@Param('id') id: string, @Body() body: ModeratePublicMediaDto) {
+  async updateMediaStatus(
+    @Param('id') id: string,
+    @Body() body: ModeratePublicMediaDto,
+    @Req() req: any,
+  ) {
     try {
       return await this.publicPostsService.updateMediaStatus(
         id,
         typeof body.status === 'string' ? body.status : 'PENDING',
+        req.user,
       );
     } catch (error) {
       this.rethrowHttpException(error);
@@ -336,11 +345,16 @@ export class PublicPostsController {
   @UseGuards(RateLimitGuard)
   @RateLimit({ key: 'admin-moderation-document', maxRequests: 60, windowMs: 60_000 })
   @Patch('admin/public-post-documents/:id/status')
-  async updateDocumentStatus(@Param('id') id: string, @Body() body: ModeratePublicMediaDto) {
+  async updateDocumentStatus(
+    @Param('id') id: string,
+    @Body() body: ModeratePublicMediaDto,
+    @Req() req: any,
+  ) {
     try {
       return await this.publicPostsService.updateDocumentStatus(
         id,
         typeof body.status === 'string' ? body.status : 'PENDING',
+        req.user,
       );
     } catch (error) {
       this.rethrowHttpException(error);

@@ -263,6 +263,24 @@ export class PublicPostsService {
       );
     }
 
+    await this.auditService.log({
+      actorUserId: user.sub,
+      entityType: 'PUBLIC_POST',
+      entityId: id,
+      action: 'PUBLIC_POST_ARCHIVED_DELETED',
+      category: 'MARKETPLACE_LIFECYCLE',
+      before: {
+        status: existing.status,
+        moderationStatus: existing.moderationStatus,
+        mediaCount: existing.media.length,
+        documentCount: existing.documents.length,
+      },
+      metadata: {
+        staleMediaReferencesRemoved: existing.media.length,
+        staleDocumentReferencesRemoved: existing.documents.length,
+      },
+    });
+
     return buildSuccessResponse({ success: true });
   }
 
@@ -488,7 +506,17 @@ export class PublicPostsService {
   async updatePostStatus(
     id: string,
     body: { status?: string; moderationStatus?: string; visibility?: string },
+    user?: AuthenticatedUser | null,
   ) {
+    const before = await this.prisma.publicPost.findUnique({
+      where: { id },
+      include: this.adminPostInclude,
+    });
+
+    if (!before) {
+      throw new NotFoundException('Public post not found');
+    }
+
     const nextModerationStatus =
       typeof body.moderationStatus === 'string'
         ? body.moderationStatus
@@ -576,6 +604,28 @@ export class PublicPostsService {
       });
     }
 
+    await this.auditService.log({
+      actorUserId: user?.sub ?? null,
+      entityType: 'PUBLIC_POST',
+      entityId: post.id,
+      action: 'PUBLIC_POST_MODERATION_UPDATED',
+      category: 'MARKETPLACE_MODERATION',
+      before: {
+        status: before.status,
+        moderationStatus: before.moderationStatus,
+        visibility: before.visibility,
+      },
+      after: {
+        status: post.status,
+        moderationStatus: post.moderationStatus,
+        visibility: post.visibility,
+      },
+      metadata: {
+        moderationAction: nextModerationStatus ?? 'STATUS_UPDATE',
+        visibilityRulesApplied: post.visibility === PublicPostVisibility.PUBLIC,
+      },
+    });
+
     return buildSuccessResponse(this.toPublicPostResponse(post, true));
   }
 
@@ -605,7 +655,18 @@ export class PublicPostsService {
     return buildSuccessResponse(documents);
   }
 
-  async updateMediaStatus(id: string, status: string) {
+  async updateMediaStatus(id: string, status: string, user?: AuthenticatedUser | null) {
+    const before = await this.prisma.publicPostMedia.findUnique({
+      where: { id },
+      include: {
+        post: true,
+      },
+    });
+
+    if (!before) {
+      throw new NotFoundException('Public post media not found');
+    }
+
     const media = await this.prisma.publicPostMedia.update({
       where: { id },
       data: {
@@ -616,10 +677,41 @@ export class PublicPostsService {
       },
     });
 
+    await this.auditService.log({
+      actorUserId: user?.sub ?? null,
+      entityType: 'PUBLIC_POST_MEDIA',
+      entityId: media.id,
+      action: 'PUBLIC_POST_MEDIA_MODERATION_UPDATED',
+      category: 'MARKETPLACE_MODERATION',
+      before: {
+        status: before.status,
+        postId: before.postId,
+      },
+      after: {
+        status: media.status,
+        postId: media.postId,
+      },
+      metadata: {
+        postId: media.postId,
+        mediaType: media.type,
+      },
+    });
+
     return buildSuccessResponse(media);
   }
 
-  async updateDocumentStatus(id: string, status: string) {
+  async updateDocumentStatus(id: string, status: string, user?: AuthenticatedUser | null) {
+    const before = await this.prisma.publicPostDocument.findUnique({
+      where: { id },
+      include: {
+        post: true,
+      },
+    });
+
+    if (!before) {
+      throw new NotFoundException('Public post document not found');
+    }
+
     const document = await this.prisma.publicPostDocument.update({
       where: { id },
       data: {
@@ -627,6 +719,26 @@ export class PublicPostsService {
       },
       include: {
         post: true,
+      },
+    });
+
+    await this.auditService.log({
+      actorUserId: user?.sub ?? null,
+      entityType: 'PUBLIC_POST_DOCUMENT',
+      entityId: document.id,
+      action: 'PUBLIC_POST_DOCUMENT_MODERATION_UPDATED',
+      category: 'MARKETPLACE_MODERATION',
+      before: {
+        status: before.status,
+        postId: before.postId,
+      },
+      after: {
+        status: document.status,
+        postId: document.postId,
+      },
+      metadata: {
+        postId: document.postId,
+        mimeType: document.mimeType,
       },
     });
 

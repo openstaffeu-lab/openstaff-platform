@@ -1,0 +1,267 @@
+{
+  "checkedAtUtc": "2026-05-26T16:02:36.350Z",
+  "apiBase": "http://127.0.0.1:18080",
+  "webBase": "http://127.0.0.1:3100",
+  "routes": [
+    "/companies/exec72-company",
+    "/profiles/exec72-company",
+    "/professionals",
+    "/publish",
+    "/onboarding/company"
+  ],
+  "summary": {
+    "pass": true,
+    "checkedBrowsers": [
+      "Chrome desktop",
+      "Edge desktop",
+      "Android Chrome",
+      "iPhone Safari"
+    ],
+    "consoleErrors": [],
+    "pageErrors": [],
+    "badResponses": [],
+    "horizontalOverflowPages": []
+  },
+  "results": [
+    {
+      "browser": "Chrome desktop",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "horizontalOverflowPages": [],
+      "routeChecks": [
+        {
+          "route": "/companies/exec72-company",
+          "title": "Exec72 Critical Works SRL | OpenStaff company profile",
+          "containsCompanyName": 4,
+          "containsReluText": 3,
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          }
+        },
+        {
+          "route": "/profiles/exec72-company",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 3,
+          "containsReluText": 1,
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          }
+        },
+        {
+          "route": "/professionals",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 0,
+          "containsReluText": 0,
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          }
+        },
+        {
+          "route": "/publish",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 0,
+          "containsReluText": 0,
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          }
+        },
+        {
+          "route": "/onboarding/company",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 0,
+          "containsReluText": 0,
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          }
+        }
+      ],
+      "pass": true
+    },
+    {
+      "browser": "Edge desktop",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "horizontalOverflowPages": [],
+      "routeChecks": [
+        {
+          "route": "/companies/exec72-company",
+          "title": "Exec72 Critical Works SRL | OpenStaff company profile",
+          "containsCompanyName": 4,
+          "containsReluText": 3,
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          }
+        },
+        {
+          "route": "/profiles/exec72-company",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 3,
+          "containsReluText": 1,
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          }
+        },
+        {
+          "route": "/professionals",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 0,
+          "containsReluText": 0,
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          }
+        },
+        {
+          "route": "/publish",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 0,
+          "containsReluText": 0,
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          }
+        },
+        {
+          "route": "/onboarding/company",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 0,
+          "containsReluText": 0,
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          }
+        }
+      ],
+      "pass": true
+    },
+    {
+      "browser": "Android Chrome",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "horizontalOverflowPages": [],
+      "routeChecks": [
+        {
+          "route": "/companies/exec72-company",
+          "title": "Exec72 Critical Works SRL | OpenStaff company profile",
+          "containsCompanyName": 4,
+          "containsReluText": 3,
+          "viewport": {
+            "width": 393,
+            "height": 727
+          }
+        },
+        {
+          "route": "/profiles/exec72-company",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 3,
+          "containsReluText": 1,
+          "viewport": {
+            "width": 393,
+            "height": 727
+          }
+        },
+        {
+          "route": "/professionals",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 0,
+          "containsReluText": 0,
+          "viewport": {
+            "width": 393,
+            "height": 727
+          }
+        },
+        {
+          "route": "/publish",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 0,
+          "containsReluText": 0,
+          "viewport": {
+            "width": 393,
+            "height": 727
+          }
+        },
+        {
+          "route": "/onboarding/company",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 0,
+          "containsReluText": 0,
+          "viewport": {
+            "width": 393,
+            "height": 727
+          }
+        }
+      ],
+      "pass": true
+    },
+    {
+      "browser": "iPhone Safari",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "horizontalOverflowPages": [],
+      "routeChecks": [
+        {
+          "route": "/companies/exec72-company",
+          "title": "Exec72 Critical Works SRL | OpenStaff company profile",
+          "containsCompanyName": 4,
+          "containsReluText": 3,
+          "viewport": {
+            "width": 390,
+            "height": 664
+          }
+        },
+        {
+          "route": "/profiles/exec72-company",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 3,
+          "containsReluText": 1,
+          "viewport": {
+            "width": 390,
+            "height": 664
+          }
+        },
+        {
+          "route": "/professionals",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 0,
+          "containsReluText": 0,
+          "viewport": {
+            "width": 390,
+            "height": 664
+          }
+        },
+        {
+          "route": "/publish",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 0,
+          "containsReluText": 0,
+          "viewport": {
+            "width": 390,
+            "height": 664
+          }
+        },
+        {
+          "route": "/onboarding/company",
+          "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+          "containsCompanyName": 0,
+          "containsReluText": 0,
+          "viewport": {
+            "width": 390,
+            "height": 664
+          }
+        }
+      ],
+      "pass": true
+    }
+  ]
+}

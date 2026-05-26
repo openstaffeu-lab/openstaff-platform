@@ -30,3 +30,11 @@ Every AI-generated artifact must retain:
 - Pricing: `apps/admin/web/app/pricing/pricing-page-client.tsx`
 - Backoffice: `apps/admin/app/admin/relu/page.tsx`
 - API persistence: `apps/admin/api/src/relu/relu.service.ts`, `apps/admin/api/prisma/schema.prisma`
+
+## EXEC-72 Operational Closure
+
+- Secured RELU assistant flows now persist operational `ReluProcessingRun` rows plus classification, match, or recommendation records.
+- Public company pages are now first-class marketplace surfaces at `/companies/:slug`.
+- Public company pages use only approved profile state, approved media, and approved public project posts.
+- RELU moderation overrides and public-post moderation actions now create before/after audit events.
+- Persistence details are indexed in `docs/AI_PERSISTENCE_AUDIT.md` and `docs/AI_MODERATION_PERSISTENCE_PROOF.md`.

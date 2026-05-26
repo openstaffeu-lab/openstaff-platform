@@ -13,6 +13,10 @@ import {
   ProfileModerationStatus,
   ProfileType,
   ProfileVisibility,
+  PublicModerationStatus,
+  PublicPostType,
+  PublicPostVisibility,
+  ReluSourceType,
 } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { createReadStream } from 'fs';
@@ -95,6 +99,41 @@ export class ProfilesService {
     }
 
     return this.toPublicProfileResponse(profile);
+  }
+
+  async getPublicCompanyProfile(slug: string) {
+    const profile = await this.prisma.profile.findUnique({
+      where: { slug },
+      include: this.companyProfileInclude,
+    });
+
+    if (!profile) {
+      throw new NotFoundException('Company profile not found');
+    }
+
+    if (
+      profile.visibility !== ProfileVisibility.PUBLIC ||
+      profile.moderationStatus !== ProfileModerationStatus.APPROVED ||
+      profile.status !== ProfileLifecycleStatus.LIVE
+    ) {
+      throw new ForbiddenException('This company page is not publicly available');
+    }
+
+    if (this.usesProfessionalWorkspace(profile.profileType) && !profile.companyName) {
+      throw new ForbiddenException('This profile is not a public company page');
+    }
+
+    const latestReluSummary = await this.prisma.reluClassificationResult.findFirst({
+      where: {
+        sourceType: ReluSourceType.PROFILE,
+        sourceId: profile.id,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return this.toPublicCompanyProfileResponse(profile, latestReluSummary);
   }
 
   async getRestrictedProfile(slug: string, user: AuthenticatedUser) {
@@ -706,6 +745,100 @@ export class ProfilesService {
     };
   }
 
+  private toPublicCompanyProfileResponse(profile: any, latestReluSummary: any) {
+    const base = this.toPublicProfileResponse(profile);
+    const ownedAssetUrls = this.resolveOwnedAssetUrls(profile);
+    const projects = Array.isArray(profile.publicPosts)
+      ? profile.publicPosts.map((post: any) => ({
+          id: post.id,
+          slug: post.slug,
+          title: post.title,
+          summary: post.summary,
+          description: post.description,
+          domain: post.domain,
+          location: post.location,
+          value: post.value,
+          status: post.status,
+          bannerUrl: post.bannerUrl,
+          taxonomy: {
+            escoCodes: this.parseStringArray(post.escoCodesJson),
+            naceCodes: this.parseStringArray(post.naceCodesJson),
+            uniclassCodes: this.parseStringArray(post.uniclassCodesJson),
+          },
+          media: Array.isArray(post.media)
+            ? post.media
+                .filter((item: any) => item.status === PublicModerationStatus.APPROVED)
+                .map((item: any) => ({
+                  id: item.id,
+                  url: `/public-posts/media/${item.id}`,
+                  type: item.type,
+                  role: item.role,
+                  alt: item.alt,
+                }))
+            : [],
+          documents: Array.isArray(post.documents)
+            ? post.documents
+                .filter((item: any) => item.status === PublicModerationStatus.APPROVED)
+                .map((item: any) => ({
+                  id: item.id,
+                  title: item.title,
+                  fileName: item.fileName,
+                  mimeType: item.mimeType,
+                  downloadUrl: `/public-posts/documents/${item.id}`,
+                }))
+            : [],
+        }))
+      : [];
+    const reluOutput =
+      latestReluSummary && typeof latestReluSummary.outputData === 'object'
+        ? (latestReluSummary.outputData as Record<string, unknown>)
+        : null;
+    const aiSummary =
+      latestReluSummary?.explanation ??
+      (typeof reluOutput?.explanation === 'string' ? reluOutput.explanation : null) ??
+      profile.summary ??
+      profile.description ??
+      `${profile.displayName} is an approved OpenStaff company profile.`;
+
+    return {
+      ...base,
+      companyPage: {
+        seo: {
+          title: `${profile.companyName ?? profile.displayName} | OpenStaff company profile`,
+          description: aiSummary.slice(0, 156),
+        },
+        bannerUrl: ownedAssetUrls.bannerUrl,
+        logoUrl: ownedAssetUrls.logoUrl,
+        gallery: ownedAssetUrls.portfolioUrls,
+        projects,
+        certifications: this.parseCertificationText(profile.certificationsText),
+        taxonomy: {
+          esco: base.escoSkills,
+          nace: base.naceCodes,
+          uniclass: base.uniclassCodes,
+        },
+        aiSummary: {
+          text: aiSummary,
+          sourceResultId: latestReluSummary?.id ?? null,
+          status: latestReluSummary?.status ?? null,
+          score: latestReluSummary?.score ?? null,
+          fallbackUsed: latestReluSummary?.fallbackUsed ?? false,
+        },
+        contactCta: {
+          email: profile.publicEmail,
+          phone: profile.publicPhone,
+          website: profile.websiteUrl,
+        },
+        moderation: {
+          visibility: profile.visibility,
+          moderationStatus: profile.moderationStatus,
+          lifecycleStatus: profile.status,
+          rule: 'Only PUBLIC, APPROVED, LIVE company profiles and approved media/projects render on this page.',
+        },
+      },
+    };
+  }
+
   private toProfileDocumentResponse(document: any) {
     return {
       id: document.id,
@@ -748,6 +881,17 @@ export class ProfilesService {
     } catch {
       return [];
     }
+  }
+
+  private parseCertificationText(value: string | null) {
+    if (!value) {
+      return [];
+    }
+
+    return value
+      .split(/[\n,;|]/)
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
 
   private normalizeNullableString(value?: string | null) {
@@ -1336,6 +1480,26 @@ export class ProfilesService {
       include: {
         uniclass: true,
       },
+    },
+  } as const;
+
+  private readonly companyProfileInclude = {
+    ...this.profileInclude,
+    publicPosts: {
+      where: {
+        type: PublicPostType.PROJECT,
+        visibility: PublicPostVisibility.PUBLIC,
+        moderationStatus: PublicModerationStatus.APPROVED,
+        status: 'LIVE',
+      },
+      include: {
+        media: true,
+        documents: true,
+      },
+      orderBy: {
+        updatedAt: 'desc' as const,
+      },
+      take: 12,
     },
   } as const;
 

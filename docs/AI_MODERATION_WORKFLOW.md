@@ -28,3 +28,10 @@ The UI identifies optional auto-approve candidates when:
 - RELU confidence is above 90%
 - fallback was not used
 - result did not fail moderation
+
+## EXEC-72 Persistence Closure
+
+- `PATCH /admin/relu/results/:id/status` stores reviewer, review timestamp, and correction audit metadata.
+- `PATCH /admin/relu/results/:id/override` stores `overrideData`, before/after audit payloads, and a `correctionLog` marker.
+- Public post, media, and document moderation changes now write `MARKETPLACE_MODERATION` audit events.
+- Reruns append new RELU task/run/result records instead of overwriting prior correction history.

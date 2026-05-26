@@ -26,3 +26,11 @@ AI-generated values are advisory and editable. RELU suggestions are marked as AI
 ## Step 4: Review & Publish
 
 The saved project keeps moderation status, AI interpretation status, selected source documents, preview-ready media, and a confidence path for backoffice review.
+
+## EXEC-72 Persistence Closure
+
+- Project interpretation through RELU now creates an operational run and persisted classification result.
+- Taxonomy match and eligibility create persisted match results with compatibility scoring.
+- Test generation creates a persisted recommendation result.
+- Existing `ProjectAIInterpretation` remains the project workspace payload for apply-selected suggestions.
+- Public company pages can now expose approved company project work after moderation.

@@ -32,3 +32,11 @@ Authenticated project discovery includes an AI-style search input. The input map
 - budget
 
 Traditional status and engagement filters remain available as fallback controls.
+
+## EXEC-72 Persistence Closure
+
+- Taxonomy match persists to `ReluMatchResult`.
+- Eligibility percentage persists to `ReluMatchResult.compatibilityPercent`.
+- Candidate recommendations persist to `ReluRecommendation`.
+- Public-post matching can create recommendation-backed RELU conversations.
+- Public company pages now provide a dedicated discovery destination for approved contractor companies.
