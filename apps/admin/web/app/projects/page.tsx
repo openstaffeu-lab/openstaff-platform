@@ -31,12 +31,89 @@ const engagementOptions: Array<EngagementModel | "ALL"> = [
   "MIXED",
 ];
 
+function deriveSmartMatch(project: ProjectListItem, isLoggedIn: boolean) {
+  const taxonomyCount =
+    project.escoSkills.length + project.naceCodes.length + project.uniclassCodes.length;
+  const hasBudget = project.budgetMinCents !== null || project.budgetMaxCents !== null;
+  const hasAi = Boolean(project.aiInterpretation);
+  const base = isLoggedIn ? 54 : 38;
+  const score = Math.min(
+    96,
+    base +
+      Math.min(24, taxonomyCount * 5) +
+      (hasBudget ? 8 : 0) +
+      (project.location ? 6 : 0) +
+      (hasAi ? 8 : 0),
+  );
+
+  return {
+    score,
+    label:
+      score >= 86
+        ? "Strong Fit"
+        : score >= 70
+          ? "Good Fit"
+          : "Requires Additional Certifications",
+    confidence: hasAi ? "Contextual AI confidence: high" : "Contextual AI confidence: draft",
+  };
+}
+
+function deriveFlashPrediction(project: ProjectListItem) {
+  const budget =
+    project.budgetMinCents !== null || project.budgetMaxCents !== null
+      ? `${project.currencyCode ?? "EUR"} ${Math.round(
+          (project.budgetMinCents ?? project.budgetMaxCents ?? 0) / 100,
+        ).toLocaleString()}+`
+      : "Budget pending";
+
+  return {
+    duration: project.startDate && project.endDate ? "Scheduled window available" : "2-8 weeks estimated",
+    budget,
+    objective: project.summary?.split(".")[0] || "Clarify delivery scope and workforce demand",
+    risk: project.status === "DRAFT" || !project.aiInterpretation ? "Medium" : "Low",
+    certifications:
+      project.escoSkills.length > 0
+        ? project.escoSkills.slice(0, 2).map((item) => item.code).join(", ")
+        : "Manual certification check",
+  };
+}
+
+function mapConversationalSearch(value: string) {
+  const normalized = value.toLowerCase();
+
+  return {
+    geography:
+      ["bacau", "bucuresti", "cluj", "brasov", "iasi"].find((city) =>
+        normalized.includes(city),
+      ) ?? "Any region",
+    taxonomy: normalized.includes("industrial")
+      ? "Industrial"
+      : normalized.includes("construct")
+        ? "Construction"
+        : normalized.includes("horeca") || normalized.includes("hotel")
+          ? "Tourism/HORECA"
+          : "Open taxonomy",
+    certifications: normalized.includes("iscir")
+      ? "ISCIR"
+      : normalized.includes("safety")
+        ? "Safety"
+        : "No explicit certification",
+    projectType: normalized.includes("subcontract")
+      ? "Subcontractor package"
+      : normalized.includes("project")
+        ? "Project delivery"
+        : "Any project type",
+    budget: normalized.match(/(\d+[\d.]*)\s*(eur|euro)/)?.[0] ?? "Any budget",
+  };
+}
+
 export default function ProjectsPage() {
   const router = useRouter();
   const { token, isReady, logout, canCreateProjects, subscription } = useAuth();
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [aiSearch, setAiSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | "ALL">("ALL");
   const [engagementFilter, setEngagementFilter] = useState<EngagementModel | "ALL">(
     "ALL",
@@ -69,6 +146,11 @@ export default function ProjectsPage() {
         .length,
     };
   }, [projects]);
+
+  const aiSearchMapping = useMemo(
+    () => mapConversationalSearch(aiSearch),
+    [aiSearch],
+  );
 
   useEffect(() => {
     if (!isReady) {
@@ -204,6 +286,29 @@ export default function ProjectsPage() {
           </div>
         </section>
 
+        <section className="mt-6 rounded-[2rem] border border-cyan-400/15 bg-slate-900/75 p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <label className="block flex-1">
+              <span className="mb-2 block text-xs uppercase tracking-[0.28em] text-cyan-200">
+                RELU conversational search
+              </span>
+              <input
+                className="w-full rounded-2xl border border-cyan-300/20 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-cyan-300"
+                value={aiSearch}
+                onChange={(event) => setAiSearch(event.target.value)}
+                placeholder="Caut proiecte industriale in Bacau peste 20.000 EUR pentru subcontractori ISCIR."
+              />
+            </label>
+            <div className="grid gap-2 rounded-2xl border border-white/8 bg-slate-950/70 p-4 text-xs text-slate-300 sm:grid-cols-2 lg:min-w-[520px]">
+              <span>Geography: {aiSearchMapping.geography}</span>
+              <span>Taxonomy: {aiSearchMapping.taxonomy}</span>
+              <span>Certifications: {aiSearchMapping.certifications}</span>
+              <span>Project type: {aiSearchMapping.projectType}</span>
+              <span className="sm:col-span-2">Budget: {aiSearchMapping.budget}</span>
+            </div>
+          </div>
+        </section>
+
         <section className="mt-6 grid gap-4 rounded-[2rem] border border-white/10 bg-slate-900/70 p-5 md:grid-cols-2 xl:grid-cols-4">
           <label className="block">
             <span className="mb-2 block text-xs uppercase tracking-[0.28em] text-slate-400">
@@ -304,12 +409,16 @@ export default function ProjectsPage() {
             </div>
           ) : (
             <div className="grid gap-5 lg:grid-cols-2">
-              {projects.map((project) => (
-                <Link
-                  key={project.id}
-                  href={`/projects/${project.id}`}
-                  className="group rounded-[2rem] border border-white/10 bg-slate-900/80 p-6 transition hover:border-cyan-400/30 hover:bg-slate-900"
-                >
+              {projects.map((project) => {
+                const smartMatch = deriveSmartMatch(project, Boolean(token));
+                const prediction = deriveFlashPrediction(project);
+
+                return (
+                  <Link
+                    key={project.id}
+                    href={`/projects/${project.id}`}
+                    className="group rounded-[2rem] border border-white/10 bg-slate-900/80 p-6 transition hover:border-cyan-400/30 hover:bg-slate-900"
+                  >
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-semibold tracking-[0.24em] text-cyan-200">
                       {project.engagementModel}
@@ -322,6 +431,9 @@ export default function ProjectsPage() {
                         AI {project.aiInterpretation.status}
                       </span>
                     ) : null}
+                    <span className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-100">
+                      {smartMatch.score}% Match
+                    </span>
                   </div>
 
                   <h2 className="mt-5 text-2xl font-semibold transition group-hover:text-cyan-200">
@@ -332,6 +444,22 @@ export default function ProjectsPage() {
                     {project.summary ||
                       "No summary yet. Open the project to refine workforce demand, clause structure, and match candidates."}
                   </p>
+
+                  <div className="mt-5 grid gap-3 rounded-2xl border border-cyan-400/10 bg-cyan-400/8 p-4 text-sm text-slate-200">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-semibold text-cyan-100">{smartMatch.label}</span>
+                      <span className="text-xs text-cyan-100/80">{smartMatch.confidence}</span>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <span>Duration: {prediction.duration}</span>
+                      <span>Budget: {prediction.budget}</span>
+                      <span>Risk: {prediction.risk}</span>
+                      <span>Certifications: {prediction.certifications}</span>
+                    </div>
+                    <p className="text-xs leading-6 text-slate-300">
+                      Objective: {prediction.objective}
+                    </p>
+                  </div>
 
                   <div className="mt-5 grid gap-3 sm:grid-cols-3">
                     <div className="rounded-2xl border border-white/8 bg-slate-950/70 px-4 py-4">
@@ -394,8 +522,9 @@ export default function ProjectsPage() {
                     <span>{project.location || "Location pending"}</span>
                     <span>{project.owner.email}</span>
                   </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </section>

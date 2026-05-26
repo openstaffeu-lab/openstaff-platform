@@ -44,6 +44,19 @@ function getPlanCtaLabel(planCode: SubscriptionPlan["code"], isCurrentPlan: bool
   }
 }
 
+function getPlanAiCapabilities(planCode: SubscriptionPlan["code"]) {
+  switch (planCode) {
+    case "BASIC":
+      return ["Public discovery", "Limited chat/contact access", "Manual upload review"];
+    case "BRONZE":
+      return ["RELU compatibility prompts", "Project intake parsing", "Moderated media previews"];
+    case "GOLD":
+      return ["Advanced parsing", "Predictive risk summaries", "Priority contractor matching"];
+    case "ENTERPRISE":
+      return ["Custom RELU workflows", "Auto-approve policy controls", "Dedicated procurement support"];
+  }
+}
+
 export function PricingPageClient() {
   const searchParams = useSearchParams();
   const { isReady, isAuthenticated, subscription, remainingPrivateContacts, token, user } =
@@ -170,15 +183,15 @@ export function PricingPageClient() {
           <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.35em] text-brand-navy/70">
-                Pricing & Entitlements
+                Pricing, RELU AI & Entitlements
               </div>
               <h1 className="mt-4 text-4xl font-bold text-brand-charcoal">
-                Upgrade paths for private outreach and structured delivery
+                Contextual AI-assisted monetization for procurement and staffing
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-                Compare plan limits and request an upgrade directly from the pricing page. OpenStaff
-                will review the request, issue the commercial paperwork manually, and contact you
-                before any activation.
+                Compare chat/contact limits, parsing depth, RELU compatibility signals,
+                and predictive features. Upgrade prompts can be triggered when RELU detects
+                strong compatibility with a contractor, subcontractor, or hiring workflow.
               </p>
               {reason === "private-contact-limit" ? (
                 <div className="mt-5 rounded-[1.4rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
@@ -304,6 +317,19 @@ export function PricingPageClient() {
                       </div>
                     </div>
 
+                    <div className="mt-5 rounded-[1.4rem] border border-cyan-100 bg-cyan-50 p-4">
+                      <div className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-800">
+                        RELU AI capabilities
+                      </div>
+                      <div className="mt-3 grid gap-2">
+                        {getPlanAiCapabilities(plan.code).map((capability) => (
+                          <div key={capability} className="text-xs font-medium text-cyan-950">
+                            {capability}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="mt-5 space-y-2">
                       {featureEntries.length ? (
                         featureEntries.map(([featureKey]) => (
@@ -330,7 +356,9 @@ export function PricingPageClient() {
                           }
                           className="inline-flex rounded-full bg-brand-navy px-4 py-2 text-sm font-semibold text-white"
                         >
-                          {getPlanCtaLabel(plan.code, isCurrentPlan)}
+                          {plan.code === "GOLD"
+                            ? "Unlock predictive RELU"
+                            : getPlanCtaLabel(plan.code, isCurrentPlan)}
                         </button>
                       ) : (
                         <Link

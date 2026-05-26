@@ -9,19 +9,22 @@ import { StatusConsoleReporter } from "../components/StatusConsoleReporter";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://openstaff.eu"),
-  title: "OpenStaff",
-  description: "The Structure for Global Work.",
+  title: "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+  description:
+    "RELU AI-powered procurement, staffing, contractor matching, and moderated workspaces for Industrial, Construction, and Tourism/HORECA sectors.",
   openGraph: {
-    title: "OpenStaff",
-    description: "The Structure for Global Work.",
+    title: "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+    description:
+      "RELU AI-powered procurement, staffing, contractor matching, and moderated workspaces for Industrial, Construction, and Tourism/HORECA sectors.",
     url: "https://openstaff.eu",
     siteName: "OpenStaff",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "OpenStaff",
-    description: "The Structure for Global Work.",
+    title: "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+    description:
+      "RELU AI-powered procurement, staffing, contractor matching, and moderated workspaces for Industrial, Construction, and Tourism/HORECA sectors.",
   },
 };
 

@@ -3639,3 +3639,21 @@ Date: 2026-05-25
 - Validation passed for Prisma validate/generate, API build/test, public build/lint, backoffice build/lint, and EXEC-26 production ops check.
 - EXEC-13 release check remains blocked by the pre-existing dirty worktree outside the EXEC-69C file set.
 - Verdict: EXEC-69C is implemented locally and browser-proven with mocked API, but remains `IN PROGRESS` for production PASS until real mailbox credentials are available and live deploy/browser OTP proof is captured.
+## EXEC-71 RELU AI Ecosystem Alignment
+
+Date: 2026-05-26
+
+Verdict: `PASS - RELU AI product positioning, smart discovery, publish wizard behavior, moderation confidence/correction visibility, media-first upload previews, AI pricing upsell, documentation, builds, tests, and browser/mobile proof are complete locally; live multi-account creation was not rerun without reusable credentials`
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| RELU AI core positioning | ✅ | homepage and metadata now present OpenStaff as an AI-Driven Procurement & Staffing Ecosystem for Industrial, Construction, and Tourism/HORECA |
+| smart project feed | ✅ | public cards and authenticated project cards show RELU match percentage, fit label, confidence, flash duration/budget/risk/certification summaries, and conversational search mapping |
+| project wizard | ✅ | project workspace now exposes four RELU wizard steps, drag/drop upload, image/video previews, AI processing checklist, validation framing, and review/publish state |
+| onboarding AI | ✅ | identity/company onboarding remains non-destructive with user validation; RELU suggestions are advisory and profile media preview is visible |
+| RELU content generation | ✅ | persisted RELU results/runs/recommendations retain output, input snapshot, score, fallback, override, and reviewed state |
+| backoffice moderation | ✅ | RELU admin review now shows raw snapshot vs extracted structure, confidence badges, low-confidence warning, correction logs, and auto-approve eligibility |
+| media-first experience | ✅ | project uploads support documents/media, local previews, persisted upload/delete/download/preview, and moderation source context |
+| pricing/upsell | ✅ | pricing exposes BASIC/BRONZE/GOLD/ENTERPRISE RELU AI capabilities, contact limits, and predictive upgrade language |
+| documentation | ✅ | EXEC-71 docs and proof README created under `docs/` and `docs/proof/exec71/` |
+| validation gates | ✅ | Prisma validate/generate, API build/tests, public web build/lint, backoffice build/lint, TypeScript checks, and Playwright screenshot proof passed |

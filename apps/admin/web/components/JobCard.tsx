@@ -34,6 +34,17 @@ export default function JobCard({
           .filter(Boolean)
           .join(" - ")}`
       : null;
+  const taxonomyCount = naceCodes?.length ?? 0;
+  const reluMatch = Math.min(
+    95,
+    58 + (budgetLabel ? 10 : 0) + (location ? 9 : 0) + Math.min(18, taxonomyCount * 6),
+  );
+  const reluFit =
+    reluMatch >= 86
+      ? "Strong Fit"
+      : reluMatch >= 72
+        ? "Good Fit"
+        : "Requires Additional Certifications";
 
   return (
     <div
@@ -86,6 +97,26 @@ export default function JobCard({
       {budgetLabel ? (
         <div style={{ color: "#00E87A", fontWeight: 800, fontSize: 20 }}>{budgetLabel}</div>
       ) : null}
+
+      <div
+        style={{
+          border: "1px solid #D6F5E5",
+          background: "#F0FDF7",
+          borderRadius: 10,
+          padding: 12,
+          display: "grid",
+          gap: 6,
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+          <strong style={{ color: "#0F766E" }}>{reluMatch}% Match</strong>
+          <span style={{ color: "#166534", fontSize: 12, fontWeight: 700 }}>{reluFit}</span>
+        </div>
+        <div style={{ color: "#475569", fontSize: 12, lineHeight: 1.5 }}>
+          RELU Flash: duration 2-8 weeks, contract risk {budgetLabel ? "low" : "medium"},
+          certifications {naceCodes?.[0] ? `NACE ${naceCodes[0]}` : "pending validation"}.
+        </div>
+      </div>
 
       {ownerName ? (
         <div style={{ color: "#8892B0", fontSize: 12 }}>

@@ -13,12 +13,12 @@ import {
 } from "@/lib/api";
 
 const CATEGORIES = [
+  { key: "INDUSTRIAL", label: "Industrial", accent: "#0F766E" },
+  { key: "CONSTRUCTION", label: "Construction", accent: "#2563EB" },
+  { key: "HORECA", label: "Tourism/HORECA", accent: "#C2410C" },
   { key: "DATA_CENTER", label: "Data Center", accent: "#3B82F6" },
   { key: "PHOTOVOLTAIC", label: "Photovoltaic", accent: "#F59E0B" },
-  { key: "HORECA", label: "HoReCa", accent: "#EF4444" },
   { key: "ENVIRONMENT", label: "Environment", accent: "#10B981" },
-  { key: "CONSTRUCTION", label: "Construction", accent: "#8B5CF6" },
-  { key: "PCB_DESIGN", label: "PCB Design", accent: "#06B6D4" },
 ];
 
 export default function HomePage() {
@@ -89,15 +89,23 @@ export default function HomePage() {
                 textTransform: "uppercase",
               }}
             >
-              Approved marketplace visibility
+              AI-Driven Procurement & Staffing Ecosystem
             </div>
-            <h1 style={{ fontSize: 52, lineHeight: 1.05, fontWeight: 800, margin: "18px 0 0" }}>
-              Real companies, approved professionals, and live project demand in one marketplace.
+            <h1
+              style={{
+                fontSize: "clamp(34px, 8vw, 52px)",
+                lineHeight: 1.05,
+                fontWeight: 800,
+                margin: "18px 0 0",
+                overflowWrap: "anywhere",
+              }}
+            >
+              RELU AI connects industrial, construction, and Tourism/HORECA demand with trusted delivery capacity.
             </h1>
             <p style={{ fontSize: 19, opacity: 0.88, marginTop: 20, maxWidth: 680, lineHeight: 1.7 }}>
-              OpenStaff helps companies and professionals create trusted profiles, publish work,
-              and appear publicly only after moderation. What you see here is the approved feed,
-              not placeholder launch content.
+              OpenStaff moves beyond static listings into AI-assisted procurement,
+              staffing, contractor matching, moderated media, and workspace operations
+              powered by shared RELU AI metadata.
             </p>
           </div>
 
@@ -114,7 +122,7 @@ export default function HomePage() {
                 textDecoration: "none",
               }}
             >
-              Explore live projects
+              Explore
             </Link>
             <Link
               href="/register"
@@ -129,7 +137,7 @@ export default function HomePage() {
                 border: "1px solid rgba(255,255,255,0.26)",
               }}
             >
-              Create your account
+              Register
             </Link>
           </div>
         </div>

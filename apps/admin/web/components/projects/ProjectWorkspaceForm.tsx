@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ChangeEvent,
+  DragEvent,
   FormEvent,
   useEffect,
   useMemo,
@@ -101,6 +102,7 @@ type QueuedDocumentDraft = {
   title: string;
   description: string;
   usedForAI: boolean;
+  previewUrl?: string;
 };
 
 type UploadedDocumentState = ProjectDocument;
@@ -160,6 +162,10 @@ function createQueuedDocument(file: File): QueuedDocumentDraft {
     title: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]+/g, " "),
     description: "",
     usedForAI: false,
+    previewUrl:
+      file.type.startsWith("image/") || file.type.startsWith("video/")
+        ? URL.createObjectURL(file)
+        : undefined,
   };
 }
 
@@ -290,6 +296,7 @@ export default function ProjectWorkspaceForm({
   const [aiStatus, setAiStatus] = useState<AIInterpretationStatus>("PENDING");
   const [sourceText, setSourceText] = useState("");
   const [selectedAiDocumentIds, setSelectedAiDocumentIds] = useState<string[]>([]);
+  const [wizardStep, setWizardStep] = useState(1);
 
   useEffect(() => {
     if (isReady && !token) {
@@ -434,6 +441,20 @@ export default function ProjectWorkspaceForm({
       ...files.map((file) => createQueuedDocument(file)),
     ]);
     event.target.value = "";
+  };
+
+  const handleDroppedFiles = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const files = Array.from(event.dataTransfer.files ?? []);
+
+    if (files.length === 0) {
+      return;
+    }
+
+    setQueuedDocuments((current) => [
+      ...current,
+      ...files.map((file) => createQueuedDocument(file)),
+    ]);
   };
 
   const uploadQueuedDocuments = async (targetProjectId: string) => {
@@ -818,12 +839,44 @@ export default function ProjectWorkspaceForm({
           </div>
         </header>
 
+        <section className="mt-6 rounded-[2rem] border border-cyan-400/15 bg-slate-900/75 p-5">
+          <div className="grid gap-3 md:grid-cols-4">
+            {[
+              ["1", "Upload media/documents", "Images, video, PDF, DOC, XLS"],
+              ["2", "RELU AI processing", "OCR, extraction, taxonomy, risk"],
+              ["3", "Validate suggestions", "Editable AI-marked fields"],
+              ["4", "Review & publish", "Moderation and confidence summary"],
+            ].map(([step, title, description]) => (
+              <button
+                key={step}
+                type="button"
+                onClick={() => setWizardStep(Number(step))}
+                className={`rounded-2xl border p-4 text-left transition ${
+                  wizardStep === Number(step)
+                    ? "border-cyan-300/40 bg-cyan-400/10 text-cyan-100"
+                    : "border-white/10 bg-slate-950/50 text-slate-300 hover:border-cyan-300/20"
+                }`}
+              >
+                <span className="text-xs font-semibold uppercase tracking-[0.24em]">
+                  Step {step}
+                </span>
+                <span className="mt-2 block text-sm font-semibold">{title}</span>
+                <span className="mt-1 block text-xs text-slate-400">{description}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
         <form
           className="mt-6 grid gap-6 xl:grid-cols-[1.18fr_0.82fr]"
           onSubmit={handleSubmit}
         >
           <div className="space-y-6">
-            <section className="rounded-[2rem] border border-white/10 bg-slate-900/80 p-6">
+            <section
+              className="rounded-[2rem] border border-white/10 bg-slate-900/80 p-6"
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={handleDroppedFiles}
+            >
               <div className="text-xs uppercase tracking-[0.35em] text-cyan-300">
                 Project Identity
               </div>
@@ -1250,8 +1303,8 @@ export default function ProjectWorkspaceForm({
                     Documents
                   </div>
                   <p className="mt-3 text-sm leading-7 text-slate-300">
-                    Upload real files to the local ingestion pipeline and mark the
-                    documents that AI should process later.
+                    Drag and drop real files into this panel or select them manually.
+                    RELU keeps uploads non-destructive until you validate and publish.
                   </p>
                 </div>
                 <label className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-200">
@@ -1298,6 +1351,24 @@ export default function ProjectWorkspaceForm({
                         Remove
                       </button>
                     </div>
+
+                    {document.previewUrl ? (
+                      <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70">
+                        {document.file.type.startsWith("image/") ? (
+                          <img
+                            src={document.previewUrl}
+                            alt={document.title}
+                            className="h-56 w-full object-cover"
+                          />
+                        ) : (
+                          <video
+                            src={document.previewUrl}
+                            className="h-56 w-full bg-black object-contain"
+                            controls
+                          />
+                        )}
+                      </div>
+                    ) : null}
 
                     <div className="mt-4 grid gap-4 md:grid-cols-2">
                       <label className="block">
@@ -1492,8 +1563,26 @@ export default function ProjectWorkspaceForm({
                 </label>
 
                 <div className="rounded-2xl border border-white/8 bg-slate-950/70 px-4 py-4 text-sm text-slate-300">
-                  This phase stores real document references for later parsing. No
-                  OCR, PDF extraction, or AI processing runs yet.
+                  RELU stores source text and document ids for OCR, semantic
+                  extraction, taxonomy extraction, contract parsing, and predictive
+                  summaries. Every generated field remains editable before publish.
+                </div>
+
+                <div className="grid gap-3 rounded-2xl border border-cyan-400/10 bg-cyan-400/8 p-4 text-sm text-cyan-50 md:col-span-2">
+                  {[
+                    "OCR progress prepared for uploaded PDF/DOC/image sources",
+                    "Semantic extraction maps objective, location, budget, and dates",
+                    "Taxonomy extraction suggests ESCO, NACE, and Uniclass tags",
+                    "Contract parsing highlights payment, safety, legal, and schedule clauses",
+                    "Predictive summary feeds moderation confidence and public preview",
+                  ].map((item, index) => (
+                    <div key={item} className="flex items-center gap-3">
+                      <span className="grid h-7 w-7 place-items-center rounded-full bg-cyan-300/20 text-xs font-semibold">
+                        {index + 1}
+                      </span>
+                      <span>{item}</span>
+                    </div>
+                  ))}
                 </div>
 
                 <label className="block md:col-span-2">
