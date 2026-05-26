@@ -3692,3 +3692,19 @@ Verdict: `PASS locally - Backoffice now uses operational grouped navigation, hid
 | media/document UX | PASS | Media page now renders image/video previews, document cards, clean file chips, and Preview/Open/Download actions without raw storage paths |
 | VAT/error states | PASS | Countries & VAT now keeps navigation and forms stable with inline warnings, retry, and compact empty states |
 | responsive proof | PASS | `docs/proof/exec73/browser-proof.json` passed Chrome desktop, Edge desktop, Android Chrome, and iPhone Safari simulation with no overflow |
+
+## EXEC-74 Deep Validation, Consistency Audit & Production Integrity Review
+
+Date: 2026-05-26
+
+Verdict: `FAIL - RELU run/result persistence is real and the visible backoffice cleanup is materially improved, but EXEC-74 found blockers that prevent a production-safe PASS: project AI interpretation history can still be overwritten, technical backend APIs are not isolated to SuperAdmin, public company uploaded assets can route through authenticated profile document endpoints, hidden raw/technical admin routes remain, and live credentialed lifecycle proof is still unverified.`
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| RELU persistence | PARTIAL PASS | `ReluTask`, `ReluProcessingRun`, result tables, overrides, reviewed actor/timestamp, fallback status, and audit logs exist; `ProjectAIInterpretation` still overwrites a single project row |
+| marketplace lifecycle | PARTIAL PASS | public post/profile gates are real, but profile assets lack per-asset moderation, project workspace delete is incomplete, and live full journeys are unverified |
+| public company pages | PARTIAL PASS | company/profile/project visibility gates exist, but uploaded profile banner/logo/gallery URLs can point at authenticated document routes |
+| backoffice isolation | PARTIAL PASS | sidebar and selected pages are cleaned, but `/admin/workforce` still renders raw metadata and `/admin/imports` remains a direct technical route |
+| role visibility | FAIL | normal `ADMIN` has broad `MANAGE_USERS`/`WRITE` permissions and can directly reach technical APIs hidden by the UI |
+| browser proof integrity | PARTIAL PASS | EXEC-72/73 scripts assert console/page errors and overflow, but they use mock APIs and do not prove live persistence, uploads, or backend role isolation |
+| release hygiene | PARTIAL PASS | tracked tree was clean and no temp/debug files were found; ignored local env/log/secret files still exist outside tracked release state |
