@@ -47,7 +47,9 @@ export class BillingAdminController {
   @Get('events')
   async listBillingEvents() {
     try {
-      return buildSuccessResponse(await this.billingService.listBillingEvents());
+      return buildSuccessResponse(
+        await this.billingService.listBillingEvents(),
+      );
     } catch (error) {
       logEndpointError('BillingAdminController.listBillingEvents', error);
       return buildInternalErrorResponse(error);
@@ -190,7 +192,10 @@ export class BillingProfileController {
         await this.billingService.upsertBillingProfile(req.user.sub, body),
       );
     } catch (error) {
-      logEndpointError('BillingProfileController.upsertMyBillingProfile', error);
+      logEndpointError(
+        'BillingProfileController.upsertMyBillingProfile',
+        error,
+      );
       throw error;
     }
   }
@@ -202,7 +207,11 @@ export class BillingPublicController {
 
   @Public()
   @UseGuards(RateLimitGuard)
-  @RateLimit({ key: 'billing-webhook-public', maxRequests: 60, windowMs: 60_000 })
+  @RateLimit({
+    key: 'billing-webhook-public',
+    maxRequests: 60,
+    windowMs: 60_000,
+  })
   @Post('webhooks/:provider')
   async receiveWebhook(
     @Param('provider') provider: string,

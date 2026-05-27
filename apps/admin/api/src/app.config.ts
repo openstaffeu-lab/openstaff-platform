@@ -79,7 +79,8 @@ export async function loadSecrets() {
   }
 
   try {
-    const { SecretManagerServiceClient } = await import('@google-cloud/secret-manager');
+    const { SecretManagerServiceClient } =
+      await import('@google-cloud/secret-manager');
     const client = new SecretManagerServiceClient();
 
     for (const secretName of PRODUCTION_SECRETS) {

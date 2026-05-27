@@ -40,7 +40,12 @@ export class MatchEngineService {
 
     const results = await Promise.all(
       profiles.map(async (profile) =>
-        this.scoreProfileAgainstProject(project, null, profile, await this.getEligibility(project.id, profile.id)),
+        this.scoreProfileAgainstProject(
+          project,
+          null,
+          profile,
+          await this.getEligibility(project.id, profile.id),
+        ),
       ),
     );
 
@@ -65,7 +70,9 @@ export class MatchEngineService {
 
     this.projectAccessPolicy.assertCanReadProject(user, project.createdById);
 
-    const jobRequest = project.jobRequests.find((item: any) => item.id === jobRequestId);
+    const jobRequest = project.jobRequests.find(
+      (item: any) => item.id === jobRequestId,
+    );
 
     if (!jobRequest) {
       throw new NotFoundException('Project job request not found');
@@ -92,7 +99,12 @@ export class MatchEngineService {
     return results.sort((left, right) => right.score - left.score);
   }
 
-  private scoreProfileAgainstProject(project: any, jobRequest: any, profile: any, eligibility: any) {
+  private scoreProfileAgainstProject(
+    project: any,
+    jobRequest: any,
+    profile: any,
+    eligibility: any,
+  ) {
     let score = 0;
     const reasons: string[] = [];
     const missingRequirements: string[] = [];
@@ -107,7 +119,9 @@ export class MatchEngineService {
     );
     const projectUniclassIds = new Set(
       jobRequest?.uniclassClassifications?.length
-        ? jobRequest.uniclassClassifications.map((item: any) => item.uniclass.id)
+        ? jobRequest.uniclassClassifications.map(
+            (item: any) => item.uniclass.id,
+          )
         : project.uniclassClassifications.map((item: any) => item.uniclass.id),
     );
 
@@ -123,14 +137,20 @@ export class MatchEngineService {
 
     if (profileEsco.length > 0) {
       score += Math.min(24, profileEsco.length * 8);
-      reasons.push(`ESCO overlap: ${profileEsco.map((item: any) => item.code).join(', ')}`);
+      reasons.push(
+        `ESCO overlap: ${profileEsco.map((item: any) => item.code).join(', ')}`,
+      );
     } else if (projectEscoIds.size > 0) {
-      missingRequirements.push('No ESCO overlap with the requested trade scope');
+      missingRequirements.push(
+        'No ESCO overlap with the requested trade scope',
+      );
     }
 
     if (profileNace.length > 0) {
       score += Math.min(12, profileNace.length * 6);
-      reasons.push(`NACE alignment: ${profileNace.map((item: any) => item.code).join(', ')}`);
+      reasons.push(
+        `NACE alignment: ${profileNace.map((item: any) => item.code).join(', ')}`,
+      );
     }
 
     if (profileUniclass.length > 0) {
@@ -143,7 +163,11 @@ export class MatchEngineService {
     if (profile.cityId && project.cityId && profile.cityId === project.cityId) {
       score += 15;
       reasons.push('Same city delivery footprint');
-    } else if (profile.regionId && project.regionId && profile.regionId === project.regionId) {
+    } else if (
+      profile.regionId &&
+      project.regionId &&
+      profile.regionId === project.regionId
+    ) {
       score += 10;
       reasons.push('Same region delivery footprint');
     } else if (
@@ -154,27 +178,36 @@ export class MatchEngineService {
       score += 6;
       reasons.push('Same country delivery footprint');
     } else if (project.countryId) {
-      missingRequirements.push('Location footprint differs from the project geography');
+      missingRequirements.push(
+        'Location footprint differs from the project geography',
+      );
     }
 
     const profileLanguageIds = new Set(
       profile.languages.map((item: any) => item.language.id),
     );
-    const projectLanguageId = jobRequest?.languageId ?? project.primaryLanguageId;
+    const projectLanguageId =
+      jobRequest?.languageId ?? project.primaryLanguageId;
 
     if (projectLanguageId && profileLanguageIds.has(projectLanguageId)) {
       score += 10;
       reasons.push('Project language is supported');
     } else if (projectLanguageId) {
-      missingRequirements.push('Primary project language is not listed on the profile');
+      missingRequirements.push(
+        'Primary project language is not listed on the profile',
+      );
     }
 
-    const supportedEngagementModels = this.parseStringArray(profile.supportedEngagementModels);
+    const supportedEngagementModels = this.parseStringArray(
+      profile.supportedEngagementModels,
+    );
     if (supportedEngagementModels.includes(project.engagementModel)) {
       score += 10;
       reasons.push(`Supports ${project.engagementModel} engagement`);
     } else {
-      missingRequirements.push(`Does not explicitly support ${project.engagementModel} engagement`);
+      missingRequirements.push(
+        `Does not explicitly support ${project.engagementModel} engagement`,
+      );
     }
 
     const profileKeywordText = [
@@ -203,35 +236,60 @@ export class MatchEngineService {
 
     if (certificationHits > 0) {
       score += Math.min(10, certificationHits * 2);
-      reasons.push('Profile certifications and experience text align with project requirements');
+      reasons.push(
+        'Profile certifications and experience text align with project requirements',
+      );
     }
 
     const domainKeywords = this.extractDomainKeywords(project, jobRequest);
-    const domainMatches = domainKeywords.filter((keyword) => profileKeywordText.includes(keyword));
+    const domainMatches = domainKeywords.filter((keyword) =>
+      profileKeywordText.includes(keyword),
+    );
 
     if (domainMatches.length > 0) {
       score += Math.min(12, domainMatches.length * 3);
-      reasons.push(`Profile documents mention ${domainMatches.slice(0, 4).join(', ')}`);
+      reasons.push(
+        `Profile documents mention ${domainMatches.slice(0, 4).join(', ')}`,
+      );
     } else if (profile.documents.length === 0) {
-      missingRequirements.push('No profile documents available for text-backed matching');
+      missingRequirements.push(
+        'No profile documents available for text-backed matching',
+      );
     } else {
-      missingRequirements.push('Profile documents do not strongly reflect this scope yet');
+      missingRequirements.push(
+        'Profile documents do not strongly reflect this scope yet',
+      );
     }
 
     const projectConditionTypes = new Set(
       project.conditions.map((condition: any) => condition.type),
     );
 
-    if (projectConditionTypes.has(ProjectConditionType.SAFETY) && !profileKeywordText.includes('safety')) {
-      missingRequirements.push('Safety capability is not obvious from profile data');
+    if (
+      projectConditionTypes.has(ProjectConditionType.SAFETY) &&
+      !profileKeywordText.includes('safety')
+    ) {
+      missingRequirements.push(
+        'Safety capability is not obvious from profile data',
+      );
     }
 
-    if (projectConditionTypes.has(ProjectConditionType.INSURANCE) && !profileKeywordText.includes('insurance')) {
-      missingRequirements.push('Insurance evidence is not obvious from profile data');
+    if (
+      projectConditionTypes.has(ProjectConditionType.INSURANCE) &&
+      !profileKeywordText.includes('insurance')
+    ) {
+      missingRequirements.push(
+        'Insurance evidence is not obvious from profile data',
+      );
     }
 
-    if (projectConditionTypes.has(ProjectConditionType.COMPLIANCE) && !profileKeywordText.includes('permit')) {
-      missingRequirements.push('Compliance and permit handling are not obvious from profile data');
+    if (
+      projectConditionTypes.has(ProjectConditionType.COMPLIANCE) &&
+      !profileKeywordText.includes('permit')
+    ) {
+      missingRequirements.push(
+        'Compliance and permit handling are not obvious from profile data',
+      );
     }
 
     return {
@@ -243,8 +301,16 @@ export class MatchEngineService {
       reasons,
       missingRequirements,
       taxonomyOverlap: {
-        esco: profileEsco.map((item: any) => ({ id: item.id, code: item.code, title: item.title })),
-        nace: profileNace.map((item: any) => ({ id: item.id, code: item.code, title: item.title })),
+        esco: profileEsco.map((item: any) => ({
+          id: item.id,
+          code: item.code,
+          title: item.title,
+        })),
+        nace: profileNace.map((item: any) => ({
+          id: item.id,
+          code: item.code,
+          title: item.title,
+        })),
         uniclass: profileUniclass.map((item: any) => ({
           id: item.id,
           code: item.code,
@@ -255,10 +321,18 @@ export class MatchEngineService {
     };
   }
 
-  private async getEligibility(projectId: string, profileId: string, jobRequestId?: string) {
-    return this.complianceEligibilityService.evaluateProfileForProjectByIds(projectId, profileId, {
-      jobRequestId,
-    });
+  private async getEligibility(
+    projectId: string,
+    profileId: string,
+    jobRequestId?: string,
+  ) {
+    return this.complianceEligibilityService.evaluateProfileForProjectByIds(
+      projectId,
+      profileId,
+      {
+        jobRequestId,
+      },
+    );
   }
 
   private extractDomainKeywords(project: any, jobRequest: any) {
@@ -271,7 +345,9 @@ export class MatchEngineService {
       jobRequest?.description ?? '',
       jobRequest?.scopeOfWork ?? '',
       jobRequest?.notes ?? '',
-      ...project.conditions.map((condition: any) => `${condition.title} ${condition.content}`),
+      ...project.conditions.map(
+        (condition: any) => `${condition.title} ${condition.content}`,
+      ),
     ]
       .join(' ')
       .toLowerCase();

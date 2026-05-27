@@ -38,7 +38,8 @@ export class PermissionsGuard implements CanActivate {
         category: 'RBAC',
         sourceType: 'HTTP_ROUTE',
         sourceId: `${request?.method ?? 'GET'} ${request?.url ?? ''}`,
-        message: 'Permissions guard denied request because no role was resolved',
+        message:
+          'Permissions guard denied request because no role was resolved',
         request,
       });
       throw new ForbiddenException('No authenticated user role found');
@@ -76,4 +77,3 @@ export class PermissionsGuard implements CanActivate {
     return true;
   }
 }
-

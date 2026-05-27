@@ -82,7 +82,11 @@ export class DocumentsService {
   }
 
   async verifyDocument(documentId: string, currentActor: any) {
-    if (!['ADMIN', 'SUPERADMIN', 'COMPLIANCE_OFFICER'].includes(currentActor?.role)) {
+    if (
+      !['ADMIN', 'SUPERADMIN', 'COMPLIANCE_OFFICER'].includes(
+        currentActor?.role,
+      )
+    ) {
       throw new ForbiddenException('Compliance or admin role required');
     }
 
@@ -109,7 +113,9 @@ export class DocumentsService {
     }
 
     if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-      throw new BadRequestException('Only PDF, JPEG, and PNG uploads are allowed');
+      throw new BadRequestException(
+        'Only PDF, JPEG, and PNG uploads are allowed',
+      );
     }
 
     if (file.size > MAX_FILE_SIZE) {
@@ -117,7 +123,10 @@ export class DocumentsService {
     }
   }
 
-  private async uploadToCloudStorage(storageKey: string, file: UploadedDocumentFile) {
+  private async uploadToCloudStorage(
+    storageKey: string,
+    file: UploadedDocumentFile,
+  ) {
     if (!this.storage || !this.storageBucket) {
       throw new Error('Cloud Storage client is not initialized');
     }
@@ -140,7 +149,10 @@ export class DocumentsService {
     return signedUrl;
   }
 
-  private async uploadToLocalStorage(storageKey: string, file: UploadedDocumentFile) {
+  private async uploadToLocalStorage(
+    storageKey: string,
+    file: UploadedDocumentFile,
+  ) {
     const uploadsRoot = join(process.cwd(), 'uploads', 'actors');
     const targetPath = join(uploadsRoot, storageKey);
     const targetDir = dirname(targetPath);

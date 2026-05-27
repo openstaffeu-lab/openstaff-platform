@@ -83,8 +83,15 @@ export class ComplianceEligibilityService {
     await this.complianceService.refreshProfileCompliance(profile.id);
     const refreshedProfile = await this.loadProfile(profile.id);
     const assessment = this.evaluateAssessment(refreshedProfile, null, null);
-    await this.syncEligibilityTask(refreshedProfile, assessment, { scope: 'profile' });
-    return this.toEligibilityResponse(refreshedProfile.id, null, null, assessment);
+    await this.syncEligibilityTask(refreshedProfile, assessment, {
+      scope: 'profile',
+    });
+    return this.toEligibilityResponse(
+      refreshedProfile.id,
+      null,
+      null,
+      assessment,
+    );
   }
 
   async getProjectEligibility(projectId: string, user: AuthenticatedUser) {
@@ -99,7 +106,12 @@ export class ComplianceEligibilityService {
       scope: 'project',
       projectId: project.id,
     });
-    return this.toEligibilityResponse(refreshedProfile.id, project.id, null, assessment);
+    return this.toEligibilityResponse(
+      refreshedProfile.id,
+      project.id,
+      null,
+      assessment,
+    );
   }
 
   async getJobRequestEligibility(
@@ -111,7 +123,9 @@ export class ComplianceEligibilityService {
     const project = await this.loadProject(projectId);
     this.accessPolicy.assertCanReadProject(user, project.createdById);
 
-    const jobRequest = project.jobRequests.find((item: any) => item.id === jobRequestId);
+    const jobRequest = project.jobRequests.find(
+      (item: any) => item.id === jobRequestId,
+    );
 
     if (!jobRequest) {
       throw new NotFoundException('Project job request not found');
@@ -119,13 +133,22 @@ export class ComplianceEligibilityService {
 
     await this.complianceService.refreshProfileCompliance(profile.id);
     const refreshedProfile = await this.loadProfile(profile.id);
-    const assessment = this.evaluateAssessment(refreshedProfile, project, jobRequest);
+    const assessment = this.evaluateAssessment(
+      refreshedProfile,
+      project,
+      jobRequest,
+    );
     await this.syncEligibilityTask(refreshedProfile, assessment, {
       scope: 'job-request',
       projectId: project.id,
       jobRequestId: jobRequest.id,
     });
-    return this.toEligibilityResponse(refreshedProfile.id, project.id, jobRequest.id, assessment);
+    return this.toEligibilityResponse(
+      refreshedProfile.id,
+      project.id,
+      jobRequest.id,
+      assessment,
+    );
   }
 
   async evaluateProfileForProjectByIds(
@@ -141,7 +164,9 @@ export class ComplianceEligibilityService {
       this.loadProfile(profileId),
     ]);
     const jobRequest = options?.jobRequestId
-      ? project.jobRequests.find((item: any) => item.id === options.jobRequestId)
+      ? project.jobRequests.find(
+          (item: any) => item.id === options.jobRequestId,
+        )
       : null;
 
     if (options?.jobRequestId && !jobRequest) {
@@ -158,7 +183,12 @@ export class ComplianceEligibilityService {
       });
     }
 
-    return this.toEligibilityResponse(profile.id, project.id, jobRequest?.id ?? null, assessment);
+    return this.toEligibilityResponse(
+      profile.id,
+      project.id,
+      jobRequest?.id ?? null,
+      assessment,
+    );
   }
 
   async evaluateWorkerForProfileByIds(profileId: string, workerId: string) {
@@ -166,8 +196,19 @@ export class ComplianceEligibilityService {
       this.loadProfile(profileId),
       this.loadWorker(workerId, profileId),
     ]);
-    const assessment = this.evaluateWorkerAssessment(profile, worker, null, null);
-    return this.toWorkerEligibilityResponse(profile.id, worker.id, null, null, assessment);
+    const assessment = this.evaluateWorkerAssessment(
+      profile,
+      worker,
+      null,
+      null,
+    );
+    return this.toWorkerEligibilityResponse(
+      profile.id,
+      worker.id,
+      null,
+      null,
+      assessment,
+    );
   }
 
   async evaluateWorkerForProjectByIds(
@@ -184,14 +225,21 @@ export class ComplianceEligibilityService {
       this.loadWorker(workerId, profileId),
     ]);
     const jobRequest = options?.jobRequestId
-      ? project.jobRequests.find((item: any) => item.id === options.jobRequestId)
+      ? project.jobRequests.find(
+          (item: any) => item.id === options.jobRequestId,
+        )
       : null;
 
     if (options?.jobRequestId && !jobRequest) {
       throw new NotFoundException('Project job request not found');
     }
 
-    const assessment = this.evaluateWorkerAssessment(profile, worker, project, jobRequest);
+    const assessment = this.evaluateWorkerAssessment(
+      profile,
+      worker,
+      project,
+      jobRequest,
+    );
     return this.toWorkerEligibilityResponse(
       profile.id,
       worker.id,
@@ -201,10 +249,18 @@ export class ComplianceEligibilityService {
     );
   }
 
-  async assertCanSubmitProposal(projectId: string, profileId: string, actorUserId?: string) {
-    const eligibility = await this.evaluateProfileForProjectByIds(projectId, profileId, {
-      syncTasks: true,
-    });
+  async assertCanSubmitProposal(
+    projectId: string,
+    profileId: string,
+    actorUserId?: string,
+  ) {
+    const eligibility = await this.evaluateProfileForProjectByIds(
+      projectId,
+      profileId,
+      {
+        syncTasks: true,
+      },
+    );
 
     await this.assertNotIneligible(
       eligibility,
@@ -218,10 +274,18 @@ export class ComplianceEligibilityService {
     );
   }
 
-  async assertCanAcceptInvitation(projectId: string, profileId: string, actorUserId?: string) {
-    const eligibility = await this.evaluateProfileForProjectByIds(projectId, profileId, {
-      syncTasks: true,
-    });
+  async assertCanAcceptInvitation(
+    projectId: string,
+    profileId: string,
+    actorUserId?: string,
+  ) {
+    const eligibility = await this.evaluateProfileForProjectByIds(
+      projectId,
+      profileId,
+      {
+        syncTasks: true,
+      },
+    );
 
     await this.assertNotIneligible(
       eligibility,
@@ -235,10 +299,18 @@ export class ComplianceEligibilityService {
     );
   }
 
-  async assertCanCreateContract(projectId: string, profileId: string, actorUserId?: string) {
-    const eligibility = await this.evaluateProfileForProjectByIds(projectId, profileId, {
-      syncTasks: true,
-    });
+  async assertCanCreateContract(
+    projectId: string,
+    profileId: string,
+    actorUserId?: string,
+  ) {
+    const eligibility = await this.evaluateProfileForProjectByIds(
+      projectId,
+      profileId,
+      {
+        syncTasks: true,
+      },
+    );
 
     await this.assertNotIneligible(
       eligibility,
@@ -252,10 +324,18 @@ export class ComplianceEligibilityService {
     );
   }
 
-  async assertCanCreateInvoice(projectId: string, profileId: string, actorUserId?: string) {
-    const eligibility = await this.evaluateProfileForProjectByIds(projectId, profileId, {
-      syncTasks: true,
-    });
+  async assertCanCreateInvoice(
+    projectId: string,
+    profileId: string,
+    actorUserId?: string,
+  ) {
+    const eligibility = await this.evaluateProfileForProjectByIds(
+      projectId,
+      profileId,
+      {
+        syncTasks: true,
+      },
+    );
 
     await this.assertNotBlocked(
       eligibility,
@@ -269,10 +349,18 @@ export class ComplianceEligibilityService {
     );
   }
 
-  async assertCanRequestPayment(projectId: string, profileId: string, actorUserId?: string) {
-    const eligibility = await this.evaluateProfileForProjectByIds(projectId, profileId, {
-      syncTasks: true,
-    });
+  async assertCanRequestPayment(
+    projectId: string,
+    profileId: string,
+    actorUserId?: string,
+  ) {
+    const eligibility = await this.evaluateProfileForProjectByIds(
+      projectId,
+      profileId,
+      {
+        syncTasks: true,
+      },
+    );
 
     await this.assertNotBlocked(
       eligibility,
@@ -286,13 +374,19 @@ export class ComplianceEligibilityService {
     );
   }
 
-  private evaluateAssessment(profile: any, project: any | null, jobRequest: any | null) {
+  private evaluateAssessment(
+    profile: any,
+    project: any | null,
+    jobRequest: any | null,
+  ) {
     const blockingReasons: string[] = [];
     const warnings: string[] = [];
     const missingItems: string[] = [];
     const notEligibleReasons: string[] = [];
 
-    const baseRequirements = this.getRequirementsForProfileType(profile.profileType);
+    const baseRequirements = this.getRequirementsForProfileType(
+      profile.profileType,
+    );
     for (const requirement of baseRequirements) {
       this.evaluateRequirement(
         requirement,
@@ -307,8 +401,8 @@ export class ComplianceEligibilityService {
     const expiredDocuments = profile.actorDocuments.filter((item: any) =>
       this.isExpiredStatus(item.status, item.expiresAt),
     );
-    const expiredCertifications = profile.actorCertifications.filter((item: any) =>
-      this.isExpiredStatus(item.status, item.expiresAt),
+    const expiredCertifications = profile.actorCertifications.filter(
+      (item: any) => this.isExpiredStatus(item.status, item.expiresAt),
     );
     const expiredMedical = profile.medicalFitnessCertificates.filter(
       (item: any) =>
@@ -317,7 +411,9 @@ export class ComplianceEligibilityService {
     );
 
     if (expiredMedical.length > 0) {
-      blockingReasons.push('Medical fitness is expired or invalid for work participation.');
+      blockingReasons.push(
+        'Medical fitness is expired or invalid for work participation.',
+      );
     }
 
     if (
@@ -330,10 +426,16 @@ export class ComplianceEligibilityService {
     }
 
     if (this.hasPendingCompliance(profile)) {
-      warnings.push('Some compliance records are still pending review or verification.');
+      warnings.push(
+        'Some compliance records are still pending review or verification.',
+      );
     }
 
-    const profileEligibility = this.resolveStatus(blockingReasons, notEligibleReasons, warnings);
+    const profileEligibility = this.resolveStatus(
+      blockingReasons,
+      notEligibleReasons,
+      warnings,
+    );
 
     const projectBlockingReasons = [...blockingReasons];
     const projectWarnings = [...warnings];
@@ -341,7 +443,9 @@ export class ComplianceEligibilityService {
     const projectNotEligibleReasons = [...notEligibleReasons];
 
     if (project) {
-      const supportedEngagementModels = this.parseStringArray(profile.supportedEngagementModels);
+      const supportedEngagementModels = this.parseStringArray(
+        profile.supportedEngagementModels,
+      );
       if (
         supportedEngagementModels.length > 0 &&
         !supportedEngagementModels.includes(project.engagementModel)
@@ -349,27 +453,44 @@ export class ComplianceEligibilityService {
         projectNotEligibleReasons.push(
           `The profile does not support ${project.engagementModel} engagement.`,
         );
-        projectMissingItems.push(`Support ${project.engagementModel} engagement model`);
+        projectMissingItems.push(
+          `Support ${project.engagementModel} engagement model`,
+        );
       }
 
-      if (profile.countryId && project.countryId && profile.countryId !== project.countryId) {
+      if (
+        profile.countryId &&
+        project.countryId &&
+        profile.countryId !== project.countryId
+      ) {
         projectWarnings.push(
           'Profile geography differs from the project country and may need manual approval.',
         );
       }
 
       if (project.primaryLanguageId) {
-        const languageIds = new Set(profile.languages.map((item: any) => item.languageId));
+        const languageIds = new Set(
+          profile.languages.map((item: any) => item.languageId),
+        );
         if (!languageIds.has(project.primaryLanguageId)) {
-          projectWarnings.push('Primary project language is not listed on the profile.');
-          projectMissingItems.push('Add the project language to the actor profile');
+          projectWarnings.push(
+            'Primary project language is not listed on the profile.',
+          );
+          projectMissingItems.push(
+            'Add the project language to the actor profile',
+          );
         }
       }
 
       const projectConditionTypes = new Set(
-        project.conditions.map((condition: any) => condition.type as ProjectConditionType),
+        project.conditions.map(
+          (condition: any) => condition.type as ProjectConditionType,
+        ),
       );
-      if (projectConditionTypes.has(ProjectConditionType.INSURANCE) && !this.hasValidInsurance(profile)) {
+      if (
+        projectConditionTypes.has(ProjectConditionType.INSURANCE) &&
+        !this.hasValidInsurance(profile)
+      ) {
         projectNotEligibleReasons.push(
           'Insurance terms are present on the project and the actor has no valid insurance evidence.',
         );
@@ -380,7 +501,9 @@ export class ComplianceEligibilityService {
         projectConditionTypes.has(ProjectConditionType.SAFETY) &&
         !this.hasSafetyEvidence(profile)
       ) {
-        projectWarnings.push('Safety evidence is not obvious from the actor compliance record.');
+        projectWarnings.push(
+          'Safety evidence is not obvious from the actor compliance record.',
+        );
       }
 
       if (
@@ -416,14 +539,29 @@ export class ComplianceEligibilityService {
     }
 
     const projectEligibility = project
-      ? this.resolveStatus(projectBlockingReasons, projectNotEligibleReasons, projectWarnings)
+      ? this.resolveStatus(
+          projectBlockingReasons,
+          projectNotEligibleReasons,
+          projectWarnings,
+        )
       : profileEligibility;
 
     let jobRequestEligibility: EligibilityStatus | undefined;
     if (project && jobRequest) {
-      const jobRules = this.evaluateJobRequestRules(profile, project, jobRequest, true);
-      const combinedBlocking = [...blockingReasons, ...jobRules.blockingReasons];
-      const combinedNotEligible = [...notEligibleReasons, ...jobRules.notEligibleReasons];
+      const jobRules = this.evaluateJobRequestRules(
+        profile,
+        project,
+        jobRequest,
+        true,
+      );
+      const combinedBlocking = [
+        ...blockingReasons,
+        ...jobRules.blockingReasons,
+      ];
+      const combinedNotEligible = [
+        ...notEligibleReasons,
+        ...jobRules.notEligibleReasons,
+      ];
       const combinedWarnings = [...warnings, ...jobRules.warnings];
       const combinedMissing = [...missingItems, ...jobRules.missingItems];
 
@@ -445,9 +583,13 @@ export class ComplianceEligibilityService {
       profileEligibility,
       projectEligibility,
       jobRequestEligibility,
-      blockingReasons: this.uniqueStrings(project ? projectBlockingReasons : blockingReasons),
+      blockingReasons: this.uniqueStrings(
+        project ? projectBlockingReasons : blockingReasons,
+      ),
       warnings: this.uniqueStrings(project ? projectWarnings : warnings),
-      missingItems: this.uniqueStrings(project ? projectMissingItems : missingItems),
+      missingItems: this.uniqueStrings(
+        project ? projectMissingItems : missingItems,
+      ),
     };
   }
 
@@ -457,14 +599,20 @@ export class ComplianceEligibilityService {
     project: any | null,
     jobRequest: any | null,
   ) {
-    const baseAssessment = this.evaluateAssessment(profile, project, jobRequest);
+    const baseAssessment = this.evaluateAssessment(
+      profile,
+      project,
+      jobRequest,
+    );
     const blockingReasons = [...baseAssessment.blockingReasons];
     const warnings = [...baseAssessment.warnings];
     const missingItems = [...baseAssessment.missingItems];
     const workerNotEligibleReasons: string[] = [];
 
     if (worker.status === WorkerStatus.SUSPENDED) {
-      blockingReasons.push(`Worker ${worker.firstName} ${worker.lastName} is suspended.`);
+      blockingReasons.push(
+        `Worker ${worker.firstName} ${worker.lastName} is suspended.`,
+      );
     } else if (worker.status === WorkerStatus.INACTIVE) {
       workerNotEligibleReasons.push(
         `Worker ${worker.firstName} ${worker.lastName} is inactive and cannot be assigned.`,
@@ -472,25 +620,29 @@ export class ComplianceEligibilityService {
     }
 
     const validIdentity = worker.documents.some(
-      (item: any) => item.type === WorkerDocumentType.IDENTITY && this.isValidRecord(item),
+      (item: any) =>
+        item.type === WorkerDocumentType.IDENTITY && this.isValidRecord(item),
     );
     if (!validIdentity) {
       blockingReasons.push(
         `Worker ${worker.firstName} ${worker.lastName} is missing a valid identity document.`,
       );
-      missingItems.push(`Worker identity document: ${worker.firstName} ${worker.lastName}`);
+      missingItems.push(
+        `Worker identity document: ${worker.firstName} ${worker.lastName}`,
+      );
     }
 
     const validMedicalDocuments = worker.documents.filter(
       (item: any) =>
-        item.type === WorkerDocumentType.MEDICAL &&
-        this.isValidRecord(item),
+        item.type === WorkerDocumentType.MEDICAL && this.isValidRecord(item),
     );
     if (validMedicalDocuments.length === 0) {
       workerNotEligibleReasons.push(
         `Worker ${worker.firstName} ${worker.lastName} needs a valid medical record before assignment.`,
       );
-      missingItems.push(`Worker medical record: ${worker.firstName} ${worker.lastName}`);
+      missingItems.push(
+        `Worker medical record: ${worker.firstName} ${worker.lastName}`,
+      );
     }
 
     if (project && jobRequest?.requiresCertification) {
@@ -511,7 +663,10 @@ export class ComplianceEligibilityService {
     }
 
     if (project && jobRequest) {
-      const requiredMedicalCategories = this.inferMedicalCategories(project, jobRequest);
+      const requiredMedicalCategories = this.inferMedicalCategories(
+        project,
+        jobRequest,
+      );
       if (requiredMedicalCategories.length > 0) {
         const missingCategories = requiredMedicalCategories.filter(
           (category) =>
@@ -534,18 +689,26 @@ export class ComplianceEligibilityService {
       }
     }
 
-    const workerEligibility = this.resolveStatus(blockingReasons, workerNotEligibleReasons, warnings);
+    const workerEligibility = this.resolveStatus(
+      blockingReasons,
+      workerNotEligibleReasons,
+      warnings,
+    );
 
     return {
       profileEligibility: baseAssessment.profileEligibility,
       projectEligibility:
-        project && (workerEligibility === 'BLOCKED' || workerEligibility === 'NOT_ELIGIBLE')
+        project &&
+        (workerEligibility === 'BLOCKED' ||
+          workerEligibility === 'NOT_ELIGIBLE')
           ? workerEligibility
           : baseAssessment.projectEligibility,
       jobRequestEligibility:
-        jobRequest && (workerEligibility === 'BLOCKED' || workerEligibility === 'NOT_ELIGIBLE')
+        jobRequest &&
+        (workerEligibility === 'BLOCKED' ||
+          workerEligibility === 'NOT_ELIGIBLE')
           ? workerEligibility
-          : baseAssessment.jobRequestEligibility ?? null,
+          : (baseAssessment.jobRequestEligibility ?? null),
       workerEligibility,
       blockingReasons: this.uniqueStrings(blockingReasons),
       warnings: this.uniqueStrings(warnings),
@@ -565,7 +728,9 @@ export class ComplianceEligibilityService {
       const matchingDocuments = profile.actorDocuments.filter(
         (item: any) => item.type === requirement.documentType,
       );
-      const validDocument = matchingDocuments.find((item: any) => this.isValidRecord(item));
+      const validDocument = matchingDocuments.find((item: any) =>
+        this.isValidRecord(item),
+      );
 
       if (validDocument) {
         return;
@@ -585,7 +750,9 @@ export class ComplianceEligibilityService {
       }
 
       if (hasExpiredDocument) {
-        notEligibleReasons.push(`${requirement.label} is expired and must be renewed.`);
+        notEligibleReasons.push(
+          `${requirement.label} is expired and must be renewed.`,
+        );
         return;
       }
 
@@ -594,15 +761,19 @@ export class ComplianceEligibilityService {
         return;
       }
 
-      notEligibleReasons.push(`${requirement.label} is required before this actor can operate.`);
+      notEligibleReasons.push(
+        `${requirement.label} is required before this actor can operate.`,
+      );
       return;
     }
 
     if (requirement.kind === 'certification') {
-      const matchingCertifications = profile.actorCertifications.filter((item: any) =>
-        requirement.certificationTypes.includes(item.type),
+      const matchingCertifications = profile.actorCertifications.filter(
+        (item: any) => requirement.certificationTypes.includes(item.type),
       );
-      const validCertification = matchingCertifications.find((item: any) => this.isValidRecord(item));
+      const validCertification = matchingCertifications.find((item: any) =>
+        this.isValidRecord(item),
+      );
 
       if (validCertification) {
         return;
@@ -616,15 +787,22 @@ export class ComplianceEligibilityService {
       if (hasPendingCertification) {
         warnings.push(`${requirement.label} is still pending review.`);
       } else {
-        notEligibleReasons.push(`${requirement.label} is required and currently missing.`);
+        notEligibleReasons.push(
+          `${requirement.label} is required and currently missing.`,
+        );
       }
       return;
     }
 
-    const matchingMedical = profile.medicalFitnessCertificates.filter((item: any) =>
-      requirement.categories?.length ? requirement.categories.includes(item.category) : true,
+    const matchingMedical = profile.medicalFitnessCertificates.filter(
+      (item: any) =>
+        requirement.categories?.length
+          ? requirement.categories.includes(item.category)
+          : true,
     );
-    const validMedical = matchingMedical.find((item: any) => this.isValidMedicalRecord(item));
+    const validMedical = matchingMedical.find((item: any) =>
+      this.isValidMedicalRecord(item),
+    );
 
     if (validMedical) {
       return;
@@ -641,7 +819,9 @@ export class ComplianceEligibilityService {
 
     missingItems.push(requirement.label);
     if (hasExpiredMedical) {
-      blockingReasons.push(`${requirement.label} is expired or medically invalid.`);
+      blockingReasons.push(
+        `${requirement.label} is expired or medically invalid.`,
+      );
       return;
     }
 
@@ -650,7 +830,9 @@ export class ComplianceEligibilityService {
       return;
     }
 
-    notEligibleReasons.push(`${requirement.label} is required before assignment.`);
+    notEligibleReasons.push(
+      `${requirement.label} is required before assignment.`,
+    );
   }
 
   private evaluateJobRequestRules(
@@ -664,14 +846,20 @@ export class ComplianceEligibilityService {
     const warnings: string[] = [];
     const missingItems: string[] = [];
 
-    if (jobRequest.requiresCertification && !this.hasValidCertification(profile)) {
+    if (
+      jobRequest.requiresCertification &&
+      !this.hasValidCertification(profile)
+    ) {
       notEligibleReasons.push(
         `Job request "${jobRequest.title}" requires at least one valid certification.`,
       );
       missingItems.push(`Valid certification for ${jobRequest.title}`);
     }
 
-    const requiredMedicalCategories = this.inferMedicalCategories(project, jobRequest);
+    const requiredMedicalCategories = this.inferMedicalCategories(
+      project,
+      jobRequest,
+    );
     if (requiredMedicalCategories.length > 0) {
       const missingCategories = requiredMedicalCategories.filter(
         (category) =>
@@ -692,9 +880,13 @@ export class ComplianceEligibilityService {
     }
 
     if (includeWarnings && jobRequest.languageId) {
-      const languageIds = new Set(profile.languages.map((item: any) => item.languageId));
+      const languageIds = new Set(
+        profile.languages.map((item: any) => item.languageId),
+      );
       if (!languageIds.has(jobRequest.languageId)) {
-        warnings.push(`Job request "${jobRequest.title}" expects a language not listed on the profile.`);
+        warnings.push(
+          `Job request "${jobRequest.title}" expects a language not listed on the profile.`,
+        );
       }
     }
 
@@ -711,7 +903,9 @@ export class ComplianceEligibilityService {
       jobRequest.description,
       jobRequest.scopeOfWork,
       jobRequest.notes,
-      ...project.conditions.map((condition: any) => `${condition.title} ${condition.content}`),
+      ...project.conditions.map(
+        (condition: any) => `${condition.title} ${condition.content}`,
+      ),
       ...project.conditions
         .filter((condition: any) => condition.jobRequestId === jobRequest.id)
         .map((condition: any) => `${condition.title} ${condition.content}`),
@@ -720,36 +914,52 @@ export class ComplianceEligibilityService {
       .join(' ')
       .toLowerCase();
 
-    const map: Array<{ category: MedicalFitnessCategory; keywords: string[] }> = [
-      {
-        category: MedicalFitnessCategory.WORK_AT_HEIGHT,
-        keywords: ['work at height', 'height', 'scaffold', 'rope access', 'elevated'],
-      },
-      {
-        category: MedicalFitnessCategory.VISION,
-        keywords: ['vision', 'eyesight', 'visual inspection'],
-      },
-      {
-        category: MedicalFitnessCategory.CARDIOVASCULAR,
-        keywords: ['cardiovascular', 'heart', 'cardio'],
-      },
-      {
-        category: MedicalFitnessCategory.PSYCHOLOGICAL_FITNESS,
-        keywords: ['psychological', 'mental fitness'],
-      },
-      {
-        category: MedicalFitnessCategory.TRANSMISSIBLE_DISEASES,
-        keywords: ['transmissible', 'infectious', 'disease screening'],
-      },
-      {
-        category: MedicalFitnessCategory.GENERAL_PHYSICAL_FITNESS,
-        keywords: ['physical fitness', 'manual handling', 'physically fit', 'fit for duty'],
-      },
-      {
-        category: MedicalFitnessCategory.JOB_SPECIFIC_CLEARANCE,
-        keywords: ['job-specific clearance', 'site medical', 'medical clearance'],
-      },
-    ];
+    const map: Array<{ category: MedicalFitnessCategory; keywords: string[] }> =
+      [
+        {
+          category: MedicalFitnessCategory.WORK_AT_HEIGHT,
+          keywords: [
+            'work at height',
+            'height',
+            'scaffold',
+            'rope access',
+            'elevated',
+          ],
+        },
+        {
+          category: MedicalFitnessCategory.VISION,
+          keywords: ['vision', 'eyesight', 'visual inspection'],
+        },
+        {
+          category: MedicalFitnessCategory.CARDIOVASCULAR,
+          keywords: ['cardiovascular', 'heart', 'cardio'],
+        },
+        {
+          category: MedicalFitnessCategory.PSYCHOLOGICAL_FITNESS,
+          keywords: ['psychological', 'mental fitness'],
+        },
+        {
+          category: MedicalFitnessCategory.TRANSMISSIBLE_DISEASES,
+          keywords: ['transmissible', 'infectious', 'disease screening'],
+        },
+        {
+          category: MedicalFitnessCategory.GENERAL_PHYSICAL_FITNESS,
+          keywords: [
+            'physical fitness',
+            'manual handling',
+            'physically fit',
+            'fit for duty',
+          ],
+        },
+        {
+          category: MedicalFitnessCategory.JOB_SPECIFIC_CLEARANCE,
+          keywords: [
+            'job-specific clearance',
+            'site medical',
+            'medical clearance',
+          ],
+        },
+      ];
 
     return map
       .filter((item) => item.keywords.some((keyword) => text.includes(keyword)))
@@ -779,11 +989,17 @@ export class ComplianceEligibilityService {
   private async syncEligibilityTask(
     profile: any,
     assessment: EligibilityAssessment,
-    scope: { scope: 'profile' | 'project' | 'job-request'; projectId?: string; jobRequestId?: string },
+    scope: {
+      scope: 'profile' | 'project' | 'job-request';
+      projectId?: string;
+      jobRequestId?: string;
+    },
   ) {
     const taskKey = `eligibility:${scope.scope}:${profile.id}:${scope.projectId ?? 'profile'}:${scope.jobRequestId ?? 'all'}`;
     const targetStatus =
-      assessment.jobRequestEligibility ?? assessment.projectEligibility ?? assessment.profileEligibility;
+      assessment.jobRequestEligibility ??
+      assessment.projectEligibility ??
+      assessment.profileEligibility;
 
     if (targetStatus === 'NOT_ELIGIBLE' || targetStatus === 'BLOCKED') {
       await this.prisma.userTask.upsert({
@@ -796,7 +1012,9 @@ export class ComplianceEligibilityService {
               : 'Resolve compliance eligibility issue',
           description: this.buildTaskDescription(assessment),
           priority:
-            targetStatus === 'BLOCKED' ? UserTaskPriority.CRITICAL : UserTaskPriority.HIGH,
+            targetStatus === 'BLOCKED'
+              ? UserTaskPriority.CRITICAL
+              : UserTaskPriority.HIGH,
           projectId: scope.projectId ?? null,
           profileId: profile.id,
           completedAt: null,
@@ -814,7 +1032,9 @@ export class ComplianceEligibilityService {
           description: this.buildTaskDescription(assessment),
           status: UserTaskStatus.OPEN,
           priority:
-            targetStatus === 'BLOCKED' ? UserTaskPriority.CRITICAL : UserTaskPriority.HIGH,
+            targetStatus === 'BLOCKED'
+              ? UserTaskPriority.CRITICAL
+              : UserTaskPriority.HIGH,
         },
       });
       return;
@@ -855,7 +1075,8 @@ export class ComplianceEligibilityService {
       action?: string;
     },
   ) {
-    const status = assessment.jobRequestEligibility ?? assessment.projectEligibility;
+    const status =
+      assessment.jobRequestEligibility ?? assessment.projectEligibility;
     if (status === 'NOT_ELIGIBLE' || status === 'BLOCKED') {
       const message = this.buildForbiddenMessage(prefix, assessment);
       await this.recordBlockedDecision(context, assessment, message);
@@ -873,7 +1094,8 @@ export class ComplianceEligibilityService {
       action?: string;
     },
   ) {
-    const status = assessment.jobRequestEligibility ?? assessment.projectEligibility;
+    const status =
+      assessment.jobRequestEligibility ?? assessment.projectEligibility;
     if (status === 'BLOCKED') {
       const message = this.buildForbiddenMessage(prefix, assessment);
       await this.recordBlockedDecision(context, assessment, message);
@@ -881,18 +1103,26 @@ export class ComplianceEligibilityService {
     }
   }
 
-  private buildForbiddenMessage(prefix: string, assessment: EligibilityAssessment) {
-    const reasons = [...assessment.blockingReasons, ...assessment.missingItems].filter(Boolean);
+  private buildForbiddenMessage(
+    prefix: string,
+    assessment: EligibilityAssessment,
+  ) {
+    const reasons = [
+      ...assessment.blockingReasons,
+      ...assessment.missingItems,
+    ].filter(Boolean);
     return reasons.length > 0 ? `${prefix} ${reasons.join(' | ')}` : prefix;
   }
 
   private async recordBlockedDecision(
-    context: {
-      actorUserId?: string;
-      projectId?: string;
-      profileId?: string;
-      action?: string;
-    } | undefined,
+    context:
+      | {
+          actorUserId?: string;
+          projectId?: string;
+          profileId?: string;
+          action?: string;
+        }
+      | undefined,
     assessment: EligibilityAssessment,
     message: string,
   ) {
@@ -962,15 +1192,26 @@ export class ComplianceEligibilityService {
   ) {
     return {
       workerId,
-      ...this.toEligibilityResponse(profileId, projectId, jobRequestId, assessment),
+      ...this.toEligibilityResponse(
+        profileId,
+        projectId,
+        jobRequestId,
+        assessment,
+      ),
     };
   }
 
   private hasPendingCompliance(profile: any) {
     return (
-      profile.actorDocuments.some((item: any) => this.isPendingOrReview(item.status)) ||
-      profile.actorCertifications.some((item: any) => this.isPendingOrReview(item.status)) ||
-      profile.medicalFitnessCertificates.some((item: any) => this.isPendingOrReview(item.status))
+      profile.actorDocuments.some((item: any) =>
+        this.isPendingOrReview(item.status),
+      ) ||
+      profile.actorCertifications.some((item: any) =>
+        this.isPendingOrReview(item.status),
+      ) ||
+      profile.medicalFitnessCertificates.some((item: any) =>
+        this.isPendingOrReview(item.status),
+      )
     );
   }
 
@@ -978,17 +1219,23 @@ export class ComplianceEligibilityService {
     return (
       profile.actorDocuments.some(
         (item: any) =>
-          item.type === ActorDocumentType.INSURANCE_DOCUMENT && this.isValidRecord(item),
+          item.type === ActorDocumentType.INSURANCE_DOCUMENT &&
+          this.isValidRecord(item),
       ) ||
       profile.actorCertifications.some(
         (item: any) =>
-          item.type === ActorCertificationType.INSURANCE && this.isValidRecord(item),
+          item.type === ActorCertificationType.INSURANCE &&
+          this.isValidRecord(item),
       )
     );
   }
 
   private hasSafetyEvidence(profile: any) {
-    const text = [profile.summary, profile.description, profile.certificationsText]
+    const text = [
+      profile.summary,
+      profile.description,
+      profile.certificationsText,
+    ]
       .filter(Boolean)
       .join(' ')
       .toLowerCase();
@@ -1001,7 +1248,9 @@ export class ComplianceEligibilityService {
   }
 
   private hasValidCertification(profile: any) {
-    return profile.actorCertifications.some((item: any) => this.isValidRecord(item));
+    return profile.actorCertifications.some((item: any) =>
+      this.isValidRecord(item),
+    );
   }
 
   private isCompanyProfile(profileType: ProfileType) {
@@ -1012,7 +1261,10 @@ export class ComplianceEligibilityService {
     );
   }
 
-  private isValidRecord(item: { status: ComplianceDocumentStatus; expiresAt?: Date | null }) {
+  private isValidRecord(item: {
+    status: ComplianceDocumentStatus;
+    expiresAt?: Date | null;
+  }) {
     return (
       item.status === ComplianceDocumentStatus.VALID &&
       (!item.expiresAt || item.expiresAt >= new Date())
@@ -1031,8 +1283,14 @@ export class ComplianceEligibilityService {
     );
   }
 
-  private isExpiredStatus(status: ComplianceDocumentStatus, expiresAt?: Date | null) {
-    return status === ComplianceDocumentStatus.EXPIRED || (!!expiresAt && expiresAt < new Date());
+  private isExpiredStatus(
+    status: ComplianceDocumentStatus,
+    expiresAt?: Date | null,
+  ) {
+    return (
+      status === ComplianceDocumentStatus.EXPIRED ||
+      (!!expiresAt && expiresAt < new Date())
+    );
   }
 
   private isPendingOrReview(status: ComplianceDocumentStatus) {
@@ -1124,7 +1382,9 @@ export class ComplianceEligibilityService {
     return worker;
   }
 
-  private getRequirementsForProfileType(profileType: ProfileType): RequirementDefinition[] {
+  private getRequirementsForProfileType(
+    profileType: ProfileType,
+  ): RequirementDefinition[] {
     if (profileType === ProfileType.GENERAL_CONTRACTOR) {
       return [
         {
@@ -1208,7 +1468,10 @@ export class ComplianceEligibilityService {
           key: 'professional-certificate',
           label: 'Certificate or license',
           kind: 'certification',
-          certificationTypes: [ActorCertificationType.CERTIFICATE, ActorCertificationType.LICENSE],
+          certificationTypes: [
+            ActorCertificationType.CERTIFICATE,
+            ActorCertificationType.LICENSE,
+          ],
         },
         {
           key: 'medical-fitness',
@@ -1246,7 +1509,10 @@ export class ComplianceEligibilityService {
         key: 'training-license',
         label: 'Training record or license',
         kind: 'certification',
-        certificationTypes: [ActorCertificationType.TRAINING_RECORD, ActorCertificationType.LICENSE],
+        certificationTypes: [
+          ActorCertificationType.TRAINING_RECORD,
+          ActorCertificationType.LICENSE,
+        ],
       },
     ];
   }

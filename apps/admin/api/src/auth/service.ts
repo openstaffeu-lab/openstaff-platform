@@ -54,7 +54,8 @@ export class AuthService {
     const role = data.role ?? this.mapProfileTypeToRole(data.profileType);
     const displayName = data.displayName.trim();
     const companyName = data.companyName?.trim() || null;
-    const slugBase = companyName || displayName || normalizedEmail.split('@')[0];
+    const slugBase =
+      companyName || displayName || normalizedEmail.split('@')[0];
     const slug = await this.generateUniqueProfileSlug(slugBase);
 
     const user = await this.prisma.$transaction(async (tx) => {

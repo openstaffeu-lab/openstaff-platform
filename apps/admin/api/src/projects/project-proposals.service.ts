@@ -35,7 +35,11 @@ export class ProjectProposalsService {
   ) {
     const project = await this.getProject(projectId);
     const profile = await this.getCurrentUserProfile(user);
-    await this.complianceEligibilityService.assertCanSubmitProposal(project.id, profile.id, user.sub);
+    await this.complianceEligibilityService.assertCanSubmitProposal(
+      project.id,
+      profile.id,
+      user.sub,
+    );
 
     let invitationId: string | null = null;
 
@@ -49,7 +53,9 @@ export class ProjectProposalsService {
       });
 
       if (!invitation) {
-        throw new BadRequestException('Invitation does not belong to this project and profile');
+        throw new BadRequestException(
+          'Invitation does not belong to this project and profile',
+        );
       }
 
       invitationId = invitation.id;
@@ -105,7 +111,10 @@ export class ProjectProposalsService {
       },
     });
 
-    return this.toProposalResponse(proposal, await this.getEligibilityForProposal(proposal));
+    return this.toProposalResponse(
+      proposal,
+      await this.getEligibilityForProposal(proposal),
+    );
   }
 
   async listForProject(projectId: string, user: AuthenticatedUser) {
@@ -123,7 +132,12 @@ export class ProjectProposalsService {
     });
 
     const withEligibility = await Promise.all(
-      proposals.map(async (item) => this.toProposalResponse(item, await this.getEligibilityForProposal(item))),
+      proposals.map(async (item) =>
+        this.toProposalResponse(
+          item,
+          await this.getEligibilityForProposal(item),
+        ),
+      ),
     );
 
     return withEligibility;
@@ -173,7 +187,10 @@ export class ProjectProposalsService {
       ),
       proposals: await Promise.all(
         proposals.map(async (item) =>
-          this.toProposalResponse(item, await this.getEligibilityForProposal(item)),
+          this.toProposalResponse(
+            item,
+            await this.getEligibilityForProposal(item),
+          ),
         ),
       ),
     };
@@ -198,16 +215,22 @@ export class ProjectProposalsService {
     }
 
     const isProjectOwner =
-      this.accessPolicy.isAdmin(user) || proposal.project.createdById === user.sub;
+      this.accessPolicy.isAdmin(user) ||
+      proposal.project.createdById === user.sub;
     const isSubmitter =
-      proposal.profile.userId === user.sub && proposal.submittedById === user.sub;
+      proposal.profile.userId === user.sub &&
+      proposal.submittedById === user.sub;
 
     if (!isProjectOwner && !isSubmitter) {
-      throw new ForbiddenException('You do not have access to update this proposal');
+      throw new ForbiddenException(
+        'You do not have access to update this proposal',
+      );
     }
 
     if (isSubmitter && body.status !== ProjectProposalStatus.WITHDRAWN) {
-      throw new BadRequestException('Proposal submitters can only withdraw their own proposal');
+      throw new BadRequestException(
+        'Proposal submitters can only withdraw their own proposal',
+      );
     }
 
     if (isProjectOwner) {

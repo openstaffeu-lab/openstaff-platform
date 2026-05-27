@@ -37,11 +37,12 @@ const contractorAccessContractStatuses: ProjectContractStatus[] = [
   ProjectContractStatus.COMPLETED,
 ];
 
-const defaultHourlyRateByContractType: Record<ProjectEngagementModel, number> = {
-  B2B: 3500,
-  B2C: 2200,
-  MIXED: 2800,
-};
+const defaultHourlyRateByContractType: Record<ProjectEngagementModel, number> =
+  {
+    B2B: 3500,
+    B2C: 2200,
+    MIXED: 2800,
+  };
 
 @Injectable()
 export class ProjectTimesheetsService {
@@ -64,7 +65,9 @@ export class ProjectTimesheetsService {
     const periodEnd = this.toEndOfDay(body.periodEnd);
 
     if (periodEnd < periodStart) {
-      throw new BadRequestException('Timesheet period end must be after period start');
+      throw new BadRequestException(
+        'Timesheet period end must be after period start',
+      );
     }
 
     const worker = await this.prisma.profileWorker.findFirst({
@@ -91,7 +94,9 @@ export class ProjectTimesheetsService {
     });
 
     if (existing) {
-      throw new BadRequestException('A timesheet already exists for this worker and period');
+      throw new BadRequestException(
+        'A timesheet already exists for this worker and period',
+      );
     }
 
     const assignments = await this.prisma.projectWorkerAssignment.findMany({
@@ -107,11 +112,15 @@ export class ProjectTimesheetsService {
     });
 
     if (assignments.length === 0) {
-      throw new BadRequestException('The worker has no project assignment for this timesheet');
+      throw new BadRequestException(
+        'The worker has no project assignment for this timesheet',
+      );
     }
 
     const selectedContractId =
-      body.contractId ?? assignments.find((item) => item.contractId)?.contractId ?? null;
+      body.contractId ??
+      assignments.find((item) => item.contractId)?.contractId ??
+      null;
 
     const approvedLogs = await this.prisma.workerWorkLog.findMany({
       where: {
@@ -130,7 +139,9 @@ export class ProjectTimesheetsService {
     });
 
     const filteredLogs = selectedContractId
-      ? approvedLogs.filter((log) => log.assignment?.contractId === selectedContractId)
+      ? approvedLogs.filter(
+          (log) => log.assignment?.contractId === selectedContractId,
+        )
       : approvedLogs;
 
     if (filteredLogs.length === 0) {
@@ -139,7 +150,10 @@ export class ProjectTimesheetsService {
       );
     }
 
-    const totalHours = filteredLogs.reduce((sum, log) => sum + log.hoursWorked, 0);
+    const totalHours = filteredLogs.reduce(
+      (sum, log) => sum + log.hoursWorked,
+      0,
+    );
     const thresholdHours = this.getRegularHourThreshold(periodStart, periodEnd);
     const regularHours = Math.min(totalHours, thresholdHours);
     const overtimeHours = Math.max(totalHours - thresholdHours, 0);
@@ -203,7 +217,11 @@ export class ProjectTimesheetsService {
     return timesheets.map((timesheet) => this.toTimesheetResponse(timesheet));
   }
 
-  async getProjectTimesheet(projectId: string, timesheetId: string, user: AuthenticatedUser) {
+  async getProjectTimesheet(
+    projectId: string,
+    timesheetId: string,
+    user: AuthenticatedUser,
+  ) {
     const access = await this.getProjectScopedAccess(projectId, user);
     const timesheet = await this.prisma.workerTimesheet.findFirst({
       where: {
@@ -248,13 +266,19 @@ export class ProjectTimesheetsService {
       throw new ForbiddenException('Locked timesheets cannot be modified');
     }
 
-    const isContractor = !access.isOwner && access.currentProfile.id === timesheet.profileId;
+    const isContractor =
+      !access.isOwner && access.currentProfile.id === timesheet.profileId;
     const reviewer = access.isOwner;
     let complianceWarnings: string[] = [];
 
-    if (body.status === WorkerTimesheetStatus.SUBMITTED || body.status === WorkerTimesheetStatus.DRAFT) {
+    if (
+      body.status === WorkerTimesheetStatus.SUBMITTED ||
+      body.status === WorkerTimesheetStatus.DRAFT
+    ) {
       if (!isContractor) {
-        throw new ForbiddenException('Only the contractor profile owner can submit or draft a timesheet');
+        throw new ForbiddenException(
+          'Only the contractor profile owner can submit or draft a timesheet',
+        );
       }
     }
 
@@ -264,16 +288,24 @@ export class ProjectTimesheetsService {
       body.status === WorkerTimesheetStatus.LOCKED
     ) {
       if (!reviewer) {
-        throw new ForbiddenException('Only the project owner or admin can review timesheets');
+        throw new ForbiddenException(
+          'Only the project owner or admin can review timesheets',
+        );
       }
     }
 
-    if (body.status === WorkerTimesheetStatus.LOCKED && timesheet.status !== WorkerTimesheetStatus.APPROVED) {
-      throw new BadRequestException('Timesheets must be approved before they can be locked');
+    if (
+      body.status === WorkerTimesheetStatus.LOCKED &&
+      timesheet.status !== WorkerTimesheetStatus.APPROVED
+    ) {
+      throw new BadRequestException(
+        'Timesheets must be approved before they can be locked',
+      );
     }
 
     if (body.status === WorkerTimesheetStatus.APPROVED) {
-      complianceWarnings = await this.collectComplianceWarningsForPeriod(timesheet);
+      complianceWarnings =
+        await this.collectComplianceWarningsForPeriod(timesheet);
     }
 
     const updated = await this.prisma.workerTimesheet.update({
@@ -282,19 +314,20 @@ export class ProjectTimesheetsService {
         status: body.status,
         submittedAt:
           body.status === WorkerTimesheetStatus.SUBMITTED
-            ? timesheet.submittedAt ?? new Date()
+            ? (timesheet.submittedAt ?? new Date())
             : body.status === WorkerTimesheetStatus.DRAFT
               ? null
               : timesheet.submittedAt,
         approvedById:
-          body.status === WorkerTimesheetStatus.APPROVED || body.status === WorkerTimesheetStatus.REJECTED
+          body.status === WorkerTimesheetStatus.APPROVED ||
+          body.status === WorkerTimesheetStatus.REJECTED
             ? user.sub
             : body.status === WorkerTimesheetStatus.DRAFT
               ? null
               : timesheet.approvedById,
         approvedAt:
           body.status === WorkerTimesheetStatus.APPROVED
-            ? timesheet.approvedAt ?? new Date()
+            ? (timesheet.approvedAt ?? new Date())
             : body.status === WorkerTimesheetStatus.REJECTED
               ? null
               : timesheet.approvedAt,
@@ -326,7 +359,10 @@ export class ProjectTimesheetsService {
         userId: updated.profile.userId,
         profileId: updated.profileId,
         type: 'TIMESHEET_REVIEWED',
-        severity: complianceWarnings.length > 0 ? NotificationSeverity.WARNING : NotificationSeverity.INFO,
+        severity:
+          complianceWarnings.length > 0
+            ? NotificationSeverity.WARNING
+            : NotificationSeverity.INFO,
         title: `Timesheet ${body.status.toLowerCase()}`,
         message:
           body.status === WorkerTimesheetStatus.LOCKED
@@ -387,7 +423,11 @@ export class ProjectTimesheetsService {
     };
   }
 
-  async calculatePayroll(projectId: string, timesheetId: string, user: AuthenticatedUser) {
+  async calculatePayroll(
+    projectId: string,
+    timesheetId: string,
+    user: AuthenticatedUser,
+  ) {
     const access = await this.getProjectScopedAccess(projectId, user);
     const timesheet = await this.prisma.workerTimesheet.findFirst({
       where: {
@@ -413,15 +453,18 @@ export class ProjectTimesheetsService {
       timesheet.status !== WorkerTimesheetStatus.APPROVED &&
       timesheet.status !== WorkerTimesheetStatus.LOCKED
     ) {
-      throw new BadRequestException('Payroll can only be calculated for approved or locked timesheets');
+      throw new BadRequestException(
+        'Payroll can only be calculated for approved or locked timesheets',
+      );
     }
 
-    const workerEligibility = await this.complianceEligibilityService.evaluateWorkerForProjectByIds(
-      projectId,
-      timesheet.profileId,
-      timesheet.workerId,
-      {},
-    );
+    const workerEligibility =
+      await this.complianceEligibilityService.evaluateWorkerForProjectByIds(
+        projectId,
+        timesheet.profileId,
+        timesheet.workerId,
+        {},
+      );
 
     if (workerEligibility.workerEligibility === 'BLOCKED') {
       throw new ForbiddenException(
@@ -444,8 +487,12 @@ export class ProjectTimesheetsService {
     const contractType =
       timesheet.contract?.contractType ?? timesheet.project.engagementModel;
     const hourlyRateCents = defaultHourlyRateByContractType[contractType];
-    const regularPayCents = Math.round(timesheet.regularHours * hourlyRateCents);
-    const overtimePayCents = Math.round(timesheet.overtimeHours * hourlyRateCents * 1.5);
+    const regularPayCents = Math.round(
+      timesheet.regularHours * hourlyRateCents,
+    );
+    const overtimePayCents = Math.round(
+      timesheet.overtimeHours * hourlyRateCents * 1.5,
+    );
     const grossPayCents = regularPayCents + overtimePayCents;
     const estimatedTaxCents = Math.round(
       grossPayCents * ((taxRule?.withholdingRate ?? 0) / 100),
@@ -490,7 +537,10 @@ export class ProjectTimesheetsService {
           assumptionVersion: 'phase21-v1',
           hourlyRateSource: 'contract-type-default-placeholder',
           overtimeMultiplier: 1.5,
-          thresholdHours: this.getRegularHourThreshold(timesheet.periodStart, timesheet.periodEnd),
+          thresholdHours: this.getRegularHourThreshold(
+            timesheet.periodStart,
+            timesheet.periodEnd,
+          ),
           taxRule,
           attendanceCount,
           eligibility: workerEligibility,
@@ -515,7 +565,10 @@ export class ProjectTimesheetsService {
           assumptionVersion: 'phase21-v1',
           hourlyRateSource: 'contract-type-default-placeholder',
           overtimeMultiplier: 1.5,
-          thresholdHours: this.getRegularHourThreshold(timesheet.periodStart, timesheet.periodEnd),
+          thresholdHours: this.getRegularHourThreshold(
+            timesheet.periodStart,
+            timesheet.periodEnd,
+          ),
           taxRule,
           attendanceCount,
           eligibility: workerEligibility,
@@ -540,7 +593,11 @@ export class ProjectTimesheetsService {
     return this.toPayrollResponse(payroll);
   }
 
-  async getPayroll(projectId: string, timesheetId: string, user: AuthenticatedUser) {
+  async getPayroll(
+    projectId: string,
+    timesheetId: string,
+    user: AuthenticatedUser,
+  ) {
     const access = await this.getProjectScopedAccess(projectId, user);
     const payroll = await this.prisma.workerPayrollCalculation.findFirst({
       where: {
@@ -608,7 +665,9 @@ export class ProjectTimesheetsService {
           certification.expiresAt >= timesheet.periodStart &&
           certification.expiresAt <= timesheet.periodEnd
         ) {
-          warnings.push(`${certification.title} expired during the work period.`);
+          warnings.push(
+            `${certification.title} expired during the work period.`,
+          );
         }
       }
 
@@ -628,12 +687,17 @@ export class ProjectTimesheetsService {
 
   private getRegularHourThreshold(periodStart: Date, periodEnd: Date) {
     const dayCount =
-      Math.floor((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      Math.floor(
+        (periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24),
+      ) + 1;
     const weeksCovered = Math.max(1, Math.ceil(dayCount / 7));
     return weeksCovered * 40;
   }
 
-  private async resolveTaxRule(countryId: string | null, contractType: ProjectEngagementModel) {
+  private async resolveTaxRule(
+    countryId: string | null,
+    contractType: ProjectEngagementModel,
+  ) {
     if (!countryId) {
       return null;
     }
@@ -669,7 +733,10 @@ export class ProjectTimesheetsService {
     return null;
   }
 
-  private async getProjectScopedAccess(projectId: string, user: AuthenticatedUser) {
+  private async getProjectScopedAccess(
+    projectId: string,
+    user: AuthenticatedUser,
+  ) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
     });
@@ -698,7 +765,9 @@ export class ProjectTimesheetsService {
     });
 
     if (!linkedContract) {
-      throw new ForbiddenException('You do not have access to this project timesheet workspace');
+      throw new ForbiddenException(
+        'You do not have access to this project timesheet workspace',
+      );
     }
 
     return {
@@ -766,7 +835,8 @@ export class ProjectTimesheetsService {
       overtimePayCents: payroll.overtimePayCents,
       grossPayCents: payroll.grossPayCents,
       estimatedTaxCents: payroll.estimatedTaxCents,
-      estimatedSocialContributionCents: payroll.estimatedSocialContributionCents,
+      estimatedSocialContributionCents:
+        payroll.estimatedSocialContributionCents,
       netPayCents: payroll.netPayCents,
       employerCostCents: payroll.employerCostCents,
       calculationJson: this.parseCalculationJson(payroll.calculationJson),
@@ -798,7 +868,8 @@ export class ProjectTimesheetsService {
             profileId: timesheet.worker.profileId,
             firstName: timesheet.worker.firstName,
             lastName: timesheet.worker.lastName,
-            fullName: `${timesheet.worker.firstName} ${timesheet.worker.lastName}`.trim(),
+            fullName:
+              `${timesheet.worker.firstName} ${timesheet.worker.lastName}`.trim(),
             roleTitle: timesheet.worker.roleTitle,
             status: timesheet.worker.status,
           }

@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, Req, UseGuards } from '@nestjs/common';
 import { JwtGuard } from '../auth/jwt.guard';
 import { MatchEngineService } from './match-engine.service';
 
@@ -14,7 +8,10 @@ export class ProjectMatchesController {
 
   @UseGuards(JwtGuard)
   @Get(':projectId/matches')
-  async findProjectMatches(@Param('projectId') projectId: string, @Req() req: any) {
+  async findProjectMatches(
+    @Param('projectId') projectId: string,
+    @Req() req: any,
+  ) {
     return this.matchEngineService.getProjectMatches(projectId, req.user);
   }
 
@@ -25,6 +22,10 @@ export class ProjectMatchesController {
     @Param('jobRequestId') jobRequestId: string,
     @Req() req: any,
   ) {
-    return this.matchEngineService.getJobRequestMatches(projectId, jobRequestId, req.user);
+    return this.matchEngineService.getJobRequestMatches(
+      projectId,
+      jobRequestId,
+      req.user,
+    );
   }
 }

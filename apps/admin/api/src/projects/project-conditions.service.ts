@@ -54,11 +54,16 @@ export class ProjectConditionsService {
     const scope = body.scope ?? ProjectConditionScope.PROJECT;
 
     if (scope === ProjectConditionScope.JOB_REQUEST && !body.jobRequestId) {
-      throw new BadRequestException('jobRequestId is required for JOB_REQUEST scope');
+      throw new BadRequestException(
+        'jobRequestId is required for JOB_REQUEST scope',
+      );
     }
 
     if (body.jobRequestId) {
-      await this.ensureJobRequestBelongsToProject(project.id, body.jobRequestId);
+      await this.ensureJobRequestBelongsToProject(
+        project.id,
+        body.jobRequestId,
+      );
     }
 
     const condition = await this.prisma.projectCondition.create({
@@ -109,7 +114,10 @@ export class ProjectConditionsService {
     }
 
     if (body.jobRequestId) {
-      await this.ensureJobRequestBelongsToProject(project.id, body.jobRequestId);
+      await this.ensureJobRequestBelongsToProject(
+        project.id,
+        body.jobRequestId,
+      );
     }
 
     if (
@@ -117,7 +125,9 @@ export class ProjectConditionsService {
       body.jobRequestId === undefined &&
       !existing.jobRequestId
     ) {
-      throw new BadRequestException('jobRequestId is required for JOB_REQUEST scope');
+      throw new BadRequestException(
+        'jobRequestId is required for JOB_REQUEST scope',
+      );
     }
 
     const data: Prisma.ProjectConditionUpdateInput = {};
@@ -218,7 +228,10 @@ export class ProjectConditionsService {
     return project;
   }
 
-  private async ensureJobRequestBelongsToProject(projectId: string, jobRequestId: string) {
+  private async ensureJobRequestBelongsToProject(
+    projectId: string,
+    jobRequestId: string,
+  ) {
     const jobRequest = await this.prisma.projectJobRequest.findFirst({
       where: {
         id: jobRequestId,

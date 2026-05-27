@@ -48,7 +48,9 @@ export class MessagingController {
 
   private assertAuthenticated(req: any) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
   }
 
@@ -56,7 +58,9 @@ export class MessagingController {
   @Get('messages/conversations')
   async listConversations(@Req() req: any, @Query() query: any) {
     try {
-      return buildSuccessResponse(await this.messagingService.listConversations(req.user, query));
+      return buildSuccessResponse(
+        await this.messagingService.listConversations(req.user, query),
+      );
     } catch (error) {
       this.rethrowHttpException(error);
       logEndpointError('MessagingController.listConversations', error);
@@ -66,7 +70,10 @@ export class MessagingController {
 
   @UseGuards(JwtGuard)
   @Get('messages/conversations/:conversationId')
-  async getConversation(@Param('conversationId') conversationId: string, @Req() req: any) {
+  async getConversation(
+    @Param('conversationId') conversationId: string,
+    @Req() req: any,
+  ) {
     try {
       return buildSuccessResponse(
         await this.messagingService.getConversation(conversationId, req.user),
@@ -139,14 +146,20 @@ export class MessagingController {
       );
     } catch (error) {
       this.rethrowHttpException(error);
-      logEndpointError('MessagingController.createWorkforceConversation', error);
+      logEndpointError(
+        'MessagingController.createWorkforceConversation',
+        error,
+      );
       return buildInternalErrorResponse(error);
     }
   }
 
   @UseGuards(JwtGuard)
   @Get('messages/conversations/:conversationId/messages')
-  async listMessages(@Param('conversationId') conversationId: string, @Req() req: any) {
+  async listMessages(
+    @Param('conversationId') conversationId: string,
+    @Req() req: any,
+  ) {
     try {
       return buildSuccessResponse(
         await this.messagingService.listMessages(conversationId, req.user),
@@ -195,7 +208,12 @@ export class MessagingController {
 
     try {
       return buildSuccessResponse(
-        await this.messagingService.uploadAttachmentMessage(conversationId, file, body, req.user),
+        await this.messagingService.uploadAttachmentMessage(
+          conversationId,
+          file,
+          body,
+          req.user,
+        ),
       );
     } catch (error) {
       this.rethrowHttpException(error);
@@ -212,7 +230,10 @@ export class MessagingController {
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
-      const file = await this.messagingService.getAttachmentAsset(attachmentId, req.user);
+      const file = await this.messagingService.getAttachmentAsset(
+        attachmentId,
+        req.user,
+      );
       res.setHeader('Content-Type', file.mimeType);
       res.setHeader(
         'Content-Disposition',
@@ -236,7 +257,9 @@ export class MessagingController {
     this.assertAuthenticated(req);
 
     try {
-      return buildSuccessResponse(await this.messagingService.editMessage(messageId, body, req.user));
+      return buildSuccessResponse(
+        await this.messagingService.editMessage(messageId, body, req.user),
+      );
     } catch (error) {
       this.rethrowHttpException(error);
       logEndpointError('MessagingController.updateMessage', error);
@@ -250,7 +273,9 @@ export class MessagingController {
     this.assertAuthenticated(req);
 
     try {
-      return buildSuccessResponse(await this.messagingService.deleteMessage(messageId, req.user));
+      return buildSuccessResponse(
+        await this.messagingService.deleteMessage(messageId, req.user),
+      );
     } catch (error) {
       this.rethrowHttpException(error);
       logEndpointError('MessagingController.deleteMessage', error);
@@ -266,7 +291,10 @@ export class MessagingController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.messagingService.markConversationRead(conversationId, req.user),
+        await this.messagingService.markConversationRead(
+          conversationId,
+          req.user,
+        ),
       );
     } catch (error) {
       this.rethrowHttpException(error);
@@ -286,7 +314,11 @@ export class MessagingController {
 
     try {
       return buildSuccessResponse(
-        await this.messagingService.addParticipant(conversationId, body as any, req.user),
+        await this.messagingService.addParticipant(
+          conversationId,
+          body as any,
+          req.user,
+        ),
       );
     } catch (error) {
       this.rethrowHttpException(error);
@@ -300,7 +332,9 @@ export class MessagingController {
   @Get('admin/messages/conversations')
   async listAdminConversations(@Query() query: any) {
     try {
-      return buildSuccessResponse(await this.messagingService.listAdminConversations(query));
+      return buildSuccessResponse(
+        await this.messagingService.listAdminConversations(query),
+      );
     } catch (error) {
       this.rethrowHttpException(error);
       logEndpointError('MessagingController.listAdminConversations', error);
@@ -311,7 +345,10 @@ export class MessagingController {
   @RequirePermissions(Permission.MANAGE_USERS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Get('admin/messages/moderation')
-  async listModeration(@Query('status') status?: PublicModerationStatus, @Query('q') q?: string) {
+  async listModeration(
+    @Query('status') status?: PublicModerationStatus,
+    @Query('q') q?: string,
+  ) {
     try {
       return buildSuccessResponse(
         await this.messagingService.listModerationQueue({ status, q }),
@@ -335,7 +372,11 @@ export class MessagingController {
 
     try {
       return buildSuccessResponse(
-        await this.messagingService.moderateMessage(messageId, body as any, req.user),
+        await this.messagingService.moderateMessage(
+          messageId,
+          body as any,
+          req.user,
+        ),
       );
     } catch (error) {
       this.rethrowHttpException(error);
@@ -353,11 +394,16 @@ export class MessagingController {
 
   @UseGuards(JwtGuard)
   @Post('conversations')
-  async legacyCreateConversation(@Body() body: CreateConversationDto, @Req() req: any) {
+  async legacyCreateConversation(
+    @Body() body: CreateConversationDto,
+    @Req() req: any,
+  ) {
     this.assertAuthenticated(req);
 
     try {
-      return buildSuccessResponse(await this.messagingService.createConversation(body, req.user));
+      return buildSuccessResponse(
+        await this.messagingService.createConversation(body, req.user),
+      );
     } catch (error) {
       this.rethrowHttpException(error);
       logEndpointError('MessagingController.legacyCreateConversation', error);
@@ -367,7 +413,10 @@ export class MessagingController {
 
   @UseGuards(JwtGuard)
   @Get('conversations/:conversationId/messages')
-  async legacyListMessages(@Param('conversationId') conversationId: string, @Req() req: any) {
+  async legacyListMessages(
+    @Param('conversationId') conversationId: string,
+    @Req() req: any,
+  ) {
     return this.listMessages(conversationId, req);
   }
 
@@ -385,7 +434,9 @@ export class MessagingController {
   @Post('messages/:messageId/read')
   async legacyMarkRead(@Param('messageId') messageId: string, @Req() req: any) {
     try {
-      return buildSuccessResponse(await this.messagingService.markRead(messageId, req.user));
+      return buildSuccessResponse(
+        await this.messagingService.markRead(messageId, req.user),
+      );
     } catch (error) {
       this.rethrowHttpException(error);
       logEndpointError('MessagingController.legacyMarkRead', error);

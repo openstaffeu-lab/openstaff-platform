@@ -18,7 +18,9 @@ import { ProjectDisputesService } from './project-disputes.service';
 
 @Controller('projects')
 export class ProjectDisputesController {
-  constructor(private readonly projectDisputesService: ProjectDisputesService) {}
+  constructor(
+    private readonly projectDisputesService: ProjectDisputesService,
+  ) {}
 
   @UseGuards(
     JwtGuard,
@@ -33,10 +35,17 @@ export class ProjectDisputesController {
   ) {
     const user = req.user;
     if (!user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectDisputesService.create(projectId, contractId, body, user);
+    return this.projectDisputesService.create(
+      projectId,
+      contractId,
+      body,
+      user,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -57,7 +66,12 @@ export class ProjectDisputesController {
     @Param('disputeId') disputeId: string,
     @Req() req: any,
   ) {
-    return this.projectDisputesService.findOne(projectId, contractId, disputeId, req.user);
+    return this.projectDisputesService.findOne(
+      projectId,
+      contractId,
+      disputeId,
+      req.user,
+    );
   }
 
   @UseGuards(
@@ -74,10 +88,18 @@ export class ProjectDisputesController {
   ) {
     const user = req.user;
     if (!user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectDisputesService.updateStatus(projectId, contractId, disputeId, body, user);
+    return this.projectDisputesService.updateStatus(
+      projectId,
+      contractId,
+      disputeId,
+      body,
+      user,
+    );
   }
 
   @UseGuards(
@@ -94,9 +116,17 @@ export class ProjectDisputesController {
   ) {
     const user = req.user;
     if (!user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectDisputesService.addEvent(projectId, contractId, disputeId, body, user);
+    return this.projectDisputesService.addEvent(
+      projectId,
+      contractId,
+      disputeId,
+      body,
+      user,
+    );
   }
 }

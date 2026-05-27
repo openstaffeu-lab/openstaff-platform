@@ -30,7 +30,11 @@ export class UniclassController {
   @Post()
   async create(
     @Body()
-    body: { code: string; title: string; description?: string },
+    body: {
+      code: string;
+      title: string;
+      description?: string;
+    },
   ) {
     try {
       return await this.uniclassService.create(body);

@@ -1,9 +1,19 @@
-import { IsEmail, IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsIn,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { SubscriptionPlanCode } from '@prisma/client';
 
 export class CreateUpgradeRequestDto {
   @IsString()
-  @IsIn([SubscriptionPlanCode.BRONZE, SubscriptionPlanCode.GOLD, SubscriptionPlanCode.ENTERPRISE])
+  @IsIn([
+    SubscriptionPlanCode.BRONZE,
+    SubscriptionPlanCode.GOLD,
+    SubscriptionPlanCode.ENTERPRISE,
+  ])
   requestedPlanCode!: 'BRONZE' | 'GOLD' | 'ENTERPRISE';
 
   @IsOptional()

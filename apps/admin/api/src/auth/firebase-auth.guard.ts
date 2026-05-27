@@ -103,7 +103,9 @@ export class FirebaseAuthGuard implements CanActivate {
           return true;
         }
 
-        throw new UnauthorizedException('Actor not found for authenticated Firebase user');
+        throw new UnauthorizedException(
+          'Actor not found for authenticated Firebase user',
+        );
       }
 
       request.actor = actor;

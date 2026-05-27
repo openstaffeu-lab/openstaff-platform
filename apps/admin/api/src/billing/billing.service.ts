@@ -222,7 +222,12 @@ export class BillingService {
   calculateVat(
     profile: BillingProfileLike,
     subtotal: number,
-  ): { vatMode: BillingVatMode; vatRatePercent: number; vatAmount: number; total: number } {
+  ): {
+    vatMode: BillingVatMode;
+    vatRatePercent: number;
+    vatAmount: number;
+    total: number;
+  } {
     const vatMode = this.resolveVatMode(profile);
     const vatRatePercent = vatMode === BillingVatMode.DOMESTIC ? 19 : 0;
     const vatAmount = this.roundMoney((subtotal * vatRatePercent) / 100);
@@ -239,7 +244,10 @@ export class BillingService {
     return Math.round((value + Number.EPSILON) * 100) / 100;
   }
 
-  async generateInvoice(input: GenerateInvoiceDto, actorUserId?: string | null) {
+  async generateInvoice(
+    input: GenerateInvoiceDto,
+    actorUserId?: string | null,
+  ) {
     const billingEvents = await this.prisma.billingEvent.findMany({
       where: {
         userId: input.userId,
@@ -251,7 +259,9 @@ export class BillingService {
     });
 
     if (billingEvents.length === 0) {
-      throw new BadRequestException('No invoiceable billing events found for the requested user.');
+      throw new BadRequestException(
+        'No invoiceable billing events found for the requested user.',
+      );
     }
 
     if (billingEvents.length !== input.billingEventIds.length) {
@@ -260,7 +270,11 @@ export class BillingService {
       );
     }
 
-    return this.createInvoiceForEvents(billingEvents, input.dueDays ?? 14, actorUserId);
+    return this.createInvoiceForEvents(
+      billingEvents,
+      input.dueDays ?? 14,
+      actorUserId,
+    );
   }
 
   async listBillingEvents() {
@@ -341,7 +355,8 @@ export class BillingService {
               event.billingLink.payrollSettlement.workforceAssignmentId,
             regularHours: event.billingLink.payrollSettlement.regularHours,
             overtimeHours: event.billingLink.payrollSettlement.overtimeHours,
-            invoiceNumber: event.billingLink.billingInvoice?.invoiceNumber ?? null,
+            invoiceNumber:
+              event.billingLink.billingInvoice?.invoiceNumber ?? null,
           }
         : null,
     }));
@@ -407,11 +422,15 @@ export class BillingService {
       workforceSettlementRefs: invoice.lines
         .map((line) => {
           const metadata =
-            line.billingEvent?.metadata && typeof line.billingEvent.metadata === 'object'
+            line.billingEvent?.metadata &&
+            typeof line.billingEvent.metadata === 'object'
               ? (line.billingEvent.metadata as Record<string, unknown>)
               : null;
 
-          if (!metadata || line.billingEvent?.type !== BillingEventType.WORKFORCE_SETTLEMENT) {
+          if (
+            !metadata ||
+            line.billingEvent?.type !== BillingEventType.WORKFORCE_SETTLEMENT
+          ) {
             return null;
           }
 
@@ -422,16 +441,22 @@ export class BillingService {
                 ? metadata.payrollSettlementId
                 : null,
             workerUserId:
-              typeof metadata.workerUserId === 'string' ? metadata.workerUserId : null,
+              typeof metadata.workerUserId === 'string'
+                ? metadata.workerUserId
+                : null,
             workerEmail: line.billingEvent.user.email,
           };
         })
-        .filter((value): value is {
-          billingEventId: string;
-          payrollSettlementId: string | null;
-          workerUserId: string | null;
-          workerEmail: string;
-        } => Boolean(value)),
+        .filter(
+          (
+            value,
+          ): value is {
+            billingEventId: string;
+            payrollSettlementId: string | null;
+            workerUserId: string | null;
+            workerEmail: string;
+          } => Boolean(value),
+        ),
     }));
   }
 
@@ -471,7 +496,11 @@ export class BillingService {
     return invoice;
   }
 
-  async markInvoicePaid(id: string, input: MarkInvoicePaidDto, actorUserId?: string | null) {
+  async markInvoicePaid(
+    id: string,
+    input: MarkInvoicePaidDto,
+    actorUserId?: string | null,
+  ) {
     const invoice = await this.prisma.billingInvoice.findUnique({
       where: { id },
       include: {
@@ -495,8 +524,13 @@ export class BillingService {
       throw new NotFoundException('Billing invoice not found.');
     }
 
-    if (invoice.status === BillingInvoiceStatus.PAID && invoice.invoiceType === BillingInvoiceType.FISCAL) {
-      throw new BadRequestException('Billing invoice is already finalized and paid.');
+    if (
+      invoice.status === BillingInvoiceStatus.PAID &&
+      invoice.invoiceType === BillingInvoiceType.FISCAL
+    ) {
+      throw new BadRequestException(
+        'Billing invoice is already finalized and paid.',
+      );
     }
 
     const billingEventIds = invoice.lines
@@ -507,7 +541,8 @@ export class BillingService {
       (payment) => payment.status === PaymentRecordStatus.PENDING,
     );
 
-    const fiscalSeries = input.fiscalSeries?.trim() || invoice.fiscalSeries || 'OS';
+    const fiscalSeries =
+      input.fiscalSeries?.trim() || invoice.fiscalSeries || 'OS';
     const fiscalNumber =
       invoice.fiscalNumber || (await this.generateFiscalNumber(fiscalSeries));
     const proformaReference =
@@ -702,7 +737,10 @@ export class BillingService {
       throw new BadRequestException('Unsupported billing webhook provider.');
     }
 
-    const rawPayload = this.resolveWebhookPayloadString(payload, options?.rawBody);
+    const rawPayload = this.resolveWebhookPayloadString(
+      payload,
+      options?.rawBody,
+    );
     this.assertStripeWebhookSignature(rawPayload, options?.signatureHeader);
 
     const stripeEvent = this.parseStripeWebhookPayload(payload);
@@ -907,11 +945,17 @@ export class BillingService {
     });
   }
 
-  async generateRenewals(input: GenerateRenewalsDto, actorUserId?: string | null) {
+  async generateRenewals(
+    input: GenerateRenewalsDto,
+    actorUserId?: string | null,
+  ) {
     const periodStart = new Date(input.periodStart);
     const periodEnd = new Date(input.periodEnd);
 
-    if (Number.isNaN(periodStart.getTime()) || Number.isNaN(periodEnd.getTime())) {
+    if (
+      Number.isNaN(periodStart.getTime()) ||
+      Number.isNaN(periodEnd.getTime())
+    ) {
       throw new BadRequestException('Invalid renewal period.');
     }
 
@@ -929,8 +973,11 @@ export class BillingService {
       },
     });
 
-    const createdRenewals: Array<{ id: string; subscriptionId: string; billingEventId: string }> =
-      [];
+    const createdRenewals: Array<{
+      id: string;
+      subscriptionId: string;
+      billingEventId: string;
+    }> = [];
 
     await this.prisma.$transaction(async (tx) => {
       for (const subscription of activeSubscriptions) {
@@ -1036,7 +1083,9 @@ export class BillingService {
     }
 
     if (renewal.status === SubscriptionRenewalStatus.PROCESSED) {
-      throw new BadRequestException('Subscription renewal is already processed.');
+      throw new BadRequestException(
+        'Subscription renewal is already processed.',
+      );
     }
 
     const renewalMetadata =
@@ -1068,7 +1117,11 @@ export class BillingService {
             billingEvent.invoiceLine.invoice.id,
           )) as BillingInvoiceWithRelations;
         } else {
-          invoice = await this.createInvoiceForEvents([billingEvent], 14, actorUserId);
+          invoice = await this.createInvoiceForEvents(
+            [billingEvent],
+            14,
+            actorUserId,
+          );
         }
       }
     }
@@ -1136,10 +1189,15 @@ export class BillingService {
     const currency = first.currency;
 
     if (billingEvents.some((event) => event.currency !== currency)) {
-      throw new BadRequestException('All billing events in an invoice must use the same currency.');
+      throw new BadRequestException(
+        'All billing events in an invoice must use the same currency.',
+      );
     }
 
-    const subtotal = billingEvents.reduce((sum, event) => sum + event.amount, 0);
+    const subtotal = billingEvents.reduce(
+      (sum, event) => sum + event.amount,
+      0,
+    );
     const subscriptionIds = Array.from(
       new Set(
         billingEvents
@@ -1147,11 +1205,15 @@ export class BillingService {
           .filter((value): value is string => Boolean(value)),
       ),
     );
-    const subscriptionId = subscriptionIds.length === 1 ? subscriptionIds[0] : null;
+    const subscriptionId =
+      subscriptionIds.length === 1 ? subscriptionIds[0] : null;
     const issuedAt = new Date();
     const dueAt = new Date(issuedAt.getTime() + dueDays * 24 * 60 * 60 * 1000);
     const invoiceNumber = await this.generateProformaNumber();
-    const billingProfile = await this.ensureBillingProfile(first.userId, currency);
+    const billingProfile = await this.ensureBillingProfile(
+      first.userId,
+      currency,
+    );
     const vatSummary = this.calculateVat(billingProfile, subtotal);
 
     const invoice = await this.prisma.$transaction(async (tx) => {
@@ -1169,7 +1231,9 @@ export class BillingService {
           issuedAt,
           dueAt,
           metadata: {
-            generatedFromBillingEventIds: billingEvents.map((event) => event.id),
+            generatedFromBillingEventIds: billingEvents.map(
+              (event) => event.id,
+            ),
             vatMode: vatSummary.vatMode,
             vatRatePercent: vatSummary.vatRatePercent,
             billingProfileSnapshot: {
@@ -1342,7 +1406,10 @@ export class BillingService {
       'charge.failed',
     ]);
 
-    if (!supportedSuccessEvents.has(payload.type) && !supportedFailureEvents.has(payload.type)) {
+    if (
+      !supportedSuccessEvents.has(payload.type) &&
+      !supportedFailureEvents.has(payload.type)
+    ) {
       return {
         provider: event.provider,
         eventType: payload.type,
@@ -1360,11 +1427,15 @@ export class BillingService {
 
     const invoice = await this.findInvoiceByStripeReference(reference);
     if (!invoice) {
-      throw new NotFoundException('Billing invoice referenced by webhook was not found.');
+      throw new NotFoundException(
+        'Billing invoice referenced by webhook was not found.',
+      );
     }
 
     const providerPaymentId =
-      this.extractStripeProviderPaymentId(payload) ?? event.externalId ?? undefined;
+      this.extractStripeProviderPaymentId(payload) ??
+      event.externalId ??
+      undefined;
 
     if (supportedSuccessEvents.has(payload.type)) {
       if (invoice.status === BillingInvoiceStatus.PAID) {
@@ -1415,9 +1486,13 @@ export class BillingService {
     };
   }
 
-  private parseStripeWebhookPayload(payload: unknown): StripeWebhookEventEnvelope {
+  private parseStripeWebhookPayload(
+    payload: unknown,
+  ): StripeWebhookEventEnvelope {
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-      throw new BadRequestException('Stripe webhook payload must be a JSON object.');
+      throw new BadRequestException(
+        'Stripe webhook payload must be a JSON object.',
+      );
     }
 
     const envelope = payload as Record<string, unknown>;
@@ -1425,11 +1500,15 @@ export class BillingService {
     const type = typeof envelope.type === 'string' ? envelope.type.trim() : '';
 
     if (!id || !type) {
-      throw new BadRequestException('Stripe webhook payload must include id and type.');
+      throw new BadRequestException(
+        'Stripe webhook payload must include id and type.',
+      );
     }
 
     const data =
-      envelope.data && typeof envelope.data === 'object' && !Array.isArray(envelope.data)
+      envelope.data &&
+      typeof envelope.data === 'object' &&
+      !Array.isArray(envelope.data)
         ? (envelope.data as { object?: Record<string, unknown> })
         : undefined;
 
@@ -1455,7 +1534,10 @@ export class BillingService {
     return JSON.stringify(payload ?? {});
   }
 
-  private assertStripeWebhookSignature(payload: string, signatureHeader?: string) {
+  private assertStripeWebhookSignature(
+    payload: string,
+    signatureHeader?: string,
+  ) {
     const secret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
     if (!secret) {
       throw new BadRequestException('STRIPE_WEBHOOK_SECRET is not configured.');
@@ -1484,9 +1566,13 @@ export class BillingService {
       throw new BadRequestException('Stripe-Signature timestamp is invalid.');
     }
 
-    const ageSeconds = Math.abs(Math.floor(Date.now() / 1000) - timestampSeconds);
+    const ageSeconds = Math.abs(
+      Math.floor(Date.now() / 1000) - timestampSeconds,
+    );
     if (ageSeconds > 300) {
-      throw new BadRequestException('Stripe webhook signature timestamp expired.');
+      throw new BadRequestException(
+        'Stripe webhook signature timestamp expired.',
+      );
     }
 
     const expectedSignature = createHmac('sha256', secret)
@@ -1500,7 +1586,9 @@ export class BillingService {
       expectedBuffer.length !== receivedBuffer.length ||
       !timingSafeEqual(expectedBuffer, receivedBuffer)
     ) {
-      throw new BadRequestException('Stripe webhook signature verification failed.');
+      throw new BadRequestException(
+        'Stripe webhook signature verification failed.',
+      );
     }
   }
 
@@ -1610,7 +1698,8 @@ export class BillingService {
           where: { id: pendingPayment.id },
           data: {
             status: PaymentRecordStatus.FAILED,
-            providerPaymentId: input.providerPaymentId ?? pendingPayment.providerPaymentId,
+            providerPaymentId:
+              input.providerPaymentId ?? pendingPayment.providerPaymentId,
             metadata: {
               ...(pendingPayment.metadata &&
               typeof pendingPayment.metadata === 'object'
@@ -1712,7 +1801,11 @@ export class BillingService {
     }
 
     if (EU_COUNTRIES.has(country)) {
-      if (profile.isCompany && profile.isVatPayer && Boolean(profile.vatId?.trim())) {
+      if (
+        profile.isCompany &&
+        profile.isVatPayer &&
+        Boolean(profile.vatId?.trim())
+      ) {
         return BillingVatMode.EU_REVERSE_CHARGE;
       }
 
@@ -1747,7 +1840,9 @@ export class BillingService {
       }
     }
 
-    throw new BadRequestException('Unable to generate a unique proforma invoice number.');
+    throw new BadRequestException(
+      'Unable to generate a unique proforma invoice number.',
+    );
   }
 
   private async generateFiscalNumber(series: string) {

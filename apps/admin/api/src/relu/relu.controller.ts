@@ -56,7 +56,10 @@ export class ReluController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.reluService.onboardingAssistant(this.requireUser(request), body),
+        await this.reluService.onboardingAssistant(
+          this.requireUser(request),
+          body,
+        ),
       );
     } catch (error) {
       return this.toErrorResponse(error);
@@ -71,7 +74,10 @@ export class ReluController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.reluService.profileCompletionAssistant(this.requireUser(request), body),
+        await this.reluService.profileCompletionAssistant(
+          this.requireUser(request),
+          body,
+        ),
       );
     } catch (error) {
       return this.toErrorResponse(error);
@@ -86,7 +92,10 @@ export class ReluController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.reluService.interpretProject(this.requireUser(request), body),
+        await this.reluService.interpretProject(
+          this.requireUser(request),
+          body,
+        ),
       );
     } catch (error) {
       return this.toErrorResponse(error);
@@ -127,10 +136,13 @@ export class ReluController {
       }
 
       return buildSuccessResponse(
-        await this.reluService.eligibilityPercentage(this.requireUser(request), {
-          projectId: body.projectId.trim(),
-          profileId: body.profileId?.trim(),
-        }),
+        await this.reluService.eligibilityPercentage(
+          this.requireUser(request),
+          {
+            projectId: body.projectId.trim(),
+            profileId: body.profileId?.trim(),
+          },
+        ),
       );
     } catch (error) {
       return this.toErrorResponse(error);
@@ -149,10 +161,13 @@ export class ReluController {
       }
 
       return buildSuccessResponse(
-        await this.reluService.missingCertificationDetection(this.requireUser(request), {
-          projectId: body.projectId.trim(),
-          profileId: body.profileId?.trim(),
-        }),
+        await this.reluService.missingCertificationDetection(
+          this.requireUser(request),
+          {
+            projectId: body.projectId.trim(),
+            profileId: body.profileId?.trim(),
+          },
+        ),
       );
     } catch (error) {
       return this.toErrorResponse(error);
@@ -188,10 +203,13 @@ export class ReluController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.reluService.candidateProjectRecommendation(this.requireUser(request), {
-          projectId: body.projectId?.trim(),
-          limit: body.limit,
-        }),
+        await this.reluService.candidateProjectRecommendation(
+          this.requireUser(request),
+          {
+            projectId: body.projectId?.trim(),
+            limit: body.limit,
+          },
+        ),
       );
     } catch (error) {
       return this.toErrorResponse(error);
@@ -199,7 +217,7 @@ export class ReluController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MODERATE_AI)
   @HttpCode(200)
   @Post('public-posts/:id/ingest')
   async ingestPublicPost(
@@ -216,7 +234,7 @@ export class ReluController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MODERATE_AI)
   @HttpCode(200)
   @Post('public-posts/:id/classify')
   async classifyPublicPost(
@@ -225,7 +243,10 @@ export class ReluController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.reluService.classifyPublicPost(id, this.requireUser(request)),
+        await this.reluService.classifyPublicPost(
+          id,
+          this.requireUser(request),
+        ),
       );
     } catch (error) {
       return this.toErrorResponse(error);
@@ -242,7 +263,11 @@ export class ReluController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.reluService.matchPublicPost(id, this.requireUser(request), body),
+        await this.reluService.matchPublicPost(
+          id,
+          this.requireUser(request),
+          body,
+        ),
       );
     } catch (error) {
       return this.toErrorResponse(error);
@@ -311,7 +336,7 @@ export class ReluController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Post('contract-lifecycle-monitor')
   async contractLifecycleMonitor(
     @Req() request: AuthenticatedRequest,
@@ -319,9 +344,12 @@ export class ReluController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.reluService.contractLifecycleMonitoring(this.requireUser(request), {
-          contractId: body.contractId?.trim(),
-        }),
+        await this.reluService.contractLifecycleMonitoring(
+          this.requireUser(request),
+          {
+            contractId: body.contractId?.trim(),
+          },
+        ),
       );
     } catch (error) {
       return this.toErrorResponse(error);
@@ -329,7 +357,7 @@ export class ReluController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Post('notification-generator')
   async notificationGenerator(
     @Req() request: AuthenticatedRequest,
@@ -343,7 +371,10 @@ export class ReluController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.reluService.notificationGenerator(this.requireUser(request), body),
+        await this.reluService.notificationGenerator(
+          this.requireUser(request),
+          body,
+        ),
       );
     } catch (error) {
       return this.toErrorResponse(error);
@@ -351,7 +382,7 @@ export class ReluController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Get('config')
   async config() {
     try {
@@ -362,7 +393,7 @@ export class ReluController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Patch('config/:id')
   async updateConfig(
     @Req() request: AuthenticatedRequest,
@@ -382,7 +413,11 @@ export class ReluController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.reluService.updateConfig(id, body, this.requireUser(request)),
+        await this.reluService.updateConfig(
+          id,
+          body,
+          this.requireUser(request),
+        ),
       );
     } catch (error) {
       return this.toErrorResponse(error);
@@ -390,7 +425,7 @@ export class ReluController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Get('prompts-policies')
   async promptsPolicies() {
     try {
@@ -401,7 +436,7 @@ export class ReluController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Patch('prompts-policies/:id')
   async updatePromptPolicy(
     @Req() request: AuthenticatedRequest,
@@ -415,7 +450,11 @@ export class ReluController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.reluService.updatePromptPolicy(id, body, this.requireUser(request)),
+        await this.reluService.updatePromptPolicy(
+          id,
+          body,
+          this.requireUser(request),
+        ),
       );
     } catch (error) {
       return this.toErrorResponse(error);
@@ -423,7 +462,7 @@ export class ReluController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Get('queue')
   async queue() {
     try {

@@ -30,9 +30,14 @@ export class NotificationController {
   @Get('notifications')
   async listCurrentUserNotifications(@Req() req: any) {
     try {
-      return buildSuccessResponse(await this.notificationService.listForUser(req.user));
+      return buildSuccessResponse(
+        await this.notificationService.listForUser(req.user),
+      );
     } catch (error) {
-      logEndpointError('NotificationController.listCurrentUserNotifications', error);
+      logEndpointError(
+        'NotificationController.listCurrentUserNotifications',
+        error,
+      );
       return buildInternalErrorResponse(error);
     }
   }
@@ -41,7 +46,9 @@ export class NotificationController {
   @Get('notifications/unread-count')
   async unreadCount(@Req() req: any) {
     try {
-      return buildSuccessResponse(await this.notificationService.unreadCount(req.user));
+      return buildSuccessResponse(
+        await this.notificationService.unreadCount(req.user),
+      );
     } catch (error) {
       logEndpointError('NotificationController.unreadCount', error);
       return buildInternalErrorResponse(error);
@@ -52,7 +59,9 @@ export class NotificationController {
   @Patch('notifications/:id/read')
   async markRead(@Param('id') id: string, @Req() req: any) {
     try {
-      return buildSuccessResponse(await this.notificationService.markRead(id, req.user));
+      return buildSuccessResponse(
+        await this.notificationService.markRead(id, req.user),
+      );
     } catch (error) {
       logEndpointError('NotificationController.markRead', error);
       return buildInternalErrorResponse(error);
@@ -63,7 +72,9 @@ export class NotificationController {
   @Patch('notifications/read-all')
   async markAllRead(@Req() req: any) {
     try {
-      return buildSuccessResponse(await this.notificationService.markAllRead(req.user));
+      return buildSuccessResponse(
+        await this.notificationService.markAllRead(req.user),
+      );
     } catch (error) {
       logEndpointError('NotificationController.markAllRead', error);
       return buildInternalErrorResponse(error);
@@ -74,7 +85,9 @@ export class NotificationController {
   @Patch('notifications/:id/dismiss')
   async dismiss(@Param('id') id: string, @Req() req: any) {
     try {
-      return buildSuccessResponse(await this.notificationService.dismiss(id, req.user));
+      return buildSuccessResponse(
+        await this.notificationService.dismiss(id, req.user),
+      );
     } catch (error) {
       logEndpointError('NotificationController.dismiss', error);
       return buildInternalErrorResponse(error);
@@ -85,7 +98,9 @@ export class NotificationController {
   @Get('notifications/preferences')
   async getPreferences(@Req() req: any) {
     try {
-      return buildSuccessResponse(await this.notificationService.getPreferences(req.user));
+      return buildSuccessResponse(
+        await this.notificationService.getPreferences(req.user),
+      );
     } catch (error) {
       logEndpointError('NotificationController.getPreferences', error);
       return buildInternalErrorResponse(error);
@@ -113,17 +128,22 @@ export class NotificationController {
         await this.notificationService.recomputeComplianceReminders(req.user),
       );
     } catch (error) {
-      logEndpointError('NotificationController.recomputeComplianceReminders', error);
+      logEndpointError(
+        'NotificationController.recomputeComplianceReminders',
+        error,
+      );
       return buildInternalErrorResponse(error);
     }
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Get('admin/notifications/events')
   async listAdminEvents() {
     try {
-      return buildSuccessResponse(await this.notificationService.listAdminEvents());
+      return buildSuccessResponse(
+        await this.notificationService.listAdminEvents(),
+      );
     } catch (error) {
       logEndpointError('NotificationController.listAdminEvents', error);
       return buildInternalErrorResponse(error);
@@ -131,11 +151,13 @@ export class NotificationController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Get('admin/notifications/deliveries')
   async listAdminDeliveries() {
     try {
-      return buildSuccessResponse(await this.notificationService.listAdminDeliveries());
+      return buildSuccessResponse(
+        await this.notificationService.listAdminDeliveries(),
+      );
     } catch (error) {
       logEndpointError('NotificationController.listAdminDeliveries', error);
       return buildInternalErrorResponse(error);
@@ -143,7 +165,7 @@ export class NotificationController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Post('admin/notifications/deliveries/:id/retry')
   async retryFailedDelivery(@Param('id') id: string, @Req() req: any) {
     try {
@@ -157,11 +179,13 @@ export class NotificationController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Get('admin/workflow-automation/runs')
   async listWorkflowRuns() {
     try {
-      return buildSuccessResponse(await this.notificationService.listWorkflowAutomationRuns());
+      return buildSuccessResponse(
+        await this.notificationService.listWorkflowAutomationRuns(),
+      );
     } catch (error) {
       logEndpointError('NotificationController.listWorkflowRuns', error);
       return buildInternalErrorResponse(error);

@@ -227,9 +227,13 @@ export class GeminiService {
     const apiKey = process.env.GEMINI_API_KEY ?? '';
     if (!apiKey) {
       if (this.runtimeConfig.isAiFallbackEnabled()) {
-        this.logger.warn('GEMINI_API_KEY not set. Gemini requests will use explicit fallbacks.');
+        this.logger.warn(
+          'GEMINI_API_KEY not set. Gemini requests will use explicit fallbacks.',
+        );
       } else {
-        this.logger.warn('GEMINI_API_KEY not set. Gemini requests requiring AI will return unavailable responses.');
+        this.logger.warn(
+          'GEMINI_API_KEY not set. Gemini requests requiring AI will return unavailable responses.',
+        );
       }
     }
     this.genAI = new GoogleGenerativeAI(apiKey);
@@ -252,7 +256,9 @@ export class GeminiService {
 
     if (!apiKey) {
       if (!this.runtimeConfig.isAiFallbackEnabled()) {
-        throw new Error('GEMINI_API_KEY is not configured and AI fallback is disabled.');
+        throw new Error(
+          'GEMINI_API_KEY is not configured and AI fallback is disabled.',
+        );
       }
       return this.fallbackTextResponse(userMessage);
     }
@@ -289,7 +295,10 @@ export class GeminiService {
       };
     }
 
-    const promptParts = [...(input.contextBlocks ?? []), input.userMessage].filter(Boolean);
+    const promptParts = [
+      ...(input.contextBlocks ?? []),
+      input.userMessage,
+    ].filter(Boolean);
     const response = await this.callGemini(
       agent.systemPrompt,
       promptParts.join('\n\n'),
@@ -352,7 +361,8 @@ export class GeminiService {
 
     const execution = await this.executeAgent({
       agentType: 'MATCHING_ENGINE',
-      userMessage: 'Score this application and return JSON with score, reasons, and recommendation.',
+      userMessage:
+        'Score this application and return JSON with score, reasons, and recommendation.',
       contextBlocks: [
         `JOB: ${job.title}`,
         `Job category: ${job.category}`,
@@ -459,7 +469,8 @@ export class GeminiService {
   async complianceCheck(content: string) {
     const execution = await this.executeAgent({
       agentType: 'COMPLIANCE_MONITOR',
-      userMessage: 'Review the supplied content and return structured compliance findings.',
+      userMessage:
+        'Review the supplied content and return structured compliance findings.',
       contextBlocks: [content],
       temperatureOverride: 0.2,
     });
@@ -498,18 +509,32 @@ export class GeminiService {
       where: { id },
       data: {
         ...(data.name !== undefined ? { name: data.name } : {}),
-        ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.description !== undefined
+          ? { description: data.description }
+          : {}),
         ...(data.model !== undefined ? { model: data.model } : {}),
-        ...(data.accessMode !== undefined ? { accessMode: data.accessMode as any } : {}),
-        ...(data.systemPrompt !== undefined ? { systemPrompt: data.systemPrompt } : {}),
-        ...(data.policyJson !== undefined ? { policyJson: data.policyJson as any } : {}),
-        ...(data.temperature !== undefined ? { temperature: data.temperature } : {}),
+        ...(data.accessMode !== undefined
+          ? { accessMode: data.accessMode as any }
+          : {}),
+        ...(data.systemPrompt !== undefined
+          ? { systemPrompt: data.systemPrompt }
+          : {}),
+        ...(data.policyJson !== undefined
+          ? { policyJson: data.policyJson as any }
+          : {}),
+        ...(data.temperature !== undefined
+          ? { temperature: data.temperature }
+          : {}),
         ...(data.enabled !== undefined ? { enabled: data.enabled } : {}),
-        ...(data.publicEnabled !== undefined ? { publicEnabled: data.publicEnabled } : {}),
+        ...(data.publicEnabled !== undefined
+          ? { publicEnabled: data.publicEnabled }
+          : {}),
         ...(data.maxContextItems !== undefined
           ? { maxContextItems: data.maxContextItems }
           : {}),
-        ...(data.webhookUrl !== undefined ? { webhookUrl: data.webhookUrl } : {}),
+        ...(data.webhookUrl !== undefined
+          ? { webhookUrl: data.webhookUrl }
+          : {}),
       },
     });
   }

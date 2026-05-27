@@ -114,6 +114,7 @@ model User {
   projects                           Project[]                    @relation("ProjectCreatedBy")
   uploadedProjectDocuments           ProjectDocument[]            @relation("ProjectDocumentUploadedBy")
   reviewedAiInterpretations          ProjectAIInterpretation[]    @relation("ProjectAIReviewedBy")
+  reviewedAiInterpretationRuns       ProjectAIInterpretationRun[] @relation("ProjectAIInterpretationRunReviewedBy")
   uploadedProfileDocuments           ProfileDocument[]            @relation("ProfileDocumentUploadedBy")
   createdShortlists                  ProjectShortlist[]           @relation("ProjectShortlistCreatedBy")
   createdInvitations                 ProjectInvitation[]          @relation("ProjectInvitationCreatedBy")
@@ -934,6 +935,7 @@ model Project {
   conditions                 ProjectCondition[]
   documents                  ProjectDocument[]
   aiInterpretation           ProjectAIInterpretation?
+  aiInterpretationRuns       ProjectAIInterpretationRun[]
   escoClassifications        ProjectEscoClassification[]
   naceClassifications        ProjectNaceClassification[]
   uniclassClassifications    ProjectUniclassClassification[]
@@ -1041,6 +1043,29 @@ model ProjectAIInterpretation {
   project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   reviewedBy User?   @relation("ProjectAIReviewedBy", fields: [reviewedById], references: [id])
 
+  @@index([status])
+  @@index([reviewedById])
+}
+
+model ProjectAIInterpretationRun {
+  id              String                        @id @default(uuid())
+  projectId       String
+  status          ProjectAIInterpretationStatus @default(PENDING)
+  sourceText      String?
+  extractedJson   String?
+  documentIds     String?
+  confidenceScore Float?
+  modelName       String?
+  modelVersion    String?
+  promptVersion   String?
+  reviewedById    String?
+  reviewNotes     String?
+  createdAt       DateTime                      @default(now())
+
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reviewedBy User?   @relation("ProjectAIInterpretationRunReviewedBy", fields: [reviewedById], references: [id])
+
+  @@index([projectId, createdAt])
   @@index([status])
   @@index([reviewedById])
 }
@@ -1208,6 +1233,7 @@ model ProfileDocument {
   extractionStatus String              @default("NOT_REQUESTED")
   extractionError  String?
   extractedAt      DateTime?
+  moderationStatus PublicModerationStatus @default(PENDING)
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
 
@@ -1217,6 +1243,7 @@ model ProfileDocument {
   verificationCaseDocuments VerificationCaseDocument[]
 
   @@index([profileId, type])
+  @@index([profileId, moderationStatus, assetKind])
   @@index([uploadedById])
 }
 
@@ -3166,6 +3193,7 @@ model ProjectJobRequestUniclassClassification {
 enum Role {
   SUPERADMIN
   ADMIN
+  AI_MODERATOR
   WORKER
   EMPLOYER
   CONTRACTOR
@@ -3438,6 +3466,8 @@ enum Permission {
   WRITE
   DELETE
   MANAGE_USERS
+  MODERATE_AI
+  MANAGE_TECHNICAL_OPERATIONS
 }
 
 enum ProjectEngagementModel {

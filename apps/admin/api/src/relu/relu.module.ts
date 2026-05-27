@@ -11,7 +11,15 @@ import { ReluController } from './relu.controller';
 import { ReluService } from './relu.service';
 
 @Module({
-  imports: [AuthModule, PrismaModule, GeminiModule, AuditModule, AccessControlModule, MessagingModule, NotificationModule],
+  imports: [
+    AuthModule,
+    PrismaModule,
+    GeminiModule,
+    AuditModule,
+    AccessControlModule,
+    MessagingModule,
+    NotificationModule,
+  ],
   controllers: [ReluController, AdminReluController],
   providers: [ReluService],
   exports: [ReluService],

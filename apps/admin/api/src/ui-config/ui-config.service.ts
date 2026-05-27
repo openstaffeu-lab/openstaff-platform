@@ -108,7 +108,9 @@ export class UiConfigService {
   }
 }
 
-function normalizeHeader(value: Prisma.JsonValue): Partial<PublicUiConfig['header']> {
+function normalizeHeader(
+  value: Prisma.JsonValue,
+): Partial<PublicUiConfig['header']> {
   const header = normalizeObject(value);
 
   return {
@@ -119,7 +121,9 @@ function normalizeHeader(value: Prisma.JsonValue): Partial<PublicUiConfig['heade
   };
 }
 
-function normalizeFooter(value: Prisma.JsonValue): Partial<PublicUiConfig['footer']> {
+function normalizeFooter(
+  value: Prisma.JsonValue,
+): Partial<PublicUiConfig['footer']> {
   const footer = normalizeObject(value);
 
   return {

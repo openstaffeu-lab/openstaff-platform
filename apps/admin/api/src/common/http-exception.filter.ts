@@ -35,7 +35,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse();
     const request = ctx.getRequest();
 
-    const requestId = request?.requestId ?? request?.headers?.['x-request-id'] ?? null;
+    const requestId =
+      request?.requestId ?? request?.headers?.['x-request-id'] ?? null;
     const isHttpException = exception instanceof HttpException;
     const status = isHttpException
       ? exception.getStatus()
@@ -94,7 +95,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return;
     }
 
-    if (![HttpStatus.UNAUTHORIZED, HttpStatus.FORBIDDEN, HttpStatus.TOO_MANY_REQUESTS].includes(input.status)) {
+    if (
+      ![
+        HttpStatus.UNAUTHORIZED,
+        HttpStatus.FORBIDDEN,
+        HttpStatus.TOO_MANY_REQUESTS,
+      ].includes(input.status)
+    ) {
       return;
     }
 

@@ -35,7 +35,8 @@ export const demoPublicPosts = [
       {
         id: 'link-project-data-center-cabling',
         url: 'https://nordgrid.example.com/project/data-center-cabling',
-        normalizedUrl: 'https://nordgrid.example.com/project/data-center-cabling',
+        normalizedUrl:
+          'https://nordgrid.example.com/project/data-center-cabling',
         sourcePostId: 'post-project-data-center-cabling',
         submittedBy: 'NordGrid Data Infrastructure GmbH',
         securityStatus: 'APPROVED',
@@ -76,7 +77,8 @@ export const demoPublicPosts = [
         id: 'comment-project-data-center-cabling',
         postId: 'post-project-data-center-cabling',
         authorName: 'Field Operations Viewer',
-        comment: 'Can you confirm whether night shifts are included in this package?',
+        comment:
+          'Can you confirm whether night shifts are included in this package?',
         status: 'PUBLISHED',
         createdAt: '2026-04-28T14:00:00.000Z',
         updatedAt: '2026-04-28T14:00:00.000Z',
@@ -155,7 +157,8 @@ export const demoPublicPosts = [
             id: 'message-professional-cabling-team-1',
             conversationId: 'conversation-professional-cabling-team',
             senderName: 'Central Europe Cabling Team',
-            message: 'Please share your exact site access and rotation requirements.',
+            message:
+              'Please share your exact site access and rotation requirements.',
             status: 'PENDING_REVIEW',
             createdAt: '2026-04-29T07:45:00.000Z',
             updatedAt: '2026-04-29T07:45:00.000Z',
@@ -180,7 +183,8 @@ export const demoPublicPosts = [
         postId: 'post-professional-cabling-team',
         authorName: 'Project Delivery Lead',
         rating: 4,
-        review: 'Strong credentials, pending link verification before publishing broader outreach.',
+        review:
+          'Strong credentials, pending link verification before publishing broader outreach.',
         status: 'PENDING_REVIEW',
         createdAt: '2026-04-29T10:30:00.000Z',
         updatedAt: '2026-04-29T10:30:00.000Z',
@@ -189,18 +193,24 @@ export const demoPublicPosts = [
   },
 ];
 
-export const demoPublicPostMedia = demoPublicPosts.flatMap((post) => post.media);
+export const demoPublicPostMedia = demoPublicPosts.flatMap(
+  (post) => post.media,
+);
 export const demoExternalLinkSubmissions = demoPublicPosts.flatMap(
   (post) => post.externalLinks,
 );
-export const demoPrivateConversations = demoPublicPosts.flatMap((post) =>
-  post.privateConversations,
+export const demoPrivateConversations = demoPublicPosts.flatMap(
+  (post) => post.privateConversations,
 );
 export const demoPrivateMessages = demoPrivateConversations.flatMap(
   (conversation) => conversation.messages,
 );
-export const demoPublicComments = demoPublicPosts.flatMap((post) => post.comments);
-export const demoPublicReviews = demoPublicPosts.flatMap((post) => post.reviews);
+export const demoPublicComments = demoPublicPosts.flatMap(
+  (post) => post.comments,
+);
+export const demoPublicReviews = demoPublicPosts.flatMap(
+  (post) => post.reviews,
+);
 
 export function cloneDemoPublicPosts() {
   return JSON.parse(JSON.stringify(demoPublicPosts));

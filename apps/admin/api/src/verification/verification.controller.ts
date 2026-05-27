@@ -31,7 +31,9 @@ export class VerificationController {
   @Get('me')
   async getMe(@Req() req: any) {
     try {
-      return buildSuccessResponse(await this.verificationService.getVerificationMe(req.user.sub));
+      return buildSuccessResponse(
+        await this.verificationService.getVerificationMe(req.user.sub),
+      );
     } catch (error) {
       logEndpointError('VerificationController.getMe', error);
       throw error;
@@ -39,7 +41,10 @@ export class VerificationController {
   }
 
   @Post('identity/submit')
-  async submitIdentityCase(@Req() req: any, @Body() body: SubmitVerificationCaseDto) {
+  async submitIdentityCase(
+    @Req() req: any,
+    @Body() body: SubmitVerificationCaseDto,
+  ) {
     try {
       return buildSuccessResponse(
         await this.verificationService.submitIdentityCase(req.user.sub, body),
@@ -51,7 +56,10 @@ export class VerificationController {
   }
 
   @Post('company/submit')
-  async submitCompanyCase(@Req() req: any, @Body() body: SubmitVerificationCaseDto) {
+  async submitCompanyCase(
+    @Req() req: any,
+    @Body() body: SubmitVerificationCaseDto,
+  ) {
     try {
       return buildSuccessResponse(
         await this.verificationService.submitCompanyCase(req.user.sub, body),
@@ -76,7 +84,11 @@ export class VerificationAdminController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.verificationService.listAdminCases({ q, status, subjectType }),
+        await this.verificationService.listAdminCases({
+          q,
+          status,
+          subjectType,
+        }),
       );
     } catch (error) {
       logEndpointError('VerificationAdminController.listCases', error);
@@ -87,7 +99,9 @@ export class VerificationAdminController {
   @Get('cases/:id')
   async getCase(@Param('id') id: string) {
     try {
-      return buildSuccessResponse(await this.verificationService.getAdminCase(id));
+      return buildSuccessResponse(
+        await this.verificationService.getAdminCase(id),
+      );
     } catch (error) {
       logEndpointError('VerificationAdminController.getCase', error);
       throw error;

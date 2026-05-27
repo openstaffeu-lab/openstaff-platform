@@ -1,4 +1,7 @@
-import { ActorCertificationType, ComplianceDocumentStatus } from '@prisma/client';
+import {
+  ActorCertificationType,
+  ComplianceDocumentStatus,
+} from '@prisma/client';
 import {
   IsEnum,
   IsOptional,

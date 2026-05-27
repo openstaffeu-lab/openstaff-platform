@@ -1,5 +1,11 @@
 import { WorkerEmploymentType } from '@prisma/client';
-import { IsEmail, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateProfileWorkerDto {
   @IsString()

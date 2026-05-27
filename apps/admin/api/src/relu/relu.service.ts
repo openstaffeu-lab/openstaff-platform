@@ -184,7 +184,9 @@ export class ReluService {
     }>,
     actor: AuthenticatedUser,
   ) {
-    const before = await this.prisma.geminiAgent.findUnique({ where: { id: agentId } });
+    const before = await this.prisma.geminiAgent.findUnique({
+      where: { id: agentId },
+    });
 
     if (!before) {
       throw new NotFoundException('Relu agent not found');
@@ -233,7 +235,9 @@ export class ReluService {
     }>,
     actor: AuthenticatedUser,
   ) {
-    const before = await this.prisma.geminiAgent.findUnique({ where: { id: agentId } });
+    const before = await this.prisma.geminiAgent.findUnique({
+      where: { id: agentId },
+    });
 
     if (!before) {
       throw new NotFoundException('Relu agent not found');
@@ -257,35 +261,40 @@ export class ReluService {
   }
 
   async queueStatus() {
-    const [pending, running, completed, failed, recentTasks] = await Promise.all([
-      this.prisma.reluTask.count({ where: { status: ReluTaskStatus.PENDING } }),
-      this.prisma.reluTask.count({ where: { status: ReluTaskStatus.RUNNING } }),
-      this.prisma.reluTask.count({
-        where: {
-          status: ReluTaskStatus.COMPLETED,
-          createdAt: { gte: new Date(Date.now() - 86_400_000) },
-        },
-      }),
-      this.prisma.reluTask.count({
-        where: {
-          status: ReluTaskStatus.FAILED,
-          createdAt: { gte: new Date(Date.now() - 86_400_000) },
-        },
-      }),
-      this.prisma.reluTask.findMany({
-        include: {
-          requestedBy: {
-            select: {
-              id: true,
-              email: true,
-              role: true,
+    const [pending, running, completed, failed, recentTasks] =
+      await Promise.all([
+        this.prisma.reluTask.count({
+          where: { status: ReluTaskStatus.PENDING },
+        }),
+        this.prisma.reluTask.count({
+          where: { status: ReluTaskStatus.RUNNING },
+        }),
+        this.prisma.reluTask.count({
+          where: {
+            status: ReluTaskStatus.COMPLETED,
+            createdAt: { gte: new Date(Date.now() - 86_400_000) },
+          },
+        }),
+        this.prisma.reluTask.count({
+          where: {
+            status: ReluTaskStatus.FAILED,
+            createdAt: { gte: new Date(Date.now() - 86_400_000) },
+          },
+        }),
+        this.prisma.reluTask.findMany({
+          include: {
+            requestedBy: {
+              select: {
+                id: true,
+                email: true,
+                role: true,
+              },
             },
           },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 40,
-      }),
-    ]);
+          orderBy: { createdAt: 'desc' },
+          take: 40,
+        }),
+      ]);
 
     return {
       summary: {
@@ -353,7 +362,8 @@ export class ReluService {
         interpretation.explanation ??
         'Public post ingestion completed with deterministic Relu taxonomy extraction.',
       score: interpretation.categoryConfidence ?? 0,
-      fallbackMessage: 'Relu ingestion fallback used because Gemini is unavailable.',
+      fallbackMessage:
+        'Relu ingestion fallback used because Gemini is unavailable.',
       auditAction: 'RELU_PUBLIC_POST_INGESTED',
     });
   }
@@ -394,7 +404,8 @@ export class ReluService {
       resultData: classification,
       explanation: classification.explanation,
       score: classification.categoryConfidence ?? 0,
-      fallbackMessage: 'Relu taxonomy classification fallback used because Gemini is unavailable.',
+      fallbackMessage:
+        'Relu taxonomy classification fallback used because Gemini is unavailable.',
       auditAction: 'RELU_PUBLIC_POST_CLASSIFIED',
     });
 
@@ -402,8 +413,12 @@ export class ReluService {
       where: { id: post.id },
       data: {
         classificationJson: classification as Prisma.InputJsonValue,
-        escoCodesJson: JSON.stringify(classification.escoCandidates.map((item: any) => item.code)),
-        naceCodesJson: JSON.stringify(classification.naceCandidates.map((item: any) => item.code)),
+        escoCodesJson: JSON.stringify(
+          classification.escoCandidates.map((item: any) => item.code),
+        ),
+        naceCodesJson: JSON.stringify(
+          classification.naceCandidates.map((item: any) => item.code),
+        ),
         uniclassCodesJson: JSON.stringify(
           classification.uniclassCandidates.map((item: any) => item.code),
         ),
@@ -413,9 +428,16 @@ export class ReluService {
     return persisted;
   }
 
-  async matchPublicPost(postId: string, actor: AuthenticatedUser, request: ReluMatchRequest = {}) {
+  async matchPublicPost(
+    postId: string,
+    actor: AuthenticatedUser,
+    request: ReluMatchRequest = {},
+  ) {
     const post = await this.getPublicPostContext(postId);
-    const profile = await this.getAccessibleProfile(request.profileId?.trim(), actor);
+    const profile = await this.getAccessibleProfile(
+      request.profileId?.trim(),
+      actor,
+    );
     const task = await this.createTask({
       capability: 'public-post-matching',
       accessMode: this.isAdminRole(actor.role)
@@ -459,7 +481,8 @@ export class ReluService {
       compatibilityPercent: match.compatibilityPercent,
       targetSourceType: ReluSourceType.PROFILE,
       targetSourceId: profile.id,
-      fallbackMessage: 'Relu matching fallback used because Gemini is unavailable.',
+      fallbackMessage:
+        'Relu matching fallback used because Gemini is unavailable.',
       auditAction: 'RELU_PUBLIC_POST_MATCHED',
     });
 
@@ -524,51 +547,59 @@ export class ReluService {
     const post = await this.getPublicPostContext(postId);
 
     if (!this.canReadPublicPostResults(post, actor)) {
-      throw new ForbiddenException('You do not have access to these Relu results');
+      throw new ForbiddenException(
+        'You do not have access to these Relu results',
+      );
     }
 
-    const [runs, classifications, matches, recommendations] = await Promise.all([
-      this.prisma.reluProcessingRun.findMany({
-        where: {
-          sourceType: ReluSourceType.PUBLIC_POST,
-          sourceId: post.id,
-        },
-        include: this.runInclude,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.reluClassificationResult.findMany({
-        where: {
-          sourceType: ReluSourceType.PUBLIC_POST,
-          sourceId: post.id,
-        },
-        include: this.classificationInclude,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.reluMatchResult.findMany({
-        where: {
-          sourceType: ReluSourceType.PUBLIC_POST,
-          sourceId: post.id,
-        },
-        include: this.matchInclude,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.reluRecommendation.findMany({
-        where: {
-          sourceType: ReluSourceType.PUBLIC_POST,
-          sourceId: post.id,
-        },
-        include: this.recommendationInclude,
-        orderBy: { createdAt: 'desc' },
-      }),
-    ]);
+    const [runs, classifications, matches, recommendations] = await Promise.all(
+      [
+        this.prisma.reluProcessingRun.findMany({
+          where: {
+            sourceType: ReluSourceType.PUBLIC_POST,
+            sourceId: post.id,
+          },
+          include: this.runInclude,
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.reluClassificationResult.findMany({
+          where: {
+            sourceType: ReluSourceType.PUBLIC_POST,
+            sourceId: post.id,
+          },
+          include: this.classificationInclude,
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.reluMatchResult.findMany({
+          where: {
+            sourceType: ReluSourceType.PUBLIC_POST,
+            sourceId: post.id,
+          },
+          include: this.matchInclude,
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.reluRecommendation.findMany({
+          where: {
+            sourceType: ReluSourceType.PUBLIC_POST,
+            sourceId: post.id,
+          },
+          include: this.recommendationInclude,
+          orderBy: { createdAt: 'desc' },
+        }),
+      ],
+    );
 
     return {
       sourceType: ReluSourceType.PUBLIC_POST,
       sourceId: post.id,
       runs: runs.map((item) => this.toRunResponse(item)),
-      classifications: classifications.map((item) => this.toClassificationResponse(item)),
+      classifications: classifications.map((item) =>
+        this.toClassificationResponse(item),
+      ),
       matches: matches.map((item) => this.toMatchResponse(item)),
-      recommendations: recommendations.map((item) => this.toRecommendationResponse(item)),
+      recommendations: recommendations.map((item) =>
+        this.toRecommendationResponse(item),
+      ),
     };
   }
 
@@ -608,7 +639,8 @@ export class ReluService {
       resultData: enrichment,
       explanation: enrichment.explanation,
       score: enrichment.categoryConfidence ?? 0,
-      fallbackMessage: 'Relu profile enrichment fallback used because Gemini is unavailable.',
+      fallbackMessage:
+        'Relu profile enrichment fallback used because Gemini is unavailable.',
       auditAction: 'RELU_PROFILE_ENRICHED',
     });
   }
@@ -649,71 +681,78 @@ export class ReluService {
       resultData: classification,
       explanation: classification.explanation,
       score: classification.categoryConfidence ?? 0,
-      fallbackMessage: 'Relu profile classification fallback used because Gemini is unavailable.',
+      fallbackMessage:
+        'Relu profile classification fallback used because Gemini is unavailable.',
       auditAction: 'RELU_PROFILE_CLASSIFIED',
     });
   }
 
   async getProfileResults(profileId: string, actor: AuthenticatedUser) {
     const profile = await this.getAccessibleProfile(profileId?.trim(), actor);
-    const [runs, classifications, matches, recommendations] = await Promise.all([
-      this.prisma.reluProcessingRun.findMany({
-        where: {
-          sourceType: ReluSourceType.PROFILE,
-          sourceId: profile.id,
-        },
-        include: this.runInclude,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.reluClassificationResult.findMany({
-        where: {
-          sourceType: ReluSourceType.PROFILE,
-          sourceId: profile.id,
-        },
-        include: this.classificationInclude,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.reluMatchResult.findMany({
-        where: {
-          OR: [
-            {
-              sourceType: ReluSourceType.PROFILE,
-              sourceId: profile.id,
-            },
-            {
-              targetSourceType: ReluSourceType.PROFILE,
-              targetSourceId: profile.id,
-            },
-          ],
-        },
-        include: this.matchInclude,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.reluRecommendation.findMany({
-        where: {
-          OR: [
-            {
-              sourceType: ReluSourceType.PROFILE,
-              sourceId: profile.id,
-            },
-            {
-              targetSourceType: ReluSourceType.PROFILE,
-              targetSourceId: profile.id,
-            },
-          ],
-        },
-        include: this.recommendationInclude,
-        orderBy: { createdAt: 'desc' },
-      }),
-    ]);
+    const [runs, classifications, matches, recommendations] = await Promise.all(
+      [
+        this.prisma.reluProcessingRun.findMany({
+          where: {
+            sourceType: ReluSourceType.PROFILE,
+            sourceId: profile.id,
+          },
+          include: this.runInclude,
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.reluClassificationResult.findMany({
+          where: {
+            sourceType: ReluSourceType.PROFILE,
+            sourceId: profile.id,
+          },
+          include: this.classificationInclude,
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.reluMatchResult.findMany({
+          where: {
+            OR: [
+              {
+                sourceType: ReluSourceType.PROFILE,
+                sourceId: profile.id,
+              },
+              {
+                targetSourceType: ReluSourceType.PROFILE,
+                targetSourceId: profile.id,
+              },
+            ],
+          },
+          include: this.matchInclude,
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.reluRecommendation.findMany({
+          where: {
+            OR: [
+              {
+                sourceType: ReluSourceType.PROFILE,
+                sourceId: profile.id,
+              },
+              {
+                targetSourceType: ReluSourceType.PROFILE,
+                targetSourceId: profile.id,
+              },
+            ],
+          },
+          include: this.recommendationInclude,
+          orderBy: { createdAt: 'desc' },
+        }),
+      ],
+    );
 
     return {
       sourceType: ReluSourceType.PROFILE,
       sourceId: profile.id,
       runs: runs.map((item) => this.toRunResponse(item)),
-      classifications: classifications.map((item) => this.toClassificationResponse(item)),
+      classifications: classifications.map((item) =>
+        this.toClassificationResponse(item),
+      ),
       matches: matches.map((item) => this.toMatchResponse(item)),
-      recommendations: recommendations.map((item) => this.toRecommendationResponse(item)),
+      recommendations: recommendations.map((item) =>
+        this.toRecommendationResponse(item),
+      ),
     };
   }
 
@@ -754,7 +793,8 @@ export class ReluService {
       ...recommendations.map((item) => this.toRecommendationResponse(item)),
     ].sort(
       (left: any, right: any) =>
-        new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+        new Date(right.createdAt).getTime() -
+        new Date(left.createdAt).getTime(),
     );
   }
 
@@ -822,7 +862,10 @@ export class ReluService {
       reviewedAt: new Date(),
     };
 
-    if (typeof override.explanation === 'string' && override.explanation.trim()) {
+    if (
+      typeof override.explanation === 'string' &&
+      override.explanation.trim()
+    ) {
       patch.explanation = override.explanation.trim();
     }
 
@@ -830,7 +873,10 @@ export class ReluService {
       patch.score = override.score;
     }
 
-    if (target.kind === 'match' && typeof override.compatibilityPercent === 'number') {
+    if (
+      target.kind === 'match' &&
+      typeof override.compatibilityPercent === 'number'
+    ) {
       patch.compatibilityPercent = override.compatibilityPercent;
     }
 
@@ -865,7 +911,10 @@ export class ReluService {
     return target.serializer(updated);
   }
 
-  async publicAssistant(payload: { message?: string; history?: ChatHistoryItem[] }) {
+  async publicAssistant(payload: {
+    message?: string;
+    history?: ChatHistoryItem[];
+  }) {
     const message = payload.message?.trim();
     if (!message) {
       throw new BadRequestException('message is required');
@@ -1024,7 +1073,12 @@ export class ReluService {
       }),
       fallbackResult: (error) => ({
         mode: 'AUTHENTICATED_USER',
-        response: this.buildOnboardingAssistantFallback(profile, completion.percentage, missingItems, error),
+        response: this.buildOnboardingAssistantFallback(
+          profile,
+          completion.percentage,
+          missingItems,
+          error,
+        ),
         completion,
         missingItems,
       }),
@@ -1085,7 +1139,8 @@ export class ReluService {
         score: (result) => result.completion.percentage,
         explanation: (result) => result.response,
         recommendedAction: (result) =>
-          result.publicReadiness.moderationStatus === ProfileModerationStatus.APPROVED
+          result.publicReadiness.moderationStatus ===
+          ProfileModerationStatus.APPROVED
             ? 'Keep public profile current and monitor marketplace response.'
             : 'Complete missing readiness items before requesting approval.',
         auditAction: 'RELU_PROFILE_COMPLETION_RESULT_PERSISTED',
@@ -1127,11 +1182,12 @@ export class ReluService {
       contextEntityType: project ? 'PROJECT' : 'TEXT',
       contextEntityId: project?.id ?? null,
       inputSummary: structuredContext,
-      contextBlocks: [`Project interpretation context: ${JSON.stringify(structuredContext)}`],
-      userMessage:
-        project
-          ? 'Interpret this secured project context into summary, requirements, taxonomy hints, and risks.'
-          : `Interpret this project or job description: ${sourceText}`,
+      contextBlocks: [
+        `Project interpretation context: ${JSON.stringify(structuredContext)}`,
+      ],
+      userMessage: project
+        ? 'Interpret this secured project context into summary, requirements, taxonomy hints, and risks.'
+        : `Interpret this project or job description: ${sourceText}`,
       resultTransformer: (response) => ({
         mode: 'AUTHENTICATED_USER',
         response,
@@ -1197,7 +1253,9 @@ export class ReluService {
           overlap,
         },
         score: () =>
-          overlap.escoMatches.length + overlap.naceMatches.length + overlap.uniclassMatches.length,
+          overlap.escoMatches.length +
+          overlap.naceMatches.length +
+          overlap.uniclassMatches.length,
         explanation: (result) => result.response,
         auditAction: 'RELU_TAXONOMY_MATCH_RESULT_PERSISTED',
       },
@@ -1323,10 +1381,7 @@ export class ReluService {
     });
   }
 
-  async generateTest(
-    user: AuthenticatedUser,
-    payload: { projectId: string },
-  ) {
+  async generateTest(user: AuthenticatedUser, payload: { projectId: string }) {
     const project = await this.getAccessibleProject(payload.projectId, user);
     const fallbackQuestions = this.buildFallbackQuestions(project);
 
@@ -1369,7 +1424,8 @@ export class ReluService {
         inputSnapshot: this.toProjectSummary(project),
         score: (result) => result.fallbackQuestions.length,
         explanation: (result) => result.response,
-        recommendedAction: () => 'Review generated screening questions before sending them to candidates.',
+        recommendedAction: () =>
+          'Review generated screening questions before sending them to candidates.',
         auditAction: 'RELU_TEST_GENERATOR_RESULT_PERSISTED',
       },
     });
@@ -1381,7 +1437,12 @@ export class ReluService {
   ) {
     const profile = await this.getOwnProfile(user.sub);
     const limit = Math.min(Math.max(payload.limit ?? 5, 1), 10);
-    const recommendations = await this.buildRecommendations(profile, payload.projectId, user, limit);
+    const recommendations = await this.buildRecommendations(
+      profile,
+      payload.projectId,
+      user,
+      limit,
+    );
 
     return this.runSecuredTask({
       user,
@@ -1448,7 +1509,9 @@ export class ReluService {
       title: 'Relu contract lifecycle monitoring',
       accessMode: ReluAccessMode.ADMIN_SECURED,
       agentType: AgentType.CONTRACT_LIFECYCLE_MONITOR,
-      contextEntityType: payload.contractId ? 'PROJECT_CONTRACT' : 'CONTRACT_PORTFOLIO',
+      contextEntityType: payload.contractId
+        ? 'PROJECT_CONTRACT'
+        : 'CONTRACT_PORTFOLIO',
       contextEntityId: payload.contractId ?? null,
       inputSummary: {
         contractId: payload.contractId ?? null,
@@ -1465,7 +1528,9 @@ export class ReluService {
             startDate: contract.startDate,
             endDate: contract.endDate,
             milestoneCount: contract.milestones.length,
-            openInvoiceCount: contract.invoices.filter((invoice) => invoice.status !== 'PAID').length,
+            openInvoiceCount: contract.invoices.filter(
+              (invoice) => invoice.status !== 'PAID',
+            ).length,
           })),
         )}`,
       ],
@@ -1477,7 +1542,9 @@ export class ReluService {
         signals,
       }),
       operationalResult: {
-        sourceType: primaryProjectId ? ReluSourceType.PROJECT : ReluSourceType.DOCUMENT,
+        sourceType: primaryProjectId
+          ? ReluSourceType.PROJECT
+          : ReluSourceType.DOCUMENT,
         sourceId: primaryProjectId,
         userId: user.sub,
         domain: ReluProcessingDomain.MODERATION,
@@ -1489,11 +1556,15 @@ export class ReluService {
         score: (result) =>
           result.signals.reduce(
             (total, signal) =>
-              total + signal.overdueMilestones + signal.unpaidInvoices + signal.pendingPayments,
+              total +
+              signal.overdueMilestones +
+              signal.unpaidInvoices +
+              signal.pendingPayments,
             0,
           ),
         explanation: (result) => result.response,
-        recommendedAction: () => 'Review contract lifecycle risks and assign operational follow-up.',
+        recommendedAction: () =>
+          'Review contract lifecycle risks and assign operational follow-up.',
         auditAction: 'RELU_CONTRACT_LIFECYCLE_RESULT_PERSISTED',
       },
     });
@@ -1517,7 +1588,8 @@ export class ReluService {
       throw new BadRequestException('eventType is required');
     }
 
-    const eventSummary = payload.summary?.trim() || 'No custom event summary supplied.';
+    const eventSummary =
+      payload.summary?.trim() || 'No custom event summary supplied.';
 
     return this.runSecuredTask({
       user,
@@ -1564,7 +1636,8 @@ export class ReluService {
           entityId: payload.entityId ?? null,
         },
         explanation: (result) => result.response,
-        recommendedAction: () => 'Review generated copy before sending a user-facing notification.',
+        recommendedAction: () =>
+          'Review generated copy before sending a user-facing notification.',
         auditAction: 'RELU_NOTIFICATION_GENERATOR_RESULT_PERSISTED',
       },
     });
@@ -1602,7 +1675,8 @@ export class ReluService {
           userId: input.operationalResult.userId ?? input.user.sub,
           triggeredByUserId: input.user.sub,
           domain: input.operationalResult.domain,
-          inputSnapshot: input.operationalResult.inputSnapshot ?? input.inputSummary,
+          inputSnapshot:
+            input.operationalResult.inputSnapshot ?? input.inputSummary,
         })
       : null;
 
@@ -1629,7 +1703,9 @@ export class ReluService {
       await this.audit.log({
         actorUserId: input.user.sub,
         projectId:
-          input.contextEntityType === 'PROJECT' ? input.contextEntityId ?? null : null,
+          input.contextEntityType === 'PROJECT'
+            ? (input.contextEntityId ?? null)
+            : null,
         entityType: 'RELU_TASK',
         entityId: task.id,
         action: `RELU_${input.capability.toUpperCase().replace(/-/g, '_')}`,
@@ -1667,7 +1743,9 @@ export class ReluService {
         await this.audit.log({
           actorUserId: input.user.sub,
           projectId:
-            input.contextEntityType === 'PROJECT' ? input.contextEntityId ?? null : null,
+            input.contextEntityType === 'PROJECT'
+              ? (input.contextEntityId ?? null)
+              : null,
           entityType: 'RELU_TASK',
           entityId: task.id,
           action: `RELU_${input.capability.toUpperCase().replace(/-/g, '_')}_FALLBACK`,
@@ -1697,7 +1775,9 @@ export class ReluService {
       await this.audit.log({
         actorUserId: input.user.sub,
         projectId:
-          input.contextEntityType === 'PROJECT' ? input.contextEntityId ?? null : null,
+          input.contextEntityType === 'PROJECT'
+            ? (input.contextEntityId ?? null)
+            : null,
         entityType: 'RELU_TASK',
         entityId: task.id,
         action: `RELU_${input.capability.toUpperCase().replace(/-/g, '_')}_FAILED`,
@@ -1728,7 +1808,9 @@ export class ReluService {
     ];
 
     if (additionalActions.length) {
-      lines.push(`Urmatoarele imbunatatiri utile: ${additionalActions.join('; ')}.`);
+      lines.push(
+        `Urmatoarele imbunatatiri utile: ${additionalActions.join('; ')}.`,
+      );
     }
 
     lines.push(
@@ -1761,7 +1843,9 @@ export class ReluService {
       where: { id: taskId },
       data: {
         status: ReluTaskStatus.COMPLETED,
-        resultSummaryJson: result ? (result as Prisma.InputJsonValue) : Prisma.JsonNull,
+        resultSummaryJson: result
+          ? (result as Prisma.InputJsonValue)
+          : Prisma.JsonNull,
         completedAt: new Date(),
       },
     });
@@ -1807,7 +1891,10 @@ export class ReluService {
     return profile;
   }
 
-  private async getAccessibleProfile(profileId: string | undefined, user: AuthenticatedUser) {
+  private async getAccessibleProfile(
+    profileId: string | undefined,
+    user: AuthenticatedUser,
+  ) {
     if (!profileId) {
       return this.getOwnProfile(user.sub);
     }
@@ -1852,7 +1939,10 @@ export class ReluService {
     throw new ForbiddenException('You do not have access to this profile');
   }
 
-  private async getAccessibleProject(projectId: string, user: AuthenticatedUser) {
+  private async getAccessibleProject(
+    projectId: string,
+    user: AuthenticatedUser,
+  ) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       include: {
@@ -1975,8 +2065,12 @@ export class ReluService {
       hasBanner: Boolean(profile.bannerUrl),
       hasPortfolio:
         this.parseStringList(profile.portfolioUrlsJson).length > 0 ||
-        profile.documents.some((document) => document.assetKind === 'PORTFOLIO'),
-      hasHeadline: Boolean(profile.publicHeadline || profile.professionalProfile?.headline),
+        profile.documents.some(
+          (document) => document.assetKind === 'PORTFOLIO',
+        ),
+      hasHeadline: Boolean(
+        profile.publicHeadline || profile.professionalProfile?.headline,
+      ),
       hasContact: Boolean(profile.publicEmail || profile.publicPhone),
     };
   }
@@ -1987,17 +2081,26 @@ export class ReluService {
       profileType: profile.profileType,
       displayName: profile.displayName,
       companyName: profile.companyName,
-      headline: profile.publicHeadline ?? profile.professionalProfile?.headline ?? null,
+      headline:
+        profile.publicHeadline ?? profile.professionalProfile?.headline ?? null,
       summary: profile.summary,
-      location: [profile.country?.name, profile.region?.name, profile.city?.name]
+      location: [
+        profile.country?.name,
+        profile.region?.name,
+        profile.city?.name,
+      ]
         .filter(Boolean)
         .join(', '),
       certificationsText: profile.certificationsText,
-      supportedEngagementModels: this.parseStringList(profile.supportedEngagementModels),
+      supportedEngagementModels: this.parseStringList(
+        profile.supportedEngagementModels,
+      ),
       languages: profile.languages.map((item) => item.language.name),
       esco: profile.escoClassifications.map((item) => item.escoSkill.title),
       nace: profile.naceClassifications.map((item) => item.nace.code),
-      uniclass: profile.uniclassClassifications.map((item) => item.uniclass.code),
+      uniclass: profile.uniclassClassifications.map(
+        (item) => item.uniclass.code,
+      ),
       yearsExperience: profile.professionalProfile?.yearsExperience ?? null,
       documentsCount: profile.documents.length,
       visibility: profile.visibility,
@@ -2016,7 +2119,11 @@ export class ReluService {
       engagementModel: project.engagementModel,
       status: project.status,
       visibility: project.visibility,
-      location: [project.country?.name, project.region?.name, project.city?.name]
+      location: [
+        project.country?.name,
+        project.region?.name,
+        project.city?.name,
+      ]
         .filter(Boolean)
         .join(', '),
       budgetMinCents: project.budgetMinCents,
@@ -2025,28 +2132,51 @@ export class ReluService {
       primaryLanguage: project.primaryLanguage?.name ?? null,
       esco: project.escoClassifications.map((item) => item.escoSkill.title),
       nace: project.naceClassifications.map((item) => item.nace.code),
-      uniclass: project.uniclassClassifications.map((item) => item.uniclass.code),
+      uniclass: project.uniclassClassifications.map(
+        (item) => item.uniclass.code,
+      ),
       conditions: project.conditions.map((condition) => condition.title),
       jobRequests: project.jobRequests.length,
     };
   }
 
-  private buildTaxonomyOverlap(profile: ProfileContext, project: ProjectContext) {
-    const profileEsco = new Set(profile.escoClassifications.map((item) => item.escoSkill.title.toLowerCase()));
-    const projectEsco = new Set(project.escoClassifications.map((item) => item.escoSkill.title.toLowerCase()));
-    const profileNace = new Set(profile.naceClassifications.map((item) => item.nace.code.toLowerCase()));
-    const projectNace = new Set(project.naceClassifications.map((item) => item.nace.code.toLowerCase()));
+  private buildTaxonomyOverlap(
+    profile: ProfileContext,
+    project: ProjectContext,
+  ) {
+    const profileEsco = new Set(
+      profile.escoClassifications.map((item) =>
+        item.escoSkill.title.toLowerCase(),
+      ),
+    );
+    const projectEsco = new Set(
+      project.escoClassifications.map((item) =>
+        item.escoSkill.title.toLowerCase(),
+      ),
+    );
+    const profileNace = new Set(
+      profile.naceClassifications.map((item) => item.nace.code.toLowerCase()),
+    );
+    const projectNace = new Set(
+      project.naceClassifications.map((item) => item.nace.code.toLowerCase()),
+    );
     const profileUniclass = new Set(
-      profile.uniclassClassifications.map((item) => item.uniclass.code.toLowerCase()),
+      profile.uniclassClassifications.map((item) =>
+        item.uniclass.code.toLowerCase(),
+      ),
     );
     const projectUniclass = new Set(
-      project.uniclassClassifications.map((item) => item.uniclass.code.toLowerCase()),
+      project.uniclassClassifications.map((item) =>
+        item.uniclass.code.toLowerCase(),
+      ),
     );
 
     return {
       escoMatches: [...profileEsco].filter((value) => projectEsco.has(value)),
       naceMatches: [...profileNace].filter((value) => projectNace.has(value)),
-      uniclassMatches: [...profileUniclass].filter((value) => projectUniclass.has(value)),
+      uniclassMatches: [...profileUniclass].filter((value) =>
+        projectUniclass.has(value),
+      ),
       profileEscoCount: profileEsco.size,
       projectEscoCount: projectEsco.size,
       profileNaceCount: profileNace.size,
@@ -2065,7 +2195,11 @@ export class ReluService {
     let score = 0;
     let total = 5;
 
-    if (overlap.escoMatches.length > 0 || overlap.naceMatches.length > 0 || overlap.uniclassMatches.length > 0) {
+    if (
+      overlap.escoMatches.length > 0 ||
+      overlap.naceMatches.length > 0 ||
+      overlap.uniclassMatches.length > 0
+    ) {
       score += 1;
     } else {
       missingItems.push('No taxonomy overlap yet');
@@ -2084,7 +2218,11 @@ export class ReluService {
       total -= 1;
     }
 
-    if (profile.countryId && project.countryId && profile.countryId === project.countryId) {
+    if (
+      profile.countryId &&
+      project.countryId &&
+      profile.countryId === project.countryId
+    ) {
       score += 1;
     } else if (project.countryId) {
       missingItems.push('Location mismatch or missing location');
@@ -2127,10 +2265,13 @@ export class ReluService {
     };
   }
 
-  private calculateCertificationGaps(profile: ProfileContext, project: ProjectContext) {
-    const availableCertifications = this.parseStringList(profile.certificationsText).map((item) =>
-      item.toLowerCase(),
-    );
+  private calculateCertificationGaps(
+    profile: ProfileContext,
+    project: ProjectContext,
+  ) {
+    const availableCertifications = this.parseStringList(
+      profile.certificationsText,
+    ).map((item) => item.toLowerCase());
 
     const projectRequirements = [
       ...project.conditions.map((condition) => condition.title),
@@ -2141,9 +2282,10 @@ export class ReluService {
 
     const missingCertifications = projectRequirements.filter((requirement) => {
       const normalizedRequirement = requirement.toLowerCase();
-      return !availableCertifications.some((certification) =>
-        certification.includes(normalizedRequirement) ||
-        normalizedRequirement.includes(certification),
+      return !availableCertifications.some(
+        (certification) =>
+          certification.includes(normalizedRequirement) ||
+          normalizedRequirement.includes(certification),
       );
     });
 
@@ -2167,11 +2309,13 @@ export class ReluService {
         intent: 'Assess practical relevance and seniority.',
       },
       {
-        question: 'Which certifications or safety credentials do you currently hold?',
+        question:
+          'Which certifications or safety credentials do you currently hold?',
         intent: 'Verify baseline compliance readiness.',
       },
       {
-        question: 'How would you approach quality and risk management for this scope?',
+        question:
+          'How would you approach quality and risk management for this scope?',
         intent: 'Evaluate operational judgement.',
       },
     ];
@@ -2188,7 +2332,9 @@ export class ReluService {
       profile.profileType === ProfileType.GENERAL_CONTRACTOR ||
       profile.profileType === ProfileType.INVESTOR
     ) {
-      const project = projectId ? await this.getAccessibleProject(projectId, user) : null;
+      const project = projectId
+        ? await this.getAccessibleProject(projectId, user)
+        : null;
       const profiles = await this.prisma.profile.findMany({
         where: {
           visibility: ProfileVisibility.PUBLIC,
@@ -2218,7 +2364,10 @@ export class ReluService {
             entityType: 'PROFILE',
             entityId: candidate.id,
             title: candidate.displayName,
-            subtitle: candidate.publicHeadline ?? candidate.companyName ?? candidate.profileType,
+            subtitle:
+              candidate.publicHeadline ??
+              candidate.companyName ??
+              candidate.profileType,
             score,
           };
         })
@@ -2228,7 +2377,9 @@ export class ReluService {
 
     const posts = await this.prisma.publicPost.findMany({
       where: {
-        type: { in: [PublicPostType.PROJECT, PublicPostType.SUBCONTRACTOR_POOL] },
+        type: {
+          in: [PublicPostType.PROJECT, PublicPostType.SUBCONTRACTOR_POOL],
+        },
         moderationStatus: PublicModerationStatus.APPROVED,
         visibility: 'PUBLIC',
         status: 'LIVE',
@@ -2265,8 +2416,12 @@ export class ReluService {
           milestone.dueDate.getTime() < now,
       ).length;
 
-      const unpaidInvoices = contract.invoices.filter((invoice) => invoice.status !== 'PAID').length;
-      const pendingPayments = contract.payments.filter((payment) => payment.status !== 'RELEASED').length;
+      const unpaidInvoices = contract.invoices.filter(
+        (invoice) => invoice.status !== 'PAID',
+      ).length;
+      const pendingPayments = contract.payments.filter(
+        (payment) => payment.status !== 'RELEASED',
+      ).length;
 
       return {
         contractId: contract.id,
@@ -2293,21 +2448,35 @@ export class ReluService {
     project: ProjectContext,
   ) {
     const profileTags = new Set([
-      ...profile.escoClassifications.map((item) => item.escoSkill.title.toLowerCase()),
-      ...profile.naceClassifications.map((item) => item.nace.code.toLowerCase()),
-      ...profile.uniclassClassifications.map((item) => item.uniclass.code.toLowerCase()),
+      ...profile.escoClassifications.map((item) =>
+        item.escoSkill.title.toLowerCase(),
+      ),
+      ...profile.naceClassifications.map((item) =>
+        item.nace.code.toLowerCase(),
+      ),
+      ...profile.uniclassClassifications.map((item) =>
+        item.uniclass.code.toLowerCase(),
+      ),
     ]);
     const projectTags = [
-      ...project.escoClassifications.map((item) => item.escoSkill.title.toLowerCase()),
-      ...project.naceClassifications.map((item) => item.nace.code.toLowerCase()),
-      ...project.uniclassClassifications.map((item) => item.uniclass.code.toLowerCase()),
+      ...project.escoClassifications.map((item) =>
+        item.escoSkill.title.toLowerCase(),
+      ),
+      ...project.naceClassifications.map((item) =>
+        item.nace.code.toLowerCase(),
+      ),
+      ...project.uniclassClassifications.map((item) =>
+        item.uniclass.code.toLowerCase(),
+      ),
     ];
 
     return projectTags.filter((tag) => profileTags.has(tag)).length;
   }
 
   private scorePublicPostForProfile(
-    post: Prisma.PublicPostGetPayload<{ include: { country: true; region: true; city: true } }>,
+    post: Prisma.PublicPostGetPayload<{
+      include: { country: true; region: true; city: true };
+    }>,
     profile: ProfileContext,
   ) {
     const postTags = [
@@ -2318,15 +2487,25 @@ export class ReluService {
     ].map((item) => item.toLowerCase());
 
     const profileTags = new Set([
-      ...profile.escoClassifications.map((item) => item.escoSkill.code.toLowerCase()),
-      ...profile.naceClassifications.map((item) => item.nace.code.toLowerCase()),
-      ...profile.uniclassClassifications.map((item) => item.uniclass.code.toLowerCase()),
+      ...profile.escoClassifications.map((item) =>
+        item.escoSkill.code.toLowerCase(),
+      ),
+      ...profile.naceClassifications.map((item) =>
+        item.nace.code.toLowerCase(),
+      ),
+      ...profile.uniclassClassifications.map((item) =>
+        item.uniclass.code.toLowerCase(),
+      ),
       ...profile.languages.map((item) => item.language.code.toLowerCase()),
     ]);
 
     let score = postTags.filter((tag) => profileTags.has(tag)).length;
 
-    if (profile.countryId && post.countryId && profile.countryId === post.countryId) {
+    if (
+      profile.countryId &&
+      post.countryId &&
+      profile.countryId === post.countryId
+    ) {
       score += 1;
     }
 
@@ -2398,9 +2577,13 @@ export class ReluService {
         ? outputData.response.slice(0, 500)
         : `Relu ${input.capability} persisted operationally.`);
     const score = input.config.score?.(input.result) ?? null;
-    const compatibilityPercent = input.config.compatibilityPercent?.(input.result) ?? null;
-    const recommendedAction = input.config.recommendedAction?.(input.result) ?? null;
-    const status = input.fallbackUsed ? ReluResultStatus.FAILED : ReluResultStatus.COMPLETED;
+    const compatibilityPercent =
+      input.config.compatibilityPercent?.(input.result) ?? null;
+    const recommendedAction =
+      input.config.recommendedAction?.(input.result) ?? null;
+    const status = input.fallbackUsed
+      ? ReluResultStatus.FAILED
+      : ReluResultStatus.COMPLETED;
 
     await this.prisma.reluProcessingRun.update({
       where: { id: input.run.id },
@@ -2425,7 +2608,8 @@ export class ReluService {
           userId: input.run.userId ?? null,
           domain: input.run.domain,
           status,
-          inputSnapshot: (input.config.inputSnapshot ?? input.task) as Prisma.InputJsonValue,
+          inputSnapshot: (input.config.inputSnapshot ??
+            input.task) as Prisma.InputJsonValue,
           outputData: outputData as Prisma.InputJsonValue,
           score,
           explanation,
@@ -2445,7 +2629,8 @@ export class ReluService {
           targetSourceId: input.config.targetSourceId ?? null,
           domain: input.run.domain,
           status,
-          inputSnapshot: (input.config.inputSnapshot ?? input.task) as Prisma.InputJsonValue,
+          inputSnapshot: (input.config.inputSnapshot ??
+            input.task) as Prisma.InputJsonValue,
           outputData: outputData as Prisma.InputJsonValue,
           score,
           compatibilityPercent,
@@ -2466,7 +2651,8 @@ export class ReluService {
           targetSourceId: input.config.targetSourceId ?? null,
           domain: input.run.domain,
           status,
-          inputSnapshot: (input.config.inputSnapshot ?? input.task) as Prisma.InputJsonValue,
+          inputSnapshot: (input.config.inputSnapshot ??
+            input.task) as Prisma.InputJsonValue,
           outputData: outputData as Prisma.InputJsonValue,
           score,
           explanation,
@@ -2512,7 +2698,13 @@ export class ReluService {
   private async persistOperationalResult(input: {
     actor: AuthenticatedUser;
     task: { id: string; capability: string };
-    run: { id: string; sourceType: ReluSourceType; sourceId: string; userId?: string | null; domain: ReluProcessingDomain };
+    run: {
+      id: string;
+      sourceType: ReluSourceType;
+      sourceId: string;
+      userId?: string | null;
+      domain: ReluProcessingDomain;
+    };
     resultKind: 'classification' | 'match';
     resultInput: unknown;
     resultData: Record<string, unknown>;
@@ -2525,7 +2717,9 @@ export class ReluService {
     auditAction: string;
   }) {
     const fallbackUsed = !this.isGeminiAvailable();
-    const status = fallbackUsed ? ReluResultStatus.FAILED : ReluResultStatus.COMPLETED;
+    const status = fallbackUsed
+      ? ReluResultStatus.FAILED
+      : ReluResultStatus.COMPLETED;
     const errorMessage = fallbackUsed ? 'GEMINI_API_KEY not set' : null;
 
     await this.prisma.reluProcessingRun.update({
@@ -2536,7 +2730,9 @@ export class ReluService {
         score: input.score ?? null,
         explanation:
           input.explanation ??
-          (fallbackUsed ? input.fallbackMessage : 'Relu processing completed successfully.'),
+          (fallbackUsed
+            ? input.fallbackMessage
+            : 'Relu processing completed successfully.'),
         fallbackUsed,
         errorMessage,
         completedAt: new Date(),
@@ -2558,7 +2754,9 @@ export class ReluService {
           score: input.score ?? null,
           explanation:
             input.explanation ??
-            (fallbackUsed ? input.fallbackMessage : 'Relu classification completed successfully.'),
+            (fallbackUsed
+              ? input.fallbackMessage
+              : 'Relu classification completed successfully.'),
           fallbackUsed,
           errorMessage,
         },
@@ -2581,7 +2779,9 @@ export class ReluService {
           compatibilityPercent: input.compatibilityPercent ?? null,
           explanation:
             input.explanation ??
-            (fallbackUsed ? input.fallbackMessage : 'Relu matching completed successfully.'),
+            (fallbackUsed
+              ? input.fallbackMessage
+              : 'Relu matching completed successfully.'),
           fallbackUsed,
           errorMessage,
         },
@@ -2597,7 +2797,10 @@ export class ReluService {
 
     await this.audit.log({
       actorUserId: input.actor.sub,
-      entityType: input.resultKind === 'classification' ? 'RELU_CLASSIFICATION_RESULT' : 'RELU_MATCH_RESULT',
+      entityType:
+        input.resultKind === 'classification'
+          ? 'RELU_CLASSIFICATION_RESULT'
+          : 'RELU_MATCH_RESULT',
       entityId: persistedResult.id,
       action: input.auditAction,
       after: {
@@ -2622,8 +2825,8 @@ export class ReluService {
   }
 
   private assertAdminActor(actor: AuthenticatedUser) {
-    if (!this.isAdminRole(actor.role)) {
-      throw new ForbiddenException('Admin access is required');
+    if (!this.isReluModeratorRole(actor.role)) {
+      throw new ForbiddenException('RELU moderation access is required');
     }
   }
 
@@ -2649,7 +2852,10 @@ export class ReluService {
     return post as PublicPostContext;
   }
 
-  private canReadPublicPostResults(post: PublicPostContext, actor?: AuthenticatedUser | null) {
+  private canReadPublicPostResults(
+    post: PublicPostContext,
+    actor?: AuthenticatedUser | null,
+  ) {
     if (
       post.visibility === 'PUBLIC' &&
       post.moderationStatus === PublicModerationStatus.APPROVED &&
@@ -2703,7 +2909,9 @@ export class ReluService {
       ...base,
       moderationHints: [
         ...base.moderationHints,
-        ...(post.externalLinks.some((item) => String(item.url).startsWith('http://'))
+        ...(post.externalLinks.some((item) =>
+          String(item.url).startsWith('http://'),
+        )
           ? ['External link uses HTTP and should be reviewed.']
           : []),
       ],
@@ -2727,15 +2935,34 @@ export class ReluService {
       .filter(Boolean)
       .join(' ');
 
-    const escoCandidates = this.findTaxonomyCandidates(TaxonomyType.ESCO, sourceText, 5);
-    const naceCandidates = this.findTaxonomyCandidates(TaxonomyType.NACE, sourceText, 5);
-    const uniclassCandidates = this.findTaxonomyCandidates(TaxonomyType.UNICLASS, sourceText, 5);
+    const escoCandidates = this.findTaxonomyCandidates(
+      TaxonomyType.ESCO,
+      sourceText,
+      5,
+    );
+    const naceCandidates = this.findTaxonomyCandidates(
+      TaxonomyType.NACE,
+      sourceText,
+      5,
+    );
+    const uniclassCandidates = this.findTaxonomyCandidates(
+      TaxonomyType.UNICLASS,
+      sourceText,
+      5,
+    );
     const extractedRequirements = this.extractRequirementsText(sourceText);
-    const moderationHints = this.extractModerationHints(post.title, post.description);
+    const moderationHints = this.extractModerationHints(
+      post.title,
+      post.description,
+    );
     const missingInformation = [
       !post.summary ? 'Short summary is missing.' : null,
-      !post.countryId && !post.location ? 'No structured location information is available.' : null,
-      !post.certifications ? 'No certification requirements were provided.' : null,
+      !post.countryId && !post.location
+        ? 'No structured location information is available.'
+        : null,
+      !post.certifications
+        ? 'No certification requirements were provided.'
+        : null,
     ].filter((item): item is string => Boolean(item));
 
     return {
@@ -2744,7 +2971,11 @@ export class ReluService {
       naceCandidates,
       escoCandidates,
       uniclassCandidates,
-      categoryConfidence: this.calculateConfidence(escoCandidates, naceCandidates, uniclassCandidates),
+      categoryConfidence: this.calculateConfidence(
+        escoCandidates,
+        naceCandidates,
+        uniclassCandidates,
+      ),
       extractedRequirements,
       locationSignals: this.extractLocationSignals(post.location),
       missingInformation,
@@ -2759,7 +2990,9 @@ export class ReluService {
       ...classification,
       missingInformation: [
         ...classification.missingInformation,
-        ...(profile.documents.length === 0 ? ['No supporting profile documents are attached yet.'] : []),
+        ...(profile.documents.length === 0
+          ? ['No supporting profile documents are attached yet.']
+          : []),
       ],
       explanation: `Relu enriched profile "${profile.displayName}" using public summary, classifications, languages, and supporting documents.`,
     };
@@ -2783,9 +3016,21 @@ export class ReluService {
       .filter(Boolean)
       .join(' ');
 
-    const escoCandidates = this.findTaxonomyCandidates(TaxonomyType.ESCO, sourceText, 5);
-    const naceCandidates = this.findTaxonomyCandidates(TaxonomyType.NACE, sourceText, 5);
-    const uniclassCandidates = this.findTaxonomyCandidates(TaxonomyType.UNICLASS, sourceText, 5);
+    const escoCandidates = this.findTaxonomyCandidates(
+      TaxonomyType.ESCO,
+      sourceText,
+      5,
+    );
+    const naceCandidates = this.findTaxonomyCandidates(
+      TaxonomyType.NACE,
+      sourceText,
+      5,
+    );
+    const uniclassCandidates = this.findTaxonomyCandidates(
+      TaxonomyType.UNICLASS,
+      sourceText,
+      5,
+    );
 
     return {
       sourceType: ReluSourceType.PROFILE,
@@ -2793,22 +3038,33 @@ export class ReluService {
       naceCandidates,
       escoCandidates,
       uniclassCandidates,
-      categoryConfidence: this.calculateConfidence(escoCandidates, naceCandidates, uniclassCandidates),
+      categoryConfidence: this.calculateConfidence(
+        escoCandidates,
+        naceCandidates,
+        uniclassCandidates,
+      ),
       extractedRequirements: this.extractRequirementsText(sourceText),
       locationSignals: this.extractLocationSignals(
-        [profile.city?.name, profile.region?.name, profile.country?.name].filter(Boolean).join(', '),
+        [profile.city?.name, profile.region?.name, profile.country?.name]
+          .filter(Boolean)
+          .join(', '),
       ),
       missingInformation: [
         !profile.summary ? 'Profile summary is missing.' : null,
         !profile.countryId ? 'Structured country mapping is missing.' : null,
-        profile.languages.length === 0 ? 'No working languages are configured.' : null,
+        profile.languages.length === 0
+          ? 'No working languages are configured.'
+          : null,
       ].filter((item): item is string => Boolean(item)),
       moderationHints: [],
       explanation: `Relu mapped "${profile.displayName}" to dominant ESCO/NACE/Uniclass candidates using profile and document context.`,
     };
   }
 
-  private buildPublicPostMatch(post: PublicPostContext, profile: ProfileContext) {
+  private buildPublicPostMatch(
+    post: PublicPostContext,
+    profile: ProfileContext,
+  ) {
     const postCodes = {
       esco: this.parseStringList(post.escoCodesJson),
       nace: this.parseStringList(post.naceCodesJson),
@@ -2818,17 +3074,30 @@ export class ReluService {
     const profileCodes = {
       esco: profile.escoClassifications.map((item) => item.escoSkill.code),
       nace: profile.naceClassifications.map((item) => item.nace.code),
-      uniclass: profile.uniclassClassifications.map((item) => item.uniclass.code),
+      uniclass: profile.uniclassClassifications.map(
+        (item) => item.uniclass.code,
+      ),
       languages: profile.languages.map((item) => item.language.code),
     };
 
-    const matchedSkills = this.intersectStrings(postCodes.esco, profileCodes.esco);
-    const missingSkills = postCodes.esco.filter((item) => !profileCodes.esco.includes(item));
+    const matchedSkills = this.intersectStrings(
+      postCodes.esco,
+      profileCodes.esco,
+    );
+    const missingSkills = postCodes.esco.filter(
+      (item) => !profileCodes.esco.includes(item),
+    );
     const taxonomyOverlap = {
       esco: matchedSkills,
       nace: this.intersectStrings(postCodes.nace, profileCodes.nace),
-      uniclass: this.intersectStrings(postCodes.uniclass, profileCodes.uniclass),
-      languages: this.intersectStrings(postCodes.languages, profileCodes.languages),
+      uniclass: this.intersectStrings(
+        postCodes.uniclass,
+        profileCodes.uniclass,
+      ),
+      languages: this.intersectStrings(
+        postCodes.languages,
+        profileCodes.languages,
+      ),
     };
 
     const locationFit = this.calculateLocationFit(post, profile);
@@ -2860,29 +3129,45 @@ export class ReluService {
       taxonomyOverlap,
       locationFit: locationFit.label,
       verificationFit,
-      entitlementAwareness: 'No subscription blocking rule applied to Relu scoring.',
+      entitlementAwareness:
+        'No subscription blocking rule applied to Relu scoring.',
       explanation: `Relu found ${matchedSkills.length} matched ESCO skills and a ${locationFit.label.toLowerCase()} location fit for "${profile.displayName}".`,
       recommendedNextAction,
     };
   }
 
-  private calculateLocationFit(post: PublicPostContext, profile: ProfileContext) {
+  private calculateLocationFit(
+    post: PublicPostContext,
+    profile: ProfileContext,
+  ) {
     if (post.cityId && profile.cityId && post.cityId === profile.cityId) {
       return { score: 15, label: 'STRONG' };
     }
 
-    if (post.regionId && profile.regionId && post.regionId === profile.regionId) {
+    if (
+      post.regionId &&
+      profile.regionId &&
+      post.regionId === profile.regionId
+    ) {
       return { score: 10, label: 'GOOD' };
     }
 
-    if (post.countryId && profile.countryId && post.countryId === profile.countryId) {
+    if (
+      post.countryId &&
+      profile.countryId &&
+      post.countryId === profile.countryId
+    ) {
       return { score: 6, label: 'PARTIAL' };
     }
 
     return { score: 0, label: 'WEAK' };
   }
 
-  private findTaxonomyCandidates(type: TaxonomyType, sourceText: string, limit = 5) {
+  private findTaxonomyCandidates(
+    type: TaxonomyType,
+    sourceText: string,
+    limit = 5,
+  ) {
     const normalized = sourceText.toLowerCase();
     const tokens = Array.from(
       new Set(
@@ -2897,16 +3182,26 @@ export class ReluService {
 
     return catalog
       .map((entry) => {
-        const haystack = `${entry.code} ${entry.label} ${entry.labelEn}`.toLowerCase();
-        const score = tokens.reduce((sum, token) => (haystack.includes(token) ? sum + 1 : sum), 0);
+        const haystack =
+          `${entry.code} ${entry.label} ${entry.labelEn}`.toLowerCase();
+        const score = tokens.reduce(
+          (sum, token) => (haystack.includes(token) ? sum + 1 : sum),
+          0,
+        );
         return {
           ...entry,
-          confidence: Math.min(1, tokens.length > 0 ? score / Math.max(tokens.length, 1) : 0),
+          confidence: Math.min(
+            1,
+            tokens.length > 0 ? score / Math.max(tokens.length, 1) : 0,
+          ),
           score,
         };
       })
       .filter((entry) => entry.score > 0)
-      .sort((left, right) => right.score - left.score || right.confidence - left.confidence)
+      .sort(
+        (left, right) =>
+          right.score - left.score || right.confidence - left.confidence,
+      )
       .slice(0, limit)
       .map(({ code, label, labelEn, confidence }) => ({
         code,
@@ -2943,7 +3238,9 @@ export class ReluService {
     }
 
     if (text.includes('urgent payment') || text.includes('wire transfer')) {
-      hints.push('Contains financial urgency language that may require review.');
+      hints.push(
+        'Contains financial urgency language that may require review.',
+      );
     }
 
     if (/\bhttp:\/\//i.test(text)) {
@@ -2972,7 +3269,11 @@ export class ReluService {
       uniclassCandidates[0]?.confidence ?? 0,
     ];
 
-    return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2));
+    return Number(
+      (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(
+        2,
+      ),
+    );
   }
 
   private intersectStrings(left: string[], right: string[]) {
@@ -2981,10 +3282,11 @@ export class ReluService {
   }
 
   private async findResultRecord(resultId: string) {
-    const classification = await this.prisma.reluClassificationResult.findUnique({
-      where: { id: resultId },
-      include: this.classificationInclude,
-    });
+    const classification =
+      await this.prisma.reluClassificationResult.findUnique({
+        where: { id: resultId },
+        include: this.classificationInclude,
+      });
 
     if (classification) {
       return {
@@ -3204,26 +3506,79 @@ export class ReluService {
   > = {
     [TaxonomyType.ESCO]: [
       { code: '7412.1', label: 'Electrician', labelEn: 'Electrician' },
-      { code: '3114.2', label: 'Electronics technician', labelEn: 'Electronics technician' },
+      {
+        code: '3114.2',
+        label: 'Electronics technician',
+        labelEn: 'Electronics technician',
+      },
       { code: '7126.1', label: 'Plumber', labelEn: 'Plumber' },
       { code: '2142.4', label: 'Civil engineer', labelEn: 'Civil engineer' },
-      { code: '2141.8', label: 'Industrial engineer', labelEn: 'Industrial engineer' },
+      {
+        code: '2141.8',
+        label: 'Industrial engineer',
+        labelEn: 'Industrial engineer',
+      },
       { code: '4321.5', label: 'HVAC technician', labelEn: 'HVAC technician' },
-      { code: '3513.2', label: 'ICT cabling technician', labelEn: 'ICT cabling technician' },
+      {
+        code: '3513.2',
+        label: 'ICT cabling technician',
+        labelEn: 'ICT cabling technician',
+      },
     ],
     [TaxonomyType.NACE]: [
-      { code: '41.20', label: 'Construction of residential and non-residential buildings', labelEn: 'Building construction' },
-      { code: '42.22', label: 'Construction of utility projects for electricity and telecommunications', labelEn: 'Utility telecom construction' },
-      { code: '43.21', label: 'Electrical installation', labelEn: 'Electrical installation' },
-      { code: '43.22', label: 'Plumbing, heat and air-conditioning installation', labelEn: 'HVAC installation' },
-      { code: '62.03', label: 'Computer facilities management activities', labelEn: 'ICT operations' },
+      {
+        code: '41.20',
+        label: 'Construction of residential and non-residential buildings',
+        labelEn: 'Building construction',
+      },
+      {
+        code: '42.22',
+        label:
+          'Construction of utility projects for electricity and telecommunications',
+        labelEn: 'Utility telecom construction',
+      },
+      {
+        code: '43.21',
+        label: 'Electrical installation',
+        labelEn: 'Electrical installation',
+      },
+      {
+        code: '43.22',
+        label: 'Plumbing, heat and air-conditioning installation',
+        labelEn: 'HVAC installation',
+      },
+      {
+        code: '62.03',
+        label: 'Computer facilities management activities',
+        labelEn: 'ICT operations',
+      },
     ],
     [TaxonomyType.UNICLASS]: [
-      { code: 'Pr_65_53', label: 'Communications systems', labelEn: 'Communications systems' },
-      { code: 'Pr_75_50', label: 'Electrical systems', labelEn: 'Electrical systems' },
-      { code: 'Pr_65_36', label: 'Heating, ventilation and air conditioning systems', labelEn: 'HVAC systems' },
-      { code: 'Pr_20_85', label: 'Civil engineering works', labelEn: 'Civil engineering works' },
-      { code: 'Pr_75_76', label: 'Security and access systems', labelEn: 'Security systems' },
+      {
+        code: 'Pr_65_53',
+        label: 'Communications systems',
+        labelEn: 'Communications systems',
+      },
+      {
+        code: 'Pr_75_50',
+        label: 'Electrical systems',
+        labelEn: 'Electrical systems',
+      },
+      {
+        code: 'Pr_65_36',
+        label: 'Heating, ventilation and air conditioning systems',
+        labelEn: 'HVAC systems',
+      },
+      {
+        code: 'Pr_20_85',
+        label: 'Civil engineering works',
+        labelEn: 'Civil engineering works',
+      },
+      {
+        code: 'Pr_75_76',
+        label: 'Security and access systems',
+        labelEn: 'Security systems',
+      },
     ],
   };
 
@@ -3236,6 +3591,10 @@ export class ReluService {
 
   private isAdminRole(role: string) {
     return role === Role.ADMIN || role === Role.SUPERADMIN;
+  }
+
+  private isReluModeratorRole(role: string) {
+    return this.isAdminRole(role) || role === Role.AI_MODERATOR;
   }
 
   private async findOperationalAdminUser(): Promise<AuthenticatedUser | null> {

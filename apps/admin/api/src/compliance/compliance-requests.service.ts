@@ -1,7 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import {
-  NotificationCategory,
-} from '@prisma/client';
+import { NotificationCategory } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { NotificationService } from '../notifications/notification.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -136,7 +134,9 @@ export class ComplianceRequestsService {
 
   async listAdminRequests(actor: AuthenticatedUser) {
     if (actor.role !== 'ADMIN' && actor.role !== 'SUPERADMIN') {
-      throw new ForbiddenException('Only administrators can review compliance requests');
+      throw new ForbiddenException(
+        'Only administrators can review compliance requests',
+      );
     }
 
     return this.auditService.listAdminComplianceRequests();

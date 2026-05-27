@@ -68,15 +68,21 @@ export class WorkforceService {
     await this.assertRecruiterAccess(application.job, user);
 
     if (application.currentStage !== ApplicationStage.HIRED) {
-      throw new BadRequestException('Only HIRED applications can become workforce assignments.');
+      throw new BadRequestException(
+        'Only HIRED applications can become workforce assignments.',
+      );
     }
 
     if (!application.candidateUserId) {
-      throw new BadRequestException('The hired application is not linked to a platform user.');
+      throw new BadRequestException(
+        'The hired application is not linked to a platform user.',
+      );
     }
 
     if (application.workforceAssignment) {
-      throw new BadRequestException('A workforce assignment already exists for this application.');
+      throw new BadRequestException(
+        'A workforce assignment already exists for this application.',
+      );
     }
 
     const contract = await this.prisma.contract.findUnique({
@@ -93,11 +99,15 @@ export class WorkforceService {
     }
 
     if (contract.jobId !== application.jobId) {
-      throw new BadRequestException('Contract must belong to the same job as the hired application.');
+      throw new BadRequestException(
+        'Contract must belong to the same job as the hired application.',
+      );
     }
 
     if (contract.contractorId !== application.actorId) {
-      throw new BadRequestException('Contract contractor must match the hired candidate actor.');
+      throw new BadRequestException(
+        'Contract contractor must match the hired candidate actor.',
+      );
     }
 
     this.assertContractMutable(contract.lifecycleStatus);
@@ -162,9 +172,16 @@ export class WorkforceService {
   ) {
     const recruiterActor = await this.findActorForUser(user);
     const where: Prisma.WorkforceAssignmentWhereInput = {
-      ...(filters?.status ? { status: filters.status as AssignmentStatus } : {}),
+      ...(filters?.status
+        ? { status: filters.status as AssignmentStatus }
+        : {}),
       ...(filters?.contractStatus
-        ? { contract: { lifecycleStatus: filters.contractStatus as ContractLifecycleStatus } }
+        ? {
+            contract: {
+              lifecycleStatus:
+                filters.contractStatus as ContractLifecycleStatus,
+            },
+          }
         : {}),
       ...(this.isAdmin(user.role)
         ? {}
@@ -194,7 +211,9 @@ export class WorkforceService {
       orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
     });
 
-    return assignments.map((assignment) => this.toAssignmentResponse(assignment));
+    return assignments.map((assignment) =>
+      this.toAssignmentResponse(assignment),
+    );
   }
 
   async getAssignment(id: string, user: AuthUser) {
@@ -248,9 +267,15 @@ export class WorkforceService {
         },
       });
 
-      await this.createLifecycleEvent(tx, contract.id, ContractLifecycleEventType.SENT, user.sub, {
-        previousLifecycleStatus: contract.lifecycleStatus,
-      });
+      await this.createLifecycleEvent(
+        tx,
+        contract.id,
+        ContractLifecycleEventType.SENT,
+        user.sub,
+        {
+          previousLifecycleStatus: contract.lifecycleStatus,
+        },
+      );
 
       return tx.contract.findUniqueOrThrow({
         where: { id: contract.id },
@@ -289,24 +314,35 @@ export class WorkforceService {
     return this.toContractLifecycleResponse(updated);
   }
 
-  async activateContract(id: string, user: AuthUser, body: ActivateContractDto) {
+  async activateContract(
+    id: string,
+    user: AuthUser,
+    body: ActivateContractDto,
+  ) {
     const contract = await this.getManagedContract(id, user);
     this.assertContractMutable(contract.lifecycleStatus);
 
     const assignments = contract.workforceAssignments;
     if (!assignments.length) {
-      throw new BadRequestException('Contract must have at least one workforce assignment before activation.');
+      throw new BadRequestException(
+        'Contract must have at least one workforce assignment before activation.',
+      );
     }
 
     const unverified = assignments.find(
       (item) =>
-        item.user.identityProfile?.verificationStatus !== VerificationStatus.VERIFIED,
+        item.user.identityProfile?.verificationStatus !==
+        VerificationStatus.VERIFIED,
     );
     if (unverified) {
-      throw new BadRequestException('Only VERIFIED users can become ACTIVE workforce.');
+      throw new BadRequestException(
+        'Only VERIFIED users can become ACTIVE workforce.',
+      );
     }
 
-    const activationDate = body.startDate ? new Date(body.startDate) : new Date();
+    const activationDate = body.startDate
+      ? new Date(body.startDate)
+      : new Date();
 
     const updated = await this.prisma.$transaction(async (tx) => {
       await this.ensureCreatedEvent(tx, contract.id, user.sub, {
@@ -454,7 +490,11 @@ export class WorkforceService {
     return this.toContractLifecycleResponse(updated);
   }
 
-  async terminateContract(id: string, user: AuthUser, body: TerminateContractDto) {
+  async terminateContract(
+    id: string,
+    user: AuthUser,
+    body: TerminateContractDto,
+  ) {
     const contract = await this.getManagedContract(id, user);
     this.assertContractMutable(contract.lifecycleStatus);
 
@@ -470,7 +510,10 @@ export class WorkforceService {
       });
 
       await tx.workforceAssignment.updateMany({
-        where: { contractId: contract.id, status: { not: AssignmentStatus.ENDED } },
+        where: {
+          contractId: contract.id,
+          status: { not: AssignmentStatus.ENDED },
+        },
         data: {
           status: AssignmentStatus.ENDED,
           endedAt: terminatedAt,
@@ -529,7 +572,9 @@ export class WorkforceService {
 
   async getContractTimeline(id: string, user: AuthUser) {
     const contract = await this.getManagedContract(id, user);
-    return contract.lifecycleEvents.map((item) => this.toLifecycleEventResponse(item));
+    return contract.lifecycleEvents.map((item) =>
+      this.toLifecycleEventResponse(item),
+    );
   }
 
   async getMyAssignments(user: AuthUser) {
@@ -585,14 +630,19 @@ export class WorkforceService {
     return contract;
   }
 
-  private async assertRecruiterAccess(job: { actorId: string }, user: AuthUser) {
+  private async assertRecruiterAccess(
+    job: { actorId: string },
+    user: AuthUser,
+  ) {
     if (this.isAdmin(user.role)) {
       return;
     }
 
     const recruiterActor = await this.findActorForUser(user);
     if (!recruiterActor || recruiterActor.id !== job.actorId) {
-      throw new ForbiddenException('Only the job owner or an admin can access workforce operations.');
+      throw new ForbiddenException(
+        'Only the job owner or an admin can access workforce operations.',
+      );
     }
   }
 
@@ -676,7 +726,8 @@ export class WorkforceService {
               id: assignment.user.identityProfile.id,
               publicSlug: assignment.user.identityProfile.publicSlug,
               displayName: assignment.user.identityProfile.displayName,
-              verificationStatus: assignment.user.identityProfile.verificationStatus,
+              verificationStatus:
+                assignment.user.identityProfile.verificationStatus,
             }
           : null,
       },

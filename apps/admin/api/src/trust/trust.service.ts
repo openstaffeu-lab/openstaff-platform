@@ -87,7 +87,10 @@ export class TrustService {
       },
     });
 
-    const template = this.buildPasswordResetTemplate(trustToken.link, trustToken.expiresAt);
+    const template = this.buildPasswordResetTemplate(
+      trustToken.link,
+      trustToken.expiresAt,
+    );
     await this.dispatchTrustEmail({
       userId: user.id,
       email: user.email,
@@ -120,7 +123,9 @@ export class TrustService {
   async resetPassword(token: string, nextPassword: string, request?: any) {
     const trustToken = await this.consumeTrustToken('PASSWORD_RESET', token);
     if (!trustToken.userId) {
-      throw new UnauthorizedException('This password reset link is invalid or has expired');
+      throw new UnauthorizedException(
+        'This password reset link is invalid or has expired',
+      );
     }
 
     const passwordHash = await bcrypt.hash(nextPassword, 10);
@@ -204,7 +209,11 @@ export class TrustService {
       },
     });
 
-    const template = this.buildAccountRecoveryTemplate(trustToken.link, trustToken.expiresAt, reason);
+    const template = this.buildAccountRecoveryTemplate(
+      trustToken.link,
+      trustToken.expiresAt,
+      reason,
+    );
     await this.dispatchTrustEmail({
       userId: user.id,
       email: user.email,
@@ -221,10 +230,16 @@ export class TrustService {
     return this.buildRequestAcceptedResponse(45);
   }
 
-  async completeAccountRecovery(token: string, nextPassword: string, request?: any) {
+  async completeAccountRecovery(
+    token: string,
+    nextPassword: string,
+    request?: any,
+  ) {
     const trustToken = await this.consumeTrustToken('ACCOUNT_RECOVERY', token);
     if (!trustToken.userId) {
-      throw new UnauthorizedException('This recovery link is invalid or has expired');
+      throw new UnauthorizedException(
+        'This recovery link is invalid or has expired',
+      );
     }
 
     const passwordHash = await bcrypt.hash(nextPassword, 10);
@@ -292,13 +307,17 @@ export class TrustService {
       },
     });
 
-    const template = this.buildEmailOwnershipTemplate(trustToken.link, trustToken.expiresAt);
+    const template = this.buildEmailOwnershipTemplate(
+      trustToken.link,
+      trustToken.expiresAt,
+    );
     await this.dispatchTrustEmail({
       userId: user.id,
       email: user.email,
       eventType: 'EMAIL_OWNERSHIP_VERIFICATION_REQUESTED',
       title: 'Email ownership verification requested',
-      message: 'Confirm this email address to strengthen your OpenStaff trust status.',
+      message:
+        'Confirm this email address to strengthen your OpenStaff trust status.',
       relatedEntityId: trustToken.id,
       purpose: trustToken.purpose,
       template,
@@ -348,7 +367,10 @@ export class TrustService {
   }
 
   async confirmSuspiciousLogin(token: string, request?: any) {
-    const trustToken = await this.consumeTrustToken('SUSPICIOUS_LOGIN_CONFIRMATION', token);
+    const trustToken = await this.consumeTrustToken(
+      'SUSPICIOUS_LOGIN_CONFIRMATION',
+      token,
+    );
     const securityEventId =
       typeof trustToken.metadata.securityEventId === 'string'
         ? trustToken.metadata.securityEventId
@@ -419,7 +441,8 @@ export class TrustService {
       email: user.email,
       eventType: 'SUSPICIOUS_LOGIN_DETECTED',
       title: 'Suspicious login detected',
-      message: 'A suspicious login/device confirmation request was issued for your account.',
+      message:
+        'A suspicious login/device confirmation request was issued for your account.',
       relatedEntityId: trustToken.id,
       purpose: trustToken.purpose,
       template,
@@ -536,7 +559,8 @@ export class TrustService {
           }
           nextProfileData = {
             status:
-              existing.profile.moderationStatus === ProfileModerationStatus.APPROVED
+              existing.profile.moderationStatus ===
+              ProfileModerationStatus.APPROVED
                 ? ProfileLifecycleStatus.LIVE
                 : ProfileLifecycleStatus.OFFLINE,
           };
@@ -670,49 +694,56 @@ export class TrustService {
     }
 
     const profileId = user.profile?.id ?? null;
-    const [auditLogs, securityEvents, notificationEvents, verificationCases, reluSignals] =
-      await Promise.all([
-        this.prisma.auditLog.findMany({
-          where: {
-            OR: [
-              { targetUserId: userId },
-              { actorUserId: userId },
-              ...(profileId ? [{ entityType: 'PROFILE', entityId: profileId }] : []),
-            ],
+    const [
+      auditLogs,
+      securityEvents,
+      notificationEvents,
+      verificationCases,
+      reluSignals,
+    ] = await Promise.all([
+      this.prisma.auditLog.findMany({
+        where: {
+          OR: [
+            { targetUserId: userId },
+            { actorUserId: userId },
+            ...(profileId
+              ? [{ entityType: 'PROFILE', entityId: profileId }]
+              : []),
+          ],
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+      this.prisma.securityEvent.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+      this.prisma.notificationEvent.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+      this.prisma.verificationCase.findMany({
+        where: { userId },
+        include: {
+          reviewedBy: {
+            select: { id: true, email: true, role: true },
           },
-          orderBy: { createdAt: 'desc' },
-          take: 20,
-        }),
-        this.prisma.securityEvent.findMany({
-          where: { userId },
-          orderBy: { createdAt: 'desc' },
-          take: 20,
-        }),
-        this.prisma.notificationEvent.findMany({
-          where: { userId },
-          orderBy: { createdAt: 'desc' },
-          take: 20,
-        }),
-        this.prisma.verificationCase.findMany({
-          where: { userId },
-          include: {
-            reviewedBy: {
-              select: { id: true, email: true, role: true },
-            },
-            decisions: {
-              include: {
-                actorUser: {
-                  select: { id: true, email: true, role: true },
-                },
+          decisions: {
+            include: {
+              actorUser: {
+                select: { id: true, email: true, role: true },
               },
-              orderBy: { createdAt: 'desc' },
             },
+            orderBy: { createdAt: 'desc' },
           },
-          orderBy: { updatedAt: 'desc' },
-          take: 10,
-        }),
-        this.getReluModerationSignals(userId, profileId),
-      ]);
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: 10,
+      }),
+      this.getReluModerationSignals(userId, profileId),
+    ]);
 
     return {
       user: this.toAdminUserState(user),
@@ -722,9 +753,11 @@ export class TrustService {
         adminEnforced: user.twoFactorSettings?.adminEnforced ?? false,
         emailOtpEnabled: user.twoFactorSettings?.emailOtpEnabled ?? true,
         lastChallengeVerifiedAt:
-          user.twoFactorSettings?.lastChallengeVerifiedAt?.toISOString() ?? null,
+          user.twoFactorSettings?.lastChallengeVerifiedAt?.toISOString() ??
+          null,
         failedAttemptCount: user.twoFactorSettings?.failedAttemptCount ?? 0,
-        lockoutUntil: user.twoFactorSettings?.lockoutUntil?.toISOString() ?? null,
+        lockoutUntil:
+          user.twoFactorSettings?.lockoutUntil?.toISOString() ?? null,
         recoveryCodesRemaining: this.countRecoveryCodesRemaining(
           user.twoFactorSettings?.recoveryCodesJson ?? null,
         ),
@@ -755,15 +788,24 @@ export class TrustService {
   }
 
   derivePublicTrustStatus(profile: {
-    user?: { approvalStatus?: AccountApprovalStatus; accountStatus?: AccountLifecycleStatus } | null;
+    user?: {
+      approvalStatus?: AccountApprovalStatus;
+      accountStatus?: AccountLifecycleStatus;
+    } | null;
     moderationStatus?: ProfileModerationStatus;
     status?: ProfileLifecycleStatus;
     identityProfile?: { verificationStatus?: string | null } | null;
   }) {
-    if (profile.user?.accountStatus === AccountLifecycleStatus.SUSPENDED || profile.status === ProfileLifecycleStatus.SUSPENDED) {
+    if (
+      profile.user?.accountStatus === AccountLifecycleStatus.SUSPENDED ||
+      profile.status === ProfileLifecycleStatus.SUSPENDED
+    ) {
       return 'SUSPENDED';
     }
-    if (profile.user?.approvalStatus === AccountApprovalStatus.REJECTED || profile.moderationStatus === ProfileModerationStatus.REJECTED) {
+    if (
+      profile.user?.approvalStatus === AccountApprovalStatus.REJECTED ||
+      profile.moderationStatus === ProfileModerationStatus.REJECTED
+    ) {
       return 'REJECTED';
     }
     if (
@@ -771,7 +813,9 @@ export class TrustService {
       profile.moderationStatus === ProfileModerationStatus.APPROVED &&
       profile.status === ProfileLifecycleStatus.LIVE
     ) {
-      return profile.identityProfile?.verificationStatus === 'VERIFIED' ? 'VERIFIED' : 'APPROVED';
+      return profile.identityProfile?.verificationStatus === 'VERIFIED'
+        ? 'VERIFIED'
+        : 'APPROVED';
     }
     return 'PENDING_REVIEW';
   }
@@ -834,7 +878,10 @@ export class TrustService {
     } satisfies TrustTokenRecord;
   }
 
-  private async consumeTrustToken(purpose: TrustTokenPurpose, rawToken: string) {
+  private async consumeTrustToken(
+    purpose: TrustTokenPurpose,
+    rawToken: string,
+  ) {
     const parsed = this.verifySignedTrustToken(rawToken, purpose);
     const tokenHash = this.hashToken(rawToken);
     const event = await this.prisma.notificationEvent.findFirst({
@@ -852,18 +899,30 @@ export class TrustService {
 
     const metadata = this.toMetadataRecord(event.metadata);
     const consumedAt =
-      typeof metadata.consumedAt === 'string' ? new Date(metadata.consumedAt) : null;
+      typeof metadata.consumedAt === 'string'
+        ? new Date(metadata.consumedAt)
+        : null;
     if (consumedAt) {
       throw new UnauthorizedException('This link was already used');
     }
 
     const expiresAt =
-      typeof metadata.expiresAt === 'string' ? new Date(metadata.expiresAt) : null;
-    if (!expiresAt || Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() < Date.now()) {
+      typeof metadata.expiresAt === 'string'
+        ? new Date(metadata.expiresAt)
+        : null;
+    if (
+      !expiresAt ||
+      Number.isNaN(expiresAt.getTime()) ||
+      expiresAt.getTime() < Date.now()
+    ) {
       throw new UnauthorizedException('This link is invalid or has expired');
     }
 
-    if (typeof parsed.sub === 'string' && event.userId && parsed.sub !== event.userId) {
+    if (
+      typeof parsed.sub === 'string' &&
+      event.userId &&
+      parsed.sub !== event.userId
+    ) {
       throw new UnauthorizedException('This link is invalid or has expired');
     }
 
@@ -884,7 +943,10 @@ export class TrustService {
       id: event.id,
       userId: event.userId,
       email: typeof metadata.email === 'string' ? metadata.email : null,
-      expiresAt: typeof metadata.expiresAt === 'string' ? metadata.expiresAt : parsed.exp,
+      expiresAt:
+        typeof metadata.expiresAt === 'string'
+          ? metadata.expiresAt
+          : parsed.exp,
       consumedAt: nextMetadata.consumedAt,
       link: typeof metadata.link === 'string' ? metadata.link : '',
       purpose,
@@ -945,15 +1007,20 @@ export class TrustService {
     };
 
     const messageMap: Record<AdminTrustActionDto['action'], string> = {
-      APPROVE_ACCOUNT: 'Your account was approved and is ready for operational use.',
-      REJECT_ACCOUNT: 'Your account was rejected. Review the latest note for next steps.',
+      APPROVE_ACCOUNT:
+        'Your account was approved and is ready for operational use.',
+      REJECT_ACCOUNT:
+        'Your account was rejected. Review the latest note for next steps.',
       REQUEST_MORE_INFO:
         'We need more information before we can approve your account or profile.',
       APPROVE_PROFILE: 'Your public profile was approved for visibility.',
-      REJECT_PROFILE: 'Your public profile was rejected. Review the latest note for next steps.',
-      SUSPEND_PROFILE: 'Your public profile was suspended from public visibility.',
+      REJECT_PROFILE:
+        'Your public profile was rejected. Review the latest note for next steps.',
+      SUSPEND_PROFILE:
+        'Your public profile was suspended from public visibility.',
       REACTIVATE_PROFILE: 'Your public profile was reactivated.',
-      ESCALATE_REVIEW: 'Your account or profile was escalated for deeper moderation review.',
+      ESCALATE_REVIEW:
+        'Your account or profile was escalated for deeper moderation review.',
       REQUIRE_2FA:
         'Two-factor authentication is now required for your account before future logins can complete.',
       CLEAR_2FA_LOCK:
@@ -965,7 +1032,12 @@ export class TrustService {
         ? this.buildPublicLink('/profile')
         : this.buildPublicLink('/login');
 
-    const template = this.buildGenericTrustTemplate(titleMap[action], messageMap[action], actionUrl, note);
+    const template = this.buildGenericTrustTemplate(
+      titleMap[action],
+      messageMap[action],
+      actionUrl,
+      note,
+    );
     await this.notificationService.emitEvent({
       key: `trust-admin-action:${action}:${user.id}:${Date.now()}`,
       eventType: this.mapAdminActionToEventType(action),
@@ -989,7 +1061,10 @@ export class TrustService {
     });
   }
 
-  private async getReluModerationSignals(userId: string, profileId: string | null) {
+  private async getReluModerationSignals(
+    userId: string,
+    profileId: string | null,
+  ) {
     const [classifications, recommendations] = await Promise.all([
       this.prisma.reluClassificationResult.findMany({
         where: {
@@ -1042,12 +1117,21 @@ export class TrustService {
   private deriveTrustLifecycleState(user: {
     approvalStatus: AccountApprovalStatus;
     accountStatus: AccountLifecycleStatus;
-    profile?: { moderationStatus: ProfileModerationStatus; status: ProfileLifecycleStatus } | null;
+    profile?: {
+      moderationStatus: ProfileModerationStatus;
+      status: ProfileLifecycleStatus;
+    } | null;
   }) {
-    if (user.accountStatus === AccountLifecycleStatus.SUSPENDED || user.profile?.status === ProfileLifecycleStatus.SUSPENDED) {
+    if (
+      user.accountStatus === AccountLifecycleStatus.SUSPENDED ||
+      user.profile?.status === ProfileLifecycleStatus.SUSPENDED
+    ) {
       return 'SUSPENDED';
     }
-    if (user.approvalStatus === AccountApprovalStatus.REJECTED || user.profile?.moderationStatus === ProfileModerationStatus.REJECTED) {
+    if (
+      user.approvalStatus === AccountApprovalStatus.REJECTED ||
+      user.profile?.moderationStatus === ProfileModerationStatus.REJECTED
+    ) {
       return 'REJECTED';
     }
     if (
@@ -1079,7 +1163,8 @@ export class TrustService {
             enabled: user.twoFactorSettings.enabled,
             adminEnforced: user.twoFactorSettings.adminEnforced,
             emailOtpEnabled: user.twoFactorSettings.emailOtpEnabled,
-            lastChallengeVerifiedAt: user.twoFactorSettings.lastChallengeVerifiedAt,
+            lastChallengeVerifiedAt:
+              user.twoFactorSettings.lastChallengeVerifiedAt,
             failedAttemptCount: user.twoFactorSettings.failedAttemptCount,
             lockoutUntil: user.twoFactorSettings.lockoutUntil,
           }
@@ -1125,7 +1210,10 @@ export class TrustService {
     }
   }
 
-  private buildPasswordResetTemplate(link: string, expiresAt: string): TrustEmailTemplate {
+  private buildPasswordResetTemplate(
+    link: string,
+    expiresAt: string,
+  ): TrustEmailTemplate {
     const expiryText = new Date(expiresAt).toLocaleString('ro-RO');
     return {
       subject: 'OpenStaff password reset',
@@ -1147,7 +1235,10 @@ export class TrustService {
     };
   }
 
-  private buildEmailOwnershipTemplate(link: string, expiresAt: string): TrustEmailTemplate {
+  private buildEmailOwnershipTemplate(
+    link: string,
+    expiresAt: string,
+  ): TrustEmailTemplate {
     const expiryText = new Date(expiresAt).toLocaleString('ro-RO');
     return {
       subject: 'OpenStaff email ownership confirmation',
@@ -1194,7 +1285,9 @@ export class TrustService {
   }
 
   private signTrustPayload(payload: Record<string, string>) {
-    const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
+    const encodedPayload = Buffer.from(JSON.stringify(payload)).toString(
+      'base64url',
+    );
     const signature = createHmac('sha256', this.getTrustSecret())
       .update(encodedPayload)
       .digest('base64url');
@@ -1216,10 +1309,9 @@ export class TrustService {
 
     let payload: Record<string, string>;
     try {
-      payload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf8')) as Record<
-        string,
-        string
-      >;
+      payload = JSON.parse(
+        Buffer.from(encodedPayload, 'base64url').toString('utf8'),
+      ) as Record<string, string>;
     } catch {
       throw new UnauthorizedException('This link is invalid or has expired');
     }

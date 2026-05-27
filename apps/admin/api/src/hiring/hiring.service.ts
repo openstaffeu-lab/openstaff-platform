@@ -36,7 +36,10 @@ export class HiringService {
     ApplicationStage.WITHDRAWN,
   ]);
 
-  private static readonly ADMIN_ROLES = new Set<Role>([Role.ADMIN, Role.SUPERADMIN]);
+  private static readonly ADMIN_ROLES = new Set<Role>([
+    Role.ADMIN,
+    Role.SUPERADMIN,
+  ]);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -53,14 +56,22 @@ export class HiringService {
 
     const where: Prisma.HiringPipelineWhereInput = {
       ...(filters?.status ? { status: filters.status } : {}),
-      ...(isAdmin ? {} : recruiterActor ? { job: { actorId: recruiterActor.id } } : { jobId: '__no_match__' }),
+      ...(isAdmin
+        ? {}
+        : recruiterActor
+          ? { job: { actorId: recruiterActor.id } }
+          : { jobId: '__no_match__' }),
     };
 
     if (filters?.q?.trim()) {
       const query = filters.q.trim();
       where.OR = [
         { job: { title: { contains: query, mode: 'insensitive' } } },
-        { job: { actor: { displayName: { contains: query, mode: 'insensitive' } } } },
+        {
+          job: {
+            actor: { displayName: { contains: query, mode: 'insensitive' } },
+          },
+        },
       ];
     }
 
@@ -99,7 +110,10 @@ export class HiringService {
     }));
   }
 
-  async getJobPipeline(jobId: string, user: { sub: string; email: string; role: Role }) {
+  async getJobPipeline(
+    jobId: string,
+    user: { sub: string; email: string; role: Role },
+  ) {
     const job = await this.prisma.job.findUnique({
       where: { id: jobId },
       include: {
@@ -130,7 +144,9 @@ export class HiringService {
         .map((application) =>
           this.toPipelineApplicationSummary(
             application,
-            candidateUsers.get(application.candidateUserId ?? application.actor.email),
+            candidateUsers.get(
+              application.candidateUserId ?? application.actor.email,
+            ),
           ),
         ),
     }));
@@ -152,7 +168,10 @@ export class HiringService {
     };
   }
 
-  async getApplicationDetail(id: string, user: { sub: string; email: string; role: Role }) {
+  async getApplicationDetail(
+    id: string,
+    user: { sub: string; email: string; role: Role },
+  ) {
     const application = await this.prisma.application.findUnique({
       where: { id },
       include: {
@@ -181,7 +200,8 @@ export class HiringService {
     await this.assertRecruiterAccess(application.job, user);
 
     const candidateUser =
-      application.candidateUser ?? (await this.findUserByActor(application.actor));
+      application.candidateUser ??
+      (await this.findUserByActor(application.actor));
 
     return {
       application: this.toApplicationSummary(application),
@@ -198,7 +218,8 @@ export class HiringService {
               id: candidateUser.identityProfile.id,
               publicSlug: candidateUser.identityProfile.publicSlug,
               displayName: candidateUser.identityProfile.displayName,
-              verificationStatus: candidateUser.identityProfile.verificationStatus,
+              verificationStatus:
+                candidateUser.identityProfile.verificationStatus,
               profileCompletionPercent:
                 candidateUser.identityProfile.profileCompletionPercent,
             }
@@ -255,7 +276,13 @@ export class HiringService {
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      const next = await this.updateStage(tx, application, body.targetStage, user.sub, body.note);
+      const next = await this.updateStage(
+        tx,
+        application,
+        body.targetStage,
+        user.sub,
+        body.note,
+      );
       await this.syncPipeline(application.jobId, tx);
       return tx.application.findUniqueOrThrow({
         where: { id: next.id },
@@ -409,7 +436,9 @@ export class HiringService {
     const application = await this.getManagedApplication(id, user);
 
     if (application.currentStage === ApplicationStage.HIRED) {
-      throw new BadRequestException('Hired applications cannot be rejected afterwards.');
+      throw new BadRequestException(
+        'Hired applications cannot be rejected afterwards.',
+      );
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
@@ -497,7 +526,10 @@ export class HiringService {
     }));
   }
 
-  async withdrawApplication(id: string, user: { sub: string; email: string; role: Role }) {
+  async withdrawApplication(
+    id: string,
+    user: { sub: string; email: string; role: Role },
+  ) {
     const application = await this.prisma.application.findUnique({
       where: { id },
       include: {
@@ -510,10 +542,13 @@ export class HiringService {
     }
 
     const isOwner =
-      application.candidateUserId === user.sub || application.actor.email === user.email;
+      application.candidateUserId === user.sub ||
+      application.actor.email === user.email;
 
     if (!isOwner) {
-      throw new ForbiddenException('Only the owner can withdraw this application.');
+      throw new ForbiddenException(
+        'Only the owner can withdraw this application.',
+      );
     }
 
     if (application.currentStage === ApplicationStage.HIRED) {
@@ -610,7 +645,9 @@ export class HiringService {
 
     const recruiterActor = await this.findActorForUser(user);
     if (!recruiterActor || recruiterActor.id !== job.actorId) {
-      throw new ForbiddenException('Only the job owner or an admin can access this pipeline.');
+      throw new ForbiddenException(
+        'Only the job owner or an admin can access this pipeline.',
+      );
     }
   }
 
@@ -632,7 +669,12 @@ export class HiringService {
     });
   }
 
-  private async loadCandidateUsers(applications: Array<{ candidateUserId: string | null; actor: { email: string } }>) {
+  private async loadCandidateUsers(
+    applications: Array<{
+      candidateUserId: string | null;
+      actor: { email: string };
+    }>,
+  ) {
     const userIds = applications
       .map((item) => item.candidateUserId)
       .filter((value): value is string => Boolean(value));
@@ -656,7 +698,9 @@ export class HiringService {
     );
   }
 
-  private groupStageCounts(applications: Array<{ currentStage: ApplicationStage }>) {
+  private groupStageCounts(
+    applications: Array<{ currentStage: ApplicationStage }>,
+  ) {
     return Object.values(ApplicationStage).map((stage) => ({
       stage,
       count: applications.filter((item) => item.currentStage === stage).length,
@@ -673,7 +717,12 @@ export class HiringService {
       createdAt: Date;
       updatedAt: Date;
     },
-    job: { id: string; title: string; status: string; actor: { id: string; displayName: string; email: string } },
+    job: {
+      id: string;
+      title: string;
+      status: string;
+      actor: { id: string; displayName: string; email: string };
+    },
   ) {
     return {
       id: pipeline.id,
@@ -711,7 +760,8 @@ export class HiringService {
         ? {
             publicSlug: candidateUser.identityProfile.publicSlug,
             displayName: candidateUser.identityProfile.displayName,
-            verificationStatus: candidateUser.identityProfile.verificationStatus,
+            verificationStatus:
+              candidateUser.identityProfile.verificationStatus,
             profileCompletionPercent:
               candidateUser.identityProfile.profileCompletionPercent,
           }
@@ -740,8 +790,11 @@ export class HiringService {
   private toManagedApplicationResponse(application: any) {
     return {
       application: this.toApplicationSummary(application),
-      latestDecision: application.hiringDecisions[application.hiringDecisions.length - 1] ?? null,
-      latestStageEntry: application.stageHistory[application.stageHistory.length - 1] ?? null,
+      latestDecision:
+        application.hiringDecisions[application.hiringDecisions.length - 1] ??
+        null,
+      latestStageEntry:
+        application.stageHistory[application.stageHistory.length - 1] ?? null,
     };
   }
 
@@ -766,18 +819,24 @@ export class HiringService {
       application.currentStage === ApplicationStage.REJECTED &&
       targetStage !== ApplicationStage.REJECTED
     ) {
-      throw new BadRequestException('Rejected applications cannot move back to active stages.');
+      throw new BadRequestException(
+        'Rejected applications cannot move back to active stages.',
+      );
     }
 
     if (
       application.currentStage === ApplicationStage.HIRED &&
       targetStage !== ApplicationStage.HIRED
     ) {
-      throw new BadRequestException('Hired applications are already finalized.');
+      throw new BadRequestException(
+        'Hired applications are already finalized.',
+      );
     }
 
     if (application.currentStage === targetStage) {
-      return tx.application.findUniqueOrThrow({ where: { id: application.id } });
+      return tx.application.findUniqueOrThrow({
+        where: { id: application.id },
+      });
     }
 
     const updated = await tx.application.update({
@@ -822,9 +881,12 @@ export class HiringService {
           (item) => item.currentStage === ApplicationStage.HIRED,
         ).length,
         status:
-          applications.some((item) => item.currentStage === ApplicationStage.HIRED) ||
           applications.some(
-            (item) => !HiringService.CLOSED_PIPELINE_STAGES.has(item.currentStage),
+            (item) => item.currentStage === ApplicationStage.HIRED,
+          ) ||
+          applications.some(
+            (item) =>
+              !HiringService.CLOSED_PIPELINE_STAGES.has(item.currentStage),
           )
             ? HiringPipelineStatus.ACTIVE
             : HiringPipelineStatus.CLOSED,

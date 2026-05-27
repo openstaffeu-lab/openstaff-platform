@@ -1,10 +1,11 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { AccountSubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  buildSuccessResponse,
-  logEndpointError,
-} from '../common/api-response';
+import { buildSuccessResponse, logEndpointError } from '../common/api-response';
 
 @Injectable()
 export class PrivateMessagingService {
@@ -45,7 +46,9 @@ export class PrivateMessagingService {
           ? body.requesterName
           : 'Approved OpenStaff User',
       ownerName:
-        typeof body.ownerName === 'string' ? body.ownerName : 'Public post owner',
+        typeof body.ownerName === 'string'
+          ? body.ownerName
+          : 'Public post owner',
       status: typeof body.status === 'string' ? body.status : 'OPEN',
     };
 
@@ -94,9 +97,13 @@ export class PrivateMessagingService {
     const data = {
       conversationId,
       senderName:
-        typeof body.senderName === 'string' ? body.senderName : 'Approved OpenStaff User',
+        typeof body.senderName === 'string'
+          ? body.senderName
+          : 'Approved OpenStaff User',
       message:
-        typeof body.message === 'string' ? body.message : 'New private message from OpenStaff.',
+        typeof body.message === 'string'
+          ? body.message
+          : 'New private message from OpenStaff.',
       status: typeof body.status === 'string' ? body.status : 'SENT',
     };
 
@@ -136,7 +143,10 @@ export class PrivateMessagingService {
 
       return buildSuccessResponse(conversation);
     } catch (error) {
-      logEndpointError('PrivateMessagingService.updateConversationStatus', error);
+      logEndpointError(
+        'PrivateMessagingService.updateConversationStatus',
+        error,
+      );
       throw error;
     }
   }
@@ -227,8 +237,12 @@ export class PrivateMessagingService {
     }
 
     const now = new Date();
-    const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-    const periodEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+    const periodStart = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+    );
+    const periodEnd = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
+    );
 
     await this.prisma.usageMeter.upsert({
       where: {

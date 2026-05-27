@@ -41,7 +41,9 @@ export class ProjectConditionsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectConditionsService.create(projectId, body, user);
@@ -61,10 +63,17 @@ export class ProjectConditionsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectConditionsService.update(projectId, conditionId, body, user);
+    return this.projectConditionsService.update(
+      projectId,
+      conditionId,
+      body,
+      user,
+    );
   }
 
   @UseGuards(
@@ -80,7 +89,9 @@ export class ProjectConditionsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectConditionsService.remove(projectId, conditionId, user);

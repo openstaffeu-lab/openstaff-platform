@@ -53,7 +53,12 @@ export class PublicPostsController {
     @Query('q') q?: string,
   ) {
     try {
-      return await this.publicPostsService.findAll({ type, status, visibility, q });
+      return await this.publicPostsService.findAll({
+        type,
+        status,
+        visibility,
+        q,
+      });
     } catch (error) {
       this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.findAll', error);
@@ -71,7 +76,12 @@ export class PublicPostsController {
     @Query('q') q?: string,
   ) {
     try {
-      return await this.publicPostsService.findAllForAdmin({ type, status, visibility, q });
+      return await this.publicPostsService.findAllForAdmin({
+        type,
+        status,
+        visibility,
+        q,
+      });
     } catch (error) {
       this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.findAllForAdmin', error);
@@ -83,7 +93,9 @@ export class PublicPostsController {
   @Get('public-posts/me')
   async findMine(@Req() req: any) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     try {
@@ -113,7 +125,10 @@ export class PublicPostsController {
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
-      const file = await this.publicPostsService.getMediaAsset(mediaId, req.user ?? null);
+      const file = await this.publicPostsService.getMediaAsset(
+        mediaId,
+        req.user ?? null,
+      );
       res.setHeader('Content-Type', file.mimeType);
       res.setHeader(
         'Content-Disposition',
@@ -134,7 +149,10 @@ export class PublicPostsController {
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
-      const file = await this.publicPostsService.getDocumentAsset(documentId, req.user ?? null);
+      const file = await this.publicPostsService.getDocumentAsset(
+        documentId,
+        req.user ?? null,
+      );
       res.setHeader('Content-Type', file.mimeType);
       res.setHeader(
         'Content-Disposition',
@@ -154,7 +172,9 @@ export class PublicPostsController {
   @Post('public-posts')
   async create(@Body() body: Record<string, unknown>, @Req() req: any) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     try {
@@ -168,9 +188,15 @@ export class PublicPostsController {
 
   @UseGuards(JwtGuard)
   @Patch('public-posts/:id')
-  async update(@Param('id') id: string, @Body() body: Record<string, unknown>, @Req() req: any) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req: any,
+  ) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     try {
@@ -186,7 +212,9 @@ export class PublicPostsController {
   @Delete('public-posts/:id')
   async remove(@Param('id') id: string, @Req() req: any) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     try {
@@ -210,7 +238,9 @@ export class PublicPostsController {
     @Req() req: any,
   ) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     try {
@@ -234,11 +264,18 @@ export class PublicPostsController {
     @Req() req: any,
   ) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     try {
-      return await this.publicPostsService.addDocument(id, body, file, req.user);
+      return await this.publicPostsService.addDocument(
+        id,
+        body,
+        file,
+        req.user,
+      );
     } catch (error) {
       this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.addDocument', error);
@@ -256,7 +293,9 @@ export class PublicPostsController {
     @Req() req: any,
   ) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     try {
@@ -271,7 +310,11 @@ export class PublicPostsController {
   @RequirePermissions(Permission.MANAGE_USERS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @UseGuards(RateLimitGuard)
-  @RateLimit({ key: 'admin-moderation-post', maxRequests: 60, windowMs: 60_000 })
+  @RateLimit({
+    key: 'admin-moderation-post',
+    maxRequests: 60,
+    windowMs: 60_000,
+  })
   @Patch('admin/public-posts/:id/status')
   async updatePostStatus(
     @Param('id') id: string,
@@ -279,11 +322,15 @@ export class PublicPostsController {
     @Req() req: any,
   ) {
     try {
-      return await this.publicPostsService.updatePostStatus(id, {
-        status: body.status,
-        moderationStatus: body.moderationStatus,
-        visibility: body.visibility,
-      }, req.user);
+      return await this.publicPostsService.updatePostStatus(
+        id,
+        {
+          status: body.status,
+          moderationStatus: body.moderationStatus,
+          visibility: body.visibility,
+        },
+        req.user,
+      );
     } catch (error) {
       this.rethrowHttpException(error);
       logEndpointError('PublicPostsController.updatePostStatus', error);
@@ -320,7 +367,11 @@ export class PublicPostsController {
   @RequirePermissions(Permission.MANAGE_USERS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @UseGuards(RateLimitGuard)
-  @RateLimit({ key: 'admin-moderation-media', maxRequests: 60, windowMs: 60_000 })
+  @RateLimit({
+    key: 'admin-moderation-media',
+    maxRequests: 60,
+    windowMs: 60_000,
+  })
   @Patch('admin/public-post-media/:id/status')
   async updateMediaStatus(
     @Param('id') id: string,
@@ -343,7 +394,11 @@ export class PublicPostsController {
   @RequirePermissions(Permission.MANAGE_USERS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @UseGuards(RateLimitGuard)
-  @RateLimit({ key: 'admin-moderation-document', maxRequests: 60, windowMs: 60_000 })
+  @RateLimit({
+    key: 'admin-moderation-document',
+    maxRequests: 60,
+    windowMs: 60_000,
+  })
   @Patch('admin/public-post-documents/:id/status')
   async updateDocumentStatus(
     @Param('id') id: string,

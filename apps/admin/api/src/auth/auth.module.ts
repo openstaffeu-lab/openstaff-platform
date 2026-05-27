@@ -39,7 +39,19 @@ function resolveJwtSecret() {
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtGuard, FirebaseAuthGuard, PlatformRolesGuard, RateLimitGuard],
-  exports: [JwtModule, JwtGuard, FirebaseAuthGuard, PlatformRolesGuard, AuthService],
+  providers: [
+    AuthService,
+    JwtGuard,
+    FirebaseAuthGuard,
+    PlatformRolesGuard,
+    RateLimitGuard,
+  ],
+  exports: [
+    JwtModule,
+    JwtGuard,
+    FirebaseAuthGuard,
+    PlatformRolesGuard,
+    AuthService,
+  ],
 })
 export class AuthModule {}

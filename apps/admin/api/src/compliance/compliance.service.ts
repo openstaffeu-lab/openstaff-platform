@@ -111,7 +111,11 @@ export class ComplianceService {
     return alerts.map((alert) => this.toAlertResponse(alert));
   }
 
-  async updateCurrentUserTask(taskId: string, body: UpdateUserTaskStatusDto, user: AuthenticatedUser) {
+  async updateCurrentUserTask(
+    taskId: string,
+    body: UpdateUserTaskStatusDto,
+    user: AuthenticatedUser,
+  ) {
     const task = await this.prisma.userTask.findUnique({
       where: { id: taskId },
     });
@@ -130,8 +134,9 @@ export class ComplianceService {
         status: body.status,
         completedAt:
           body.status === UserTaskStatus.COMPLETED
-            ? this.toDate(body.completedAt) ?? new Date()
-            : body.status === UserTaskStatus.OPEN || body.status === UserTaskStatus.IN_PROGRESS
+            ? (this.toDate(body.completedAt) ?? new Date())
+            : body.status === UserTaskStatus.OPEN ||
+                body.status === UserTaskStatus.IN_PROGRESS
               ? null
               : undefined,
       },
@@ -141,9 +146,16 @@ export class ComplianceService {
     return this.toTaskResponse(updatedTask);
   }
 
-  async createActorDocument(profileId: string, body: CreateActorDocumentDto, user: AuthenticatedUser) {
+  async createActorDocument(
+    profileId: string,
+    body: CreateActorDocumentDto,
+    user: AuthenticatedUser,
+  ) {
     const profile = await this.getManagedProfile(profileId, user);
-    await this.assertProfileDocumentOwnership(body.profileDocumentId, profile.id);
+    await this.assertProfileDocumentOwnership(
+      body.profileDocumentId,
+      profile.id,
+    );
 
     const document = await this.prisma.actorDocument.create({
       data: {
@@ -195,7 +207,10 @@ export class ComplianceService {
       throw new NotFoundException('Actor document not found');
     }
 
-    await this.assertProfileDocumentOwnership(body.profileDocumentId, profile.id);
+    await this.assertProfileDocumentOwnership(
+      body.profileDocumentId,
+      profile.id,
+    );
 
     const document = await this.prisma.actorDocument.update({
       where: { id: existing.id },
@@ -203,11 +218,19 @@ export class ComplianceService {
         profileDocumentId: body.profileDocumentId ?? undefined,
         type: body.type ?? undefined,
         title: body.title?.trim(),
-        issuer: body.issuer !== undefined ? body.issuer?.trim() ?? null : undefined,
-        issuedAt: body.issuedAt !== undefined ? this.toDate(body.issuedAt) ?? null : undefined,
-        expiresAt: body.expiresAt !== undefined ? this.toDate(body.expiresAt) ?? null : undefined,
+        issuer:
+          body.issuer !== undefined ? (body.issuer?.trim() ?? null) : undefined,
+        issuedAt:
+          body.issuedAt !== undefined
+            ? (this.toDate(body.issuedAt) ?? null)
+            : undefined,
+        expiresAt:
+          body.expiresAt !== undefined
+            ? (this.toDate(body.expiresAt) ?? null)
+            : undefined,
         status: body.status ?? undefined,
-        notes: body.notes !== undefined ? body.notes?.trim() ?? null : undefined,
+        notes:
+          body.notes !== undefined ? (body.notes?.trim() ?? null) : undefined,
       },
       include: this.actorDocumentInclude,
     });
@@ -294,11 +317,21 @@ export class ComplianceService {
         actorDocumentId: body.actorDocumentId ?? undefined,
         type: body.type ?? undefined,
         title: body.title?.trim(),
-        issuer: body.issuer !== undefined ? body.issuer?.trim() ?? null : undefined,
-        issuedAt: body.issuedAt !== undefined ? this.toDate(body.issuedAt) ?? null : undefined,
-        expiresAt: body.expiresAt !== undefined ? this.toDate(body.expiresAt) ?? null : undefined,
+        issuer:
+          body.issuer !== undefined ? (body.issuer?.trim() ?? null) : undefined,
+        issuedAt:
+          body.issuedAt !== undefined
+            ? (this.toDate(body.issuedAt) ?? null)
+            : undefined,
+        expiresAt:
+          body.expiresAt !== undefined
+            ? (this.toDate(body.expiresAt) ?? null)
+            : undefined,
         status: body.status ?? undefined,
-        escoSkillId: body.escoSkillId !== undefined ? body.escoSkillId ?? null : undefined,
+        escoSkillId:
+          body.escoSkillId !== undefined
+            ? (body.escoSkillId ?? null)
+            : undefined,
       },
       include: this.actorCertificationInclude,
     });
@@ -340,7 +373,8 @@ export class ComplianceService {
         issuedAt: this.toDate(body.issuedAt) ?? null,
         expiresAt: this.toDate(body.expiresAt) ?? null,
         status: body.status ?? ComplianceDocumentStatus.PENDING,
-        fitnessDecision: body.fitnessDecision ?? MedicalFitnessDecision.REQUIRES_REVIEW,
+        fitnessDecision:
+          body.fitnessDecision ?? MedicalFitnessDecision.REQUIRES_REVIEW,
         jobSpecificClearance: body.jobSpecificClearance?.trim() ?? null,
       },
       include: this.medicalFitnessInclude,
@@ -391,14 +425,22 @@ export class ComplianceService {
         title: body.title?.trim(),
         issuerName: body.issuerName?.trim(),
         issuedByProfileId:
-          body.issuedByProfileId !== undefined ? body.issuedByProfileId ?? null : undefined,
-        issuedAt: body.issuedAt !== undefined ? this.toDate(body.issuedAt) ?? null : undefined,
-        expiresAt: body.expiresAt !== undefined ? this.toDate(body.expiresAt) ?? null : undefined,
+          body.issuedByProfileId !== undefined
+            ? (body.issuedByProfileId ?? null)
+            : undefined,
+        issuedAt:
+          body.issuedAt !== undefined
+            ? (this.toDate(body.issuedAt) ?? null)
+            : undefined,
+        expiresAt:
+          body.expiresAt !== undefined
+            ? (this.toDate(body.expiresAt) ?? null)
+            : undefined,
         status: body.status ?? undefined,
         fitnessDecision: body.fitnessDecision ?? undefined,
         jobSpecificClearance:
           body.jobSpecificClearance !== undefined
-            ? body.jobSpecificClearance?.trim() ?? null
+            ? (body.jobSpecificClearance?.trim() ?? null)
             : undefined,
       },
       include: this.medicalFitnessInclude,
@@ -420,7 +462,10 @@ export class ComplianceService {
     return this.toMedicalFitnessResponse(certificate);
   }
 
-  async getProjectComplianceOverview(projectId: string, user: AuthenticatedUser) {
+  async getProjectComplianceOverview(
+    projectId: string,
+    user: AuthenticatedUser,
+  ) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
     });
@@ -430,7 +475,9 @@ export class ComplianceService {
     }
 
     if (user.role !== 'ADMIN' && project.createdById !== user.sub) {
-      throw new ForbiddenException('You do not have access to this project compliance workspace');
+      throw new ForbiddenException(
+        'You do not have access to this project compliance workspace',
+      );
     }
 
     const contracts = await this.prisma.projectContract.findMany({
@@ -450,7 +497,11 @@ export class ComplianceService {
       this.prisma.complianceAlert.findMany({
         where: { projectId, status: { not: ComplianceAlertStatus.RESOLVED } },
         include: this.alertInclude,
-        orderBy: [{ severity: 'desc' }, { dueDate: 'asc' }, { createdAt: 'desc' }],
+        orderBy: [
+          { severity: 'desc' },
+          { dueDate: 'asc' },
+          { createdAt: 'desc' },
+        ],
       }),
       this.prisma.userTask.findMany({
         where: {
@@ -458,7 +509,11 @@ export class ComplianceService {
           status: { not: UserTaskStatus.COMPLETED },
         },
         include: this.taskInclude,
-        orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }, { createdAt: 'desc' }],
+        orderBy: [
+          { priority: 'desc' },
+          { dueDate: 'asc' },
+          { createdAt: 'desc' },
+        ],
       }),
       this.prisma.projectContract.findMany({
         where: { projectId },
@@ -477,10 +532,13 @@ export class ComplianceService {
 
     const actorItems = await Promise.all(
       fullContracts.map(async (contract) => {
-        const profileCompliance = await this.buildProfileComplianceResponse(contract.profileId, {
-          sub: contract.profile.userId,
-          role: 'CONTRACTOR',
-        });
+        const profileCompliance = await this.buildProfileComplianceResponse(
+          contract.profileId,
+          {
+            sub: contract.profile.userId,
+            role: 'CONTRACTOR',
+          },
+        );
 
         const actorAlerts = alerts
           .filter((alert) => alert.profileId === contract.profileId)
@@ -513,15 +571,22 @@ export class ComplianceService {
       ComplianceAlertType.CERTIFICATION_EXPIRING,
       ComplianceAlertType.MEDICAL_EXPIRING,
     ]);
-    const expiredCount = alerts.filter((alert) => expiredAlertTypes.has(alert.type)).length;
-    const expiringCount = alerts.filter((alert) => expiringAlertTypes.has(alert.type)).length;
+    const expiredCount = alerts.filter((alert) =>
+      expiredAlertTypes.has(alert.type),
+    ).length;
+    const expiringCount = alerts.filter((alert) =>
+      expiringAlertTypes.has(alert.type),
+    ).length;
 
     return {
       projectId,
       summary: {
         activeContracts: fullContracts.length,
         missingRequirementsCount: actorItems.reduce(
-          (total, item) => total + item.onboarding.requiredItems.filter((req: any) => !req.satisfied).length,
+          (total, item) =>
+            total +
+            item.onboarding.requiredItems.filter((req: any) => !req.satisfied)
+              .length,
           0,
         ),
         expiringCount,
@@ -535,7 +600,10 @@ export class ComplianceService {
     };
   }
 
-  private async buildProfileComplianceResponse(profileId: string, user: AuthenticatedUser) {
+  private async buildProfileComplianceResponse(
+    profileId: string,
+    user: AuthenticatedUser,
+  ) {
     const profile = await this.prisma.profile.findUnique({
       where: { id: profileId },
       include: this.profileComplianceInclude,
@@ -546,7 +614,9 @@ export class ComplianceService {
     }
 
     if (user.role !== 'ADMIN' && profile.userId !== user.sub) {
-      throw new ForbiddenException('You do not have access to this profile compliance workspace');
+      throw new ForbiddenException(
+        'You do not have access to this profile compliance workspace',
+      );
     }
 
     const requirements = this.evaluateOnboardingRequirements(profile);
@@ -578,17 +648,21 @@ export class ComplianceService {
       onboarding: {
         readiness: requirements.every((item) => item.satisfied)
           ? 'READY'
-          : requirements.some((item) => item.status === ComplianceDocumentStatus.EXPIRED)
+          : requirements.some(
+                (item) => item.status === ComplianceDocumentStatus.EXPIRED,
+              )
             ? 'AT_RISK'
             : 'MISSING_REQUIREMENTS',
         requiredItems: requirements,
       },
-      actorDocuments: profile.actorDocuments.map((item) => this.toActorDocumentResponse(item)),
+      actorDocuments: profile.actorDocuments.map((item) =>
+        this.toActorDocumentResponse(item),
+      ),
       certifications: profile.actorCertifications.map((item) =>
         this.toActorCertificationResponse(item),
       ),
-      medicalFitnessCertificates: profile.medicalFitnessCertificates.map((item) =>
-        this.toMedicalFitnessResponse(item),
+      medicalFitnessCertificates: profile.medicalFitnessCertificates.map(
+        (item) => this.toMedicalFitnessResponse(item),
       ),
       alerts: alerts.map((item) => this.toAlertResponse(item)),
       tasks: tasks.map((item) => this.toTaskResponse(item)),
@@ -622,7 +696,13 @@ export class ComplianceService {
       where: {
         profileId,
         expiresAt: { lt: now },
-        status: { in: [ComplianceDocumentStatus.PENDING, ComplianceDocumentStatus.VALID, ComplianceDocumentStatus.REQUIRES_REVIEW] },
+        status: {
+          in: [
+            ComplianceDocumentStatus.PENDING,
+            ComplianceDocumentStatus.VALID,
+            ComplianceDocumentStatus.REQUIRES_REVIEW,
+          ],
+        },
       },
       data: {
         status: ComplianceDocumentStatus.EXPIRED,
@@ -632,7 +712,13 @@ export class ComplianceService {
       where: {
         profileId,
         expiresAt: { lt: now },
-        status: { in: [ComplianceDocumentStatus.PENDING, ComplianceDocumentStatus.VALID, ComplianceDocumentStatus.REQUIRES_REVIEW] },
+        status: {
+          in: [
+            ComplianceDocumentStatus.PENDING,
+            ComplianceDocumentStatus.VALID,
+            ComplianceDocumentStatus.REQUIRES_REVIEW,
+          ],
+        },
       },
       data: {
         status: ComplianceDocumentStatus.EXPIRED,
@@ -642,7 +728,13 @@ export class ComplianceService {
       where: {
         profileId,
         expiresAt: { lt: now },
-        status: { in: [ComplianceDocumentStatus.PENDING, ComplianceDocumentStatus.VALID, ComplianceDocumentStatus.REQUIRES_REVIEW] },
+        status: {
+          in: [
+            ComplianceDocumentStatus.PENDING,
+            ComplianceDocumentStatus.VALID,
+            ComplianceDocumentStatus.REQUIRES_REVIEW,
+          ],
+        },
       },
       data: {
         status: ComplianceDocumentStatus.EXPIRED,
@@ -710,7 +802,10 @@ export class ComplianceService {
         title: document.title,
         expiresAt: document.expiresAt,
         status: document.status,
-        ownerMessagePrefix: document.type === ActorDocumentType.INSURANCE_DOCUMENT ? 'Insurance document' : 'Document',
+        ownerMessagePrefix:
+          document.type === ActorDocumentType.INSURANCE_DOCUMENT
+            ? 'Insurance document'
+            : 'Document',
         ownerTaskType:
           document.type === ActorDocumentType.INSURANCE_DOCUMENT
             ? UserTaskType.UPLOAD_INSURANCE
@@ -779,16 +874,23 @@ export class ComplianceService {
         profileId: refreshedProfile.id,
         type: UserTaskType.ACCEPT_CONTRACT,
         title: `Prepare contract compliance pack for ${contract.project.name}`,
-        description: 'Keep required insurance, certifications, and medical fitness records valid for the active contract.',
+        description:
+          'Keep required insurance, certifications, and medical fitness records valid for the active contract.',
         priority: UserTaskPriority.HIGH,
         dueDate: contract.startDate ?? this.addDays(now, 5),
       });
 
       const unmet = requirements.filter((item) => !item.satisfied);
       const expiredSignals = [
-        ...refreshedProfile.actorDocuments.filter((item) => item.status === ComplianceDocumentStatus.EXPIRED),
-        ...refreshedProfile.actorCertifications.filter((item) => item.status === ComplianceDocumentStatus.EXPIRED),
-        ...refreshedProfile.medicalFitnessCertificates.filter((item) => item.status === ComplianceDocumentStatus.EXPIRED),
+        ...refreshedProfile.actorDocuments.filter(
+          (item) => item.status === ComplianceDocumentStatus.EXPIRED,
+        ),
+        ...refreshedProfile.actorCertifications.filter(
+          (item) => item.status === ComplianceDocumentStatus.EXPIRED,
+        ),
+        ...refreshedProfile.medicalFitnessCertificates.filter(
+          (item) => item.status === ComplianceDocumentStatus.EXPIRED,
+        ),
       ];
 
       if (unmet.length > 0 || expiredSignals.length > 0) {
@@ -801,26 +903,39 @@ export class ComplianceService {
           projectId: contract.projectId,
           contractId: contract.id,
           type: ComplianceAlertType.CONTRACT_ELIGIBILITY_RISK,
-          severity: expiredSignals.length > 0 ? ComplianceAlertSeverity.CRITICAL : ComplianceAlertSeverity.WARNING,
+          severity:
+            expiredSignals.length > 0
+              ? ComplianceAlertSeverity.CRITICAL
+              : ComplianceAlertSeverity.WARNING,
           message: `${refreshedProfile.displayName} has compliance gaps that may affect project eligibility on ${contract.project.name}.`,
           dueDate: contract.startDate ?? this.addDays(now, 3),
         });
       }
     }
 
-    await this.resolveStaleAlertsAndTasks(refreshedProfile.id, impactedUsers, activeAlertKeys, activeTaskKeys);
+    await this.resolveStaleAlertsAndTasks(
+      refreshedProfile.id,
+      impactedUsers,
+      activeAlertKeys,
+      activeTaskKeys,
+    );
   }
 
   private evaluateOnboardingRequirements(profile: any) {
-    const definitions = this.getRequirementDefinitions(profile.user.role, profile.profileType);
+    const definitions = this.getRequirementDefinitions(
+      profile.user.role,
+      profile.profileType,
+    );
     return definitions.map((definition) => {
       if (definition.kind === 'document') {
         const match = profile.actorDocuments.find(
-          (item: any) => item.type === definition.documentType && this.isCurrentValid(item),
+          (item: any) =>
+            item.type === definition.documentType && this.isCurrentValid(item),
         );
         const expired = profile.actorDocuments.find(
           (item: any) =>
-            item.type === definition.documentType && item.status === ComplianceDocumentStatus.EXPIRED,
+            item.type === definition.documentType &&
+            item.status === ComplianceDocumentStatus.EXPIRED,
         );
         return {
           key: definition.key,
@@ -828,7 +943,10 @@ export class ComplianceService {
           description: definition.description,
           kind: definition.kind,
           satisfied: Boolean(match),
-          status: match?.status ?? expired?.status ?? ComplianceDocumentStatus.PENDING,
+          status:
+            match?.status ??
+            expired?.status ??
+            ComplianceDocumentStatus.PENDING,
           currentRecordId: match?.id ?? expired?.id ?? null,
         };
       }
@@ -836,7 +954,8 @@ export class ComplianceService {
       if (definition.kind === 'certification') {
         const match = profile.actorCertifications.find(
           (item: any) =>
-            definition.certificationTypes.includes(item.type) && this.isCurrentValid(item),
+            definition.certificationTypes.includes(item.type) &&
+            this.isCurrentValid(item),
         );
         const expired = profile.actorCertifications.find(
           (item: any) =>
@@ -849,20 +968,25 @@ export class ComplianceService {
           description: definition.description,
           kind: definition.kind,
           satisfied: Boolean(match),
-          status: match?.status ?? expired?.status ?? ComplianceDocumentStatus.PENDING,
+          status:
+            match?.status ??
+            expired?.status ??
+            ComplianceDocumentStatus.PENDING,
           currentRecordId: match?.id ?? expired?.id ?? null,
         };
       }
 
       const match = profile.medicalFitnessCertificates.find(
         (item: any) =>
-          (!definition.categories?.length || definition.categories.includes(item.category)) &&
+          (!definition.categories?.length ||
+            definition.categories.includes(item.category)) &&
           this.isCurrentValid(item) &&
           item.fitnessDecision !== MedicalFitnessDecision.UNFIT,
       );
       const expired = profile.medicalFitnessCertificates.find(
         (item: any) =>
-          (!definition.categories?.length || definition.categories.includes(item.category)) &&
+          (!definition.categories?.length ||
+            definition.categories.includes(item.category)) &&
           item.status === ComplianceDocumentStatus.EXPIRED,
       );
       return {
@@ -871,43 +995,53 @@ export class ComplianceService {
         description: definition.description,
         kind: definition.kind,
         satisfied: Boolean(match),
-        status: match?.status ?? expired?.status ?? ComplianceDocumentStatus.PENDING,
+        status:
+          match?.status ?? expired?.status ?? ComplianceDocumentStatus.PENDING,
         currentRecordId: match?.id ?? expired?.id ?? null,
       };
     });
   }
 
-  private getRequirementDefinitions(role: string, profileType: ProfileType): RequirementDefinition[] {
+  private getRequirementDefinitions(
+    role: string,
+    profileType: ProfileType,
+  ): RequirementDefinition[] {
     const effectiveType =
-      role === 'GENERAL_CONTRACTOR' ? ProfileType.GENERAL_CONTRACTOR : profileType;
+      role === 'GENERAL_CONTRACTOR'
+        ? ProfileType.GENERAL_CONTRACTOR
+        : profileType;
 
     if (effectiveType === ProfileType.GENERAL_CONTRACTOR) {
       return [
         {
           key: 'company-document',
           label: 'Company registration document',
-          description: 'Upload company registration evidence for the general contractor entity.',
+          description:
+            'Upload company registration evidence for the general contractor entity.',
           kind: 'document',
           documentType: ActorDocumentType.COMPANY_DOCUMENT,
         },
         {
           key: 'tax-document',
           label: 'VAT / tax data',
-          description: 'Provide the tax or VAT document required for commercial contracting.',
+          description:
+            'Provide the tax or VAT document required for commercial contracting.',
           kind: 'document',
           documentType: ActorDocumentType.TAX_DOCUMENT,
         },
         {
           key: 'insurance-document',
           label: 'Insurance evidence',
-          description: 'Valid insurance must be on file before contract activation.',
+          description:
+            'Valid insurance must be on file before contract activation.',
           kind: 'document',
           documentType: ActorDocumentType.INSURANCE_DOCUMENT,
         },
         {
           key: 'project-authority',
           label: 'Project authority document',
-          description: 'Upload the document proving project authority or appointment.',
+          description:
+            'Upload the document proving project authority or appointment.',
           kind: 'document',
           documentType: ActorDocumentType.PROJECT_AUTHORITY_DOCUMENT,
         },
@@ -922,28 +1056,32 @@ export class ComplianceService {
         {
           key: 'company-document',
           label: 'Company registration document',
-          description: 'Provide registered company evidence for contractor onboarding.',
+          description:
+            'Provide registered company evidence for contractor onboarding.',
           kind: 'document',
           documentType: ActorDocumentType.COMPANY_DOCUMENT,
         },
         {
           key: 'nace-document',
           label: 'NACE activity support',
-          description: 'Upload a document supporting the declared NACE activity.',
+          description:
+            'Upload a document supporting the declared NACE activity.',
           kind: 'document',
           documentType: ActorDocumentType.NACE_ACTIVITY_DOCUMENT,
         },
         {
           key: 'insurance-document',
           label: 'Insurance evidence',
-          description: 'Contractor insurance must remain valid for active work.',
+          description:
+            'Contractor insurance must remain valid for active work.',
           kind: 'document',
           documentType: ActorDocumentType.INSURANCE_DOCUMENT,
         },
         {
           key: 'trade-certification',
           label: 'Trade certification or permit',
-          description: 'At least one contractor certification, permit, or license is required.',
+          description:
+            'At least one contractor certification, permit, or license is required.',
           kind: 'certification',
           certificationTypes: [
             ActorCertificationType.CERTIFICATE,
@@ -964,21 +1102,27 @@ export class ComplianceService {
         {
           key: 'identity-document',
           label: 'Identity document',
-          description: 'Identity evidence is required before individual assignment.',
+          description:
+            'Identity evidence is required before individual assignment.',
           kind: 'document',
           documentType: ActorDocumentType.IDENTITY_DOCUMENT,
         },
         {
           key: 'professional-certificate',
           label: 'Certificate or license',
-          description: 'Provide at least one valid professional certificate or license.',
+          description:
+            'Provide at least one valid professional certificate or license.',
           kind: 'certification',
-          certificationTypes: [ActorCertificationType.CERTIFICATE, ActorCertificationType.LICENSE],
+          certificationTypes: [
+            ActorCertificationType.CERTIFICATE,
+            ActorCertificationType.LICENSE,
+          ],
         },
         {
           key: 'medical-fitness',
           label: 'Medical fitness',
-          description: 'A valid medical fitness certificate is required for assignment eligibility.',
+          description:
+            'A valid medical fitness certificate is required for assignment eligibility.',
           kind: 'medical',
         },
       ];
@@ -1007,7 +1151,8 @@ export class ComplianceService {
       {
         key: 'authorization-document',
         label: 'Authorization document',
-        description: 'Upload an authorization document for evaluator or trainer access.',
+        description:
+          'Upload an authorization document for evaluator or trainer access.',
         kind: 'document',
         documentType: ActorDocumentType.AUTHORIZATION_DOCUMENT,
       },
@@ -1016,7 +1161,10 @@ export class ComplianceService {
         label: 'Training record or license',
         description: 'A valid training record or license is required.',
         kind: 'certification',
-        certificationTypes: [ActorCertificationType.TRAINING_RECORD, ActorCertificationType.LICENSE],
+        certificationTypes: [
+          ActorCertificationType.TRAINING_RECORD,
+          ActorCertificationType.LICENSE,
+        ],
       },
     ];
   }
@@ -1056,7 +1204,10 @@ export class ComplianceService {
       },
     } as const;
 
-    if (input.status === ComplianceDocumentStatus.EXPIRED || daysUntilExpiry < 0) {
+    if (
+      input.status === ComplianceDocumentStatus.EXPIRED ||
+      daysUntilExpiry < 0
+    ) {
       const alertKey = `expired:${input.kind}:${input.profile.id}:${input.title}`;
       input.activeAlertKeys.add(alertKey);
       await this.upsertAlert({
@@ -1102,7 +1253,9 @@ export class ComplianceService {
         medicalFitnessCertificateId: input.medicalFitnessCertificateId,
         type: kindMap[input.kind].expiring,
         severity:
-          daysUntilExpiry <= 15 ? ComplianceAlertSeverity.CRITICAL : ComplianceAlertSeverity.WARNING,
+          daysUntilExpiry <= 15
+            ? ComplianceAlertSeverity.CRITICAL
+            : ComplianceAlertSeverity.WARNING,
         message: `${input.ownerMessagePrefix} "${input.title}" expires on ${input.expiresAt.toISOString().slice(0, 10)}.`,
         dueDate: input.expiresAt,
       });
@@ -1122,7 +1275,10 @@ export class ComplianceService {
           daysUntilExpiry <= 15
             ? `${input.ownerMessagePrefix} expires within 15 days and should be renewed urgently.`
             : `${input.ownerMessagePrefix} expires within 30 days and should be renewed.`,
-        priority: daysUntilExpiry <= 15 ? UserTaskPriority.HIGH : UserTaskPriority.MEDIUM,
+        priority:
+          daysUntilExpiry <= 15
+            ? UserTaskPriority.HIGH
+            : UserTaskPriority.MEDIUM,
         dueDate: input.expiresAt,
       });
     }
@@ -1274,7 +1430,10 @@ export class ComplianceService {
     return UserTaskType.COMPLETE_PROFILE;
   }
 
-  private isCurrentValid(item: { status: ComplianceDocumentStatus; expiresAt?: Date | null }) {
+  private isCurrentValid(item: {
+    status: ComplianceDocumentStatus;
+    expiresAt?: Date | null;
+  }) {
     if (item.status !== ComplianceDocumentStatus.VALID) {
       return false;
     }
@@ -1283,7 +1442,9 @@ export class ComplianceService {
   }
 
   private daysBetween(left: Date, right: Date) {
-    return Math.floor((right.getTime() - left.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.floor(
+      (right.getTime() - left.getTime()) / (1000 * 60 * 60 * 24),
+    );
   }
 
   private addDays(base: Date, days: number) {
@@ -1470,7 +1631,10 @@ export class ComplianceService {
     return profile;
   }
 
-  private async assertProfileDocumentOwnership(profileDocumentId: string | undefined, profileId: string) {
+  private async assertProfileDocumentOwnership(
+    profileDocumentId: string | undefined,
+    profileId: string,
+  ) {
     if (!profileDocumentId) {
       return;
     }
@@ -1483,11 +1647,16 @@ export class ComplianceService {
     });
 
     if (!document) {
-      throw new BadRequestException('Referenced profile document does not belong to this profile');
+      throw new BadRequestException(
+        'Referenced profile document does not belong to this profile',
+      );
     }
   }
 
-  private async assertActorDocumentOwnership(actorDocumentId: string | undefined, profileId: string) {
+  private async assertActorDocumentOwnership(
+    actorDocumentId: string | undefined,
+    profileId: string,
+  ) {
     if (!actorDocumentId) {
       return;
     }
@@ -1500,7 +1669,9 @@ export class ComplianceService {
     });
 
     if (!document) {
-      throw new BadRequestException('Referenced actor document does not belong to this profile');
+      throw new BadRequestException(
+        'Referenced actor document does not belong to this profile',
+      );
     }
   }
 

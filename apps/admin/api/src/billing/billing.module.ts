@@ -12,7 +12,11 @@ import { BillingService } from './billing.service';
 
 @Module({
   imports: [PrismaModule, AuthModule, AuditModule, NotificationModule],
-  controllers: [BillingAdminController, BillingProfileController, BillingPublicController],
+  controllers: [
+    BillingAdminController,
+    BillingProfileController,
+    BillingPublicController,
+  ],
   providers: [BillingService],
   exports: [BillingService],
 })

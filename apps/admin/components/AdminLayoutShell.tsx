@@ -9,7 +9,7 @@ type MenuItem = {
   name: string;
   path: string;
   description: string;
-  visibility?: "all" | "superadmin";
+  visibility?: "all" | "superadmin" | "operational" | "aiModerator";
 };
 
 type MenuGroup = {
@@ -21,21 +21,21 @@ const menuGroups: MenuGroup[] = [
   {
     name: "Operations",
     items: [
-      { name: "Dashboard", path: "/dashboard", description: "Executive queue overview" },
-      { name: "Moderation", path: "/admin/posts", description: "Public marketplace approvals" },
-      { name: "Media & Documents", path: "/admin/media", description: "Asset review queue" },
-      { name: "Companies & Workforce", path: "/professionals", description: "Profiles and capacity" },
-      { name: "Contracts", path: "/contracts", description: "Delivery agreements" },
-      { name: "Financial Engine", path: "/financial", description: "Invoices, VAT and billing" },
-      { name: "Countries & VAT", path: "/countries-vat", description: "Market tax settings" },
+      { name: "Dashboard", path: "/dashboard", description: "Executive queue overview", visibility: "operational" },
+      { name: "Moderation", path: "/admin/posts", description: "Public marketplace approvals", visibility: "operational" },
+      { name: "Media & Documents", path: "/admin/media", description: "Asset review queue", visibility: "operational" },
+      { name: "Companies & Workforce", path: "/professionals", description: "Profiles and capacity", visibility: "operational" },
+      { name: "Contracts", path: "/contracts", description: "Delivery agreements", visibility: "operational" },
+      { name: "Financial Engine", path: "/financial", description: "Invoices, VAT and billing", visibility: "operational" },
+      { name: "Countries & VAT", path: "/countries-vat", description: "Market tax settings", visibility: "operational" },
     ],
   },
   {
     name: "Trust",
     items: [
-      { name: "RELU AI Moderation", path: "/admin/relu", description: "AI interpretation review" },
-      { name: "Trust & Security", path: "/admin/security", description: "Account and access posture" },
-      { name: "Users", path: "/admin/users", description: "Approvals and account state" },
+      { name: "RELU AI Moderation", path: "/admin/relu", description: "AI interpretation review", visibility: "aiModerator" },
+      { name: "Trust & Security", path: "/admin/security", description: "Account and access posture", visibility: "operational" },
+      { name: "Users", path: "/admin/users", description: "Approvals and account state", visibility: "operational" },
       {
         name: "Roles",
         path: "/admin/roles",
@@ -106,9 +106,27 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { logout, user } = useAuth();
   const isSuperAdmin = user?.role === "SUPERADMIN";
+  const isAiModerator = user?.role === "AI_MODERATOR";
+  const canUseOperationalWorkspace = user?.role === "ADMIN" || isSuperAdmin;
 
   if (PUBLIC_PATHS.has(pathname)) {
     return <>{children}</>;
+  }
+
+  function canSeeItem(item: MenuItem) {
+    if (item.visibility === "superadmin") {
+      return isSuperAdmin;
+    }
+
+    if (item.visibility === "operational") {
+      return canUseOperationalWorkspace;
+    }
+
+    if (item.visibility === "aiModerator") {
+      return isAiModerator || canUseOperationalWorkspace;
+    }
+
+    return true;
   }
 
   async function handleLogout() {
@@ -129,9 +147,7 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
 
           <nav className="space-y-6 overflow-y-auto pr-1">
             {menuGroups.map((group) => {
-              const visibleItems = group.items.filter(
-                (item) => item.visibility !== "superadmin" || isSuperAdmin,
-              );
+              const visibleItems = group.items.filter(canSeeItem);
 
               if (visibleItems.length === 0) {
                 return null;
@@ -178,12 +194,18 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
 
           <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="text-sm font-semibold text-white">
-              {isSuperAdmin ? "SuperAdmin technical mode" : "Operational admin mode"}
+              {isSuperAdmin
+                ? "SuperAdmin technical mode"
+                : isAiModerator
+                  ? "AI moderation mode"
+                  : "Operational admin mode"}
             </div>
             <div className="mt-2 text-sm leading-6 text-slate-300">
               {isSuperAdmin
                 ? "Operational tools are primary. Technical diagnostics stay isolated in the Technical group."
-                : "Technical infrastructure and delivery diagnostics are hidden from this workspace."}
+                : isAiModerator
+                  ? "Only RELU review workflows are available for this role."
+                  : "Technical infrastructure and delivery diagnostics are hidden from this workspace."}
             </div>
             <button
               type="button"
@@ -223,7 +245,7 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
             <nav className="mt-5 flex max-w-full flex-wrap gap-2 pb-1 md:hidden">
               {menuGroups
                 .flatMap((group) => group.items)
-                .filter((item) => item.visibility !== "superadmin" || isSuperAdmin)
+                .filter(canSeeItem)
                 .map((item) => (
                   <Link
                     key={item.path}
@@ -237,7 +259,33 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
             </nav>
           </header>
 
-          <main className="flex-1 bg-[#0b1220]">{children}</main>
+          <main className="flex-1 bg-[#0b1220]">
+            {isAiModerator && !pathname.startsWith("/admin/relu") ? (
+              <section className="p-6 text-white md:p-8">
+                <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-8 shadow-2xl shadow-slate-950/30">
+                  <p className="text-sm font-semibold uppercase tracking-[0.14em] text-cyan-300">
+                    AI moderation workspace
+                  </p>
+                  <h1 className="mt-3 text-3xl font-semibold">
+                    This role is limited to RELU review
+                  </h1>
+                  <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
+                    Technical tools, operations queues, user management, security logs, and
+                    delivery diagnostics are isolated from AI Moderator accounts.
+                  </p>
+                  <Link
+                    href="/admin/relu"
+                    prefetch={false}
+                    className="mt-6 inline-flex rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 no-underline transition hover:bg-cyan-200"
+                  >
+                    Open RELU Moderation
+                  </Link>
+                </div>
+              </section>
+            ) : (
+              children
+            )}
+          </main>
         </div>
       </div>
     </AdminAuthGuard>

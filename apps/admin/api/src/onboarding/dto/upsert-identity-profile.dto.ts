@@ -30,7 +30,9 @@ export class UpsertIdentityProfileDto {
   displayName?: string;
 
   @IsOptional()
-  @ValidateIf((_, value) => typeof value === 'string' && value.trim().length > 0)
+  @ValidateIf(
+    (_, value) => typeof value === 'string' && value.trim().length > 0,
+  )
   @IsUrl()
   avatarUrl?: string;
 
@@ -65,22 +67,30 @@ export class UpsertIdentityProfileDto {
   phone?: string;
 
   @IsOptional()
-  @ValidateIf((_, value) => typeof value === 'string' && value.trim().length > 0)
+  @ValidateIf(
+    (_, value) => typeof value === 'string' && value.trim().length > 0,
+  )
   @IsUrl()
   website?: string;
 
   @IsOptional()
-  @ValidateIf((_, value) => typeof value === 'string' && value.trim().length > 0)
+  @ValidateIf(
+    (_, value) => typeof value === 'string' && value.trim().length > 0,
+  )
   @IsUrl()
   linkedinUrl?: string;
 
   @IsOptional()
-  @ValidateIf((_, value) => typeof value === 'string' && value.trim().length > 0)
+  @ValidateIf(
+    (_, value) => typeof value === 'string' && value.trim().length > 0,
+  )
   @IsUrl()
   githubUrl?: string;
 
   @IsOptional()
-  @ValidateIf((_, value) => typeof value === 'string' && value.trim().length > 0)
+  @ValidateIf(
+    (_, value) => typeof value === 'string' && value.trim().length > 0,
+  )
   @IsUrl()
   portfolioUrl?: string;
 }

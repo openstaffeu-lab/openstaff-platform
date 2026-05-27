@@ -42,7 +42,9 @@ export class ComplianceController {
   @UseGuards(JwtGuard)
   @Get('profile/eligibility')
   async getCurrentProfileEligibility(@Req() req: any) {
-    return this.complianceEligibilityService.getCurrentProfileEligibility(req.user);
+    return this.complianceEligibilityService.getCurrentProfileEligibility(
+      req.user,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -75,7 +77,13 @@ export class ComplianceController {
 
   @UseGuards(
     JwtGuard,
-    new RolesGuard(['ADMIN', 'EMPLOYER', 'CONTRACTOR', 'GENERAL_CONTRACTOR', 'PROFESSIONAL']),
+    new RolesGuard([
+      'ADMIN',
+      'EMPLOYER',
+      'CONTRACTOR',
+      'GENERAL_CONTRACTOR',
+      'PROFESSIONAL',
+    ]),
   )
   @Post('profiles/:profileId/actor-documents')
   async createActorDocument(
@@ -85,7 +93,9 @@ export class ComplianceController {
   ) {
     const user = req.user;
     if (!user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.complianceService.createActorDocument(profileId, body, user);
@@ -93,7 +103,13 @@ export class ComplianceController {
 
   @UseGuards(
     JwtGuard,
-    new RolesGuard(['ADMIN', 'EMPLOYER', 'CONTRACTOR', 'GENERAL_CONTRACTOR', 'PROFESSIONAL']),
+    new RolesGuard([
+      'ADMIN',
+      'EMPLOYER',
+      'CONTRACTOR',
+      'GENERAL_CONTRACTOR',
+      'PROFESSIONAL',
+    ]),
   )
   @Patch('profiles/:profileId/actor-documents/:actorDocumentId')
   async updateActorDocument(
@@ -104,15 +120,28 @@ export class ComplianceController {
   ) {
     const user = req.user;
     if (!user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.complianceService.updateActorDocument(profileId, actorDocumentId, body, user);
+    return this.complianceService.updateActorDocument(
+      profileId,
+      actorDocumentId,
+      body,
+      user,
+    );
   }
 
   @UseGuards(
     JwtGuard,
-    new RolesGuard(['ADMIN', 'EMPLOYER', 'CONTRACTOR', 'GENERAL_CONTRACTOR', 'PROFESSIONAL']),
+    new RolesGuard([
+      'ADMIN',
+      'EMPLOYER',
+      'CONTRACTOR',
+      'GENERAL_CONTRACTOR',
+      'PROFESSIONAL',
+    ]),
   )
   @Post('profiles/:profileId/certifications')
   async createCertification(
@@ -122,7 +151,9 @@ export class ComplianceController {
   ) {
     const user = req.user;
     if (!user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.complianceService.createCertification(profileId, body, user);
@@ -130,7 +161,13 @@ export class ComplianceController {
 
   @UseGuards(
     JwtGuard,
-    new RolesGuard(['ADMIN', 'EMPLOYER', 'CONTRACTOR', 'GENERAL_CONTRACTOR', 'PROFESSIONAL']),
+    new RolesGuard([
+      'ADMIN',
+      'EMPLOYER',
+      'CONTRACTOR',
+      'GENERAL_CONTRACTOR',
+      'PROFESSIONAL',
+    ]),
   )
   @Patch('profiles/:profileId/certifications/:certificationId')
   async updateCertification(
@@ -141,15 +178,28 @@ export class ComplianceController {
   ) {
     const user = req.user;
     if (!user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.complianceService.updateCertification(profileId, certificationId, body, user);
+    return this.complianceService.updateCertification(
+      profileId,
+      certificationId,
+      body,
+      user,
+    );
   }
 
   @UseGuards(
     JwtGuard,
-    new RolesGuard(['ADMIN', 'EMPLOYER', 'CONTRACTOR', 'GENERAL_CONTRACTOR', 'PROFESSIONAL']),
+    new RolesGuard([
+      'ADMIN',
+      'EMPLOYER',
+      'CONTRACTOR',
+      'GENERAL_CONTRACTOR',
+      'PROFESSIONAL',
+    ]),
   )
   @Post('profiles/:profileId/medical-fitness')
   async createMedicalFitnessCertificate(
@@ -159,15 +209,27 @@ export class ComplianceController {
   ) {
     const user = req.user;
     if (!user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.complianceService.createMedicalFitnessCertificate(profileId, body, user);
+    return this.complianceService.createMedicalFitnessCertificate(
+      profileId,
+      body,
+      user,
+    );
   }
 
   @UseGuards(
     JwtGuard,
-    new RolesGuard(['ADMIN', 'EMPLOYER', 'CONTRACTOR', 'GENERAL_CONTRACTOR', 'PROFESSIONAL']),
+    new RolesGuard([
+      'ADMIN',
+      'EMPLOYER',
+      'CONTRACTOR',
+      'GENERAL_CONTRACTOR',
+      'PROFESSIONAL',
+    ]),
   )
   @Patch('profiles/:profileId/medical-fitness/:medicalFitnessCertificateId')
   async updateMedicalFitnessCertificate(
@@ -178,7 +240,9 @@ export class ComplianceController {
   ) {
     const user = req.user;
     if (!user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.complianceService.updateMedicalFitnessCertificate(
@@ -195,13 +259,22 @@ export class ComplianceController {
     @Param('projectId') projectId: string,
     @Req() req: any,
   ) {
-    return this.complianceService.getProjectComplianceOverview(projectId, req.user);
+    return this.complianceService.getProjectComplianceOverview(
+      projectId,
+      req.user,
+    );
   }
 
   @UseGuards(JwtGuard)
   @Get('projects/:projectId/eligibility')
-  async getProjectEligibility(@Param('projectId') projectId: string, @Req() req: any) {
-    return this.complianceEligibilityService.getProjectEligibility(projectId, req.user);
+  async getProjectEligibility(
+    @Param('projectId') projectId: string,
+    @Req() req: any,
+  ) {
+    return this.complianceEligibilityService.getProjectEligibility(
+      projectId,
+      req.user,
+    );
   }
 
   @UseGuards(JwtGuard)

@@ -418,11 +418,7 @@ export default function AdminWorkforcePage() {
                     <div className="mt-2 text-xs text-slate-400">
                       Actor: {item.actorUser?.email ?? "system"}
                     </div>
-                    {item.metadata ? (
-                      <pre className="mt-3 overflow-x-auto rounded-2xl bg-slate-950 p-3 text-xs text-cyan-100">
-                        {JSON.stringify(item.metadata, null, 2)}
-                      </pre>
-                    ) : null}
+                    <OperationalMetadata metadata={item.metadata} />
                   </div>
                 ))
               ) : (
@@ -473,4 +469,66 @@ function StatusPill({
       {value}
     </span>
   );
+}
+
+function OperationalMetadata({ metadata }: { metadata: unknown }) {
+  const summary = summarizeMetadata(metadata);
+
+  if (summary.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {summary.map((item) => (
+        <span
+          key={`${item.label}-${item.value}`}
+          className="rounded-full border border-slate-700 bg-slate-950/70 px-3 py-1 text-xs text-slate-300"
+        >
+          <span className="font-semibold text-slate-100">{item.label}:</span> {item.value}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function summarizeMetadata(metadata: unknown) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return [];
+  }
+
+  const hiddenKeyPattern = /(id|uuid|token|secret|key|url|path|storage|bucket|raw|json)/i;
+
+  return Object.entries(metadata as Record<string, unknown>)
+    .filter(([key, value]) => !hiddenKeyPattern.test(key) && value !== null && value !== undefined)
+    .slice(0, 4)
+    .map(([key, value]) => ({
+      label: humanizeMetadataKey(key),
+      value: summarizeMetadataValue(value),
+    }))
+    .filter((item) => item.value.length > 0 && item.value.length <= 80);
+}
+
+function summarizeMetadataValue(value: unknown) {
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    return `${value.length} items`;
+  }
+
+  if (typeof value === "object" && value !== null) {
+    return "Operational context captured";
+  }
+
+  return "";
+}
+
+function humanizeMetadataKey(value: string) {
+  return value
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .replace(/^./, (letter) => letter.toUpperCase());
 }

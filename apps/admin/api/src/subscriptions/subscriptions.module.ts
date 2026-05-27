@@ -12,7 +12,13 @@ import {
 import { SubscriptionsService } from './subscriptions.service';
 
 @Module({
-  imports: [PrismaModule, AuthModule, AuditModule, BillingModule, NotificationModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    AuditModule,
+    BillingModule,
+    NotificationModule,
+  ],
   controllers: [
     SubscriptionsController,
     AdminSubscriptionUpgradeRequestsController,

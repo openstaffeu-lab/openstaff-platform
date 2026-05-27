@@ -63,7 +63,9 @@ export class ProjectsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectsService.create(body, user);
@@ -84,7 +86,9 @@ export class ProjectsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectsService.update(projectId, body, user);

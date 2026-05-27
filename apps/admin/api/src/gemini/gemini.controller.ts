@@ -34,7 +34,11 @@ export class GeminiController {
 
   @Post('chat')
   async chat(
-    @Body() body: { message?: string; history?: Array<{ role: 'user' | 'model'; parts: string }> },
+    @Body()
+    body: {
+      message?: string;
+      history?: Array<{ role: 'user' | 'model'; parts: string }>;
+    },
   ) {
     try {
       const message = body.message?.trim();
@@ -83,7 +87,9 @@ export class GeminiController {
         return buildErrorResponse('contractId is required');
       }
 
-      const result = await this.geminiService.generateContract(body.contractId.trim());
+      const result = await this.geminiService.generateContract(
+        body.contractId.trim(),
+      );
       return buildSuccessResponse(result);
     } catch (error) {
       return this.toErrorResponse(error);
@@ -99,7 +105,9 @@ export class GeminiController {
         return buildErrorResponse('content is required');
       }
 
-      const result = await this.geminiService.complianceCheck(body.content.trim());
+      const result = await this.geminiService.complianceCheck(
+        body.content.trim(),
+      );
       return buildSuccessResponse(result);
     } catch (error) {
       return this.toErrorResponse(error);
@@ -127,7 +135,7 @@ export class GeminiController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Get('agents')
   async getAgents() {
     try {
@@ -138,11 +146,16 @@ export class GeminiController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Patch('agents/:id')
-  async updateAgent(@Param('id') id: string, @Body() body: Record<string, unknown>) {
+  async updateAgent(
+    @Param('id') id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
     try {
-      return buildSuccessResponse(await this.geminiService.updateAgent(id, body));
+      return buildSuccessResponse(
+        await this.geminiService.updateAgent(id, body),
+      );
     } catch (error) {
       return this.toErrorResponse(error);
     }

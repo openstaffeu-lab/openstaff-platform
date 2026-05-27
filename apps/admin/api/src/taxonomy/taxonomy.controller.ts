@@ -12,10 +12,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import {
-  Permission,
-  TaxonomyType,
-} from '@prisma/client';
+import { Permission, TaxonomyType } from '@prisma/client';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PermissionsGuard } from '../access-control/permissions.guard';
 import { RequirePermissions } from '../access-control/permissions.decorator';
@@ -79,7 +76,11 @@ export class TaxonomyController {
   ) {
     try {
       return {
-        results: await this.taxonomyService.searchByType(TaxonomyType.NACE, query, limit),
+        results: await this.taxonomyService.searchByType(
+          TaxonomyType.NACE,
+          query,
+          limit,
+        ),
       };
     } catch (error) {
       logEndpointError('TaxonomyController.searchNace', error);
@@ -94,7 +95,11 @@ export class TaxonomyController {
   ) {
     try {
       return {
-        results: await this.taxonomyService.searchByType(TaxonomyType.ESCO, query, limit),
+        results: await this.taxonomyService.searchByType(
+          TaxonomyType.ESCO,
+          query,
+          limit,
+        ),
       };
     } catch (error) {
       logEndpointError('TaxonomyController.searchEsco', error);
@@ -109,7 +114,11 @@ export class TaxonomyController {
   ) {
     try {
       return {
-        results: await this.taxonomyService.searchByType(TaxonomyType.UNICLASS, query, limit),
+        results: await this.taxonomyService.searchByType(
+          TaxonomyType.UNICLASS,
+          query,
+          limit,
+        ),
       };
     } catch (error) {
       logEndpointError('TaxonomyController.searchUniclass', error);
@@ -144,7 +153,7 @@ export class TaxonomyController {
     }
   }
 
-  @RequirePermissions(Permission.READ)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Get('admin/import-options')
   async getImportOptions() {
@@ -156,7 +165,7 @@ export class TaxonomyController {
     }
   }
 
-  @RequirePermissions(Permission.READ)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Get('admin/imports')
   async listImportBatches() {
@@ -168,7 +177,7 @@ export class TaxonomyController {
     }
   }
 
-  @RequirePermissions(Permission.READ)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Get('admin/imports/:id')
   async getImportBatch(@Param('id') id: string) {
@@ -180,7 +189,7 @@ export class TaxonomyController {
     }
   }
 
-  @RequirePermissions(Permission.WRITE)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @UseInterceptors(FileInterceptor('file'))
   @Post('admin/imports/upload')
@@ -197,14 +206,11 @@ export class TaxonomyController {
       );
     } catch (error) {
       logEndpointError('TaxonomyController.uploadImport', error);
-      return buildErrorResponse(
-        'Import upload failed',
-        getErrorDetails(error),
-      );
+      return buildErrorResponse('Import upload failed', getErrorDetails(error));
     }
   }
 
-  @RequirePermissions(Permission.WRITE)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Post('admin/imports/:id/parse')
   async parseImport(@Param('id') id: string) {
@@ -212,11 +218,14 @@ export class TaxonomyController {
       return await this.taxonomyService.parseImport(id);
     } catch (error) {
       logEndpointError('TaxonomyController.parseImport', error);
-      return buildErrorResponse('Import parsing failed', getErrorDetails(error));
+      return buildErrorResponse(
+        'Import parsing failed',
+        getErrorDetails(error),
+      );
     }
   }
 
-  @RequirePermissions(Permission.WRITE)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Post('admin/imports/:id/validate')
   async validateImport(@Param('id') id: string) {
@@ -231,7 +240,7 @@ export class TaxonomyController {
     }
   }
 
-  @RequirePermissions(Permission.WRITE)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Post('admin/imports/:id/commit')
   async commitImport(@Param('id') id: string) {
@@ -243,7 +252,7 @@ export class TaxonomyController {
     }
   }
 
-  @RequirePermissions(Permission.READ)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Get('admin/browser')
   async browseEntries(
@@ -251,14 +260,17 @@ export class TaxonomyController {
     @Query('q') query?: string,
   ) {
     try {
-      return await this.taxonomyService.browseEntries(entityType ?? '', query ?? '');
+      return await this.taxonomyService.browseEntries(
+        entityType ?? '',
+        query ?? '',
+      );
     } catch (error) {
       logEndpointError('TaxonomyController.browseEntries', error);
       return buildInternalErrorResponse(error);
     }
   }
 
-  @RequirePermissions(Permission.WRITE)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Patch('admin/browser/:entityType/:id')
   async updateEntry(
@@ -270,7 +282,10 @@ export class TaxonomyController {
       return await this.taxonomyService.updateEntry(entityType, id, body);
     } catch (error) {
       logEndpointError('TaxonomyController.updateEntry', error);
-      return buildErrorResponse('Taxonomy update failed', getErrorDetails(error));
+      return buildErrorResponse(
+        'Taxonomy update failed',
+        getErrorDetails(error),
+      );
     }
   }
 }

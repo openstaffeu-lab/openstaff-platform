@@ -44,7 +44,10 @@ export class PayrollService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  async createCompensationAgreement(body: CreateCompensationAgreementDto, user: AuthUser) {
+  async createCompensationAgreement(
+    body: CreateCompensationAgreementDto,
+    user: AuthUser,
+  ) {
     const assignment = await this.prisma.workforceAssignment.findUnique({
       where: { id: body.workforceAssignmentId },
       include: this.assignmentInclude,
@@ -70,7 +73,9 @@ export class PayrollService {
         currency: body.currency.trim().toUpperCase(),
         baseRate: this.toDecimal(body.baseRate),
         overtimeRate:
-          body.overtimeRate !== undefined ? this.toDecimal(body.overtimeRate) : null,
+          body.overtimeRate !== undefined
+            ? this.toDecimal(body.overtimeRate)
+            : null,
         overtimeThresholdHours: body.overtimeThresholdHours ?? null,
         effectiveFrom,
         effectiveTo,
@@ -112,7 +117,9 @@ export class PayrollService {
     });
 
     if (existing) {
-      throw new BadRequestException('A payroll cycle already exists for this period.');
+      throw new BadRequestException(
+        'A payroll cycle already exists for this period.',
+      );
     }
 
     const created = await this.prisma.payrollCycle.create({
@@ -138,7 +145,10 @@ export class PayrollService {
     return this.toPayrollCycleResponse(created);
   }
 
-  async listPayrollCycles(_user: AuthUser, filters?: { status?: PayrollCycleStatus }) {
+  async listPayrollCycles(
+    _user: AuthUser,
+    filters?: { status?: PayrollCycleStatus },
+  ) {
     const cycles = await this.prisma.payrollCycle.findMany({
       where: filters?.status ? { status: filters.status } : undefined,
       include: this.payrollCycleInclude,
@@ -161,7 +171,11 @@ export class PayrollService {
     return this.toPayrollCycleResponse(cycle);
   }
 
-  async processPayrollCycle(id: string, body: ProcessPayrollCycleDto, user: AuthUser) {
+  async processPayrollCycle(
+    id: string,
+    body: ProcessPayrollCycleDto,
+    user: AuthUser,
+  ) {
     const cycle = await this.prisma.payrollCycle.findUnique({
       where: { id },
       include: {
@@ -181,7 +195,9 @@ export class PayrollService {
       cycle.status === PayrollCycleStatus.LOCKED ||
       cycle.status === PayrollCycleStatus.EXPORTED
     ) {
-      throw new BadRequestException('Locked or exported payroll cycles are immutable.');
+      throw new BadRequestException(
+        'Locked or exported payroll cycles are immutable.',
+      );
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
@@ -261,7 +277,9 @@ export class PayrollService {
             regularHours: settlementSnapshot.regularHours,
             overtimeHours: settlementSnapshot.overtimeHours,
             grossAmount: this.toDecimal(settlementSnapshot.grossAmount),
-            deductionsAmount: this.toDecimal(settlementSnapshot.deductionsAmount),
+            deductionsAmount: this.toDecimal(
+              settlementSnapshot.deductionsAmount,
+            ),
             netAmount: this.toDecimal(settlementSnapshot.netAmount),
             currency: settlementSnapshot.currency,
             status: SettlementStatus.PENDING,
@@ -384,7 +402,9 @@ export class PayrollService {
     this.assertSettlementBillingEligibility(settlement);
 
     if (settlement.billingLink) {
-      throw new BadRequestException('A billing event already exists for this payroll settlement.');
+      throw new BadRequestException(
+        'A billing event already exists for this payroll settlement.',
+      );
     }
 
     const previousBillingLinkStatus = 'NOT_BILLED';
@@ -462,7 +482,8 @@ export class PayrollService {
 
     const eligibleSettlements = cycle.settlements.filter(
       (settlement) =>
-        this.isBillableSettlementStatus(settlement.status) && !settlement.billingLink,
+        this.isBillableSettlementStatus(settlement.status) &&
+        !settlement.billingLink,
     );
 
     const createdSettlementIds: string[] = [];
@@ -472,7 +493,9 @@ export class PayrollService {
       createdSettlementIds.push(settlement.id);
     }
 
-    const refreshedLinks = await this.listBillingLinks(user, { payrollCycleId });
+    const refreshedLinks = await this.listBillingLinks(user, {
+      payrollCycleId,
+    });
 
     await this.auditService.log({
       actorUserId: user.sub,
@@ -523,7 +546,11 @@ export class PayrollService {
     return links.map((link) => this.toWorkforceBillingLinkResponse(link));
   }
 
-  async approveSettlement(id: string, body: ApprovePayrollSettlementDto, user: AuthUser) {
+  async approveSettlement(
+    id: string,
+    body: ApprovePayrollSettlementDto,
+    user: AuthUser,
+  ) {
     const settlement = await this.prisma.payrollSettlement.findUnique({
       where: { id },
       include: this.payrollSettlementInclude,
@@ -538,7 +565,9 @@ export class PayrollService {
     }
 
     if (settlement.status !== SettlementStatus.PENDING) {
-      throw new BadRequestException('Only pending settlements can be approved.');
+      throw new BadRequestException(
+        'Only pending settlements can be approved.',
+      );
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
@@ -594,7 +623,11 @@ export class PayrollService {
     return this.toPayrollSettlementResponse(updated);
   }
 
-  async rejectSettlement(id: string, body: RejectPayrollSettlementDto, user: AuthUser) {
+  async rejectSettlement(
+    id: string,
+    body: RejectPayrollSettlementDto,
+    user: AuthUser,
+  ) {
     const settlement = await this.prisma.payrollSettlement.findUnique({
       where: { id },
       include: this.payrollSettlementInclude,
@@ -608,14 +641,18 @@ export class PayrollService {
       settlement.payrollCycle.status === PayrollCycleStatus.LOCKED ||
       settlement.payrollCycle.status === PayrollCycleStatus.EXPORTED
     ) {
-      throw new BadRequestException('Locked or exported payroll cycles are immutable.');
+      throw new BadRequestException(
+        'Locked or exported payroll cycles are immutable.',
+      );
     }
 
     if (
       settlement.status !== SettlementStatus.PENDING &&
       settlement.status !== SettlementStatus.APPROVED
     ) {
-      throw new BadRequestException('Only pending or approved settlements can be rejected.');
+      throw new BadRequestException(
+        'Only pending or approved settlements can be rejected.',
+      );
     }
 
     const updated = await this.prisma.payrollSettlement.update({
@@ -664,7 +701,8 @@ export class PayrollService {
       userId: updated.userId,
       category: NotificationCategory.PAYROLL,
       title: 'Payroll settlement rejected',
-      message: 'Your payroll settlement needs review before payment preparation can continue.',
+      message:
+        'Your payroll settlement needs review before payment preparation can continue.',
       relatedEntityType: 'PayrollSettlement',
       relatedEntityId: updated.id,
       metadata: {
@@ -719,7 +757,9 @@ export class PayrollService {
       compensationAgreements: agreements.map((item) =>
         this.toCompensationAgreementResponse(item),
       ),
-      settlements: settlements.map((item) => this.toPayrollSettlementResponse(item)),
+      settlements: settlements.map((item) =>
+        this.toPayrollSettlementResponse(item),
+      ),
       cycles: cycles.map((item) => this.toPayrollCycleResponse(item)),
     };
   }
@@ -744,10 +784,11 @@ export class PayrollService {
       return;
     }
 
-    const allApproved = settlements.every((item) =>
-      item.status === SettlementStatus.APPROVED ||
-      item.status === SettlementStatus.READY_FOR_PAYMENT ||
-      item.status === SettlementStatus.PAID,
+    const allApproved = settlements.every(
+      (item) =>
+        item.status === SettlementStatus.APPROVED ||
+        item.status === SettlementStatus.READY_FOR_PAYMENT ||
+        item.status === SettlementStatus.PAID,
     );
 
     if (!allApproved) {
@@ -802,7 +843,9 @@ export class PayrollService {
 
     const processed = new Set<string>();
     for (const settlement of settlements) {
-      for (const id of this.extractTimesheetIds(settlement.approvedTimesheetIds)) {
+      for (const id of this.extractTimesheetIds(
+        settlement.approvedTimesheetIds,
+      )) {
         processed.add(id);
       }
     }
@@ -831,7 +874,9 @@ export class PayrollService {
             agreement.effectiveFrom <= periodEnd &&
             (!agreement.effectiveTo || agreement.effectiveTo >= periodStart),
         )
-        .sort((a, b) => b.effectiveFrom.getTime() - a.effectiveFrom.getTime())[0] ?? null
+        .sort(
+          (a, b) => b.effectiveFrom.getTime() - a.effectiveFrom.getTime(),
+        )[0] ?? null
     );
   }
 
@@ -847,7 +892,10 @@ export class PayrollService {
     periodStart: Date,
     periodEnd: Date,
   ) {
-    const totalHours = timesheets.reduce((sum, item) => sum + item.totalHours, 0);
+    const totalHours = timesheets.reduce(
+      (sum, item) => sum + item.totalHours,
+      0,
+    );
     const explicitOvertimeHours = timesheets.reduce(
       (sum, item) => sum + item.overtimeHours,
       0,
@@ -858,12 +906,18 @@ export class PayrollService {
     const overtimeHours = Number(
       Math.max(explicitOvertimeHours, thresholdOvertime).toFixed(2),
     );
-    const regularHours = Number(Math.max(0, totalHours - overtimeHours).toFixed(2));
-    const overtimeRate = this.toNumber(agreement.overtimeRate ?? agreement.baseRate);
+    const regularHours = Number(
+      Math.max(0, totalHours - overtimeHours).toFixed(2),
+    );
+    const overtimeRate = this.toNumber(
+      agreement.overtimeRate ?? agreement.baseRate,
+    );
     const baseRate = this.toNumber(agreement.baseRate);
     const uniqueWorkDays = new Set(
       timesheets.flatMap((item) =>
-        item.entries.map((entry: any) => entry.workDate.toISOString().slice(0, 10)),
+        item.entries.map((entry: any) =>
+          entry.workDate.toISOString().slice(0, 10),
+        ),
       ),
     ).size;
 
@@ -1012,7 +1066,9 @@ export class PayrollService {
       compensationType: agreement.compensationType,
       currency: agreement.currency,
       baseRate: this.toNumber(agreement.baseRate),
-      overtimeRate: agreement.overtimeRate ? this.toNumber(agreement.overtimeRate) : null,
+      overtimeRate: agreement.overtimeRate
+        ? this.toNumber(agreement.overtimeRate)
+        : null,
       overtimeThresholdHours: agreement.overtimeThresholdHours,
       effectiveFrom: agreement.effectiveFrom,
       effectiveTo: agreement.effectiveTo,
@@ -1039,12 +1095,15 @@ export class PayrollService {
       createdAt: cycle.createdAt,
       updatedAt: cycle.updatedAt,
       settlementCount: settlements.length,
-      pendingSettlementCount: settlements.filter((item: any) => item.status === 'PENDING')
-        .length,
+      pendingSettlementCount: settlements.filter(
+        (item: any) => item.status === 'PENDING',
+      ).length,
       readyForPaymentCount: settlements.filter(
         (item: any) => item.status === 'READY_FOR_PAYMENT',
       ).length,
-      settlements: settlements.map((item: any) => this.toPayrollSettlementResponse(item)),
+      settlements: settlements.map((item: any) =>
+        this.toPayrollSettlementResponse(item),
+      ),
     };
   }
 
@@ -1057,20 +1116,28 @@ export class PayrollService {
         return checkIn >= cycleStart && checkIn <= cycleEnd;
       }) ?? [];
 
-    const attendanceHours = attendanceRecords.reduce((sum: number, item: any) => {
-      if (!item.checkOutAt) {
-        return sum;
-      }
+    const attendanceHours = attendanceRecords.reduce(
+      (sum: number, item: any) => {
+        if (!item.checkOutAt) {
+          return sum;
+        }
 
-      return (
-        sum +
-        (item.checkOutAt.getTime() - item.checkInAt.getTime()) / 1000 / 60 / 60
-      );
-    }, 0);
+        return (
+          sum +
+          (item.checkOutAt.getTime() - item.checkInAt.getTime()) /
+            1000 /
+            60 /
+            60
+        );
+      },
+      0,
+    );
 
     return {
       id: settlement.id,
-      approvedTimesheetIds: this.extractTimesheetIds(settlement.approvedTimesheetIds),
+      approvedTimesheetIds: this.extractTimesheetIds(
+        settlement.approvedTimesheetIds,
+      ),
       regularHours: settlement.regularHours,
       overtimeHours: settlement.overtimeHours,
       grossAmount: this.toNumber(settlement.grossAmount),

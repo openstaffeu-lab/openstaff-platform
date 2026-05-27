@@ -27,6 +27,15 @@ export class ProjectAIInterpretationsController {
     return this.projectAIInterpretationsService.findOne(projectId, req.user);
   }
 
+  @UseGuards(JwtGuard)
+  @Get('history')
+  async findHistory(@Param('projectId') projectId: string, @Req() req: any) {
+    return this.projectAIInterpretationsService.findHistory(
+      projectId,
+      req.user,
+    );
+  }
+
   @UseGuards(
     JwtGuard,
     new RolesGuard(['ADMIN', 'EMPLOYER', 'CONTRACTOR', 'GENERAL_CONTRACTOR']),
@@ -40,7 +49,9 @@ export class ProjectAIInterpretationsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectAIInterpretationsService.upsert(projectId, body, user);
@@ -59,7 +70,9 @@ export class ProjectAIInterpretationsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectAIInterpretationsService.apply(projectId, body, user);

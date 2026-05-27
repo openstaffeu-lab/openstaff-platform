@@ -9,7 +9,7 @@ type AuthenticatedUser = {
 @Injectable()
 export class ProjectAccessPolicy {
   isAdmin(user: AuthenticatedUser) {
-    return user.role === 'ADMIN';
+    return user.role === 'ADMIN' || user.role === 'SUPERADMIN';
   }
 
   assertCanReadProject(user: AuthenticatedUser, projectOwnerId: string) {
@@ -28,7 +28,9 @@ export class ProjectAccessPolicy {
     }
 
     if (user.sub !== projectOwnerId) {
-      throw new ForbiddenException('You do not have access to modify this project');
+      throw new ForbiddenException(
+        'You do not have access to modify this project',
+      );
     }
   }
 

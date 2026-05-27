@@ -9,7 +9,13 @@ import { PublicPostsController } from './public-posts.controller';
 import { PublicPostsService } from './public-posts.service';
 
 @Module({
-  imports: [PrismaModule, AuthModule, AccessControlModule, AuditModule, NotificationModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    AccessControlModule,
+    AuditModule,
+    NotificationModule,
+  ],
   controllers: [PublicPostsController],
   providers: [PublicPostsService, RateLimitGuard],
   exports: [PublicPostsService],

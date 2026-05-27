@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   OnboardingStatus,
   NotificationCategory,
@@ -36,7 +40,11 @@ type CompanyLookupResponse = {
   providerLabel: string;
   lookupTimestamp: string;
   verifiedSource: boolean;
-  lookupStatus: 'matched' | 'manual_required' | 'invalid' | 'provider_unavailable';
+  lookupStatus:
+    | 'matched'
+    | 'manual_required'
+    | 'invalid'
+    | 'provider_unavailable';
   verificationStatus: 'unverified' | 'provider_matched';
   explanation: string;
   lookupMetadata?: Record<string, unknown> | null;
@@ -72,7 +80,9 @@ export class OnboardingService {
     const context = await this.ensureOnboardingContext(userId);
     return {
       currentStep: context.onboardingSession.currentStep,
-      completedSteps: this.parseCompletedSteps(context.onboardingSession.completedSteps),
+      completedSteps: this.parseCompletedSteps(
+        context.onboardingSession.completedSteps,
+      ),
       completionPercent: context.onboardingSession.completionPercent,
       status: context.onboardingSession.status,
       onboardingCompletedAt: context.identityProfile.onboardingCompletedAt,
@@ -147,7 +157,9 @@ export class OnboardingService {
         data: {
           companyName: body.companyName.trim(),
           legalName: this.normalizeNullableString(body.legalName),
-          registrationNumber: this.normalizeNullableString(body.registrationNumber),
+          registrationNumber: this.normalizeNullableString(
+            body.registrationNumber,
+          ),
           vatId: this.normalizeNullableString(body.vatId),
           country: this.normalizeNullableString(body.country),
           city: this.normalizeNullableString(body.city),
@@ -164,7 +176,9 @@ export class OnboardingService {
           ownerUserId: userId,
           companyName: body.companyName.trim(),
           legalName: this.normalizeNullableString(body.legalName),
-          registrationNumber: this.normalizeNullableString(body.registrationNumber),
+          registrationNumber: this.normalizeNullableString(
+            body.registrationNumber,
+          ),
           vatId: this.normalizeNullableString(body.vatId),
           country: this.normalizeNullableString(body.country),
           city: this.normalizeNullableString(body.city),
@@ -204,7 +218,9 @@ export class OnboardingService {
   async updateOnboardingSteps(userId: string, body: UpdateOnboardingStepDto) {
     const context = await this.ensureOnboardingContext(userId);
     const before = this.toOnboardingResponse(context);
-    const completedSteps = new Set(this.parseCompletedSteps(context.onboardingSession.completedSteps));
+    const completedSteps = new Set(
+      this.parseCompletedSteps(context.onboardingSession.completedSteps),
+    );
 
     if (body.completedStep?.trim()) {
       completedSteps.add(body.completedStep.trim());
@@ -220,7 +236,8 @@ export class OnboardingService {
     await this.prisma.onboardingSession.update({
       where: { userId },
       data: {
-        currentStep: body.currentStep?.trim() || context.onboardingSession.currentStep,
+        currentStep:
+          body.currentStep?.trim() || context.onboardingSession.currentStep,
         completedSteps: Array.from(completedSteps),
         ...(body.status ? { status: body.status } : {}),
         ...(body.completionPercent !== undefined
@@ -354,7 +371,10 @@ export class OnboardingService {
         const identity = session.user.identityProfile;
         const company = session.user.identityCompanyProfiles[0] ?? null;
 
-        if (filters?.onboardingStatus && session.status !== filters.onboardingStatus) {
+        if (
+          filters?.onboardingStatus &&
+          session.status !== filters.onboardingStatus
+        ) {
           return false;
         }
 
@@ -383,7 +403,9 @@ export class OnboardingService {
       .map((session) => this.toAdminSessionResponse(session));
   }
 
-  async getRegistrationDefaults(request?: any): Promise<RegistrationDefaultsResponse> {
+  async getRegistrationDefaults(
+    request?: any,
+  ): Promise<RegistrationDefaultsResponse> {
     const acceptLanguage = this.getAcceptLanguage(request);
     const timezoneHeader = this.firstHeaderValue(request, 'x-timezone');
     const countryHeader =
@@ -396,7 +418,9 @@ export class OnboardingService {
       this.firstHeaderValue(request, 'x-appengine-city');
     const countryCode = this.normalizeCountryCode(countryHeader) ?? 'RO';
     const language =
-      (countryCode === 'RO' ? 'ro' : acceptLanguage?.split('-')[0]?.toLowerCase()) || 'ro';
+      (countryCode === 'RO'
+        ? 'ro'
+        : acceptLanguage?.split('-')[0]?.toLowerCase()) || 'ro';
     const timezone = timezoneHeader?.trim() || 'Europe/Bucharest';
     const city = this.normalizeNullableString(cityHeader);
 
@@ -434,9 +458,14 @@ export class OnboardingService {
     const lookupTimestamp = new Date().toISOString();
     const countryCode =
       this.normalizeCountryCode(input.countryCode) ||
-      this.normalizeCountryCode(this.firstHeaderValue(input.request, 'x-country-code')) ||
+      this.normalizeCountryCode(
+        this.firstHeaderValue(input.request, 'x-country-code'),
+      ) ||
       'RO';
-    const normalizedFiscalCode = this.normalizeFiscalCode(rawFiscalCode, countryCode);
+    const normalizedFiscalCode = this.normalizeFiscalCode(
+      rawFiscalCode,
+      countryCode,
+    );
 
     let result: CompanyLookupResponse;
 
@@ -451,7 +480,8 @@ export class OnboardingService {
         verifiedSource: false,
         lookupStatus: 'invalid',
         verificationStatus: 'unverified',
-        explanation: 'The fiscal or VAT code format is invalid. Continue manually if needed.',
+        explanation:
+          'The fiscal or VAT code format is invalid. Continue manually if needed.',
         lookupMetadata: {
           countryCode,
           stage: 'validation',
@@ -462,7 +492,10 @@ export class OnboardingService {
       return result;
     }
 
-    const trustedMatch = this.lookupKnownCompany(normalizedFiscalCode, countryCode);
+    const trustedMatch = this.lookupKnownCompany(
+      normalizedFiscalCode,
+      countryCode,
+    );
     if (trustedMatch) {
       result = {
         rawFiscalCode,
@@ -476,9 +509,16 @@ export class OnboardingService {
 
     const liveProviderMatch =
       countryCode === 'RO'
-        ? await this.lookupRomanianCompany(normalizedFiscalCode, lookupTimestamp)
+        ? await this.lookupRomanianCompany(
+            normalizedFiscalCode,
+            lookupTimestamp,
+          )
         : this.isEuropeanUnionCountry(countryCode)
-          ? await this.lookupEuropeanVatCompany(normalizedFiscalCode, countryCode, lookupTimestamp)
+          ? await this.lookupEuropeanVatCompany(
+              normalizedFiscalCode,
+              countryCode,
+              lookupTimestamp,
+            )
           : null;
 
     if (liveProviderMatch) {
@@ -687,12 +727,16 @@ export class OnboardingService {
 
     const identity = context.identityProfile;
     const company = context.identityCompanyProfiles[0] ?? null;
-    const completedSteps = this.parseCompletedSteps(context.onboardingSession.completedSteps);
+    const completedSteps = this.parseCompletedSteps(
+      context.onboardingSession.completedSteps,
+    );
     const identityCase = (context.verificationCases ?? []).find(
-      (item: any) => item.subjectType === VerificationCaseSubjectType.IDENTITY_PROFILE,
+      (item: any) =>
+        item.subjectType === VerificationCaseSubjectType.IDENTITY_PROFILE,
     );
     const companyCase = (context.verificationCases ?? []).find(
-      (item: any) => item.subjectType === VerificationCaseSubjectType.COMPANY_PROFILE,
+      (item: any) =>
+        item.subjectType === VerificationCaseSubjectType.COMPANY_PROFILE,
     );
     const linksCount = [
       identity.website,
@@ -751,7 +795,8 @@ export class OnboardingService {
       data: {
         completionPercent,
         status: nextStatus,
-        completedAt: nextStatus === OnboardingStatus.COMPLETED ? new Date() : null,
+        completedAt:
+          nextStatus === OnboardingStatus.COMPLETED ? new Date() : null,
       },
     });
   }
@@ -765,7 +810,9 @@ export class OnboardingService {
       },
     });
 
-    const completedSteps = new Set(this.parseCompletedSteps(session?.completedSteps ?? null));
+    const completedSteps = new Set(
+      this.parseCompletedSteps(session?.completedSteps ?? null),
+    );
     completedSteps.add(completedStep);
 
     await this.prisma.onboardingSession.update({
@@ -797,13 +844,18 @@ export class OnboardingService {
     });
   }
 
-  private resolveDisplayName(body: UpsertIdentityProfileDto, context: OnboardingContext) {
+  private resolveDisplayName(
+    body: UpsertIdentityProfileDto,
+    context: OnboardingContext,
+  ) {
     const explicit = body.displayName?.trim();
     if (explicit) {
       return explicit;
     }
 
-    const combined = [body.firstName?.trim(), body.lastName?.trim()].filter(Boolean).join(' ');
+    const combined = [body.firstName?.trim(), body.lastName?.trim()]
+      .filter(Boolean)
+      .join(' ');
     if (combined) {
       return combined;
     }
@@ -854,7 +906,10 @@ export class OnboardingService {
     }
 
     if (Array.isArray(value)) {
-      return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+      return value.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      );
     }
 
     return [];
@@ -893,12 +948,16 @@ export class OnboardingService {
 
   private toOnboardingResponse(context: NonNullable<OnboardingContext>) {
     const company = context.identityCompanyProfiles[0] ?? null;
-    const completedSteps = this.parseCompletedSteps(context.onboardingSession.completedSteps);
+    const completedSteps = this.parseCompletedSteps(
+      context.onboardingSession.completedSteps,
+    );
     const identityCase = (context.verificationCases ?? []).find(
-      (item: any) => item.subjectType === VerificationCaseSubjectType.IDENTITY_PROFILE,
+      (item: any) =>
+        item.subjectType === VerificationCaseSubjectType.IDENTITY_PROFILE,
     );
     const companyCase = (context.verificationCases ?? []).find(
-      (item: any) => item.subjectType === VerificationCaseSubjectType.COMPANY_PROFILE,
+      (item: any) =>
+        item.subjectType === VerificationCaseSubjectType.COMPANY_PROFILE,
     );
 
     return {
@@ -921,7 +980,8 @@ export class OnboardingService {
         portfolioUrl: context.identityProfile.portfolioUrl,
         verificationStatus: context.identityProfile.verificationStatus,
         onboardingCompletedAt: context.identityProfile.onboardingCompletedAt,
-        profileCompletionPercent: context.identityProfile.profileCompletionPercent,
+        profileCompletionPercent:
+          context.identityProfile.profileCompletionPercent,
         createdAt: context.identityProfile.createdAt,
         updatedAt: context.identityProfile.updatedAt,
       },
@@ -959,7 +1019,8 @@ export class OnboardingService {
       completionPercent: context.onboardingSession.completionPercent,
       verificationStates: {
         identityProfile: context.identityProfile.verificationStatus,
-        companyProfile: company?.verificationStatus ?? VerificationStatus.UNVERIFIED,
+        companyProfile:
+          company?.verificationStatus ?? VerificationStatus.UNVERIFIED,
       },
       verificationSummary: {
         identityCase: this.toVerificationCaseSummary(identityCase),
@@ -1121,9 +1182,17 @@ export class OnboardingService {
     });
   }
 
-  private async emitProfileCompletedIfNeeded(before: any, after: any, userId: string) {
-    const beforePercent = Number(before?.identityProfile?.profileCompletionPercent ?? 0);
-    const afterPercent = Number(after?.identityProfile?.profileCompletionPercent ?? 0);
+  private async emitProfileCompletedIfNeeded(
+    before: any,
+    after: any,
+    userId: string,
+  ) {
+    const beforePercent = Number(
+      before?.identityProfile?.profileCompletionPercent ?? 0,
+    );
+    const afterPercent = Number(
+      after?.identityProfile?.profileCompletionPercent ?? 0,
+    );
 
     if (beforePercent >= 80 || afterPercent < 80) {
       return;
@@ -1187,7 +1256,9 @@ export class OnboardingService {
     }
 
     if (this.isEuropeanUnionCountry(countryCode)) {
-      const normalized = compact.startsWith(countryCode) ? compact : `${countryCode}${compact}`;
+      const normalized = compact.startsWith(countryCode)
+        ? compact
+        : `${countryCode}${compact}`;
       return /^[A-Z]{2}[A-Z0-9]{4,14}$/.test(normalized) ? normalized : '';
     }
 
@@ -1249,10 +1320,16 @@ export class OnboardingService {
   private lookupKnownCompany(
     normalizedFiscalCode: string,
     countryCode: string,
-  ): Omit<CompanyLookupResponse, 'rawFiscalCode' | 'normalizedFiscalCode' | 'countryCode'> | null {
+  ): Omit<
+    CompanyLookupResponse,
+    'rawFiscalCode' | 'normalizedFiscalCode' | 'countryCode'
+  > | null {
     const knownCompanies: Record<
       string,
-      Omit<CompanyLookupResponse, 'rawFiscalCode' | 'normalizedFiscalCode' | 'countryCode'>
+      Omit<
+        CompanyLookupResponse,
+        'rawFiscalCode' | 'normalizedFiscalCode' | 'countryCode'
+      >
     > = {
       RO12345678: {
         provider: 'ro-baseline',
@@ -1311,8 +1388,14 @@ export class OnboardingService {
     return knownCompanies[normalizedFiscalCode] ?? null;
   }
 
-  private async lookupRomanianCompany(normalizedFiscalCode: string, lookupTimestamp: string) {
-    const providerResponse = await this.lookupRomanianProvider(normalizedFiscalCode, lookupTimestamp);
+  private async lookupRomanianCompany(
+    normalizedFiscalCode: string,
+    lookupTimestamp: string,
+  ) {
+    const providerResponse = await this.lookupRomanianProvider(
+      normalizedFiscalCode,
+      lookupTimestamp,
+    );
     if (providerResponse) {
       return providerResponse;
     }
@@ -1321,10 +1404,17 @@ export class OnboardingService {
       return null;
     }
 
-    return this.lookupEuropeanVatCompany(normalizedFiscalCode, 'RO', lookupTimestamp);
+    return this.lookupEuropeanVatCompany(
+      normalizedFiscalCode,
+      'RO',
+      lookupTimestamp,
+    );
   }
 
-  private async lookupRomanianProvider(normalizedFiscalCode: string, lookupTimestamp: string) {
+  private async lookupRomanianProvider(
+    normalizedFiscalCode: string,
+    lookupTimestamp: string,
+  ) {
     const providerUrl =
       process.env.ROMANIAN_COMPANY_LOOKUP_URL?.trim() ||
       process.env.COMPANY_LOOKUP_PROVIDER_URL?.trim() ||
@@ -1372,7 +1462,10 @@ export class OnboardingService {
           countryCode: 'RO',
         },
         company,
-      } satisfies Omit<CompanyLookupResponse, 'rawFiscalCode' | 'normalizedFiscalCode' | 'countryCode'>;
+      } satisfies Omit<
+        CompanyLookupResponse,
+        'rawFiscalCode' | 'normalizedFiscalCode' | 'countryCode'
+      >;
     } catch {
       return null;
     }
@@ -1385,8 +1478,11 @@ export class OnboardingService {
     const legalName = this.normalizeNullableString(
       value?.legalName ?? value?.denumire,
     );
-    const vatId = this.normalizeNullableString(value?.vatId ?? value?.cui ?? value?.cif);
-    const country = this.normalizeNullableString(value?.country ?? value?.tara) ?? 'Romania';
+    const vatId = this.normalizeNullableString(
+      value?.vatId ?? value?.cui ?? value?.cif,
+    );
+    const country =
+      this.normalizeNullableString(value?.country ?? value?.tara) ?? 'Romania';
 
     if (!companyName && !legalName) {
       return null;
@@ -1398,11 +1494,15 @@ export class OnboardingService {
       registrationNumber: this.normalizeNullableString(
         value?.registrationNumber ?? value?.nrRegCom ?? value?.registrationId,
       ),
-      vatId: vatId ? this.normalizeFiscalCode(vatId, 'RO') ?? vatId : null,
+      vatId: vatId ? (this.normalizeFiscalCode(vatId, 'RO') ?? vatId) : null,
       country,
       city: this.normalizeNullableString(value?.city ?? value?.localitate),
-      addressLine1: this.normalizeNullableString(value?.addressLine1 ?? value?.address ?? value?.adresa),
-      postalCode: this.normalizeNullableString(value?.postalCode ?? value?.codPostal),
+      addressLine1: this.normalizeNullableString(
+        value?.addressLine1 ?? value?.address ?? value?.adresa,
+      ),
+      postalCode: this.normalizeNullableString(
+        value?.postalCode ?? value?.codPostal,
+      ),
       vatPayer:
         typeof value?.vatPayer === 'boolean'
           ? value.vatPayer
@@ -1410,7 +1510,9 @@ export class OnboardingService {
             ? value.tva
             : null,
       vatMode: 'domestic',
-      legalStatus: this.normalizeNullableString(value?.legalStatus ?? value?.status),
+      legalStatus: this.normalizeNullableString(
+        value?.legalStatus ?? value?.status,
+      ),
     };
   }
 
@@ -1471,11 +1573,16 @@ export class OnboardingService {
             vatMode: countryCode === 'RO' ? 'domestic' : 'eu',
             legalStatus: null,
           },
-        } satisfies Omit<CompanyLookupResponse, 'rawFiscalCode' | 'normalizedFiscalCode' | 'countryCode'>;
+        } satisfies Omit<
+          CompanyLookupResponse,
+          'rawFiscalCode' | 'normalizedFiscalCode' | 'countryCode'
+        >;
       }
 
       const name = this.cleanProviderText(this.extractXmlTag(xml, 'name'));
-      const address = this.cleanProviderText(this.extractXmlTag(xml, 'address'));
+      const address = this.cleanProviderText(
+        this.extractXmlTag(xml, 'address'),
+      );
       const city = address?.split(/\s*,\s*/).slice(-1)[0] ?? null;
 
       return {
@@ -1490,7 +1597,9 @@ export class OnboardingService {
         lookupMetadata: {
           source: 'vies',
           countryCode,
-          requestDate: this.cleanProviderText(this.extractXmlTag(xml, 'requestDate')),
+          requestDate: this.cleanProviderText(
+            this.extractXmlTag(xml, 'requestDate'),
+          ),
         },
         company: {
           companyName: name,
@@ -1505,7 +1614,10 @@ export class OnboardingService {
           vatMode: countryCode === 'RO' ? 'domestic' : 'eu',
           legalStatus: 'vat_valid',
         },
-      } satisfies Omit<CompanyLookupResponse, 'rawFiscalCode' | 'normalizedFiscalCode' | 'countryCode'>;
+      } satisfies Omit<
+        CompanyLookupResponse,
+        'rawFiscalCode' | 'normalizedFiscalCode' | 'countryCode'
+      >;
     } catch {
       return null;
     }
@@ -1543,7 +1655,9 @@ export class OnboardingService {
   }
 
   private extractXmlTag(xml: string, tagName: string) {
-    const match = xml.match(new RegExp(`<[^:>]*:?${tagName}>([\\s\\S]*?)</[^:>]*:?${tagName}>`, 'i'));
+    const match = xml.match(
+      new RegExp(`<[^:>]*:?${tagName}>([\\s\\S]*?)</[^:>]*:?${tagName}>`, 'i'),
+    );
     return match?.[1]?.trim() ?? null;
   }
 
@@ -1552,10 +1666,7 @@ export class OnboardingService {
       return null;
     }
 
-    const cleaned = value
-      .replace(/-+$/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+    const cleaned = value.replace(/-+$/g, '').replace(/\s+/g, ' ').trim();
 
     return cleaned && cleaned !== '---' ? cleaned : null;
   }

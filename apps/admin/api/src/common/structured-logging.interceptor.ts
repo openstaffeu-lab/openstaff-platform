@@ -24,7 +24,10 @@ export class StructuredLoggingInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap({
         next: () => {
-          if (!this.runtimeConfig.isDebugLogsEnabled() && !this.runtimeConfig.isProduction) {
+          if (
+            !this.runtimeConfig.isDebugLogsEnabled() &&
+            !this.runtimeConfig.isProduction
+          ) {
             return;
           }
 

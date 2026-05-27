@@ -34,7 +34,8 @@ export class FinancialRulesService {
     const vatRate = context.taxRule?.vatRate ?? context.country?.vatRate ?? 0;
     const withholdingRate = context.taxRule?.withholdingRate ?? 0;
     const socialContributionRate = context.taxRule?.socialContributionRate ?? 0;
-    const employerContributionRate = context.taxRule?.employerContributionRate ?? 0;
+    const employerContributionRate =
+      context.taxRule?.employerContributionRate ?? 0;
     const currencyCode =
       context.taxRule?.currencyCode ??
       context.proposalCurrencyCode ??
@@ -99,7 +100,8 @@ export class FinancialRulesService {
           assumptions: {
             baseAmountSource: 'proposal.priceCents',
             benefitsPlaceholderRate: b2c.benefitsPlaceholderRate,
-            workerNetDefinition: 'workerGross - withholding - socialContribution',
+            workerNetDefinition:
+              'workerGross - withholding - socialContribution',
             escrowDefinition: 'employerCost + platformFee',
           },
           b2c,
@@ -129,7 +131,8 @@ export class FinancialRulesService {
         platformFeeRate,
         assumptions: {
           baseAmountSource: 'proposal.priceCents',
-          mixedTopLevel: 'Top-level commercial totals follow B2B assumptions while worker pay follows B2C assumptions.',
+          mixedTopLevel:
+            'Top-level commercial totals follow B2B assumptions while worker pay follows B2C assumptions.',
         },
         mixedAssumptions: {
           b2b,
@@ -139,9 +142,16 @@ export class FinancialRulesService {
     };
   }
 
-  private calculateB2B(baseAmountCents: number, vatRate: number, platformFeeRate: number) {
+  private calculateB2B(
+    baseAmountCents: number,
+    vatRate: number,
+    platformFeeRate: number,
+  ) {
     const vatAmountCents = this.multiplyRate(baseAmountCents, vatRate);
-    const platformFeeCents = this.multiplyRate(baseAmountCents, platformFeeRate);
+    const platformFeeCents = this.multiplyRate(
+      baseAmountCents,
+      platformFeeRate,
+    );
     const netAmountCents = baseAmountCents + vatAmountCents;
     const escrowRequiredAmountCents = netAmountCents + platformFeeCents;
 
@@ -164,7 +174,10 @@ export class FinancialRulesService {
     platformFeeRate: number,
   ) {
     const benefitsPlaceholderRate = 5;
-    const withholdingAmountCents = this.multiplyRate(baseAmountCents, withholdingRate);
+    const withholdingAmountCents = this.multiplyRate(
+      baseAmountCents,
+      withholdingRate,
+    );
     const socialContributionAmountCents = this.multiplyRate(
       baseAmountCents,
       socialContributionRate,
@@ -177,11 +190,16 @@ export class FinancialRulesService {
       baseAmountCents,
       benefitsPlaceholderRate,
     );
-    const platformFeeCents = this.multiplyRate(baseAmountCents, platformFeeRate);
+    const platformFeeCents = this.multiplyRate(
+      baseAmountCents,
+      platformFeeRate,
+    );
     const workerNetPayCents =
       baseAmountCents - withholdingAmountCents - socialContributionAmountCents;
     const employerCostCents =
-      baseAmountCents + employerContributionAmountCents + benefitsPlaceholderCents;
+      baseAmountCents +
+      employerContributionAmountCents +
+      benefitsPlaceholderCents;
 
     return {
       workerGrossPayCents: baseAmountCents,

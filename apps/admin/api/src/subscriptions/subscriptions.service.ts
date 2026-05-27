@@ -52,7 +52,9 @@ export class SubscriptionsService {
     });
 
     return plans.map((plan) => {
-      const { features, contactLimit } = this.mapEntitlements(plan.entitlements);
+      const { features, contactLimit } = this.mapEntitlements(
+        plan.entitlements,
+      );
 
       return {
         code: plan.code,
@@ -90,7 +92,9 @@ export class SubscriptionsService {
       return null;
     }
 
-    const { features, contactLimit } = this.mapEntitlements(subscription.plan.entitlements);
+    const { features, contactLimit } = this.mapEntitlements(
+      subscription.plan.entitlements,
+    );
     const usageMeter = await this.prisma.usageMeter.findFirst({
       where: {
         userId,
@@ -144,7 +148,9 @@ export class SubscriptionsService {
     });
   }
 
-  async resolveOptionalUserFromAuthorizationHeader(authorizationHeader?: string) {
+  async resolveOptionalUserFromAuthorizationHeader(
+    authorizationHeader?: string,
+  ) {
     if (!authorizationHeader?.startsWith('Bearer ')) {
       return null;
     }
@@ -206,7 +212,10 @@ export class SubscriptionsService {
       },
     });
 
-    if (!requestedPlan || requestedPlan.status !== SubscriptionPlanStatus.ACTIVE) {
+    if (
+      !requestedPlan ||
+      requestedPlan.status !== SubscriptionPlanStatus.ACTIVE
+    ) {
       throw new BadRequestException('Requested plan does not exist.');
     }
 
@@ -217,7 +226,9 @@ export class SubscriptionsService {
     const resolvedEmail = authUser?.email ?? input.email?.trim();
 
     if (!resolvedEmail) {
-      throw new BadRequestException('Email is required for unauthenticated upgrade requests.');
+      throw new BadRequestException(
+        'Email is required for unauthenticated upgrade requests.',
+      );
     }
 
     const currentSubscription = authUser
@@ -311,10 +322,11 @@ export class SubscriptionsService {
   }
 
   async updateUpgradeRequestStatus(id: string, status: string) {
-    const existingRequest = await this.prisma.subscriptionUpgradeRequest.findUnique({
-      where: { id },
-      select: { id: true },
-    });
+    const existingRequest =
+      await this.prisma.subscriptionUpgradeRequest.findUnique({
+        where: { id },
+        select: { id: true },
+      });
 
     if (!existingRequest) {
       throw new NotFoundException('Upgrade request not found.');
@@ -342,16 +354,22 @@ export class SubscriptionsService {
     input: ApproveUpgradeRequestDto,
     actorUserId?: string | null,
   ) {
-    const upgradeRequest = await this.prisma.subscriptionUpgradeRequest.findUnique({
-      where: { id },
-    });
+    const upgradeRequest =
+      await this.prisma.subscriptionUpgradeRequest.findUnique({
+        where: { id },
+      });
 
     if (!upgradeRequest) {
       throw new NotFoundException('Upgrade request not found.');
     }
 
-    if (upgradeRequest.status === 'APPROVED' || upgradeRequest.status === 'CLOSED') {
-      throw new BadRequestException('Upgrade request cannot be approved from its current status.');
+    if (
+      upgradeRequest.status === 'APPROVED' ||
+      upgradeRequest.status === 'CLOSED'
+    ) {
+      throw new BadRequestException(
+        'Upgrade request cannot be approved from its current status.',
+      );
     }
 
     if (!upgradeRequest.userId) {
@@ -371,16 +389,17 @@ export class SubscriptionsService {
       throw new BadRequestException('Requested plan does not exist.');
     }
 
-    const previousSubscription = await this.prisma.accountSubscription.findFirst({
-      where: {
-        userId: upgradeRequest.userId,
-        status: AccountSubscriptionStatus.ACTIVE,
-      },
-      include: {
-        plan: true,
-      },
-      orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
-    });
+    const previousSubscription =
+      await this.prisma.accountSubscription.findFirst({
+        where: {
+          userId: upgradeRequest.userId,
+          status: AccountSubscriptionStatus.ACTIVE,
+        },
+        include: {
+          plan: true,
+        },
+        orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
+      });
 
     const result = await this.prisma.$transaction(async (tx) => {
       if (previousSubscription) {
@@ -453,7 +472,9 @@ export class SubscriptionsService {
           type: BillingEventType.SUBSCRIPTION_UPGRADE,
           amount: plan.priceMonthly,
           currency: plan.currencyCode,
-          status: (input.billingStatus as BillingEventStatus | undefined) ?? BillingEventStatus.PENDING,
+          status:
+            (input.billingStatus as BillingEventStatus | undefined) ??
+            BillingEventStatus.PENDING,
           description: `Approved upgrade request for ${plan.code}`,
           metadata: {
             upgradeRequestId: upgradeRequest.id,
@@ -524,7 +545,9 @@ export class SubscriptionsService {
 
     return {
       request: this.toUpgradeRequestResponse(result.request),
-      subscription: await this.getCurrentSubscriptionSummary(upgradeRequest.userId!),
+      subscription: await this.getCurrentSubscriptionSummary(
+        upgradeRequest.userId!,
+      ),
       billingEvent: {
         id: result.billingEvent.id,
         type: result.billingEvent.type,
@@ -565,16 +588,17 @@ export class SubscriptionsService {
       throw new BadRequestException('Requested plan does not exist.');
     }
 
-    const previousSubscription = await this.prisma.accountSubscription.findFirst({
-      where: {
-        userId,
-        status: AccountSubscriptionStatus.ACTIVE,
-      },
-      include: {
-        plan: true,
-      },
-      orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
-    });
+    const previousSubscription =
+      await this.prisma.accountSubscription.findFirst({
+        where: {
+          userId,
+          status: AccountSubscriptionStatus.ACTIVE,
+        },
+        include: {
+          plan: true,
+        },
+        orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
+      });
 
     const result = await this.prisma.$transaction(async (tx) => {
       if (previousSubscription) {
@@ -706,7 +730,11 @@ export class SubscriptionsService {
   }
 
   private mapEntitlements(
-    entitlements: Array<{ featureKey: string; enabled: boolean; limitInt: number | null }>,
+    entitlements: Array<{
+      featureKey: string;
+      enabled: boolean;
+      limitInt: number | null;
+    }>,
   ): { features: SubscriptionFeatureMap; contactLimit: number } {
     const features: SubscriptionFeatureMap = {};
     let contactLimit = 0;
@@ -717,7 +745,8 @@ export class SubscriptionsService {
         continue;
       }
 
-      features[this.toFeatureFlagKey(entitlement.featureKey)] = entitlement.enabled;
+      features[this.toFeatureFlagKey(entitlement.featureKey)] =
+        entitlement.enabled;
     }
 
     return { features, contactLimit };
@@ -728,7 +757,9 @@ export class SubscriptionsService {
       .toLowerCase()
       .split('_')
       .map((segment, index) =>
-        index === 0 ? segment : `${segment.charAt(0).toUpperCase()}${segment.slice(1)}`,
+        index === 0
+          ? segment
+          : `${segment.charAt(0).toUpperCase()}${segment.slice(1)}`,
       )
       .join('');
   }

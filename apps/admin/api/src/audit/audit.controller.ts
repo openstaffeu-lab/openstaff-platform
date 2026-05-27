@@ -1,10 +1,22 @@
-import { Controller, Get, Param, Patch, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { Permission } from '@prisma/client';
 import { RequirePermissions } from '../access-control/permissions.decorator';
 import { PermissionsGuard } from '../access-control/permissions.guard';
 import { JwtGuard } from '../auth/jwt.guard';
 import { AuditService } from './audit.service';
-import { buildInternalErrorResponse, buildSuccessResponse, logEndpointError } from '../common/api-response';
+import {
+  buildInternalErrorResponse,
+  buildSuccessResponse,
+  logEndpointError,
+} from '../common/api-response';
 
 @Controller()
 export class AuditController {
@@ -12,7 +24,10 @@ export class AuditController {
 
   @UseGuards(JwtGuard)
   @Get('projects/:projectId/audit-logs')
-  async listProjectAuditLogs(@Param('projectId') projectId: string, @Req() req: any) {
+  async listProjectAuditLogs(
+    @Param('projectId') projectId: string,
+    @Req() req: any,
+  ) {
     try {
       return await this.auditService.listProjectAuditLogs(projectId, req.user);
     } catch (error) {
@@ -21,7 +36,7 @@ export class AuditController {
     }
   }
 
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Get('audit/ai-actions')
   async listAiAuditLogs(@Req() req: any) {
@@ -33,7 +48,7 @@ export class AuditController {
     }
   }
 
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Get('admin/security/audit-logs')
   async listAdminAuditLogs(
@@ -51,7 +66,7 @@ export class AuditController {
     }
   }
 
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Get('admin/security/events')
   async listAdminSecurityEvents(
@@ -68,7 +83,7 @@ export class AuditController {
     }
   }
 
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Patch('admin/security/events/:id/status')
   async updateSecurityEventStatus(
@@ -78,7 +93,11 @@ export class AuditController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.auditService.updateSecurityEventStatus(id, status, req.user.sub),
+        await this.auditService.updateSecurityEventStatus(
+          id,
+          status,
+          req.user.sub,
+        ),
       );
     } catch (error) {
       logEndpointError('AuditController.updateSecurityEventStatus', error);
@@ -86,7 +105,7 @@ export class AuditController {
     }
   }
 
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @UseGuards(JwtGuard, PermissionsGuard)
   @Get('admin/security/sessions')
   async listAdminSessions() {

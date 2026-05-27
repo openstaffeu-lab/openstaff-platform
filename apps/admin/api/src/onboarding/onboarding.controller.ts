@@ -149,7 +149,10 @@ export class OnboardingPublicProfilesController {
         await this.onboardingService.getPublicProfileBySlug(slug),
       );
     } catch (error) {
-      logEndpointError('OnboardingPublicProfilesController.getPublicProfile', error);
+      logEndpointError(
+        'OnboardingPublicProfilesController.getPublicProfile',
+        error,
+      );
       throw error;
     }
   }

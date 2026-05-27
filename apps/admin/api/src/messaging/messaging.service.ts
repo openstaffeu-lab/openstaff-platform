@@ -77,7 +77,9 @@ export class MessagingService {
         ...(query?.workforceAssignmentId
           ? { workforceAssignmentId: query.workforceAssignmentId }
           : {}),
-        ...(query?.payrollCycleId ? { payrollCycleId: query.payrollCycleId } : {}),
+        ...(query?.payrollCycleId
+          ? { payrollCycleId: query.payrollCycleId }
+          : {}),
         ...(query?.payrollSettlementId
           ? { payrollSettlementId: query.payrollSettlementId }
           : {}),
@@ -86,9 +88,22 @@ export class MessagingService {
           ? {
               OR: [
                 { title: { contains: query.q.trim(), mode: 'insensitive' } },
-                { lastMessagePreview: { contains: query.q.trim(), mode: 'insensitive' } },
-                { project: { name: { contains: query.q.trim(), mode: 'insensitive' } } },
-                { publicPost: { title: { contains: query.q.trim(), mode: 'insensitive' } } },
+                {
+                  lastMessagePreview: {
+                    contains: query.q.trim(),
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  project: {
+                    name: { contains: query.q.trim(), mode: 'insensitive' },
+                  },
+                },
+                {
+                  publicPost: {
+                    title: { contains: query.q.trim(), mode: 'insensitive' },
+                  },
+                },
               ],
             }
           : {}),
@@ -114,9 +129,22 @@ export class MessagingService {
           ? {
               OR: [
                 { title: { contains: filters.q.trim(), mode: 'insensitive' } },
-                { lastMessagePreview: { contains: filters.q.trim(), mode: 'insensitive' } },
-                { project: { name: { contains: filters.q.trim(), mode: 'insensitive' } } },
-                { publicPost: { title: { contains: filters.q.trim(), mode: 'insensitive' } } },
+                {
+                  lastMessagePreview: {
+                    contains: filters.q.trim(),
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  project: {
+                    name: { contains: filters.q.trim(), mode: 'insensitive' },
+                  },
+                },
+                {
+                  publicPost: {
+                    title: { contains: filters.q.trim(), mode: 'insensitive' },
+                  },
+                },
               ],
             }
           : {}),
@@ -124,7 +152,8 @@ export class MessagingService {
           ? {
               messages: {
                 some: {
-                  moderationStatus: filters.moderationStatus as PublicModerationStatus,
+                  moderationStatus:
+                    filters.moderationStatus as PublicModerationStatus,
                 },
               },
             }
@@ -159,7 +188,9 @@ export class MessagingService {
         ...(filters?.q?.trim()
           ? {
               OR: [
-                { content: { contains: filters.q.trim(), mode: 'insensitive' } },
+                {
+                  content: { contains: filters.q.trim(), mode: 'insensitive' },
+                },
                 {
                   sender: {
                     email: { contains: filters.q.trim(), mode: 'insensitive' },
@@ -178,11 +209,17 @@ export class MessagingService {
   }
 
   async getConversation(conversationId: string, user: AuthenticatedUser) {
-    const conversation = await this.getConversationForUser(conversationId, user.sub);
+    const conversation = await this.getConversationForUser(
+      conversationId,
+      user.sub,
+    );
     return this.toConversationResponse(conversation, user.sub);
   }
 
-  async createConversation(body: CreateConversationDto, user: AuthenticatedUser) {
+  async createConversation(
+    body: CreateConversationDto,
+    user: AuthenticatedUser,
+  ) {
     if (body.type === 'DIRECT') {
       return this.createDirectConversation(
         {
@@ -207,7 +244,9 @@ export class MessagingService {
 
     if (body.type === 'WORKFORCE') {
       if (!body.workforceAssignmentId) {
-        throw new BadRequestException('Workforce conversations require a workforceAssignmentId');
+        throw new BadRequestException(
+          'Workforce conversations require a workforceAssignmentId',
+        );
       }
 
       const conversation = await this.createWorkforceConversation(
@@ -242,7 +281,9 @@ export class MessagingService {
 
     if (body.type === 'RELU') {
       if (!body.reluRecommendationId) {
-        throw new BadRequestException('Relu conversations require a reluRecommendationId');
+        throw new BadRequestException(
+          'Relu conversations require a reluRecommendationId',
+        );
       }
 
       const conversation = await this.createReluConversationForRecommendation(
@@ -255,19 +296,29 @@ export class MessagingService {
 
     if (body.type === 'CONTRACT') {
       if (!body.contractId) {
-        throw new BadRequestException('Contract conversations require a contractId');
+        throw new BadRequestException(
+          'Contract conversations require a contractId',
+        );
       }
 
-      const conversation = await this.ensureContractConversation(body.contractId, user.sub);
+      const conversation = await this.ensureContractConversation(
+        body.contractId,
+        user.sub,
+      );
       return this.toConversationResponse(conversation, user.sub);
     }
 
     if (body.type === 'DISPUTE') {
       if (!body.disputeId) {
-        throw new BadRequestException('Dispute conversations require a disputeId');
+        throw new BadRequestException(
+          'Dispute conversations require a disputeId',
+        );
       }
 
-      const conversation = await this.ensureDisputeConversation(body.disputeId, user.sub);
+      const conversation = await this.ensureDisputeConversation(
+        body.disputeId,
+        user.sub,
+      );
       return this.toConversationResponse(conversation, user.sub);
     }
 
@@ -278,9 +329,13 @@ export class MessagingService {
     input: { participantUserIds: string[]; title?: string | null },
     user: AuthenticatedUser,
   ) {
-    const participantUserIds = Array.from(new Set([user.sub, ...input.participantUserIds]));
+    const participantUserIds = Array.from(
+      new Set([user.sub, ...input.participantUserIds]),
+    );
     if (participantUserIds.length < 2) {
-      throw new BadRequestException('Direct conversations require at least two participants');
+      throw new BadRequestException(
+        'Direct conversations require at least two participants',
+      );
     }
 
     const users = await this.prisma.user.findMany({
@@ -290,10 +345,13 @@ export class MessagingService {
     });
 
     if (users.length !== participantUserIds.length) {
-      throw new NotFoundException('One or more direct conversation users were not found');
+      throw new NotFoundException(
+        'One or more direct conversation users were not found',
+      );
     }
 
-    const existing = await this.findExistingDirectConversation(participantUserIds);
+    const existing =
+      await this.findExistingDirectConversation(participantUserIds);
     if (existing) {
       return this.toConversationResponse(existing, user.sub);
     }
@@ -309,7 +367,8 @@ export class MessagingService {
               userId === user.sub
                 ? ConversationParticipantRole.OWNER
                 : this.mapUserToConversationRole(
-                    users.find((item) => item.id === userId)?.role ?? 'PROFESSIONAL',
+                    users.find((item) => item.id === userId)?.role ??
+                      'PROFESSIONAL',
                   ),
             unreadCount: 0,
             lastReadAt: new Date(),
@@ -333,11 +392,16 @@ export class MessagingService {
     user: AuthenticatedUser,
   ) {
     if (!input.projectId && !input.publicPostId) {
-      throw new BadRequestException('Project conversations require a projectId or publicPostId');
+      throw new BadRequestException(
+        'Project conversations require a projectId or publicPostId',
+      );
     }
 
     if (input.projectId) {
-      const conversation = await this.ensureProjectConversation(input.projectId, user.sub);
+      const conversation = await this.ensureProjectConversation(
+        input.projectId,
+        user.sub,
+      );
       return this.toConversationResponse(conversation, user.sub);
     }
 
@@ -354,15 +418,23 @@ export class MessagingService {
 
     const participantMap = new Map<string, ConversationParticipantRole>();
     if (publicPost.authorUserId) {
-      participantMap.set(publicPost.authorUserId, ConversationParticipantRole.OWNER);
+      participantMap.set(
+        publicPost.authorUserId,
+        ConversationParticipantRole.OWNER,
+      );
     }
-    participantMap.set(user.sub, participantMap.get(user.sub) ?? ConversationParticipantRole.MEMBER);
+    participantMap.set(
+      user.sub,
+      participantMap.get(user.sub) ?? ConversationParticipantRole.MEMBER,
+    );
     for (const participantUserId of input.participantUserIds ?? []) {
       participantMap.set(participantUserId, ConversationParticipantRole.MEMBER);
     }
 
     if (!participantMap.has(user.sub)) {
-      throw new ForbiddenException('You are not allowed to create this project conversation');
+      throw new ForbiddenException(
+        'You are not allowed to create this project conversation',
+      );
     }
 
     let conversation = await this.prisma.conversation.findFirst({
@@ -421,7 +493,10 @@ export class MessagingService {
       throw new NotFoundException('Workforce assignment not found');
     }
 
-    const participantMap = await this.buildWorkforceParticipantMap(assignment, actorUserId);
+    const participantMap = await this.buildWorkforceParticipantMap(
+      assignment,
+      actorUserId,
+    );
     let conversation = await this.prisma.conversation.findFirst({
       where: {
         workforceAssignmentId: assignment.id,
@@ -454,7 +529,10 @@ export class MessagingService {
   }
 
   async listMessages(conversationId: string, user: AuthenticatedUser) {
-    const conversation = await this.getConversationForUser(conversationId, user.sub);
+    const conversation = await this.getConversationForUser(
+      conversationId,
+      user.sub,
+    );
     const messages = await this.prisma.message.findMany({
       where: {
         conversationId: conversation.id,
@@ -469,8 +547,15 @@ export class MessagingService {
     return messages.map((message) => this.toMessageResponse(message));
   }
 
-  async sendMessage(conversationId: string, body: CreateMessageDto, user: AuthenticatedUser) {
-    const conversation = await this.getConversationForUser(conversationId, user.sub);
+  async sendMessage(
+    conversationId: string,
+    body: CreateMessageDto,
+    user: AuthenticatedUser,
+  ) {
+    const conversation = await this.getConversationForUser(
+      conversationId,
+      user.sub,
+    );
     const content = body.content?.trim() ?? '';
 
     if (!content) {
@@ -504,11 +589,21 @@ export class MessagingService {
         include: this.messageInclude,
       });
 
-      await this.bumpConversationAfterMessage(tx, conversation.id, created, user.sub);
+      await this.bumpConversationAfterMessage(
+        tx,
+        conversation.id,
+        created,
+        user.sub,
+      );
       return created;
     });
 
-    await this.notifyConversationParticipants(conversation, message, user.sub, mentionedUserIds);
+    await this.notifyConversationParticipants(
+      conversation,
+      message,
+      user.sub,
+      mentionedUserIds,
+    );
     return this.toMessageResponse(message);
   }
 
@@ -522,9 +617,17 @@ export class MessagingService {
       throw new BadRequestException('Attachment file is required');
     }
 
-    const conversation = await this.getConversationForUser(conversationId, user.sub);
+    const conversation = await this.getConversationForUser(
+      conversationId,
+      user.sub,
+    );
     const safeName = this.sanitizeFileName(file.originalname);
-    const storageDir = join(process.cwd(), 'uploads', 'messages', conversation.id);
+    const storageDir = join(
+      process.cwd(),
+      'uploads',
+      'messages',
+      conversation.id,
+    );
     const storageKey = join(storageDir, `${Date.now()}-${safeName}`);
     await mkdir(storageDir, { recursive: true });
     await writeFile(storageKey, file.buffer);
@@ -564,18 +667,32 @@ export class MessagingService {
         },
       });
 
-      await this.bumpConversationAfterMessage(tx, conversation.id, created, user.sub);
+      await this.bumpConversationAfterMessage(
+        tx,
+        conversation.id,
+        created,
+        user.sub,
+      );
       return tx.message.findUniqueOrThrow({
         where: { id: created.id },
         include: this.messageInclude,
       });
     });
 
-    await this.notifyConversationParticipants(conversation, message, user.sub, []);
+    await this.notifyConversationParticipants(
+      conversation,
+      message,
+      user.sub,
+      [],
+    );
     return this.toMessageResponse(message);
   }
 
-  async editMessage(messageId: string, body: { content: string }, user: AuthenticatedUser) {
+  async editMessage(
+    messageId: string,
+    body: { content: string },
+    user: AuthenticatedUser,
+  ) {
     const message = await this.prisma.message.findUnique({
       where: { id: messageId },
       include: {
@@ -656,7 +773,9 @@ export class MessagingService {
     const isSender = message.senderId === user.sub;
     const isAdmin = this.isAdmin(user.role);
     if (!isSender && !isAdmin) {
-      throw new ForbiddenException('You do not have permission to delete this message');
+      throw new ForbiddenException(
+        'You do not have permission to delete this message',
+      );
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
@@ -691,7 +810,10 @@ export class MessagingService {
   }
 
   async markConversationRead(conversationId: string, user: AuthenticatedUser) {
-    const conversation = await this.getConversationForUser(conversationId, user.sub);
+    const conversation = await this.getConversationForUser(
+      conversationId,
+      user.sub,
+    );
     const unreadMessages = await this.prisma.message.findMany({
       where: {
         conversationId: conversation.id,
@@ -760,7 +882,8 @@ export class MessagingService {
 
     if (
       !message.conversation.participants.some(
-        (participant) => participant.userId === user.sub && !participant.removedAt,
+        (participant) =>
+          participant.userId === user.sub && !participant.removedAt,
       )
     ) {
       throw new ForbiddenException('You do not have access to this message');
@@ -797,11 +920,18 @@ export class MessagingService {
     body: { userId: string; role?: ConversationParticipantRole },
     user: AuthenticatedUser,
   ) {
-    const conversation = await this.getConversationForUser(conversationId, user.sub);
-    const actor = conversation.participants.find((item) => item.userId === user.sub);
+    const conversation = await this.getConversationForUser(
+      conversationId,
+      user.sub,
+    );
+    const actor = conversation.participants.find(
+      (item) => item.userId === user.sub,
+    );
 
     if (!actor || !this.canManageParticipants(actor.role, user.role)) {
-      throw new ForbiddenException('You do not have permission to manage participants');
+      throw new ForbiddenException(
+        'You do not have permission to manage participants',
+      );
     }
 
     const targetUser = await this.prisma.user.findUnique({
@@ -846,12 +976,23 @@ export class MessagingService {
     return this.toConversationResponse(updated, user.sub);
   }
 
-  async removeParticipant(conversationId: string, participantUserId: string, user: AuthenticatedUser) {
-    const conversation = await this.getConversationForUser(conversationId, user.sub);
-    const actor = conversation.participants.find((item) => item.userId === user.sub);
+  async removeParticipant(
+    conversationId: string,
+    participantUserId: string,
+    user: AuthenticatedUser,
+  ) {
+    const conversation = await this.getConversationForUser(
+      conversationId,
+      user.sub,
+    );
+    const actor = conversation.participants.find(
+      (item) => item.userId === user.sub,
+    );
 
     if (!actor || !this.canManageParticipants(actor.role, user.role)) {
-      throw new ForbiddenException('You do not have permission to manage participants');
+      throw new ForbiddenException(
+        'You do not have permission to manage participants',
+      );
     }
 
     await this.prisma.conversationParticipant.update({
@@ -902,7 +1043,9 @@ export class MessagingService {
         data: {
           moderationStatus: body.moderationStatus,
           moderationNotes: body.moderationNotes?.trim() || null,
-          isFlagged: body.isFlagged ?? body.moderationStatus === PublicModerationStatus.FLAGGED,
+          isFlagged:
+            body.isFlagged ??
+            body.moderationStatus === PublicModerationStatus.FLAGGED,
           moderatedAt: new Date(),
           moderatedByUserId: user.sub,
         },
@@ -949,7 +1092,8 @@ export class MessagingService {
     const hasAccess =
       this.isAdmin(user.role) ||
       attachment.conversation.participants.some(
-        (participant) => participant.userId === user.sub && !participant.removedAt,
+        (participant) =>
+          participant.userId === user.sub && !participant.removedAt,
       );
 
     if (!hasAccess) {
@@ -1056,7 +1200,10 @@ export class MessagingService {
 
     for (const assignment of project.workerAssignments) {
       if (assignment.worker.userId) {
-        participantMap.set(assignment.worker.userId, ConversationParticipantRole.WORKER);
+        participantMap.set(
+          assignment.worker.userId,
+          ConversationParticipantRole.WORKER,
+        );
       }
     }
 
@@ -1066,8 +1213,14 @@ export class MessagingService {
       include: this.conversationInclude,
     });
 
-    if (actorUserId && !participantMap.has(actorUserId) && actorUserId !== project.createdById) {
-      throw new ForbiddenException('You are not a participant in this project conversation');
+    if (
+      actorUserId &&
+      !participantMap.has(actorUserId) &&
+      actorUserId !== project.createdById
+    ) {
+      throw new ForbiddenException(
+        'You are not a participant in this project conversation',
+      );
     }
 
     return conversation;
@@ -1107,7 +1260,10 @@ export class MessagingService {
     }
 
     const participantMap = new Map<string, ConversationParticipantRole>();
-    participantMap.set(contract.project.createdById, ConversationParticipantRole.OWNER);
+    participantMap.set(
+      contract.project.createdById,
+      ConversationParticipantRole.OWNER,
+    );
     participantMap.set(
       contract.profile.userId,
       this.mapProfileToConversationRole(contract.profile.profileType),
@@ -1120,7 +1276,9 @@ export class MessagingService {
     });
 
     if (actorUserId && !participantMap.has(actorUserId)) {
-      throw new ForbiddenException('You are not a participant in this contract conversation');
+      throw new ForbiddenException(
+        'You are not a participant in this contract conversation',
+      );
     }
 
     return conversation;
@@ -1165,12 +1323,18 @@ export class MessagingService {
     }
 
     const participantMap = new Map<string, ConversationParticipantRole>();
-    participantMap.set(dispute.project.createdById, ConversationParticipantRole.OWNER);
+    participantMap.set(
+      dispute.project.createdById,
+      ConversationParticipantRole.OWNER,
+    );
     participantMap.set(
       dispute.contract.profile.userId,
       this.mapProfileToConversationRole(dispute.contract.profile.profileType),
     );
-    participantMap.set(dispute.openedById, ConversationParticipantRole.CONTRACTOR);
+    participantMap.set(
+      dispute.openedById,
+      ConversationParticipantRole.CONTRACTOR,
+    );
 
     await this.syncParticipants(conversation.id, participantMap);
     conversation = await this.prisma.conversation.findUniqueOrThrow({
@@ -1179,7 +1343,9 @@ export class MessagingService {
     });
 
     if (actorUserId && !participantMap.has(actorUserId)) {
-      throw new ForbiddenException('You are not a participant in this dispute conversation');
+      throw new ForbiddenException(
+        'You are not a participant in this dispute conversation',
+      );
     }
 
     return conversation;
@@ -1196,10 +1362,19 @@ export class MessagingService {
   }) {
     const conversation =
       input.type === ConversationType.PROJECT
-        ? await this.ensureProjectConversation(input.projectId!, input.actorUserId)
+        ? await this.ensureProjectConversation(
+            input.projectId!,
+            input.actorUserId,
+          )
         : input.type === ConversationType.CONTRACT
-          ? await this.ensureContractConversation(input.contractId!, input.actorUserId)
-          : await this.ensureDisputeConversation(input.disputeId!, input.actorUserId);
+          ? await this.ensureContractConversation(
+              input.contractId!,
+              input.actorUserId,
+            )
+          : await this.ensureDisputeConversation(
+              input.disputeId!,
+              input.actorUserId,
+            );
 
     const message = await this.prisma.$transaction(async (tx) => {
       const created = await tx.message.create({
@@ -1219,11 +1394,21 @@ export class MessagingService {
         include: this.messageInclude,
       });
 
-      await this.bumpConversationAfterMessage(tx, conversation.id, created, input.actorUserId);
+      await this.bumpConversationAfterMessage(
+        tx,
+        conversation.id,
+        created,
+        input.actorUserId,
+      );
       return created;
     });
 
-    await this.notifyConversationParticipants(conversation, message, input.actorUserId, []);
+    await this.notifyConversationParticipants(
+      conversation,
+      message,
+      input.actorUserId,
+      [],
+    );
     return this.toMessageResponse(message);
   }
 
@@ -1260,7 +1445,9 @@ export class MessagingService {
       participantMap.set(actorUserId, ConversationParticipantRole.ADMIN);
     }
 
-    const recruiterUser = await this.findUserByEmail(settlement.workforceAssignment.job.actor.email);
+    const recruiterUser = await this.findUserByEmail(
+      settlement.workforceAssignment.job.actor.email,
+    );
     if (recruiterUser?.id) {
       participantMap.set(recruiterUser.id, ConversationParticipantRole.ADMIN);
     }
@@ -1369,7 +1556,10 @@ export class MessagingService {
         data: {
           reluRecommendationId: recommendation.id,
           type: ConversationType.RELU,
-          title: title?.trim() || recommendation.recommendedAction || 'Relu follow-up',
+          title:
+            title?.trim() ||
+            recommendation.recommendedAction ||
+            'Relu follow-up',
         },
         include: this.conversationInclude,
       });
@@ -1377,7 +1567,10 @@ export class MessagingService {
 
     const participantMap = new Map<string, ConversationParticipantRole>();
     if (recommendation.userId) {
-      participantMap.set(recommendation.userId, ConversationParticipantRole.OWNER);
+      participantMap.set(
+        recommendation.userId,
+        ConversationParticipantRole.OWNER,
+      );
     }
     if (actorUserId) {
       participantMap.set(actorUserId, ConversationParticipantRole.ADMIN);
@@ -1392,8 +1585,15 @@ export class MessagingService {
     });
   }
 
-  async createPayrollIssueNotification(settlementId: string, actorUserId: string, reason?: string | null) {
-    const conversation = await this.createPayrollConversationForSettlement(settlementId, actorUserId);
+  async createPayrollIssueNotification(
+    settlementId: string,
+    actorUserId: string,
+    reason?: string | null,
+  ) {
+    const conversation = await this.createPayrollConversationForSettlement(
+      settlementId,
+      actorUserId,
+    );
     return this.addMessageToConversation(
       conversation.id,
       {
@@ -1417,7 +1617,10 @@ export class MessagingService {
     content: string,
     metadata?: Record<string, unknown>,
   ) {
-    const conversation = await this.createWorkforceConversation(assignmentId, actorUserId);
+    const conversation = await this.createWorkforceConversation(
+      assignmentId,
+      actorUserId,
+    );
     return this.addMessageToConversation(
       conversation.id,
       {
@@ -1463,11 +1666,21 @@ export class MessagingService {
         include: this.messageInclude,
       });
 
-      await this.bumpConversationAfterMessage(tx, conversationId, created, actorUserId);
+      await this.bumpConversationAfterMessage(
+        tx,
+        conversationId,
+        created,
+        actorUserId,
+      );
       return created;
     });
 
-    await this.notifyConversationParticipants(conversation, message, actorUserId, []);
+    await this.notifyConversationParticipants(
+      conversation,
+      message,
+      actorUserId,
+      [],
+    );
     return this.toMessageResponse(message);
   }
 
@@ -1494,7 +1707,10 @@ export class MessagingService {
           .map((participant) => participant.userId)
           .sort();
         const target = [...participantUserIds].sort();
-        return ids.length === target.length && ids.every((value, index) => value === target[index]);
+        return (
+          ids.length === target.length &&
+          ids.every((value, index) => value === target[index])
+        );
       }) ?? null
     );
   }
@@ -1553,7 +1769,8 @@ export class MessagingService {
     mentionedUserIds: string[],
   ) {
     const recipients = conversation.participants.filter(
-      (participant: any) => participant.userId !== actorUserId && !participant.removedAt,
+      (participant: any) =>
+        participant.userId !== actorUserId && !participant.removedAt,
     );
 
     for (const recipient of recipients) {
@@ -1576,7 +1793,9 @@ export class MessagingService {
       });
     }
 
-    for (const mentionedUserId of mentionedUserIds.filter((item) => item !== actorUserId)) {
+    for (const mentionedUserId of mentionedUserIds.filter(
+      (item) => item !== actorUserId,
+    )) {
       await this.notificationService.emitEvent({
         key: `message-mention:${message.id}:${mentionedUserId}`,
         eventType: 'MESSAGE_MENTION',
@@ -1670,12 +1889,18 @@ export class MessagingService {
     });
   }
 
-  private async buildWorkforceParticipantMap(assignment: any, actorUserId?: string) {
+  private async buildWorkforceParticipantMap(
+    assignment: any,
+    actorUserId?: string,
+  ) {
     const participantMap = new Map<string, ConversationParticipantRole>();
     participantMap.set(assignment.userId, ConversationParticipantRole.WORKER);
 
     if (assignment.project?.createdById) {
-      participantMap.set(assignment.project.createdById, ConversationParticipantRole.OWNER);
+      participantMap.set(
+        assignment.project.createdById,
+        ConversationParticipantRole.OWNER,
+      );
     }
 
     const actorEmails = [
@@ -1734,7 +1959,10 @@ export class MessagingService {
     return ConversationParticipantRole.CONTRACTOR;
   }
 
-  private canManageParticipants(role: ConversationParticipantRole, userRole: string) {
+  private canManageParticipants(
+    role: ConversationParticipantRole,
+    userRole: string,
+  ) {
     return (
       this.isAdmin(userRole) ||
       role === ConversationParticipantRole.OWNER ||
@@ -1752,10 +1980,18 @@ export class MessagingService {
     content: string,
   ) {
     const explicitIds = Array.isArray(metadataJson?.mentionedUserIds)
-      ? metadataJson.mentionedUserIds.filter((item): item is string => typeof item === 'string')
+      ? metadataJson.mentionedUserIds.filter(
+          (item): item is string => typeof item === 'string',
+        )
       : [];
 
-    const mentionedEmails = Array.from(new Set((content.match(/@([\w.+-]+@[\w.-]+\.[A-Za-z]{2,})/g) ?? []).map((item) => item.slice(1).toLowerCase())));
+    const mentionedEmails = Array.from(
+      new Set(
+        (content.match(/@([\w.+-]+@[\w.-]+\.[A-Za-z]{2,})/g) ?? []).map(
+          (item) => item.slice(1).toLowerCase(),
+        ),
+      ),
+    );
     const matchedIds = conversation.participants
       .filter((participant: any) =>
         participant.user?.email
@@ -1830,12 +2066,17 @@ export class MessagingService {
     });
   }
 
-  private toConversationResponse(conversation: any, currentUserId: string | null) {
+  private toConversationResponse(
+    conversation: any,
+    currentUserId: string | null,
+  ) {
     const latestMessage = conversation.messages[0]
       ? this.toMessageResponse(conversation.messages[0])
       : null;
     const currentParticipant = currentUserId
-      ? conversation.participants.find((item: any) => item.userId === currentUserId)
+      ? conversation.participants.find(
+          (item: any) => item.userId === currentUserId,
+        )
       : null;
     const unreadCount =
       currentParticipant?.unreadCount ??
@@ -1920,7 +2161,8 @@ export class MessagingService {
         ? {
             id: conversation.reluRecommendation.id,
             status: conversation.reluRecommendation.status,
-            recommendedAction: conversation.reluRecommendation.recommendedAction,
+            recommendedAction:
+              conversation.reluRecommendation.recommendedAction,
           }
         : null,
       participants: conversation.participants

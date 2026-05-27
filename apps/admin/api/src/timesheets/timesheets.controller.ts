@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { Role, TimesheetStatus } from '@prisma/client';
 import { JwtGuard } from '../auth/jwt.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -68,7 +77,9 @@ export class TimesheetsWorkerController {
   @Post('attendance/check-in')
   async checkIn(@Body() body: AttendanceCheckInDto, @Req() req: any) {
     try {
-      return buildSuccessResponse(await this.timesheetsService.checkIn(body, req.user));
+      return buildSuccessResponse(
+        await this.timesheetsService.checkIn(body, req.user),
+      );
     } catch (error) {
       logEndpointError('TimesheetsWorkerController.checkIn', error);
       throw error;
@@ -78,7 +89,9 @@ export class TimesheetsWorkerController {
   @Post('attendance/check-out')
   async checkOut(@Body() body: AttendanceCheckOutDto, @Req() req: any) {
     try {
-      return buildSuccessResponse(await this.timesheetsService.checkOut(body, req.user));
+      return buildSuccessResponse(
+        await this.timesheetsService.checkOut(body, req.user),
+      );
     } catch (error) {
       logEndpointError('TimesheetsWorkerController.checkOut', error);
       throw error;
@@ -88,7 +101,9 @@ export class TimesheetsWorkerController {
   @Get('timesheets/me')
   async getMyTimesheets(@Req() req: any) {
     try {
-      return buildSuccessResponse(await this.timesheetsService.getMyTimesheets(req.user));
+      return buildSuccessResponse(
+        await this.timesheetsService.getMyTimesheets(req.user),
+      );
     } catch (error) {
       logEndpointError('TimesheetsWorkerController.getMyTimesheets', error);
       throw error;
@@ -98,7 +113,9 @@ export class TimesheetsWorkerController {
   @Get('attendance/me')
   async getMyAttendance(@Req() req: any) {
     try {
-      return buildSuccessResponse(await this.timesheetsService.getMyAttendance(req.user));
+      return buildSuccessResponse(
+        await this.timesheetsService.getMyAttendance(req.user),
+      );
     } catch (error) {
       logEndpointError('TimesheetsWorkerController.getMyAttendance', error);
       throw error;
@@ -128,7 +145,10 @@ export class TimesheetsAdminController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.timesheetsService.listAdminTimesheets(req.user, { q, status }),
+        await this.timesheetsService.listAdminTimesheets(req.user, {
+          q,
+          status,
+        }),
       );
     } catch (error) {
       logEndpointError('TimesheetsAdminController.listTimesheets', error);
@@ -139,7 +159,9 @@ export class TimesheetsAdminController {
   @Get('timesheets/:id')
   async getTimesheet(@Param('id') id: string, @Req() req: any) {
     try {
-      return buildSuccessResponse(await this.timesheetsService.getAdminTimesheet(id, req.user));
+      return buildSuccessResponse(
+        await this.timesheetsService.getAdminTimesheet(id, req.user),
+      );
     } catch (error) {
       logEndpointError('TimesheetsAdminController.getTimesheet', error);
       throw error;

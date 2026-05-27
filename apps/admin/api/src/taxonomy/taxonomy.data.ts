@@ -231,7 +231,11 @@ export const taxonomyProfessions: TaxonomyProfession[] = [
     tags: ['hospitality', 'service', 'restaurant', 'guest-experience'],
     skills: [
       { name: 'assist customers', relationType: 'essential', source: 'ESCO' },
-      { name: 'serve food and beverages', relationType: 'essential', source: 'ESCO' },
+      {
+        name: 'serve food and beverages',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
       { name: 'handle payments', relationType: 'essential', source: 'ESCO' },
       { name: 'prepare tables', relationType: 'essential', source: 'ESCO' },
     ],
@@ -246,9 +250,7 @@ export const taxonomyProfessions: TaxonomyProfession[] = [
         label: 'waiter/waitress',
         uri: 'http://data.europa.eu/esco/occupation/d5db9d5c-2ebf-4a54-a79a-1b7e7ff70471',
       },
-      nace: [
-        { code: 'I56', label: 'Food and beverage service activities' },
-      ],
+      nace: [{ code: 'I56', label: 'Food and beverage service activities' }],
       uniclass: [{ code: 'Ac_05_90', label: 'Food service assets' }],
       sourceFiles: [
         'occupations_en.csv',
@@ -274,9 +276,21 @@ export const taxonomyProfessions: TaxonomyProfession[] = [
     },
     tags: ['kitchen', 'food', 'hospitality', 'menu-engineering'],
     skills: [
-      { name: 'comply with food safety and hygiene', relationType: 'essential', source: 'ESCO' },
-      { name: 'use food preparation techniques', relationType: 'essential', source: 'ESCO' },
-      { name: 'think creatively about food and beverages', relationType: 'essential', source: 'ESCO' },
+      {
+        name: 'comply with food safety and hygiene',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
+      {
+        name: 'use food preparation techniques',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
+      {
+        name: 'think creatively about food and beverages',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
       { name: 'manage staff', relationType: 'essential', source: 'ESCO' },
       { name: 'plan menus', relationType: 'essential', source: 'ESCO' },
       { name: 'manage budgets', relationType: 'essential', source: 'ESCO' },
@@ -294,7 +308,10 @@ export const taxonomyProfessions: TaxonomyProfession[] = [
       },
       nace: [
         { code: 'I56', label: 'Food and beverage service activities' },
-        { code: '5611', label: 'Restaurants and mobile food service activities' },
+        {
+          code: '5611',
+          label: 'Restaurants and mobile food service activities',
+        },
       ],
       uniclass: [{ code: 'Ac_05_90', label: 'Food service assets' }],
       sourceFiles: [
@@ -321,10 +338,22 @@ export const taxonomyProfessions: TaxonomyProfession[] = [
     },
     tags: ['hotel', 'management', 'operations', 'guest-experience'],
     skills: [
-      { name: 'manage hospitality revenue', relationType: 'essential', source: 'ESCO' },
+      {
+        name: 'manage hospitality revenue',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
       { name: 'manage staff', relationType: 'essential', source: 'ESCO' },
-      { name: 'handle customer complaints', relationType: 'essential', source: 'ESCO' },
-      { name: 'plan shifts of employees', relationType: 'essential', source: 'ESCO' },
+      {
+        name: 'handle customer complaints',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
+      {
+        name: 'plan shifts of employees',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
     ],
     mappings: {
       esco: ['hotel-manager'],
@@ -358,10 +387,26 @@ export const taxonomyProfessions: TaxonomyProfession[] = [
     },
     tags: ['spa', 'wellness', 'therapy', 'guest-care'],
     skills: [
-      { name: 'prepare treatment room', relationType: 'essential', source: 'CUSTOM' },
-      { name: 'apply guest care standards', relationType: 'essential', source: 'CUSTOM' },
-      { name: 'maintain hygiene procedures', relationType: 'essential', source: 'CUSTOM' },
-      { name: 'promote wellness services', relationType: 'optional', source: 'CUSTOM' },
+      {
+        name: 'prepare treatment room',
+        relationType: 'essential',
+        source: 'CUSTOM',
+      },
+      {
+        name: 'apply guest care standards',
+        relationType: 'essential',
+        source: 'CUSTOM',
+      },
+      {
+        name: 'maintain hygiene procedures',
+        relationType: 'essential',
+        source: 'CUSTOM',
+      },
+      {
+        name: 'promote wellness services',
+        relationType: 'optional',
+        source: 'CUSTOM',
+      },
     ],
     mappings: {
       esco: ['massage therapist-adjacent'],
@@ -395,10 +440,26 @@ export const taxonomyProfessions: TaxonomyProfession[] = [
     },
     tags: ['electrical', 'construction', 'maintenance', 'power-systems'],
     skills: [
-      { name: 'install electrical wiring', relationType: 'essential', source: 'ESCO' },
-      { name: 'maintain electrical equipment', relationType: 'essential', source: 'ESCO' },
-      { name: 'inspect electrical systems', relationType: 'essential', source: 'ESCO' },
-      { name: 'diagnose electrical faults', relationType: 'essential', source: 'ESCO' },
+      {
+        name: 'install electrical wiring',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
+      {
+        name: 'maintain electrical equipment',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
+      {
+        name: 'inspect electrical systems',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
+      {
+        name: 'diagnose electrical faults',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
     ],
     mappings: {
       esco: ['electrician', '7411.1'],
@@ -442,9 +503,21 @@ export const taxonomyProfessions: TaxonomyProfession[] = [
     tags: ['installations', 'water', 'maintenance', 'pipework'],
     skills: [
       { name: 'install pipes', relationType: 'essential', source: 'ESCO' },
-      { name: 'inspect pipes and fixtures', relationType: 'essential', source: 'ESCO' },
-      { name: 'test systems safely', relationType: 'essential', source: 'ESCO' },
-      { name: 'place sanitary equipment', relationType: 'essential', source: 'ESCO' },
+      {
+        name: 'inspect pipes and fixtures',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
+      {
+        name: 'test systems safely',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
+      {
+        name: 'place sanitary equipment',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
     ],
     mappings: {
       esco: ['plumber', '7126.8'],
@@ -459,7 +532,10 @@ export const taxonomyProfessions: TaxonomyProfession[] = [
       },
       nace: [
         { code: 'F43', label: 'Specialised construction activities' },
-        { code: '4322', label: 'Plumbing, heat and air-conditioning installation' },
+        {
+          code: '4322',
+          label: 'Plumbing, heat and air-conditioning installation',
+        },
       ],
       uniclass: [{ code: 'Ss_40_10', label: 'Pipework systems' }],
       sourceFiles: [
@@ -487,10 +563,26 @@ export const taxonomyProfessions: TaxonomyProfession[] = [
     },
     tags: ['sales', 'retail', 'customer', 'commercial'],
     skills: [
-      { name: 'provide customer information', relationType: 'essential', source: 'ESCO' },
-      { name: 'handle sales transactions', relationType: 'essential', source: 'ESCO' },
-      { name: 'fit offer to customer needs', relationType: 'essential', source: 'ESCO' },
-      { name: 'follow up on after-sales', relationType: 'optional', source: 'ESCO' },
+      {
+        name: 'provide customer information',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
+      {
+        name: 'handle sales transactions',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
+      {
+        name: 'fit offer to customer needs',
+        relationType: 'essential',
+        source: 'ESCO',
+      },
+      {
+        name: 'follow up on after-sales',
+        relationType: 'optional',
+        source: 'ESCO',
+      },
     ],
     mappings: {
       esco: ['advertising sales agent', '3339.1'],
@@ -530,10 +622,26 @@ export const taxonomyProfessions: TaxonomyProfession[] = [
     },
     tags: ['facilities', 'maintenance', 'technical', 'asset-operations'],
     skills: [
-      { name: 'maintain building systems', relationType: 'essential', source: 'CUSTOM' },
-      { name: 'coordinate technical interventions', relationType: 'essential', source: 'CUSTOM' },
-      { name: 'monitor service continuity', relationType: 'essential', source: 'CUSTOM' },
-      { name: 'report maintenance issues', relationType: 'essential', source: 'CUSTOM' },
+      {
+        name: 'maintain building systems',
+        relationType: 'essential',
+        source: 'CUSTOM',
+      },
+      {
+        name: 'coordinate technical interventions',
+        relationType: 'essential',
+        source: 'CUSTOM',
+      },
+      {
+        name: 'monitor service continuity',
+        relationType: 'essential',
+        source: 'CUSTOM',
+      },
+      {
+        name: 'report maintenance issues',
+        relationType: 'essential',
+        source: 'CUSTOM',
+      },
     ],
     mappings: {
       esco: ['industrial-maintenance-supervisor'],
@@ -541,8 +649,18 @@ export const taxonomyProfessions: TaxonomyProfession[] = [
       uniclass: ['Ss_65_40'],
     },
     references: {
-      nace: [{ code: 'N81', label: 'Services to buildings and landscape activities' }],
-      uniclass: [{ code: 'Ss_65_40', label: 'Heating, ventilation and air conditioning systems' }],
+      nace: [
+        {
+          code: 'N81',
+          label: 'Services to buildings and landscape activities',
+        },
+      ],
+      uniclass: [
+        {
+          code: 'Ss_65_40',
+          label: 'Heating, ventilation and air conditioning systems',
+        },
+      ],
       sourceFiles: [
         'SPACE_ACTIVITIES_NACE2.1_NACE2_Table.xlsx',
         'Uniclass2015_Ss_v1_41.xlsx',
@@ -566,10 +684,26 @@ export const taxonomyProfessions: TaxonomyProfession[] = [
     },
     tags: ['supervision', 'site', 'safety', 'execution-control'],
     skills: [
-      { name: 'coordinate subcontractors', relationType: 'essential', source: 'CUSTOM' },
-      { name: 'enforce site safety', relationType: 'essential', source: 'CUSTOM' },
-      { name: 'monitor work progress', relationType: 'essential', source: 'CUSTOM' },
-      { name: 'report execution status', relationType: 'essential', source: 'CUSTOM' },
+      {
+        name: 'coordinate subcontractors',
+        relationType: 'essential',
+        source: 'CUSTOM',
+      },
+      {
+        name: 'enforce site safety',
+        relationType: 'essential',
+        source: 'CUSTOM',
+      },
+      {
+        name: 'monitor work progress',
+        relationType: 'essential',
+        source: 'CUSTOM',
+      },
+      {
+        name: 'report execution status',
+        relationType: 'essential',
+        source: 'CUSTOM',
+      },
     ],
     mappings: {
       esco: ['site-supervisor'],

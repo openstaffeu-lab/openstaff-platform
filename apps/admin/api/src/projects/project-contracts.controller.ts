@@ -24,7 +24,9 @@ import { ProjectContractsService } from './project-contracts.service';
 
 @Controller('projects')
 export class ProjectContractsController {
-  constructor(private readonly projectContractsService: ProjectContractsService) {}
+  constructor(
+    private readonly projectContractsService: ProjectContractsService,
+  ) {}
 
   @UseGuards(
     JwtGuard,
@@ -39,10 +41,17 @@ export class ProjectContractsController {
   ) {
     const user = req.user;
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectContractsService.createFromProposal(projectId, proposalId, body, user);
+    return this.projectContractsService.createFromProposal(
+      projectId,
+      proposalId,
+      body,
+      user,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -58,7 +67,11 @@ export class ProjectContractsController {
     @Param('contractId') contractId: string,
     @Req() req: any,
   ) {
-    return this.projectContractsService.findOne(projectId, contractId, req.user);
+    return this.projectContractsService.findOne(
+      projectId,
+      contractId,
+      req.user,
+    );
   }
 
   @UseGuards(
@@ -74,10 +87,17 @@ export class ProjectContractsController {
   ) {
     const user = req.user;
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectContractsService.updateStatus(projectId, contractId, body, user);
+    return this.projectContractsService.updateStatus(
+      projectId,
+      contractId,
+      body,
+      user,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -87,7 +107,11 @@ export class ProjectContractsController {
     @Param('contractId') contractId: string,
     @Req() req: any,
   ) {
-    return this.projectContractsService.getEscrow(projectId, contractId, req.user);
+    return this.projectContractsService.getEscrow(
+      projectId,
+      contractId,
+      req.user,
+    );
   }
 
   @UseGuards(
@@ -103,10 +127,17 @@ export class ProjectContractsController {
   ) {
     const user = req.user;
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectContractsService.updateEscrow(projectId, contractId, body, user);
+    return this.projectContractsService.updateEscrow(
+      projectId,
+      contractId,
+      body,
+      user,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -116,7 +147,11 @@ export class ProjectContractsController {
     @Param('contractId') contractId: string,
     @Req() req: any,
   ) {
-    return this.projectContractsService.getFinancialSnapshot(projectId, contractId, req.user);
+    return this.projectContractsService.getFinancialSnapshot(
+      projectId,
+      contractId,
+      req.user,
+    );
   }
 
   @UseGuards(
@@ -131,10 +166,16 @@ export class ProjectContractsController {
   ) {
     const user = req.user;
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectContractsService.createFinancialSnapshot(projectId, contractId, user);
+    return this.projectContractsService.createFinancialSnapshot(
+      projectId,
+      contractId,
+      user,
+    );
   }
 
   @UseGuards(
@@ -150,10 +191,17 @@ export class ProjectContractsController {
   ) {
     const user = req.user;
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectContractsService.createInvoice(projectId, contractId, body, user);
+    return this.projectContractsService.createInvoice(
+      projectId,
+      contractId,
+      body,
+      user,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -163,7 +211,11 @@ export class ProjectContractsController {
     @Param('contractId') contractId: string,
     @Req() req: any,
   ) {
-    return this.projectContractsService.listInvoices(projectId, contractId, req.user);
+    return this.projectContractsService.listInvoices(
+      projectId,
+      contractId,
+      req.user,
+    );
   }
 
   @UseGuards(
@@ -180,7 +232,9 @@ export class ProjectContractsController {
   ) {
     const user = req.user;
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectContractsService.updateInvoiceStatus(
@@ -199,7 +253,11 @@ export class ProjectContractsController {
     @Param('contractId') contractId: string,
     @Req() req: any,
   ) {
-    return this.projectContractsService.listPayments(projectId, contractId, req.user);
+    return this.projectContractsService.listPayments(
+      projectId,
+      contractId,
+      req.user,
+    );
   }
 
   @UseGuards(
@@ -215,10 +273,17 @@ export class ProjectContractsController {
   ) {
     const user = req.user;
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectContractsService.requestPayment(projectId, contractId, body, user);
+    return this.projectContractsService.requestPayment(
+      projectId,
+      contractId,
+      body,
+      user,
+    );
   }
 
   @UseGuards(
@@ -234,10 +299,17 @@ export class ProjectContractsController {
   ) {
     const user = req.user;
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectContractsService.createMilestone(projectId, contractId, body, user);
+    return this.projectContractsService.createMilestone(
+      projectId,
+      contractId,
+      body,
+      user,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -247,7 +319,11 @@ export class ProjectContractsController {
     @Param('contractId') contractId: string,
     @Req() req: any,
   ) {
-    return this.projectContractsService.listMilestones(projectId, contractId, req.user);
+    return this.projectContractsService.listMilestones(
+      projectId,
+      contractId,
+      req.user,
+    );
   }
 
   @UseGuards(
@@ -264,7 +340,9 @@ export class ProjectContractsController {
   ) {
     const user = req.user;
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectContractsService.updateMilestoneStatus(

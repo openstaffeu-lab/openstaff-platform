@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProjectShortlistDto } from './dto/create-project-shortlist.dto';
 import { ProjectAccessPolicy } from './project-access.policy';
@@ -66,7 +63,11 @@ export class ProjectShortlistService {
     return this.toShortlistResponse(shortlist);
   }
 
-  async remove(projectId: string, shortlistId: string, user: AuthenticatedUser) {
+  async remove(
+    projectId: string,
+    shortlistId: string,
+    user: AuthenticatedUser,
+  ) {
     const project = await this.getProjectForOwner(projectId, user);
 
     const shortlist = await this.prisma.projectShortlist.findFirst({
@@ -145,9 +146,15 @@ export class ProjectShortlistService {
         counts: {
           documents: shortlist.profile._count.documents,
         },
-        escoSkills: shortlist.profile.escoClassifications.map((item: any) => item.escoSkill),
-        naceCodes: shortlist.profile.naceClassifications.map((item: any) => item.nace),
-        uniclassCodes: shortlist.profile.uniclassClassifications.map((item: any) => item.uniclass),
+        escoSkills: shortlist.profile.escoClassifications.map(
+          (item: any) => item.escoSkill,
+        ),
+        naceCodes: shortlist.profile.naceClassifications.map(
+          (item: any) => item.nace,
+        ),
+        uniclassCodes: shortlist.profile.uniclassClassifications.map(
+          (item: any) => item.uniclass,
+        ),
       },
     };
   }

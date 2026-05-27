@@ -41,7 +41,9 @@ export class PublicFeedbackController {
     @Req() req: any,
   ) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     try {
@@ -70,7 +72,9 @@ export class PublicFeedbackController {
     @Req() req: any,
   ) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     try {

@@ -14,7 +14,9 @@ import { ProjectContractsService } from './project-contracts.service';
 
 @Controller('payments')
 export class ProjectPaymentsController {
-  constructor(private readonly projectContractsService: ProjectContractsService) {}
+  constructor(
+    private readonly projectContractsService: ProjectContractsService,
+  ) {}
 
   @UseGuards(
     JwtGuard,
@@ -28,9 +30,15 @@ export class ProjectPaymentsController {
   ) {
     const user = req.user;
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectContractsService.updatePaymentStatus(paymentId, body, user);
+    return this.projectContractsService.updatePaymentStatus(
+      paymentId,
+      body,
+      user,
+    );
   }
 }

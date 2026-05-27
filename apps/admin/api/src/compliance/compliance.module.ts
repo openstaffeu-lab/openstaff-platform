@@ -12,7 +12,16 @@ import { ComplianceService } from './compliance.service';
 @Module({
   imports: [PrismaModule, AuthModule, AuditModule, NotificationModule],
   controllers: [ComplianceController],
-  providers: [ComplianceService, ComplianceEligibilityService, ComplianceRequestsService, ProjectAccessPolicy],
-  exports: [ComplianceService, ComplianceEligibilityService, ComplianceRequestsService],
+  providers: [
+    ComplianceService,
+    ComplianceEligibilityService,
+    ComplianceRequestsService,
+    ProjectAccessPolicy,
+  ],
+  exports: [
+    ComplianceService,
+    ComplianceEligibilityService,
+    ComplianceRequestsService,
+  ],
 })
 export class ComplianceModule {}

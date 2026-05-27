@@ -5,7 +5,15 @@ export class AddConversationParticipantDto {
   userId!: string;
 
   @IsOptional()
-  @IsIn(['OWNER', 'ADMIN', 'MEMBER', 'OBSERVER', 'CONTRACTOR', 'WORKER', 'SUPERVISOR'])
+  @IsIn([
+    'OWNER',
+    'ADMIN',
+    'MEMBER',
+    'OBSERVER',
+    'CONTRACTOR',
+    'WORKER',
+    'SUPERVISOR',
+  ])
   role?:
     | 'OWNER'
     | 'ADMIN'

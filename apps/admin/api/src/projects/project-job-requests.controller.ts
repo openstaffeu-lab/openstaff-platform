@@ -41,7 +41,9 @@ export class ProjectJobRequestsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectJobRequestsService.create(projectId, body, user);
@@ -61,10 +63,17 @@ export class ProjectJobRequestsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectJobRequestsService.update(projectId, jobRequestId, body, user);
+    return this.projectJobRequestsService.update(
+      projectId,
+      jobRequestId,
+      body,
+      user,
+    );
   }
 
   @UseGuards(
@@ -80,7 +89,9 @@ export class ProjectJobRequestsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectJobRequestsService.remove(projectId, jobRequestId, user);

@@ -1,0 +1,112 @@
+{
+  "checkedAtUtc": "2026-05-27T05:42:07.032Z",
+  "apiBase": "http://127.0.0.1:18085",
+  "adminBase": "http://127.0.0.1:3115",
+  "webBase": "http://127.0.0.1:3116",
+  "screenshotDir": "docs\\proof\\exec75\\screenshots",
+  "summary": {
+    "pass": true,
+    "checkedBrowsers": [
+      "Chrome desktop",
+      "Android Chrome"
+    ],
+    "consoleErrors": [],
+    "pageErrors": [],
+    "badResponses": [],
+    "failedChecks": [],
+    "assetResponses": [
+      {
+        "url": "http://127.0.0.1:18085/profiles/assets/exec75-banner",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:18085/profiles/assets/exec75-logo",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:18085/profiles/assets/exec75-gallery",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:18085/profiles/assets/exec75-banner",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:18085/profiles/assets/exec75-logo",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:18085/profiles/assets/exec75-gallery",
+        "status": 200
+      }
+    ],
+    "horizontalOverflowPages": []
+  },
+  "results": [
+    {
+      "label": "Chrome desktop",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "failedChecks": [],
+      "assetResponses": [
+        {
+          "url": "http://127.0.0.1:18085/profiles/assets/exec75-banner",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:18085/profiles/assets/exec75-logo",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:18085/profiles/assets/exec75-gallery",
+          "status": 200
+        }
+      ],
+      "horizontalOverflowPages": []
+    },
+    {
+      "label": "Android Chrome",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "failedChecks": [],
+      "assetResponses": [
+        {
+          "url": "http://127.0.0.1:18085/profiles/assets/exec75-banner",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:18085/profiles/assets/exec75-logo",
+          "status": 200
+        },
+        {
+          "url": "http://127.0.0.1:18085/profiles/assets/exec75-gallery",
+          "status": 200
+        }
+      ],
+      "horizontalOverflowPages": []
+    },
+    {
+      "label": "ADMIN",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "failedChecks": []
+    },
+    {
+      "label": "AI_MODERATOR",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "failedChecks": []
+    },
+    {
+      "label": "SUPERADMIN",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "failedChecks": []
+    }
+  ]
+}

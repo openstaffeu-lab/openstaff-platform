@@ -46,7 +46,12 @@ export class JobsService {
   async findOne(id: string) {
     const job = await this.prisma.job.findUnique({
       where: { id },
-      include: { actor: true, applications: true, contracts: true, reviews: true },
+      include: {
+        actor: true,
+        applications: true,
+        contracts: true,
+        reviews: true,
+      },
     });
 
     if (!job) {
@@ -121,7 +126,9 @@ export class JobsService {
     }
 
     if (!this.isAdmin(resolvedActor) && job.actorId !== resolvedActor?.id) {
-      throw new ForbiddenException('Only the owner or an admin can update this job');
+      throw new ForbiddenException(
+        'Only the owner or an admin can update this job',
+      );
     }
 
     return this.prisma.job.update({
@@ -172,7 +179,9 @@ export class JobsService {
     }
 
     if (!this.isAdmin(resolvedActor) && job.actorId !== resolvedActor?.id) {
-      throw new ForbiddenException('Only the owner or an admin can list applications');
+      throw new ForbiddenException(
+        'Only the owner or an admin can list applications',
+      );
     }
 
     return job.applications;
@@ -201,12 +210,17 @@ export class JobsService {
     });
 
     if (existing) {
-      throw new ConflictException('Application already exists for this actor and job');
+      throw new ConflictException(
+        'Application already exists for this actor and job',
+      );
     }
 
     const matchedUser = await this.prisma.user.findFirst({
       where: {
-        OR: [{ email: resolvedActor.email }, { firebaseUid: resolvedActor.firebaseUid }],
+        OR: [
+          { email: resolvedActor.email },
+          { firebaseUid: resolvedActor.firebaseUid },
+        ],
       },
       select: { id: true },
     });

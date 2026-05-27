@@ -46,7 +46,6 @@ type NormalizedPublicPostPayload = Prisma.PublicPostUncheckedCreateInput & {
   externalLinkUrl?: string;
 };
 
-
 @Injectable()
 export class PublicPostsService {
   private readonly storageBucket = process.env.STORAGE_BUCKET?.trim() ?? '';
@@ -67,7 +66,9 @@ export class PublicPostsService {
       },
     });
 
-    return buildSuccessResponse(posts.map((post) => this.toPublicPostResponse(post, false)));
+    return buildSuccessResponse(
+      posts.map((post) => this.toPublicPostResponse(post, false)),
+    );
   }
 
   async findAllForAdmin(filters: PublicPostFilters = {}) {
@@ -79,7 +80,9 @@ export class PublicPostsService {
       },
     });
 
-    return buildSuccessResponse(posts.map((post) => this.toPublicPostResponse(post, true)));
+    return buildSuccessResponse(
+      posts.map((post) => this.toPublicPostResponse(post, true)),
+    );
   }
 
   async findMine(user: AuthenticatedUser) {
@@ -93,7 +96,9 @@ export class PublicPostsService {
       },
     });
 
-    return buildSuccessResponse(posts.map((post) => this.toPublicPostResponse(post, true)));
+    return buildSuccessResponse(
+      posts.map((post) => this.toPublicPostResponse(post, true)),
+    );
   }
 
   async findOne(id: string, user?: AuthenticatedUser | null) {
@@ -110,7 +115,9 @@ export class PublicPostsService {
       throw new ForbiddenException('This marketplace post is not public');
     }
 
-    return buildSuccessResponse(this.toPublicPostResponse(post, this.canManagePost(post, user)));
+    return buildSuccessResponse(
+      this.toPublicPostResponse(post, this.canManagePost(post, user)),
+    );
   }
 
   async create(body: Record<string, unknown>, user: AuthenticatedUser) {
@@ -124,12 +131,21 @@ export class PublicPostsService {
 
     if (externalLinkUrl) {
       await this.prisma.externalLinkSubmission.create({
-        data: this.buildExternalLinkData(post.id, externalLinkUrl, data.ownerName),
+        data: this.buildExternalLinkData(
+          post.id,
+          externalLinkUrl,
+          data.ownerName,
+        ),
       });
-      await this.createModerationTask('PUBLIC_POST_EXTERNAL_LINK', post.id, user.sub, {
-        postId: post.id,
-        url: externalLinkUrl,
-      });
+      await this.createModerationTask(
+        'PUBLIC_POST_EXTERNAL_LINK',
+        post.id,
+        user.sub,
+        {
+          postId: post.id,
+          url: externalLinkUrl,
+        },
+      );
     }
 
     await this.createModerationTask('PUBLIC_POST', post.id, user.sub, {
@@ -169,10 +185,16 @@ export class PublicPostsService {
       skipNotification: true,
     });
 
-    return buildSuccessResponse(this.toPublicPostResponse(withRelations ?? post, true));
+    return buildSuccessResponse(
+      this.toPublicPostResponse(withRelations ?? post, true),
+    );
   }
 
-  async update(id: string, body: Record<string, unknown>, user: AuthenticatedUser) {
+  async update(
+    id: string,
+    body: Record<string, unknown>,
+    user: AuthenticatedUser,
+  ) {
     const existing = await this.prisma.publicPost.findUnique({
       where: { id },
       include: {
@@ -186,7 +208,11 @@ export class PublicPostsService {
 
     this.assertCanManagePost(existing, user);
 
-    const normalized = await this.normalizePublicPostPayload(body, user, existing);
+    const normalized = await this.normalizePublicPostPayload(
+      body,
+      user,
+      existing,
+    );
     const { externalLinkUrl, ...data } = normalized;
 
     const post = await this.prisma.publicPost.update({
@@ -201,18 +227,30 @@ export class PublicPostsService {
       if (existingLink) {
         await this.prisma.externalLinkSubmission.update({
           where: { id: existingLink.id },
-          data: this.buildExternalLinkUpdateData(externalLinkUrl, data.ownerName),
+          data: this.buildExternalLinkUpdateData(
+            externalLinkUrl,
+            data.ownerName,
+          ),
         });
       } else {
         await this.prisma.externalLinkSubmission.create({
-          data: this.buildExternalLinkData(post.id, externalLinkUrl, data.ownerName),
+          data: this.buildExternalLinkData(
+            post.id,
+            externalLinkUrl,
+            data.ownerName,
+          ),
         });
       }
 
-      await this.createModerationTask('PUBLIC_POST_EXTERNAL_LINK', post.id, user.sub, {
-        postId: post.id,
-        url: externalLinkUrl,
-      });
+      await this.createModerationTask(
+        'PUBLIC_POST_EXTERNAL_LINK',
+        post.id,
+        user.sub,
+        {
+          postId: post.id,
+          url: externalLinkUrl,
+        },
+      );
     }
 
     await this.createModerationTask('PUBLIC_POST', post.id, user.sub, {
@@ -231,7 +269,9 @@ export class PublicPostsService {
       include: this.adminPostInclude,
     });
 
-    return buildSuccessResponse(this.toPublicPostResponse(withRelations ?? post, true));
+    return buildSuccessResponse(
+      this.toPublicPostResponse(withRelations ?? post, true),
+    );
   }
 
   async remove(id: string, user: AuthenticatedUser) {
@@ -258,9 +298,11 @@ export class PublicPostsService {
     }
 
     for (const document of existing.documents) {
-      await this.deleteStoredDocument(document.storageProvider, document.storageBucket, document.storageKey).catch(
-        () => undefined,
-      );
+      await this.deleteStoredDocument(
+        document.storageProvider,
+        document.storageBucket,
+        document.storageKey,
+      ).catch(() => undefined);
     }
 
     await this.auditService.log({
@@ -315,7 +357,10 @@ export class PublicPostsService {
     const storageReference = this.storageBucket
       ? this.buildGcsReference(storageKey, this.storageBucket)
       : storageKey;
-    const role = typeof body.role === 'string' && body.role.trim() ? body.role.trim() : 'GALLERY';
+    const role =
+      typeof body.role === 'string' && body.role.trim()
+        ? body.role.trim()
+        : 'GALLERY';
     const type = file.mimetype.startsWith('video/') ? 'VIDEO' : 'IMAGE';
 
     const created = await this.prisma.publicPostMedia.create({
@@ -373,7 +418,13 @@ export class PublicPostsService {
     try {
       storageKey = await this.persistUploadedFile(postId, 'documents', file);
     } catch (error) {
-      await this.recordUploadFailure(postId, user.sub, 'documents', error, file);
+      await this.recordUploadFailure(
+        postId,
+        user.sub,
+        'documents',
+        error,
+        file,
+      );
       throw error;
     }
 
@@ -398,16 +449,25 @@ export class PublicPostsService {
       },
     });
 
-    await this.createModerationTask('PUBLIC_POST_DOCUMENT', document.id, user.sub, {
-      postId,
-      title: document.title,
-      mimeType: document.mimeType,
-    });
+    await this.createModerationTask(
+      'PUBLIC_POST_DOCUMENT',
+      document.id,
+      user.sub,
+      {
+        postId,
+        title: document.title,
+        mimeType: document.mimeType,
+      },
+    );
 
     return buildSuccessResponse(document);
   }
 
-  async addExternalLink(postId: string, body: Record<string, unknown>, user: AuthenticatedUser) {
+  async addExternalLink(
+    postId: string,
+    body: Record<string, unknown>,
+    user: AuthenticatedUser,
+  ) {
     const post = await this.prisma.publicPost.findUnique({
       where: { id: postId },
     });
@@ -428,10 +488,15 @@ export class PublicPostsService {
       data: this.buildExternalLinkData(postId, url, post.ownerName),
     });
 
-    await this.createModerationTask('PUBLIC_POST_EXTERNAL_LINK', created.id, user.sub, {
-      postId,
-      url,
-    });
+    await this.createModerationTask(
+      'PUBLIC_POST_EXTERNAL_LINK',
+      created.id,
+      user.sub,
+      {
+        postId,
+        url,
+      },
+    );
 
     return buildSuccessResponse(created);
   }
@@ -450,7 +515,12 @@ export class PublicPostsService {
 
     if (
       media.status !== PublicModerationStatus.APPROVED &&
-      !(user && (user.role === "ADMIN" || user.role === 'SUPERADMIN' || media.post.authorUserId === user.sub))
+      !(
+        user &&
+        (user.role === 'ADMIN' ||
+          user.role === 'SUPERADMIN' ||
+          media.post.authorUserId === user.sub)
+      )
     ) {
       throw new ForbiddenException('Media is not available');
     }
@@ -481,7 +551,12 @@ export class PublicPostsService {
 
     if (
       document.status !== PublicModerationStatus.APPROVED &&
-      !(user && (user.role === 'ADMIN' || user.role === 'SUPERADMIN' || document.post.authorUserId === user.sub))
+      !(
+        user &&
+        (user.role === 'ADMIN' ||
+          user.role === 'SUPERADMIN' ||
+          document.post.authorUserId === user.sub)
+      )
     ) {
       throw new ForbiddenException('Document is not available');
     }
@@ -494,7 +569,8 @@ export class PublicPostsService {
       fileName: document.fileName,
       mimeType: document.mimeType,
       canPreview:
-        document.mimeType === 'application/pdf' || document.mimeType.startsWith('image/'),
+        document.mimeType === 'application/pdf' ||
+        document.mimeType.startsWith('image/'),
       stream: this.createDocumentReadStream(
         document.storageProvider,
         document.storageBucket,
@@ -655,7 +731,11 @@ export class PublicPostsService {
     return buildSuccessResponse(documents);
   }
 
-  async updateMediaStatus(id: string, status: string, user?: AuthenticatedUser | null) {
+  async updateMediaStatus(
+    id: string,
+    status: string,
+    user?: AuthenticatedUser | null,
+  ) {
     const before = await this.prisma.publicPostMedia.findUnique({
       where: { id },
       include: {
@@ -700,7 +780,11 @@ export class PublicPostsService {
     return buildSuccessResponse(media);
   }
 
-  async updateDocumentStatus(id: string, status: string, user?: AuthenticatedUser | null) {
+  async updateDocumentStatus(
+    id: string,
+    status: string,
+    user?: AuthenticatedUser | null,
+  ) {
     const before = await this.prisma.publicPostDocument.findUnique({
       where: { id },
       include: {
@@ -759,7 +843,11 @@ export class PublicPostsService {
       throw new NotFoundException('Authenticated user not found');
     }
 
-    const title = this.stringValue(body.title, existing?.title, 'Untitled marketplace post');
+    const title = this.stringValue(
+      body.title,
+      existing?.title,
+      'Untitled marketplace post',
+    );
     const slug = await this.resolveUniqueSlug(
       this.stringValue(body.slug, existing?.slug, title),
       existing?.id ?? null,
@@ -771,24 +859,51 @@ export class PublicPostsService {
       authorProfileId: author.profile?.id ?? null,
       type: this.normalizePostType(body.type, existing?.type),
       title,
-      description: this.stringValue(body.description, existing?.description, 'No description provided.'),
-      summary: this.nullableStringValue(body.summary, existing?.summary ?? null),
+      description: this.stringValue(
+        body.description,
+        existing?.description,
+        'No description provided.',
+      ),
+      summary: this.nullableStringValue(
+        body.summary,
+        existing?.summary ?? null,
+      ),
       domain: this.stringValue(body.domain, existing?.domain, 'General'),
-      location: this.stringValue(body.location, existing?.location, 'Unspecified'),
+      location: this.stringValue(
+        body.location,
+        existing?.location,
+        'Unspecified',
+      ),
       status:
         user.role === 'ADMIN' || user.role === 'SUPERADMIN'
-          ? this.stringValue(body.status, existing?.status, 'PENDING_MODERATION')
+          ? this.stringValue(
+              body.status,
+              existing?.status,
+              'PENDING_MODERATION',
+            )
           : 'PENDING_MODERATION',
       moderationStatus:
         user.role === 'ADMIN' || user.role === 'SUPERADMIN'
-          ? existing?.moderationStatus ?? PublicModerationStatus.PENDING
+          ? (existing?.moderationStatus ?? PublicModerationStatus.PENDING)
           : PublicModerationStatus.PENDING,
-      bannerUrl: this.nullableStringValue(body.bannerUrl, existing?.bannerUrl ?? null),
-      experienceLabel: this.nullableStringValue(body.experienceLabel, existing?.experienceLabel ?? null),
+      bannerUrl: this.nullableStringValue(
+        body.bannerUrl,
+        existing?.bannerUrl ?? null,
+      ),
+      experienceLabel: this.nullableStringValue(
+        body.experienceLabel,
+        existing?.experienceLabel ?? null,
+      ),
       value: this.stringValue(body.value, existing?.value, 'To be confirmed'),
-      currencyCode: this.nullableStringValue(body.currencyCode, existing?.currencyCode ?? null),
+      currencyCode: this.nullableStringValue(
+        body.currencyCode,
+        existing?.currencyCode ?? null,
+      ),
       vatRate: this.numberValue(body.vatRate, existing?.vatRate ?? null),
-      fiscalMetadataJson: this.objectValue(body.fiscalMetadataJson, existing?.fiscalMetadataJson ?? {}),
+      fiscalMetadataJson: this.objectValue(
+        body.fiscalMetadataJson,
+        existing?.fiscalMetadataJson ?? {},
+      ),
       budgetMin: this.numberValue(body.budgetMin, existing?.budgetMin ?? null),
       budgetMax: this.numberValue(body.budgetMax, existing?.budgetMax ?? null),
       salaryMin: this.numberValue(body.salaryMin, existing?.salaryMin ?? null),
@@ -803,14 +918,24 @@ export class PublicPostsService {
         existing?.ownerType,
         author.profile?.profileType ?? author.role,
       ),
-      classificationJson: this.objectValue(body.classificationJson, existing?.classificationJson ?? {}),
-      certifications: this.stringValue(body.certifications, existing?.certifications, ''),
+      classificationJson: this.objectValue(
+        body.classificationJson,
+        existing?.classificationJson ?? {},
+      ),
+      certifications: this.stringValue(
+        body.certifications,
+        existing?.certifications,
+        '',
+      ),
       certificationsOffered: this.stringValue(
         body.certificationsOffered,
         existing?.certificationsOffered ?? '',
         '',
       ),
-      visibility: this.normalizeVisibility(body.visibility, existing?.visibility),
+      visibility: this.normalizeVisibility(
+        body.visibility,
+        existing?.visibility,
+      ),
       escoCodesJson: JSON.stringify(
         this.arrayOfStringsFromMany(
           [body.escoCodes, body.escoCodesJson],
@@ -835,9 +960,17 @@ export class PublicPostsService {
           existing?.languageCodesJson,
         ),
       ),
-      documentsJson: JSON.stringify(this.arrayOfObjects(body.documentsJson, existing?.documentsJson)),
-      countryId: this.nullableStringValue(body.countryId, existing?.countryId ?? null),
-      regionId: this.nullableStringValue(body.regionId, existing?.regionId ?? null),
+      documentsJson: JSON.stringify(
+        this.arrayOfObjects(body.documentsJson, existing?.documentsJson),
+      ),
+      countryId: this.nullableStringValue(
+        body.countryId,
+        existing?.countryId ?? null,
+      ),
+      regionId: this.nullableStringValue(
+        body.regionId,
+        existing?.regionId ?? null,
+      ),
       cityId: this.nullableStringValue(body.cityId, existing?.cityId ?? null),
       externalLinkUrl:
         typeof body.externalLinkUrl === 'string' && body.externalLinkUrl.trim()
@@ -853,7 +986,9 @@ export class PublicPostsService {
       where.visibility = PublicPostVisibility.PUBLIC;
       where.moderationStatus = PublicModerationStatus.APPROVED;
       where.status =
-        typeof filters.status === 'string' && filters.status ? filters.status : 'LIVE';
+        typeof filters.status === 'string' && filters.status
+          ? filters.status
+          : 'LIVE';
     } else if (typeof filters.status === 'string' && filters.status) {
       where.status = filters.status;
     }
@@ -892,7 +1027,15 @@ export class PublicPostsService {
     return where;
   }
 
-  private canReadPost(post: { visibility: PublicPostVisibility; moderationStatus: PublicModerationStatus; status: string; authorUserId?: string | null }, user?: AuthenticatedUser | null) {
+  private canReadPost(
+    post: {
+      visibility: PublicPostVisibility;
+      moderationStatus: PublicModerationStatus;
+      status: string;
+      authorUserId?: string | null;
+    },
+    user?: AuthenticatedUser | null,
+  ) {
     if (
       post.visibility === PublicPostVisibility.PUBLIC &&
       post.moderationStatus === PublicModerationStatus.APPROVED &&
@@ -912,7 +1055,10 @@ export class PublicPostsService {
     return post.authorUserId === user.sub;
   }
 
-  private assertCanManagePost(post: { authorUserId?: string | null }, user: AuthenticatedUser) {
+  private assertCanManagePost(
+    post: { authorUserId?: string | null },
+    user: AuthenticatedUser,
+  ) {
     if (this.canManagePost(post, user)) {
       return;
     }
@@ -935,35 +1081,58 @@ export class PublicPostsService {
     return post.authorUserId === user.sub;
   }
 
-  private toPublicPostResponse(post: Record<string, unknown>, includePrivateRelations = false) {
+  private toPublicPostResponse(
+    post: Record<string, unknown>,
+    includePrivateRelations = false,
+  ) {
     const typedPost = includePrivateRelations
       ? (post as Record<string, unknown>)
       : this.filterPublicRelations(post as Record<string, unknown>);
 
     return {
       ...typedPost,
-      escoCodes: this.parseStringArray((typedPost as { escoCodesJson?: string | null }).escoCodesJson),
-      naceCodes: this.parseStringArray((typedPost as { naceCodesJson?: string | null }).naceCodesJson),
-      uniclassCodes: this.parseStringArray((typedPost as { uniclassCodesJson?: string | null }).uniclassCodesJson),
-      languageCodes: this.parseStringArray((typedPost as { languageCodesJson?: string | null }).languageCodesJson),
-      documentRefs: this.parseJsonArray((typedPost as { documentsJson?: string | null }).documentsJson),
-      externalLinks: Array.isArray((typedPost as { externalLinks?: unknown[] }).externalLinks)
+      escoCodes: this.parseStringArray(
+        (typedPost as { escoCodesJson?: string | null }).escoCodesJson,
+      ),
+      naceCodes: this.parseStringArray(
+        (typedPost as { naceCodesJson?: string | null }).naceCodesJson,
+      ),
+      uniclassCodes: this.parseStringArray(
+        (typedPost as { uniclassCodesJson?: string | null }).uniclassCodesJson,
+      ),
+      languageCodes: this.parseStringArray(
+        (typedPost as { languageCodesJson?: string | null }).languageCodesJson,
+      ),
+      documentRefs: this.parseJsonArray(
+        (typedPost as { documentsJson?: string | null }).documentsJson,
+      ),
+      externalLinks: Array.isArray(
+        (typedPost as { externalLinks?: unknown[] }).externalLinks,
+      )
         ? (typedPost as { externalLinks: unknown[] }).externalLinks
         : [],
       media: Array.isArray((typedPost as { media?: unknown[] }).media)
         ? (typedPost as { media: unknown[] }).media
         : [],
-      mediaAssets: Array.isArray((typedPost as { media?: Array<Record<string, unknown>> }).media)
-        ? (typedPost as { media: Array<Record<string, unknown>> }).media.map((item) => ({
-            ...item,
-            assetUrl: `/public-posts/media/${item.id}`,
-          }))
+      mediaAssets: Array.isArray(
+        (typedPost as { media?: Array<Record<string, unknown>> }).media,
+      )
+        ? (typedPost as { media: Array<Record<string, unknown>> }).media.map(
+            (item) => ({
+              ...item,
+              assetUrl: `/public-posts/media/${item.id}`,
+            }),
+          )
         : [],
       country: (typedPost as { country?: unknown }).country ?? null,
       region: (typedPost as { region?: unknown }).region ?? null,
       city: (typedPost as { city?: unknown }).city ?? null,
-      documents: Array.isArray((typedPost as { documents?: Array<Record<string, unknown>> }).documents)
-        ? (typedPost as { documents: Array<Record<string, unknown>> }).documents.map((item) => ({
+      documents: Array.isArray(
+        (typedPost as { documents?: Array<Record<string, unknown>> }).documents,
+      )
+        ? (
+            typedPost as { documents: Array<Record<string, unknown>> }
+          ).documents.map((item) => ({
             ...item,
             downloadUrl: `/public-posts/documents/${item.id}`,
           }))
@@ -979,7 +1148,8 @@ export class PublicPostsService {
             (item) =>
               typeof item === 'object' &&
               item !== null &&
-              (item as { status?: unknown }).status === PublicModerationStatus.APPROVED,
+              (item as { status?: unknown }).status ===
+                PublicModerationStatus.APPROVED,
           )
         : [],
       documents: Array.isArray(post.documents)
@@ -987,7 +1157,8 @@ export class PublicPostsService {
             (item) =>
               typeof item === 'object' &&
               item !== null &&
-              (item as { status?: unknown }).status === PublicModerationStatus.APPROVED,
+              (item as { status?: unknown }).status ===
+                PublicModerationStatus.APPROVED,
           )
         : [],
       externalLinks: Array.isArray(post.externalLinks)
@@ -995,7 +1166,8 @@ export class PublicPostsService {
             (item) =>
               typeof item === 'object' &&
               item !== null &&
-              (item as { securityStatus?: unknown }).securityStatus === 'APPROVED',
+              (item as { securityStatus?: unknown }).securityStatus ===
+                'APPROVED',
           )
         : [],
     };
@@ -1069,7 +1241,11 @@ export class PublicPostsService {
     });
   }
 
-  private buildExternalLinkData(postId: string, url: string, submittedBy: string) {
+  private buildExternalLinkData(
+    postId: string,
+    url: string,
+    submittedBy: string,
+  ) {
     return {
       url,
       normalizedUrl: this.normalizeUrl(url),
@@ -1093,7 +1269,9 @@ export class PublicPostsService {
   private linkReasons(url: string) {
     const reasons: string[] = [];
 
-    reasons.push(url.startsWith('https://') ? 'HTTPS detected' : 'HTTP link detected');
+    reasons.push(
+      url.startsWith('https://') ? 'HTTPS detected' : 'HTTP link detected',
+    );
 
     if (/\.(exe|bat|cmd|msi)(\?|$)/i.test(url)) {
       reasons.push('Executable extension detected');
@@ -1129,18 +1307,28 @@ export class PublicPostsService {
   }
 
   private normalizeVisibility(value: unknown, fallback?: PublicPostVisibility) {
-    if (value === PublicPostVisibility.PUBLIC || value === PublicPostVisibility.PRIVATE) {
+    if (
+      value === PublicPostVisibility.PUBLIC ||
+      value === PublicPostVisibility.PRIVATE
+    ) {
       return value;
     }
 
-    if (fallback === PublicPostVisibility.PUBLIC || fallback === PublicPostVisibility.PRIVATE) {
+    if (
+      fallback === PublicPostVisibility.PUBLIC ||
+      fallback === PublicPostVisibility.PRIVATE
+    ) {
       return fallback;
     }
 
     return PublicPostVisibility.PUBLIC;
   }
 
-  private stringValue(value: unknown, fallback: string | undefined, defaultValue: string) {
+  private stringValue(
+    value: unknown,
+    fallback: string | undefined,
+    defaultValue: string,
+  ) {
     return typeof value === 'string' && value.trim()
       ? value.trim()
       : fallback && fallback.trim()
@@ -1178,14 +1366,20 @@ export class PublicPostsService {
 
   private arrayOfStrings(value: unknown, fallback: string | null | undefined) {
     if (Array.isArray(value)) {
-      return value.filter((item): item is string => typeof item === 'string' && item.trim() !== '');
+      return value.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim() !== '',
+      );
     }
 
     if (typeof value === 'string') {
       try {
         const parsed = JSON.parse(value);
         return Array.isArray(parsed)
-          ? parsed.filter((item): item is string => typeof item === 'string' && item.trim() !== '')
+          ? parsed.filter(
+              (item): item is string =>
+                typeof item === 'string' && item.trim() !== '',
+            )
           : [];
       } catch {
         return value
@@ -1301,7 +1495,8 @@ export class PublicPostsService {
     folder: 'media' | 'documents',
     file: UploadedMarketplaceFile,
   ) {
-    const extension = extname(file.originalname) || this.extensionFromMime(file.mimetype);
+    const extension =
+      extname(file.originalname) || this.extensionFromMime(file.mimetype);
     const uniqueFileName = `${randomUUID()}${extension}`;
     const relativeStorageKey = `public-posts/${folder}/${postId}/${uniqueFileName}`;
 
@@ -1319,7 +1514,10 @@ export class PublicPostsService {
 
     const targetFolder = join(this.getUploadsRoot(), folder, postId);
     await mkdir(targetFolder, { recursive: true });
-    await writeFile(join(this.getBaseUploadsPath(), relativeStorageKey), file.buffer);
+    await writeFile(
+      join(this.getBaseUploadsPath(), relativeStorageKey),
+      file.buffer,
+    );
 
     return relativeStorageKey;
   }
@@ -1332,7 +1530,9 @@ export class PublicPostsService {
     file?: UploadedMarketplaceFile,
   ) {
     const message =
-      error instanceof Error ? error.message : 'Upload failed before persistence completed.';
+      error instanceof Error
+        ? error.message
+        : 'Upload failed before persistence completed.';
 
     await this.notificationService.emitEvent({
       key: `rollout-funnel:upload-failed:${surface}:${postId}:${Date.now()}`,
@@ -1417,14 +1617,20 @@ export class PublicPostsService {
   }
 
   private createAssetReadStream(reference: string) {
-    const { provider, bucketName, storageKey } = this.parseStoredAssetReference(reference);
+    const { provider, bucketName, storageKey } =
+      this.parseStoredAssetReference(reference);
 
     if (provider === 'gcs') {
       if (!this.storage || !bucketName) {
-        throw new NotFoundException('Cloud Storage is not configured for this asset');
+        throw new NotFoundException(
+          'Cloud Storage is not configured for this asset',
+        );
       }
 
-      return this.storage.bucket(bucketName).file(storageKey).createReadStream();
+      return this.storage
+        .bucket(bucketName)
+        .file(storageKey)
+        .createReadStream();
     }
 
     return createReadStream(this.resolveStoragePath(storageKey));
@@ -1437,17 +1643,23 @@ export class PublicPostsService {
   ) {
     if (storageProvider.toLowerCase() === 'gcs') {
       if (!this.storage || !storageBucket) {
-        throw new NotFoundException('Cloud Storage is not configured for this document');
+        throw new NotFoundException(
+          'Cloud Storage is not configured for this document',
+        );
       }
 
-      return this.storage.bucket(storageBucket).file(storageKey).createReadStream();
+      return this.storage
+        .bucket(storageBucket)
+        .file(storageKey)
+        .createReadStream();
     }
 
     return createReadStream(this.resolveStoragePath(storageKey));
   }
 
   private async deleteStoredAssetReference(reference: string) {
-    const { provider, bucketName, storageKey } = this.parseStoredAssetReference(reference);
+    const { provider, bucketName, storageKey } =
+      this.parseStoredAssetReference(reference);
 
     if (provider === 'gcs') {
       if (!this.storage || !bucketName) {
@@ -1486,7 +1698,8 @@ export class PublicPostsService {
     const mimeMap: Record<string, string> = {
       'application/pdf': '.pdf',
       'application/msword': '.doc',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+        '.docx',
       'image/jpeg': '.jpg',
       'image/png': '.png',
       'image/webp': '.webp',

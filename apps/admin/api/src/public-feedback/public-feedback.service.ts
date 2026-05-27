@@ -38,7 +38,9 @@ export class PublicFeedbackService {
         }
 
         return buildSuccessResponse(
-          cloneDemoPublicComments().filter((item: any) => item.postId === postId),
+          cloneDemoPublicComments().filter(
+            (item: any) => item.postId === postId,
+          ),
           'placeholder',
         );
       }
@@ -51,13 +53,14 @@ export class PublicFeedbackService {
     const data = {
       postId,
       authorName:
-        typeof body.authorName === 'string' ? body.authorName : 'OpenStaff user',
+        typeof body.authorName === 'string'
+          ? body.authorName
+          : 'OpenStaff user',
       comment:
         typeof body.comment === 'string'
           ? body.comment
           : 'New public comment from OpenStaff.',
-      status:
-        typeof body.status === 'string' ? body.status : 'PENDING_REVIEW',
+      status: typeof body.status === 'string' ? body.status : 'PENDING_REVIEW',
     };
 
     try {
@@ -117,7 +120,9 @@ export class PublicFeedbackService {
         }
 
         return buildSuccessResponse(
-          cloneDemoPublicReviews().filter((item: any) => item.postId === postId),
+          cloneDemoPublicReviews().filter(
+            (item: any) => item.postId === postId,
+          ),
           'placeholder',
         );
       }
@@ -131,14 +136,15 @@ export class PublicFeedbackService {
     const data = {
       postId,
       authorName:
-        typeof body.authorName === 'string' ? body.authorName : 'OpenStaff user',
+        typeof body.authorName === 'string'
+          ? body.authorName
+          : 'OpenStaff user',
       rating: Number.isNaN(parsedRating) ? null : parsedRating,
       review:
         typeof body.review === 'string'
           ? body.review
           : 'New public review from OpenStaff.',
-      status:
-        typeof body.status === 'string' ? body.status : 'PENDING_REVIEW',
+      status: typeof body.status === 'string' ? body.status : 'PENDING_REVIEW',
     };
 
     try {
@@ -247,7 +253,9 @@ export class PublicFeedbackService {
           throw new NotFoundException('Public comment not found');
         }
 
-        const comment = cloneDemoPublicComments().find((item: any) => item.id === id);
+        const comment = cloneDemoPublicComments().find(
+          (item: any) => item.id === id,
+        );
 
         if (!comment) {
           throw new NotFoundException('Public comment not found');
@@ -288,7 +296,9 @@ export class PublicFeedbackService {
           throw new NotFoundException('Public review not found');
         }
 
-        const review = cloneDemoPublicReviews().find((item: any) => item.id === id);
+        const review = cloneDemoPublicReviews().find(
+          (item: any) => item.id === id,
+        );
 
         if (!review) {
           throw new NotFoundException('Public review not found');

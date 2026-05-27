@@ -1,5 +1,9 @@
 import { createHash } from 'node:crypto';
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { buildSuccessResponse } from '../common/api-response';
@@ -43,12 +47,16 @@ export class AuditService {
         ? forwarded.split(',')[0]?.trim()
         : null;
     const userAgentHeader = request?.headers?.['user-agent'];
-    const userAgent = Array.isArray(userAgentHeader) ? userAgentHeader[0] : userAgentHeader;
+    const userAgent = Array.isArray(userAgentHeader)
+      ? userAgentHeader[0]
+      : userAgentHeader;
 
     return {
-      ipAddress: forwardedIp ?? request?.ip ?? request?.socket?.remoteAddress ?? null,
+      ipAddress:
+        forwardedIp ?? request?.ip ?? request?.socket?.remoteAddress ?? null,
       userAgent: userAgent ?? null,
-      requestId: request?.requestId ?? request?.headers?.['x-request-id'] ?? null,
+      requestId:
+        request?.requestId ?? request?.headers?.['x-request-id'] ?? null,
     };
   }
 
@@ -68,7 +76,9 @@ export class AuditService {
     requestId?: string | null;
     request?: any;
   }) {
-    const context = input.request ? this.extractRequestContext(input.request) : undefined;
+    const context = input.request
+      ? this.extractRequestContext(input.request)
+      : undefined;
 
     return this.prisma.auditLog.create({
       data: {
@@ -105,7 +115,9 @@ export class AuditService {
     requestId?: string | null;
     request?: any;
   }) {
-    const context = input.request ? this.extractRequestContext(input.request) : undefined;
+    const context = input.request
+      ? this.extractRequestContext(input.request)
+      : undefined;
 
     return this.prisma.securityEvent.create({
       data: {
@@ -213,7 +225,11 @@ export class AuditService {
       throw new NotFoundException('Session not found');
     }
 
-    if (actor.role !== 'ADMIN' && actor.role !== 'SUPERADMIN' && session.userId !== actor.sub) {
+    if (
+      actor.role !== 'ADMIN' &&
+      actor.role !== 'SUPERADMIN' &&
+      session.userId !== actor.sub
+    ) {
       throw new ForbiddenException('You do not have access to this session');
     }
 
@@ -263,7 +279,9 @@ export class AuditService {
       orderBy: [{ updatedAt: 'desc' }],
     });
 
-    return sessions.map((session) => this.toSessionResponse(session, session.deviceFingerprint ?? null));
+    return sessions.map((session) =>
+      this.toSessionResponse(session, session.deviceFingerprint ?? null),
+    );
   }
 
   async listAdminSessions() {
@@ -302,7 +320,9 @@ export class AuditService {
       user.role !== 'SUPERADMIN' &&
       project.createdById !== user.sub
     ) {
-      throw new ForbiddenException('You do not have access to this audit timeline');
+      throw new ForbiddenException(
+        'You do not have access to this audit timeline',
+      );
     }
 
     const logs = await this.prisma.auditLog.findMany({
@@ -413,11 +433,8 @@ export class AuditService {
     return logs.map((log) => this.toAuditResponse(log));
   }
 
-  async listAdminSecurityEvents(filters?: {
-    type?: string;
-    status?: string;
-  }) {
-    const events = await this.prisma.securityEvent.findMany({
+  async listAdminSecurityEvents(filters?: { type?: string; status?: string }) {
+    const events = (await this.prisma.securityEvent.findMany({
       where: {
         ...(filters?.type ? { type: filters.type } : {}),
         ...(filters?.status ? { status: filters.status } : {}),
@@ -440,7 +457,7 @@ export class AuditService {
       } as any,
       orderBy: [{ createdAt: 'desc' }],
       take: 200,
-    }) as any[];
+    })) as any[];
 
     return events.map((event) => ({
       id: event.id,
@@ -553,7 +570,8 @@ export class AuditService {
       id: session.id,
       userId: session.userId,
       deviceFingerprintId: session.userDeviceFingerprintId,
-      deviceLabel: session.deviceLabel ?? deviceFingerprint?.deviceLabel ?? null,
+      deviceLabel:
+        session.deviceLabel ?? deviceFingerprint?.deviceLabel ?? null,
       browser: deviceFingerprint?.browser ?? null,
       os: deviceFingerprint?.os ?? null,
       ipAddress: session.ipAddress ?? deviceFingerprint?.ipAddress ?? null,
@@ -565,7 +583,10 @@ export class AuditService {
     };
   }
 
-  private computeFingerprintHash(input: { userAgent?: string | null; ipAddress?: string | null }) {
+  private computeFingerprintHash(input: {
+    userAgent?: string | null;
+    ipAddress?: string | null;
+  }) {
     return createHash('sha256')
       .update(`${input.userAgent ?? 'unknown'}|${input.ipAddress ?? 'unknown'}`)
       .digest('hex');
@@ -605,7 +626,11 @@ export class AuditService {
     if (source.includes('android')) {
       return 'Android';
     }
-    if (source.includes('iphone') || source.includes('ipad') || source.includes('ios')) {
+    if (
+      source.includes('iphone') ||
+      source.includes('ipad') ||
+      source.includes('ios')
+    ) {
       return 'iOS';
     }
     if (source.includes('linux')) {

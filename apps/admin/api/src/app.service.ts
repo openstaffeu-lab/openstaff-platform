@@ -50,7 +50,12 @@ export class AppService {
     let notificationQueue = { pending: 0, failed: 0 };
     let reluQueue = { pending: 0, failed: 0 };
     let workflowRuns = { total: 0, failed: 0 };
-    let securitySummary = { openEvents: 0, criticalEvents: 0, activeSessions: 0, complianceRequests: 0 };
+    let securitySummary = {
+      openEvents: 0,
+      criticalEvents: 0,
+      activeSessions: 0,
+      complianceRequests: 0,
+    };
     let rolloutIntelligence = this.emptyRolloutIntelligence();
 
     try {
@@ -114,219 +119,268 @@ export class AppService {
         pendingUpgradeOldest,
         contactedUpgradeOldest,
         recentOperatorActions,
-      ] =
-        await Promise.all([
-          this.prisma.notificationDelivery.count({
-            where: { status: 'PENDING' as any },
-          }),
-          this.prisma.notificationDelivery.count({
-            where: { status: 'FAILED' as any },
-          }),
-          this.prisma.reluTask.count({
-            where: { status: 'PENDING' as any },
-          }),
-          this.prisma.reluTask.count({
-            where: { status: 'FAILED' as any },
-          }),
-          this.prisma.workflowAutomationRun.count(),
-          this.prisma.workflowAutomationRun.count({
-            where: { status: 'FAILED' as any },
-          }),
-          this.prisma.securityEvent.count({
-            where: { status: 'PENDING' as any },
-          }),
-          this.prisma.securityEvent.count({
-            where: { severity: 'CRITICAL' as any },
-          }),
-          this.prisma.userSession.count({
-            where: { revokedAt: null },
-          }),
-          this.prisma.complianceRequest.count({
-            where: { status: 'PENDING' as any },
-          }),
-          this.prisma.notificationEvent.count({
-            where: { eventType: 'LANDING_PAGE_VISIT', createdAt: { gte: last24Hours } },
-          }),
-          this.prisma.notificationEvent.count({
-            where: { eventType: 'REGISTER_STARTED', createdAt: { gte: last24Hours } },
-          }),
-          this.prisma.notificationEvent.count({
-            where: { eventType: 'REGISTER_COMPLETED', createdAt: { gte: last24Hours } },
-          }),
-          this.prisma.notificationEvent.count({
-            where: { eventType: 'ONBOARDING_COMPLETED', createdAt: { gte: last24Hours } },
-          }),
-          this.prisma.notificationEvent.count({
-            where: { eventType: 'PROFILE_COMPLETED', createdAt: { gte: last24Hours } },
-          }),
-          this.prisma.notificationEvent.count({
-            where: { eventType: 'PUBLISH_STARTED', createdAt: { gte: last24Hours } },
-          }),
-          this.prisma.notificationEvent.count({
-            where: { eventType: 'PUBLISH_SUBMITTED', createdAt: { gte: last24Hours } },
-          }),
-          this.prisma.notificationEvent.count({
-            where: { eventType: 'PUBLISH_APPROVED', createdAt: { gte: last24Hours } },
-          }),
-          this.prisma.notificationEvent.count({
-            where: { eventType: 'UPGRADE_REQUESTED', createdAt: { gte: last24Hours } },
-          }),
-          this.prisma.notificationEvent.count({
-            where: { eventType: 'SUBSCRIPTION_UPGRADE_APPROVED', createdAt: { gte: last24Hours } },
-          }),
-          this.prisma.notificationEvent.count({
-            where: { eventType: 'UPLOAD_FAILED', createdAt: { gte: last24Hours } },
-          }),
-          this.prisma.onboardingSession.count({
-            where: { status: 'NOT_STARTED' as any },
-          }),
-          this.prisma.onboardingSession.count({
-            where: { status: 'IN_PROGRESS' as any },
-          }),
-          this.prisma.onboardingSession.count({
-            where: { status: 'COMPLETED' as any },
-          }),
-          this.prisma.publicPost.count({
-            where: { moderationStatus: 'PENDING' as any },
-          }),
-          this.prisma.publicPost.count({
-            where: { moderationStatus: 'REJECTED' as any },
-          }),
-          this.prisma.publicPostMedia.count({
-            where: { status: 'PENDING' as any },
-          }),
-          this.prisma.publicPostMedia.count({
-            where: { status: 'REJECTED' as any },
-          }),
-          this.prisma.publicPostDocument.count({
-            where: { status: 'PENDING' as any },
-          }),
-          this.prisma.publicPostDocument.count({
-            where: { status: 'REJECTED' as any },
-          }),
-          this.prisma.subscriptionUpgradeRequest.count({
-            where: { status: 'PENDING' as any },
-          }),
-          this.prisma.subscriptionUpgradeRequest.count({
-            where: { status: 'CONTACTED' as any },
-          }),
-          this.prisma.subscriptionUpgradeRequest.count({
-            where: { status: 'APPROVED' as any },
-          }),
-          this.prisma.securityEvent.count({
-            where: { type: 'LOGIN_FAILED' as any, createdAt: { gte: last24Hours } },
-          }),
-          this.prisma.securityEvent.count({
-            where: { type: 'LOGIN_FAILED' as any, createdAt: { gte: last15Minutes } },
-          }),
-          this.prisma.securityEvent.count({
-            where: { type: 'RATE_LIMIT_TRIGGERED' as any, createdAt: { gte: last15Minutes } },
-          }),
-          this.prisma.billingWebhookEvent.count({
-            where: { status: 'FAILED' as any, createdAt: { gte: last24Hours } },
-          }),
-          this.prisma.notificationEvent.count({
-            where: {
-              eventType: 'OPERATIONAL_FEEDBACK_OPERATOR_ESCALATION',
-              createdAt: { gte: last24Hours },
+      ] = await Promise.all([
+        this.prisma.notificationDelivery.count({
+          where: { status: 'PENDING' as any },
+        }),
+        this.prisma.notificationDelivery.count({
+          where: { status: 'FAILED' as any },
+        }),
+        this.prisma.reluTask.count({
+          where: { status: 'PENDING' as any },
+        }),
+        this.prisma.reluTask.count({
+          where: { status: 'FAILED' as any },
+        }),
+        this.prisma.workflowAutomationRun.count(),
+        this.prisma.workflowAutomationRun.count({
+          where: { status: 'FAILED' as any },
+        }),
+        this.prisma.securityEvent.count({
+          where: { status: 'PENDING' as any },
+        }),
+        this.prisma.securityEvent.count({
+          where: { severity: 'CRITICAL' as any },
+        }),
+        this.prisma.userSession.count({
+          where: { revokedAt: null },
+        }),
+        this.prisma.complianceRequest.count({
+          where: { status: 'PENDING' as any },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'LANDING_PAGE_VISIT',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'REGISTER_STARTED',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'REGISTER_COMPLETED',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'ONBOARDING_COMPLETED',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'PROFILE_COMPLETED',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'PUBLISH_STARTED',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'PUBLISH_SUBMITTED',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'PUBLISH_APPROVED',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'UPGRADE_REQUESTED',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'SUBSCRIPTION_UPGRADE_APPROVED',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'UPLOAD_FAILED',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.onboardingSession.count({
+          where: { status: 'NOT_STARTED' as any },
+        }),
+        this.prisma.onboardingSession.count({
+          where: { status: 'IN_PROGRESS' as any },
+        }),
+        this.prisma.onboardingSession.count({
+          where: { status: 'COMPLETED' as any },
+        }),
+        this.prisma.publicPost.count({
+          where: { moderationStatus: 'PENDING' as any },
+        }),
+        this.prisma.publicPost.count({
+          where: { moderationStatus: 'REJECTED' as any },
+        }),
+        this.prisma.publicPostMedia.count({
+          where: { status: 'PENDING' as any },
+        }),
+        this.prisma.publicPostMedia.count({
+          where: { status: 'REJECTED' as any },
+        }),
+        this.prisma.publicPostDocument.count({
+          where: { status: 'PENDING' as any },
+        }),
+        this.prisma.publicPostDocument.count({
+          where: { status: 'REJECTED' as any },
+        }),
+        this.prisma.subscriptionUpgradeRequest.count({
+          where: { status: 'PENDING' as any },
+        }),
+        this.prisma.subscriptionUpgradeRequest.count({
+          where: { status: 'CONTACTED' as any },
+        }),
+        this.prisma.subscriptionUpgradeRequest.count({
+          where: { status: 'APPROVED' as any },
+        }),
+        this.prisma.securityEvent.count({
+          where: {
+            type: 'LOGIN_FAILED' as any,
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.securityEvent.count({
+          where: {
+            type: 'LOGIN_FAILED' as any,
+            createdAt: { gte: last15Minutes },
+          },
+        }),
+        this.prisma.securityEvent.count({
+          where: {
+            type: 'RATE_LIMIT_TRIGGERED' as any,
+            createdAt: { gte: last15Minutes },
+          },
+        }),
+        this.prisma.billingWebhookEvent.count({
+          where: { status: 'FAILED' as any, createdAt: { gte: last24Hours } },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'OPERATIONAL_FEEDBACK_OPERATOR_ESCALATION',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'OPERATIONAL_FEEDBACK_REPEATED_USER_CONFUSION',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            sourceType: 'OPERATIONAL_FEEDBACK',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'OPERATIONAL_FEEDBACK_ONBOARDING_FRICTION',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'OPERATIONAL_FEEDBACK_MODERATION_CONFUSION',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'OPERATIONAL_FEEDBACK_BILLING_CONFUSION',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'OPERATIONAL_FEEDBACK_SUPPORT_PAIN_POINT',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.notificationEvent.count({
+          where: {
+            eventType: 'OPERATIONAL_FEEDBACK_FAILED_FLOW',
+            createdAt: { gte: last24Hours },
+          },
+        }),
+        this.prisma.publicPost.findFirst({
+          where: { moderationStatus: 'PENDING' as any },
+          orderBy: { createdAt: 'asc' },
+          select: { createdAt: true },
+        }),
+        this.prisma.publicPostMedia.findFirst({
+          where: { status: 'PENDING' as any },
+          orderBy: { createdAt: 'asc' },
+          select: { createdAt: true },
+        }),
+        this.prisma.publicPostDocument.findFirst({
+          where: { status: 'PENDING' as any },
+          orderBy: { createdAt: 'asc' },
+          select: { createdAt: true },
+        }),
+        this.prisma.subscriptionUpgradeRequest.findFirst({
+          where: { status: 'PENDING' as any },
+          orderBy: { createdAt: 'asc' },
+          select: { createdAt: true },
+        }),
+        this.prisma.subscriptionUpgradeRequest.findFirst({
+          where: { status: 'CONTACTED' as any },
+          orderBy: { createdAt: 'asc' },
+          select: { createdAt: true },
+        }),
+        this.prisma.auditLog.findMany({
+          orderBy: [{ createdAt: 'desc' }],
+          take: 8,
+          where: {
+            actorUser: {
+              role: { in: ['ADMIN', 'SUPERADMIN'] as any },
             },
-          }),
-          this.prisma.notificationEvent.count({
-            where: {
-              eventType: 'OPERATIONAL_FEEDBACK_REPEATED_USER_CONFUSION',
-              createdAt: { gte: last24Hours },
-            },
-          }),
-          this.prisma.notificationEvent.count({
-            where: {
-              sourceType: 'OPERATIONAL_FEEDBACK',
-              createdAt: { gte: last24Hours },
-            },
-          }),
-          this.prisma.notificationEvent.count({
-            where: {
-              eventType: 'OPERATIONAL_FEEDBACK_ONBOARDING_FRICTION',
-              createdAt: { gte: last24Hours },
-            },
-          }),
-          this.prisma.notificationEvent.count({
-            where: {
-              eventType: 'OPERATIONAL_FEEDBACK_MODERATION_CONFUSION',
-              createdAt: { gte: last24Hours },
-            },
-          }),
-          this.prisma.notificationEvent.count({
-            where: {
-              eventType: 'OPERATIONAL_FEEDBACK_BILLING_CONFUSION',
-              createdAt: { gte: last24Hours },
-            },
-          }),
-          this.prisma.notificationEvent.count({
-            where: {
-              eventType: 'OPERATIONAL_FEEDBACK_SUPPORT_PAIN_POINT',
-              createdAt: { gte: last24Hours },
-            },
-          }),
-          this.prisma.notificationEvent.count({
-            where: {
-              eventType: 'OPERATIONAL_FEEDBACK_FAILED_FLOW',
-              createdAt: { gte: last24Hours },
-            },
-          }),
-          this.prisma.publicPost.findFirst({
-            where: { moderationStatus: 'PENDING' as any },
-            orderBy: { createdAt: 'asc' },
-            select: { createdAt: true },
-          }),
-          this.prisma.publicPostMedia.findFirst({
-            where: { status: 'PENDING' as any },
-            orderBy: { createdAt: 'asc' },
-            select: { createdAt: true },
-          }),
-          this.prisma.publicPostDocument.findFirst({
-            where: { status: 'PENDING' as any },
-            orderBy: { createdAt: 'asc' },
-            select: { createdAt: true },
-          }),
-          this.prisma.subscriptionUpgradeRequest.findFirst({
-            where: { status: 'PENDING' as any },
-            orderBy: { createdAt: 'asc' },
-            select: { createdAt: true },
-          }),
-          this.prisma.subscriptionUpgradeRequest.findFirst({
-            where: { status: 'CONTACTED' as any },
-            orderBy: { createdAt: 'asc' },
-            select: { createdAt: true },
-          }),
-          this.prisma.auditLog.findMany({
-            orderBy: [{ createdAt: 'desc' }],
-            take: 8,
-            where: {
-              actorUser: {
-                role: { in: ['ADMIN', 'SUPERADMIN'] as any },
+          },
+          select: {
+            createdAt: true,
+            action: true,
+            category: true,
+            entityType: true,
+            actorUser: {
+              select: {
+                email: true,
+                role: true,
               },
             },
-            select: {
-              createdAt: true,
-              action: true,
-              category: true,
-              entityType: true,
-              actorUser: {
-                select: {
-                  email: true,
-                  role: true,
-                },
-              },
-            },
-          }),
-        ]);
+          },
+        }),
+      ]);
 
       notificationQueue = { pending, failed };
       reluQueue = { pending: reluPending, failed: reluFailed };
       workflowRuns = { total: workflowTotal, failed: workflowFailed };
-      securitySummary = { openEvents, criticalEvents, activeSessions, complianceRequests };
+      securitySummary = {
+        openEvents,
+        criticalEvents,
+        activeSessions,
+        complianceRequests,
+      };
       const funnelConversions = {
-        landingToRegisterStartPct: this.percentage(registerStarted24h, landingPageVisits24h),
+        landingToRegisterStartPct: this.percentage(
+          registerStarted24h,
+          landingPageVisits24h,
+        ),
         registerStartToCompletePct: this.percentage(
           registerCompleted24h,
           registerStarted24h,
@@ -366,8 +420,9 @@ export class AppService {
         minutes: number;
       }>;
       const oldestModerationItem =
-        moderationOldestCandidates.sort((left, right) => right.minutes - left.minutes)[0] ??
-        null;
+        moderationOldestCandidates.sort(
+          (left, right) => right.minutes - left.minutes,
+        )[0] ?? null;
       const upgradeOldestCandidates = [
         {
           label: 'pending',
@@ -382,7 +437,9 @@ export class AppService {
         minutes: number;
       }>;
       const oldestUpgradeItem =
-        upgradeOldestCandidates.sort((left, right) => right.minutes - left.minutes)[0] ?? null;
+        upgradeOldestCandidates.sort(
+          (left, right) => right.minutes - left.minutes,
+        )[0] ?? null;
       const supportIndicators = {
         backlogSignals24h:
           supportPainPoints24h +
@@ -549,7 +606,10 @@ export class AppService {
         },
         emailDelivery: {
           mode: this.getEmailDeliveryMode(),
-          provider: this.getEmailDeliveryMode() === 'configured' ? 'configured_provider' : 'not_configured',
+          provider:
+            this.getEmailDeliveryMode() === 'configured'
+              ? 'configured_provider'
+              : 'not_configured',
         },
         smsDelivery: {
           mode: this.getSmsDeliveryMode(),
@@ -570,10 +630,18 @@ export class AppService {
         this.component('projects', 'implemented', '/projects'),
         this.component('profiles', 'implemented', '/profiles'),
         this.component('public-posts', 'implemented', '/public-posts'),
-        this.component('public-feedback', 'implemented', '/public-comments, /public-reviews'),
+        this.component(
+          'public-feedback',
+          'implemented',
+          '/public-comments, /public-reviews',
+        ),
         this.component('admin-moderation', 'implemented', '/admin/*'),
         this.component('notifications', 'implemented', '/notifications'),
-        this.component('audit', 'implemented', '/projects/:projectId/audit-logs'),
+        this.component(
+          'audit',
+          'implemented',
+          '/projects/:projectId/audit-logs',
+        ),
       ],
     };
   }
@@ -597,13 +665,17 @@ export class AppService {
       process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim(),
     );
 
-    return hasInlineServiceAccount || hasServiceAccountPath || hasGoogleCredentials
+    return hasInlineServiceAccount ||
+      hasServiceAccountPath ||
+      hasGoogleCredentials
       ? 'configured'
       : 'missing';
   }
 
   private getSecretManagerStatus(): ReadinessStatus {
-    const runningOnGcp = Boolean(process.env.K_SERVICE || process.env.GOOGLE_CLOUD_PROJECT);
+    const runningOnGcp = Boolean(
+      process.env.K_SERVICE || process.env.GOOGLE_CLOUD_PROJECT,
+    );
 
     if (!runningOnGcp) {
       return 'missing';
@@ -619,12 +691,14 @@ export class AppService {
   private hasStripeCheckoutProviderConfigured() {
     return Boolean(
       process.env.STRIPE_SECRET_KEY?.trim() ||
-        process.env.STRIPE_API_KEY?.trim(),
+      process.env.STRIPE_API_KEY?.trim(),
     );
   }
 
   private getPublicBillingMode() {
-    return this.hasStripeCheckoutProviderConfigured() ? 'provider_backed' : 'manual_only';
+    return this.hasStripeCheckoutProviderConfigured()
+      ? 'provider_backed'
+      : 'manual_only';
   }
 
   private getBillingWebhookMode() {
@@ -642,21 +716,21 @@ export class AppService {
     const genericApiKey = process.env.EMAIL_API_KEY?.trim();
     const genericProviderConfigured = Boolean(
       (configuredProvider === 'smtp' && process.env.SMTP_URL?.trim()) ||
-        ((configuredProvider === 'resend' ||
-          configuredProvider === 'sendgrid' ||
-          configuredProvider === 'postmark') &&
-          genericApiKey) ||
-        (configuredProvider === 'mailgun' &&
-          genericApiKey &&
-          process.env.MAILGUN_DOMAIN?.trim()),
+      ((configuredProvider === 'resend' ||
+        configuredProvider === 'sendgrid' ||
+        configuredProvider === 'postmark') &&
+        genericApiKey) ||
+      (configuredProvider === 'mailgun' &&
+        genericApiKey &&
+        process.env.MAILGUN_DOMAIN?.trim()),
     );
     const hasProvider = Boolean(
       genericProviderConfigured ||
       process.env.SMTP_URL?.trim() ||
-        process.env.RESEND_API_KEY?.trim() ||
-        process.env.SENDGRID_API_KEY?.trim() ||
-        process.env.MAILGUN_API_KEY?.trim() ||
-        process.env.POSTMARK_SERVER_TOKEN?.trim(),
+      process.env.RESEND_API_KEY?.trim() ||
+      process.env.SENDGRID_API_KEY?.trim() ||
+      process.env.MAILGUN_API_KEY?.trim() ||
+      process.env.POSTMARK_SERVER_TOKEN?.trim(),
     );
 
     return hasProvider ? 'configured' : 'not_configured';
@@ -665,14 +739,16 @@ export class AppService {
   private getSmsDeliveryMode() {
     const hasProvider = Boolean(
       process.env.TWILIO_ACCOUNT_SID?.trim() &&
-        process.env.TWILIO_AUTH_TOKEN?.trim(),
+      process.env.TWILIO_AUTH_TOKEN?.trim(),
     );
 
     if (hasProvider) {
       return 'configured';
     }
 
-    return this.runtimeConfig.isSmsPlaceholderEnabled() ? 'manual_only' : 'not_required';
+    return this.runtimeConfig.isSmsPlaceholderEnabled()
+      ? 'manual_only'
+      : 'not_required';
   }
 
   private getCommercialReadinessSummary() {
@@ -682,7 +758,10 @@ export class AppService {
         ? 'direct_checkout'
         : 'request_upgrade',
       operatorReviewRequired: !this.hasStripeCheckoutProviderConfigured(),
-      webhookProvider: this.getBillingWebhookMode() === 'configured' ? 'stripe' : 'not_configured',
+      webhookProvider:
+        this.getBillingWebhookMode() === 'configured'
+          ? 'stripe'
+          : 'not_configured',
       emailDelivery: this.getEmailDeliveryMode(),
       smsDelivery: this.getSmsDeliveryMode(),
     };
@@ -701,7 +780,10 @@ export class AppService {
       return null;
     }
 
-    return Math.max(0, Math.round((Date.now() - new Date(date).getTime()) / 60000));
+    return Math.max(
+      0,
+      Math.round((Date.now() - new Date(date).getTime()) / 60000),
+    );
   }
 
   private buildAdoptionReadinessSummary(input: {
@@ -735,7 +817,9 @@ export class AppService {
     }
 
     if ((input.oldestModerationMinutes ?? 0) >= 1440) {
-      reasons.push('Moderation backlog contains items older than one business day.');
+      reasons.push(
+        'Moderation backlog contains items older than one business day.',
+      );
     }
 
     if ((input.oldestUpgradeMinutes ?? 0) >= 1440) {
@@ -750,14 +834,18 @@ export class AppService {
       input.funnelConversions.registerStartToCompletePct > 0 &&
       input.funnelConversions.registerStartToCompletePct < 60
     ) {
-      reasons.push('Registration completion is below the current rollout confidence floor.');
+      reasons.push(
+        'Registration completion is below the current rollout confidence floor.',
+      );
     }
 
     if (
       input.funnelConversions.publishStartToSubmitPct > 0 &&
       input.funnelConversions.publishStartToSubmitPct < 50
     ) {
-      reasons.push('Publish completion is below the current rollout confidence floor.');
+      reasons.push(
+        'Publish completion is below the current rollout confidence floor.',
+      );
     }
 
     if (

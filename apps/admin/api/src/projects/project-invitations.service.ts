@@ -138,11 +138,15 @@ export class ProjectInvitationsService {
       throw new NotFoundException('Invitation not found');
     }
 
-    const isProjectOwner = this.accessPolicy.isAdmin(user) || invitation.project.createdById === user.sub;
+    const isProjectOwner =
+      this.accessPolicy.isAdmin(user) ||
+      invitation.project.createdById === user.sub;
     const isInvitedProfileOwner = invitation.profile.userId === user.sub;
 
     if (!isProjectOwner && !isInvitedProfileOwner) {
-      throw new ForbiddenException('You do not have access to update this invitation');
+      throw new ForbiddenException(
+        'You do not have access to update this invitation',
+      );
     }
 
     if (isInvitedProfileOwner) {
@@ -153,7 +157,9 @@ export class ProjectInvitationsService {
       ]);
 
       if (!allowedProfileStatuses.has(body.status)) {
-        throw new BadRequestException('Profile owners can only view, accept, or decline invitations');
+        throw new BadRequestException(
+          'Profile owners can only view, accept, or decline invitations',
+        );
       }
 
       if (body.status === ProjectInvitationStatus.ACCEPTED) {
@@ -174,7 +180,7 @@ export class ProjectInvitationsService {
         message: body.message?.trim() ?? invitation.message,
         sentAt:
           body.status === ProjectInvitationStatus.SENT
-            ? invitation.sentAt ?? new Date()
+            ? (invitation.sentAt ?? new Date())
             : invitation.sentAt,
         respondedAt: this.isResponseStatus(body.status) ? new Date() : null,
       },

@@ -29,7 +29,7 @@ type AuthenticatedRequest = {
 
 @Controller('admin/relu')
 @UseGuards(JwtGuard, PermissionsGuard)
-@RequirePermissions(Permission.MANAGE_USERS)
+@RequirePermissions(Permission.MODERATE_AI)
 export class AdminReluController {
   constructor(private readonly reluService: ReluService) {}
 

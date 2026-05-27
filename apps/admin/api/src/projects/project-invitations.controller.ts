@@ -17,7 +17,9 @@ import { ProjectInvitationsService } from './project-invitations.service';
 
 @Controller('projects')
 export class ProjectInvitationsController {
-  constructor(private readonly projectInvitationsService: ProjectInvitationsService) {}
+  constructor(
+    private readonly projectInvitationsService: ProjectInvitationsService,
+  ) {}
 
   @UseGuards(
     JwtGuard,
@@ -32,7 +34,9 @@ export class ProjectInvitationsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectInvitationsService.create(projectId, body, user);
@@ -47,7 +51,9 @@ export class ProjectInvitationsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectInvitationsService.list(projectId, user);
@@ -55,7 +61,13 @@ export class ProjectInvitationsController {
 
   @UseGuards(
     JwtGuard,
-    new RolesGuard(['ADMIN', 'EMPLOYER', 'CONTRACTOR', 'GENERAL_CONTRACTOR', 'PROFESSIONAL']),
+    new RolesGuard([
+      'ADMIN',
+      'EMPLOYER',
+      'CONTRACTOR',
+      'GENERAL_CONTRACTOR',
+      'PROFESSIONAL',
+    ]),
   )
   @Patch(':projectId/invitations/:invitationId/status')
   async updateStatus(
@@ -67,9 +79,16 @@ export class ProjectInvitationsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectInvitationsService.updateStatus(projectId, invitationId, body, user);
+    return this.projectInvitationsService.updateStatus(
+      projectId,
+      invitationId,
+      body,
+      user,
+    );
   }
 }

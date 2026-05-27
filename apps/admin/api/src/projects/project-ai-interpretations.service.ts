@@ -11,6 +11,7 @@ import {
   ProjectEngagementModel,
   ProjectJobRequestStatus,
 } from '@prisma/client';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApplyProjectAIInterpretationDto } from './dto/apply-project-ai-interpretation.dto';
 import { CreateProjectAIInterpretationDto } from './dto/create-project-ai-interpretation.dto';
@@ -60,20 +61,36 @@ export class ProjectAIInterpretationsService {
     private readonly accessPolicy: ProjectAccessPolicy,
     private readonly projectResponseMapper: ProjectResponseMapper,
     private readonly projectAIParserService: ProjectAIParserService,
+    private readonly auditService: AuditService,
   ) {}
 
   async findOne(projectId: string, user: AuthenticatedUser) {
     const project = await this.getProjectForRead(projectId, user);
 
-    const aiInterpretation = await this.prisma.projectAIInterpretation.findUnique({
-      where: {
-        projectId: project.id,
-      },
-    });
+    const aiInterpretation =
+      await this.prisma.projectAIInterpretation.findUnique({
+        where: {
+          projectId: project.id,
+        },
+      });
 
     return aiInterpretation
       ? this.projectResponseMapper.toAIInterpretationResponse(aiInterpretation)
       : null;
+  }
+
+  async findHistory(projectId: string, user: AuthenticatedUser) {
+    const project = await this.getProjectForRead(projectId, user);
+
+    const runs = await this.prisma.projectAIInterpretationRun.findMany({
+      where: { projectId: project.id },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    return runs.map((run) =>
+      this.projectResponseMapper.toAIInterpretationResponse(run),
+    );
   }
 
   async upsert(
@@ -168,63 +185,119 @@ export class ProjectAIInterpretationsService {
           ? ProjectAIInterpretationStatus.OVERRIDDEN
           : ProjectAIInterpretationStatus.COMPLETED;
 
-      const aiInterpretation = await this.prisma.projectAIInterpretation.upsert({
-        where: {
-          projectId: project.id,
-        },
-        create: {
-          project: {
-            connect: {
-              id: project.id,
+      const interpretationRun =
+        await this.prisma.projectAIInterpretationRun.create({
+          data: {
+            project: {
+              connect: {
+                id: project.id,
+              },
             },
-          },
-          status,
-          sourceText: trimmedSourceText,
-          extractedJson,
-          documentIds,
-          confidenceScore: body.confidenceScore,
-          modelName: body.modelName?.trim() || 'local-rules-v1',
-          modelVersion: body.modelVersion?.trim() || '1.0.0',
-          promptVersion: body.promptVersion?.trim() || 'deterministic-local-rules',
-          reviewNotes: body.reviewNotes?.trim(),
-          ...(status === ProjectAIInterpretationStatus.OVERRIDDEN
-            ? {
-                reviewedBy: {
-                  connect: {
-                    id: user.sub,
-                  },
-                },
-              }
-            : {}),
-        },
-        update: {
-          status,
-          sourceText: trimmedSourceText,
-          extractedJson,
-          documentIds:
-            documentIds ?? (body.documentIds !== undefined ? JSON.stringify([]) : undefined),
-          confidenceScore: body.confidenceScore ?? null,
-          modelName: body.modelName?.trim() || 'local-rules-v1',
-          modelVersion: body.modelVersion?.trim() || '1.0.0',
-          promptVersion: body.promptVersion?.trim() || 'deterministic-local-rules',
-          reviewNotes: body.reviewNotes?.trim() ?? null,
-          reviewedBy:
-            status === ProjectAIInterpretationStatus.OVERRIDDEN
+            status,
+            sourceText: trimmedSourceText,
+            extractedJson,
+            documentIds,
+            confidenceScore: body.confidenceScore,
+            modelName: body.modelName?.trim() || 'local-rules-v1',
+            modelVersion: body.modelVersion?.trim() || '1.0.0',
+            promptVersion:
+              body.promptVersion?.trim() || 'deterministic-local-rules',
+            reviewNotes: body.reviewNotes?.trim(),
+            ...(status === ProjectAIInterpretationStatus.OVERRIDDEN
               ? {
-                  connect: {
-                    id: user.sub,
+                  reviewedBy: {
+                    connect: {
+                      id: user.sub,
+                    },
                   },
                 }
-              : {
-                  disconnect: true,
-                },
+              : {}),
+          },
+        });
+
+      const aiInterpretation = await this.prisma.projectAIInterpretation.upsert(
+        {
+          where: {
+            projectId: project.id,
+          },
+          create: {
+            project: {
+              connect: {
+                id: project.id,
+              },
+            },
+            status,
+            sourceText: trimmedSourceText,
+            extractedJson,
+            documentIds,
+            confidenceScore: body.confidenceScore,
+            modelName: body.modelName?.trim() || 'local-rules-v1',
+            modelVersion: body.modelVersion?.trim() || '1.0.0',
+            promptVersion:
+              body.promptVersion?.trim() || 'deterministic-local-rules',
+            reviewNotes: body.reviewNotes?.trim(),
+            ...(status === ProjectAIInterpretationStatus.OVERRIDDEN
+              ? {
+                  reviewedBy: {
+                    connect: {
+                      id: user.sub,
+                    },
+                  },
+                }
+              : {}),
+          },
+          update: {
+            status,
+            sourceText: trimmedSourceText,
+            extractedJson,
+            documentIds:
+              documentIds ??
+              (body.documentIds !== undefined ? JSON.stringify([]) : undefined),
+            confidenceScore: body.confidenceScore ?? null,
+            modelName: body.modelName?.trim() || 'local-rules-v1',
+            modelVersion: body.modelVersion?.trim() || '1.0.0',
+            promptVersion:
+              body.promptVersion?.trim() || 'deterministic-local-rules',
+            reviewNotes: body.reviewNotes?.trim() ?? null,
+            reviewedBy:
+              status === ProjectAIInterpretationStatus.OVERRIDDEN
+                ? {
+                    connect: {
+                      id: user.sub,
+                    },
+                  }
+                : {
+                    disconnect: true,
+                  },
+          },
+        },
+      );
+
+      await this.auditService.log({
+        actorUserId: user.sub,
+        projectId: project.id,
+        entityType: 'ProjectAIInterpretation',
+        entityId: aiInterpretation.id,
+        action: 'PROJECT_AI_INTERPRETATION_RUN_APPENDED',
+        category: 'AI',
+        after: {
+          currentInterpretationId: aiInterpretation.id,
+          runId: interpretationRun.id,
+          status,
+          modelName: aiInterpretation.modelName,
+          promptVersion: aiInterpretation.promptVersion,
         },
       });
 
-      return this.projectResponseMapper.toAIInterpretationResponse(aiInterpretation);
+      return this.projectResponseMapper.toAIInterpretationResponse(
+        aiInterpretation,
+      );
     } catch (error) {
       const failurePayload = JSON.stringify({
-        error: error instanceof Error ? error.message : 'Local AI interpretation failed',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Local AI interpretation failed',
         sourceText: trimmedSourceText,
         documentIds: attachedDocuments.map((document) => document.id),
         documents: attachedDocuments.map((document) => ({
@@ -235,46 +308,51 @@ export class ProjectAIInterpretationsService {
         })),
       });
 
-      const failedInterpretation = await this.prisma.projectAIInterpretation.upsert({
-        where: {
-          projectId: project.id,
-        },
-        create: {
-          project: {
-            connect: {
-              id: project.id,
+      const failedInterpretationRun =
+        await this.prisma.projectAIInterpretationRun.create({
+          data: {
+            project: {
+              connect: {
+                id: project.id,
+              },
             },
+            status: ProjectAIInterpretationStatus.FAILED,
+            sourceText: trimmedSourceText,
+            extractedJson: failurePayload,
+            documentIds,
+            modelName: body.modelName?.trim() || 'local-rules-v1',
+            modelVersion: body.modelVersion?.trim() || '1.0.0',
+            promptVersion:
+              body.promptVersion?.trim() || 'deterministic-local-rules',
+            reviewNotes:
+              body.reviewNotes?.trim() ??
+              (error instanceof Error
+                ? error.message
+                : 'Local AI interpretation failed'),
           },
+        });
+
+      await this.auditService.log({
+        actorUserId: user.sub,
+        projectId: project.id,
+        entityType: 'ProjectAIInterpretationRun',
+        entityId: failedInterpretationRun.id,
+        action: 'PROJECT_AI_INTERPRETATION_FAILED_RUN_APPENDED',
+        category: 'AI',
+        after: {
+          runId: failedInterpretationRun.id,
           status: ProjectAIInterpretationStatus.FAILED,
-          sourceText: trimmedSourceText,
-          extractedJson: failurePayload,
-          documentIds,
-          modelName: body.modelName?.trim() || 'local-rules-v1',
-          modelVersion: body.modelVersion?.trim() || '1.0.0',
-          promptVersion: body.promptVersion?.trim() || 'deterministic-local-rules',
-          reviewNotes:
-            body.reviewNotes?.trim() ??
-            (error instanceof Error ? error.message : 'Local AI interpretation failed'),
-        },
-        update: {
-          status: ProjectAIInterpretationStatus.FAILED,
-          sourceText: trimmedSourceText,
-          extractedJson: failurePayload,
-          documentIds:
-            documentIds ?? (body.documentIds !== undefined ? JSON.stringify([]) : undefined),
-          modelName: body.modelName?.trim() || 'local-rules-v1',
-          modelVersion: body.modelVersion?.trim() || '1.0.0',
-          promptVersion: body.promptVersion?.trim() || 'deterministic-local-rules',
-          reviewNotes:
-            body.reviewNotes?.trim() ??
-            (error instanceof Error ? error.message : 'Local AI interpretation failed'),
-          reviewedBy: {
-            disconnect: true,
-          },
+          preservedCurrentInterpretation: true,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Local AI interpretation failed',
         },
       });
 
-      return this.projectResponseMapper.toAIInterpretationResponse(failedInterpretation);
+      return this.projectResponseMapper.toAIInterpretationResponse(
+        failedInterpretationRun,
+      );
     }
   }
 
@@ -312,7 +390,9 @@ export class ProjectAIInterpretationsService {
     this.accessPolicy.assertCanWriteProject(user, project.createdById);
 
     if (!project.aiInterpretation?.extractedJson) {
-      throw new BadRequestException('No AI interpretation is available to apply');
+      throw new BadRequestException(
+        'No AI interpretation is available to apply',
+      );
     }
 
     const parsedPayload = this.parseAIInterpretationPayload(
@@ -370,8 +450,12 @@ export class ProjectAIInterpretationsService {
       throw new BadRequestException('No AI suggestions were selected to apply');
     }
 
-    const currentEscoIds = project.escoClassifications.map((item) => item.escoSkillId);
-    const currentNaceIds = project.naceClassifications.map((item) => item.naceId);
+    const currentEscoIds = project.escoClassifications.map(
+      (item) => item.escoSkillId,
+    );
+    const currentNaceIds = project.naceClassifications.map(
+      (item) => item.naceId,
+    );
     const currentUniclassIds = project.uniclassClassifications.map(
       (item) => item.uniclassId,
     );
@@ -498,7 +582,9 @@ export class ProjectAIInterpretationsService {
     });
 
     if (!updatedProject) {
-      throw new NotFoundException('Project not found after applying AI suggestions');
+      throw new NotFoundException(
+        'Project not found after applying AI suggestions',
+      );
     }
 
     return this.projectResponseMapper.toProjectDetail(updatedProject);
@@ -530,7 +616,10 @@ export class ProjectAIInterpretationsService {
     return project;
   }
 
-  private async resolveAttachedDocuments(projectId: string, documentIds?: string[]) {
+  private async resolveAttachedDocuments(
+    projectId: string,
+    documentIds?: string[],
+  ) {
     if (!documentIds) {
       return [];
     }
@@ -558,8 +647,12 @@ export class ProjectAIInterpretationsService {
     }
 
     return documentIds
-      .map((documentId) => documents.find((document) => document.id === documentId))
-      .filter((document): document is (typeof documents)[number] => Boolean(document));
+      .map((documentId) =>
+        documents.find((document) => document.id === documentId),
+      )
+      .filter((document): document is (typeof documents)[number] =>
+        Boolean(document),
+      );
   }
 
   private parseAIInterpretationPayload(value: string) {
@@ -568,11 +661,15 @@ export class ProjectAIInterpretationsService {
     try {
       parsed = JSON.parse(value);
     } catch {
-      throw new BadRequestException('Stored AI interpretation payload is invalid');
+      throw new BadRequestException(
+        'Stored AI interpretation payload is invalid',
+      );
     }
 
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      throw new BadRequestException('Stored AI interpretation payload is invalid');
+      throw new BadRequestException(
+        'Stored AI interpretation payload is invalid',
+      );
     }
 
     return parsed as ParsedAIInterpretationPayload;
@@ -629,7 +726,9 @@ export class ProjectAIInterpretationsService {
       : ProjectConditionType.CUSTOM;
   }
 
-  private isSupportedEngagementModel(value?: string): value is ProjectEngagementModel {
+  private isSupportedEngagementModel(
+    value?: string,
+  ): value is ProjectEngagementModel {
     return (
       value === ProjectEngagementModel.B2B ||
       value === ProjectEngagementModel.B2C ||

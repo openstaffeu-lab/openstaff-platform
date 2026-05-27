@@ -10,7 +10,16 @@ import {
 } from 'class-validator';
 
 export class CreateConversationDto {
-  @IsIn(['PROJECT', 'CONTRACT', 'DISPUTE', 'DIRECT', 'WORKFORCE', 'PAYROLL', 'RELU', 'SUPPORT'])
+  @IsIn([
+    'PROJECT',
+    'CONTRACT',
+    'DISPUTE',
+    'DIRECT',
+    'WORKFORCE',
+    'PAYROLL',
+    'RELU',
+    'SUPPORT',
+  ])
   type!:
     | 'PROJECT'
     | 'CONTRACT'

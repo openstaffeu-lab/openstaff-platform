@@ -72,7 +72,11 @@ export class ProjectsService {
       throw new NotFoundException('Project not found');
     }
 
-    await this.assertCanReadProjectDetail(project.id, user, project.createdById);
+    await this.assertCanReadProjectDetail(
+      project.id,
+      user,
+      project.createdById,
+    );
     return this.projectResponseMapper.toProjectDetail(project);
   }
 
@@ -94,7 +98,11 @@ export class ProjectsService {
     return this.projectResponseMapper.toProjectDetail(project);
   }
 
-  async update(projectId: string, body: UpdateProjectDto, user: AuthenticatedUser) {
+  async update(
+    projectId: string,
+    body: UpdateProjectDto,
+    user: AuthenticatedUser,
+  ) {
     const existingProject = await this.prisma.project.findUnique({
       where: { id: projectId },
     });
@@ -192,7 +200,8 @@ export class ProjectsService {
     slug: string,
   ): Prisma.ProjectCreateInput {
     const projectStatus = body.status ?? ProjectStatus.DRAFT;
-    const engagementModel = body.engagementModel ?? ProjectEngagementModel.MIXED;
+    const engagementModel =
+      body.engagementModel ?? ProjectEngagementModel.MIXED;
     const visibility = body.visibility ?? ProjectVisibility.PRIVATE;
 
     return {
@@ -217,7 +226,7 @@ export class ProjectsService {
       endDate: this.toDate(body.endDate),
       responseDeadline: this.toDate(body.responseDeadline),
       publishedAt: this.shouldSetPublishedAt(projectStatus, body.publishedAt)
-        ? this.toDate(body.publishedAt) ?? new Date()
+        ? (this.toDate(body.publishedAt) ?? new Date())
         : this.toDate(body.publishedAt),
       archivedAt: this.toDate(body.archivedAt),
       createdBy: {
@@ -323,7 +332,8 @@ export class ProjectsService {
                 title: document.title.trim(),
                 description: document.description?.trim(),
                 fileName: document.fileName.trim(),
-                mimeType: document.mimeType?.trim() ?? 'application/octet-stream',
+                mimeType:
+                  document.mimeType?.trim() ?? 'application/octet-stream',
                 sizeBytes: document.sizeBytes ?? 0,
                 storageProvider: document.storageProvider?.trim() ?? 'manual',
                 storageBucket: document.storageBucket?.trim(),
@@ -376,7 +386,8 @@ export class ProjectsService {
                 budgetMaxCents: jobRequest.budgetMaxCents,
                 currencyCode: jobRequest.currencyCode?.trim(),
                 requiredExperienceYears: jobRequest.requiredExperienceYears,
-                requiresCertification: jobRequest.requiresCertification ?? false,
+                requiresCertification:
+                  jobRequest.requiresCertification ?? false,
                 startDate: this.toDate(jobRequest.startDate),
                 endDate: this.toDate(jobRequest.endDate),
                 responseDeadline: this.toDate(jobRequest.responseDeadline),
@@ -662,7 +673,10 @@ export class ProjectsService {
     return jsonText;
   }
 
-  private shouldSetPublishedAt(status: ProjectStatus, publishedAt?: string | Date | null) {
+  private shouldSetPublishedAt(
+    status: ProjectStatus,
+    publishedAt?: string | Date | null,
+  ) {
     return (
       (status === ProjectStatus.PUBLISHED || status === ProjectStatus.ACTIVE) &&
       publishedAt === undefined

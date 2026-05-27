@@ -6,10 +6,7 @@ import {
   ProfileModerationStatus,
   Role,
 } from '@prisma/client';
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { APP_MANAGED_ROLES } from '../access-control/access-control.constants';
 
@@ -47,7 +44,8 @@ export class UsersService {
             enabled: user.twoFactorSettings.enabled,
             adminEnforced: user.twoFactorSettings.adminEnforced,
             emailOtpEnabled: user.twoFactorSettings.emailOtpEnabled,
-            lastChallengeVerifiedAt: user.twoFactorSettings.lastChallengeVerifiedAt,
+            lastChallengeVerifiedAt:
+              user.twoFactorSettings.lastChallengeVerifiedAt,
             failedAttemptCount: user.twoFactorSettings.failedAttemptCount,
             lockoutUntil: user.twoFactorSettings.lockoutUntil,
           }
@@ -153,13 +151,18 @@ export class UsersService {
     };
   }
 
-  async updateAccountStatus(userId: string, accountStatus: AccountLifecycleStatus) {
+  async updateAccountStatus(
+    userId: string,
+    accountStatus: AccountLifecycleStatus,
+  ) {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: {
         accountStatus,
         suspendedAt:
-          accountStatus === AccountLifecycleStatus.SUSPENDED ? new Date() : null,
+          accountStatus === AccountLifecycleStatus.SUSPENDED
+            ? new Date()
+            : null,
       },
       include: {
         profile: true,
@@ -208,7 +211,9 @@ export class UsersService {
         moderationStatus,
         status,
         approvedAt:
-          moderationStatus === ProfileModerationStatus.APPROVED ? new Date() : null,
+          moderationStatus === ProfileModerationStatus.APPROVED
+            ? new Date()
+            : null,
       },
     });
 

@@ -41,12 +41,22 @@ export class ProjectDisputesService {
     body: CreateProjectDisputeDto,
     user: AuthenticatedUser,
   ) {
-    const contract = await this.getContractForParty(projectId, contractId, user);
+    const contract = await this.getContractForParty(
+      projectId,
+      contractId,
+      user,
+    );
 
     const [milestone, invoice, payment] = await Promise.all([
-      body.milestoneId ? this.findMilestone(contract.id, body.milestoneId) : Promise.resolve(null),
-      body.invoiceId ? this.findInvoice(contract.id, body.invoiceId) : Promise.resolve(null),
-      body.paymentId ? this.findPayment(contract.id, body.paymentId) : Promise.resolve(null),
+      body.milestoneId
+        ? this.findMilestone(contract.id, body.milestoneId)
+        : Promise.resolve(null),
+      body.invoiceId
+        ? this.findInvoice(contract.id, body.invoiceId)
+        : Promise.resolve(null),
+      body.paymentId
+        ? this.findPayment(contract.id, body.paymentId)
+        : Promise.resolve(null),
     ]);
 
     const dispute = await this.prisma.projectDispute.create({
@@ -105,7 +115,11 @@ export class ProjectDisputesService {
   }
 
   async list(projectId: string, contractId: string, user: AuthenticatedUser) {
-    const contract = await this.getContractForParty(projectId, contractId, user);
+    const contract = await this.getContractForParty(
+      projectId,
+      contractId,
+      user,
+    );
     const disputes = await this.prisma.projectDispute.findMany({
       where: {
         contractId: contract.id,
@@ -119,8 +133,17 @@ export class ProjectDisputesService {
     return disputes.map((dispute) => this.toDisputeResponse(dispute));
   }
 
-  async findOne(projectId: string, contractId: string, disputeId: string, user: AuthenticatedUser) {
-    const contract = await this.getContractForParty(projectId, contractId, user);
+  async findOne(
+    projectId: string,
+    contractId: string,
+    disputeId: string,
+    user: AuthenticatedUser,
+  ) {
+    const contract = await this.getContractForParty(
+      projectId,
+      contractId,
+      user,
+    );
     const dispute = await this.prisma.projectDispute.findFirst({
       where: {
         id: disputeId,
@@ -143,7 +166,11 @@ export class ProjectDisputesService {
     body: UpdateProjectDisputeStatusDto,
     user: AuthenticatedUser,
   ) {
-    const contract = await this.getContractForParty(projectId, contractId, user);
+    const contract = await this.getContractForParty(
+      projectId,
+      contractId,
+      user,
+    );
     const dispute = await this.prisma.projectDispute.findFirst({
       where: {
         id: disputeId,
@@ -157,7 +184,8 @@ export class ProjectDisputesService {
     }
 
     const isOwnerOrAdmin =
-      this.accessPolicy.isAdmin(user) || contract.project.createdById === user.sub;
+      this.accessPolicy.isAdmin(user) ||
+      contract.project.createdById === user.sub;
     const isProfileOwner = contract.profile.userId === user.sub;
     const isOpener = dispute.openedById === user.sub;
 
@@ -167,7 +195,9 @@ export class ProjectDisputesService {
         ProjectDisputeStatus.CANCELLED,
       ]);
       if (!(isProfileOwner || isOpener) || !allowedForParty.has(body.status)) {
-        throw new ForbiddenException('You do not have permission to change this dispute status');
+        throw new ForbiddenException(
+          'You do not have permission to change this dispute status',
+        );
       }
     }
 
@@ -176,7 +206,9 @@ export class ProjectDisputesService {
         body.status === ProjectDisputeStatus.REJECTED) &&
       !isOwnerOrAdmin
     ) {
-      throw new ForbiddenException('Only the project owner or admin can resolve or reject a dispute');
+      throw new ForbiddenException(
+        'Only the project owner or admin can resolve or reject a dispute',
+      );
     }
 
     const updatedDispute = await this.prisma.projectDispute.update({
@@ -185,13 +217,14 @@ export class ProjectDisputesService {
       },
       data: {
         status: body.status,
-        resolutionNotes: body.resolutionNotes?.trim() ?? dispute.resolutionNotes,
+        resolutionNotes:
+          body.resolutionNotes?.trim() ?? dispute.resolutionNotes,
         resolvedAt:
           body.status === ProjectDisputeStatus.RESOLVED ||
           body.status === ProjectDisputeStatus.REJECTED
-            ? dispute.resolvedAt ?? new Date()
+            ? (dispute.resolvedAt ?? new Date())
             : body.status === ProjectDisputeStatus.CANCELLED
-              ? dispute.resolvedAt ?? new Date()
+              ? (dispute.resolvedAt ?? new Date())
               : null,
       },
       include: this.disputeInclude,
@@ -266,7 +299,11 @@ export class ProjectDisputesService {
     body: CreateProjectDisputeEventDto,
     user: AuthenticatedUser,
   ) {
-    const contract = await this.getContractForParty(projectId, contractId, user);
+    const contract = await this.getContractForParty(
+      projectId,
+      contractId,
+      user,
+    );
     const dispute = await this.prisma.projectDispute.findFirst({
       where: {
         id: disputeId,
@@ -280,7 +317,9 @@ export class ProjectDisputesService {
     }
 
     if (!this.canCommentOnDispute(contract, dispute, user)) {
-      throw new ForbiddenException('You do not have access to add dispute events');
+      throw new ForbiddenException(
+        'You do not have access to add dispute events',
+      );
     }
 
     const event = await this.prisma.projectDisputeEvent.create({
@@ -369,7 +408,8 @@ export class ProjectDisputesService {
     }
 
     const isOwnerOrAdmin =
-      this.accessPolicy.isAdmin(user) || contract.project.createdById === user.sub;
+      this.accessPolicy.isAdmin(user) ||
+      contract.project.createdById === user.sub;
     const isProfileOwner = contract.profile.userId === user.sub;
 
     if (!isOwnerOrAdmin && !isProfileOwner) {
@@ -379,7 +419,11 @@ export class ProjectDisputesService {
     return contract;
   }
 
-  private canCommentOnDispute(contract: any, dispute: any, user: AuthenticatedUser) {
+  private canCommentOnDispute(
+    contract: any,
+    dispute: any,
+    user: AuthenticatedUser,
+  ) {
     return (
       this.accessPolicy.isAdmin(user) ||
       contract.project.createdById === user.sub ||
@@ -440,7 +484,10 @@ export class ProjectDisputesService {
     title: string,
     message: string,
   ) {
-    const recipients = new Map<string, { userId: string; profileId?: string | null }>();
+    const recipients = new Map<
+      string,
+      { userId: string; profileId?: string | null }
+    >();
     recipients.set(contract.project.createdById, {
       userId: contract.project.createdById,
       profileId: null,
@@ -485,7 +532,11 @@ export class ProjectDisputesService {
     }
 
     if (contract.profile.userId === user.sub) {
-      return contract.profile.displayName || contract.profile.companyName || 'Contractor';
+      return (
+        contract.profile.displayName ||
+        contract.profile.companyName ||
+        'Contractor'
+      );
     }
 
     return 'Actor';
@@ -573,7 +624,9 @@ export class ProjectDisputesService {
             currencyCode: dispute.payment.currencyCode,
           }
         : null,
-      events: dispute.events.map((event: any) => this.toDisputeEventResponse(event)),
+      events: dispute.events.map((event: any) =>
+        this.toDisputeEventResponse(event),
+      ),
     };
   }
 

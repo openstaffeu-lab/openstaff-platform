@@ -10,7 +10,12 @@ import { AdminUsersController } from './admin-users.controller';
 
 @Global()
 @Module({
-  imports: [PrismaModule, UsersModule, forwardRef(() => AuthModule), forwardRef(() => AuditModule)],
+  imports: [
+    PrismaModule,
+    UsersModule,
+    forwardRef(() => AuthModule),
+    forwardRef(() => AuditModule),
+  ],
   controllers: [AdminRolesController, AdminUsersController],
   providers: [AccessControlService, PermissionsGuard],
   exports: [AccessControlService, PermissionsGuard],

@@ -28,7 +28,9 @@ import { TrustService } from '../trust/trust.service';
 import { UploadProfileDocumentDto } from './dto/upload-profile-document.dto';
 import { UpsertProfileDto } from './dto/upsert-profile.dto';
 
-const pdfParse: (buffer: Buffer) => Promise<{ text: string }> = require('pdf-parse');
+const pdfParse: (
+  buffer: Buffer,
+) => Promise<{ text: string }> = require('pdf-parse');
 
 export type UploadedProfileFile = {
   originalname: string;
@@ -116,22 +118,28 @@ export class ProfilesService {
       profile.moderationStatus !== ProfileModerationStatus.APPROVED ||
       profile.status !== ProfileLifecycleStatus.LIVE
     ) {
-      throw new ForbiddenException('This company page is not publicly available');
+      throw new ForbiddenException(
+        'This company page is not publicly available',
+      );
     }
 
-    if (this.usesProfessionalWorkspace(profile.profileType) && !profile.companyName) {
+    if (
+      this.usesProfessionalWorkspace(profile.profileType) &&
+      !profile.companyName
+    ) {
       throw new ForbiddenException('This profile is not a public company page');
     }
 
-    const latestReluSummary = await this.prisma.reluClassificationResult.findFirst({
-      where: {
-        sourceType: ReluSourceType.PROFILE,
-        sourceId: profile.id,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const latestReluSummary =
+      await this.prisma.reluClassificationResult.findFirst({
+        where: {
+          sourceType: ReluSourceType.PROFILE,
+          sourceId: profile.id,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
 
     return this.toPublicCompanyProfileResponse(profile, latestReluSummary);
   }
@@ -171,7 +179,10 @@ export class ProfilesService {
       throw new NotFoundException('User not found');
     }
 
-    const profileType = body.profileType ?? existingUser.profile?.profileType ?? this.defaultProfileType(existingUser.role);
+    const profileType =
+      body.profileType ??
+      existingUser.profile?.profileType ??
+      this.defaultProfileType(existingUser.role);
     const slug = await this.resolveUniqueSlug(
       body.slug ?? body.companyName ?? body.displayName,
       existingUser.profile?.id ?? null,
@@ -199,17 +210,24 @@ export class ProfilesService {
           body.companyRegistrationNumber,
         ),
         taxNumber: this.normalizeNullableString(body.taxNumber),
-        visibility: body.visibility ?? existingUser.profile?.visibility ?? ProfileVisibility.PRIVATE,
+        visibility:
+          body.visibility ??
+          existingUser.profile?.visibility ??
+          ProfileVisibility.PRIVATE,
         status: isAdmin
-          ? body.status ?? existingUser.profile?.status ?? ProfileLifecycleStatus.OFFLINE
-          : existingUser.profile?.status ?? ProfileLifecycleStatus.OFFLINE,
+          ? (body.status ??
+            existingUser.profile?.status ??
+            ProfileLifecycleStatus.OFFLINE)
+          : (existingUser.profile?.status ?? ProfileLifecycleStatus.OFFLINE),
         countryId: geography.countryId,
         regionId: geography.regionId,
         cityId: geography.cityId,
         supportedEngagementModels: body.supportedEngagementModels
           ? JSON.stringify(body.supportedEngagementModels)
           : null,
-        certificationsText: this.normalizeNullableString(body.certificationsText),
+        certificationsText: this.normalizeNullableString(
+          body.certificationsText,
+        ),
         availabilityStatus:
           body.availabilityStatus ?? ProfileAvailabilityStatus.AVAILABLE,
         rating: body.rating ?? null,
@@ -236,7 +254,7 @@ export class ProfilesService {
         visibility: body.visibility ?? ProfileVisibility.PRIVATE,
         moderationStatus: ProfileModerationStatus.PENDING,
         status: isAdmin
-          ? body.status ?? ProfileLifecycleStatus.OFFLINE
+          ? (body.status ?? ProfileLifecycleStatus.OFFLINE)
           : ProfileLifecycleStatus.OFFLINE,
         countryId: geography.countryId,
         regionId: geography.regionId,
@@ -244,7 +262,9 @@ export class ProfilesService {
         supportedEngagementModels: body.supportedEngagementModels
           ? JSON.stringify(body.supportedEngagementModels)
           : JSON.stringify(['B2B']),
-        certificationsText: this.normalizeNullableString(body.certificationsText),
+        certificationsText: this.normalizeNullableString(
+          body.certificationsText,
+        ),
         availabilityStatus:
           body.availabilityStatus ?? ProfileAvailabilityStatus.AVAILABLE,
         rating: body.rating ?? null,
@@ -257,10 +277,11 @@ export class ProfilesService {
       where: { id: profile.id },
       data: {
         moderationStatus: isAdmin
-          ? existingUser.profile?.moderationStatus ?? ProfileModerationStatus.PENDING
+          ? (existingUser.profile?.moderationStatus ??
+            ProfileModerationStatus.PENDING)
           : ProfileModerationStatus.PENDING,
         status: isAdmin
-          ? body.status ?? profile.status
+          ? (body.status ?? profile.status)
           : profile.status === ProfileLifecycleStatus.SUSPENDED
             ? ProfileLifecycleStatus.SUSPENDED
             : ProfileLifecycleStatus.OFFLINE,
@@ -278,7 +299,9 @@ export class ProfilesService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return documents.map((document) => this.toProfileDocumentResponse(document));
+    return documents.map((document) =>
+      this.toProfileDocumentResponse(document),
+    );
   }
 
   async uploadDocument(
@@ -315,6 +338,7 @@ export class ProfilesService {
         storageBucket: storedFile.storageBucket,
         storageKey: storedFile.storageKey,
         extractionStatus: extractionStatuses.NOT_REQUESTED,
+        moderationStatus: PublicModerationStatus.PENDING,
       },
     });
 
@@ -323,7 +347,11 @@ export class ProfilesService {
     return this.toProfileDocumentResponse(document);
   }
 
-  async getDocument(profileId: string, documentId: string, user: AuthenticatedUser) {
+  async getDocument(
+    profileId: string,
+    documentId: string,
+    user: AuthenticatedUser,
+  ) {
     const document = await this.getDocumentForRead(profileId, documentId, user);
 
     return {
@@ -350,7 +378,8 @@ export class ProfilesService {
       (document.profile.visibility !== ProfileVisibility.PUBLIC &&
         document.profile.visibility !== ProfileVisibility.APPROVED_ONLY) ||
       document.profile.moderationStatus !== ProfileModerationStatus.APPROVED ||
-      document.profile.status !== ProfileLifecycleStatus.LIVE
+      document.profile.status !== ProfileLifecycleStatus.LIVE ||
+      document.moderationStatus !== PublicModerationStatus.APPROVED
     ) {
       throw new ForbiddenException('Asset is not public');
     }
@@ -372,7 +401,11 @@ export class ProfilesService {
     };
   }
 
-  async getExtractedText(profileId: string, documentId: string, user: AuthenticatedUser) {
+  async getExtractedText(
+    profileId: string,
+    documentId: string,
+    user: AuthenticatedUser,
+  ) {
     const document = await this.getDocumentForRead(profileId, documentId, user);
 
     return {
@@ -384,8 +417,16 @@ export class ProfilesService {
     };
   }
 
-  async extractDocument(profileId: string, documentId: string, user: AuthenticatedUser) {
-    const document = await this.getDocumentForWrite(profileId, documentId, user);
+  async extractDocument(
+    profileId: string,
+    documentId: string,
+    user: AuthenticatedUser,
+  ) {
+    const document = await this.getDocumentForWrite(
+      profileId,
+      documentId,
+      user,
+    );
 
     await this.prisma.profileDocument.update({
       where: { id: document.id },
@@ -429,8 +470,42 @@ export class ProfilesService {
     }
   }
 
-  async removeDocument(profileId: string, documentId: string, user: AuthenticatedUser) {
-    const document = await this.getDocumentForWrite(profileId, documentId, user);
+  async updateDocumentModerationStatus(
+    profileId: string,
+    documentId: string,
+    status: PublicModerationStatus | undefined,
+    user: AuthenticatedUser,
+  ) {
+    if (!status || !Object.values(PublicModerationStatus).includes(status)) {
+      throw new BadRequestException('A valid moderation status is required');
+    }
+
+    const isAdmin = user.role === 'ADMIN' || user.role === 'SUPERADMIN';
+
+    if (!isAdmin) {
+      throw new ForbiddenException('You cannot moderate profile media');
+    }
+
+    await this.getDocumentForRead(profileId, documentId, user);
+
+    const document = await this.prisma.profileDocument.update({
+      where: { id: documentId },
+      data: { moderationStatus: status },
+    });
+
+    return this.toProfileDocumentResponse(document);
+  }
+
+  async removeDocument(
+    profileId: string,
+    documentId: string,
+    user: AuthenticatedUser,
+  ) {
+    const document = await this.getDocumentForWrite(
+      profileId,
+      documentId,
+      user,
+    );
 
     await this.prisma.profileDocument.delete({
       where: { id: document.id },
@@ -449,9 +524,15 @@ export class ProfilesService {
     profileType: ProfileType,
   ) {
     await this.prisma.profileLanguage.deleteMany({ where: { profileId } });
-    await this.prisma.profileEscoClassification.deleteMany({ where: { profileId } });
-    await this.prisma.profileNaceClassification.deleteMany({ where: { profileId } });
-    await this.prisma.profileUniclassClassification.deleteMany({ where: { profileId } });
+    await this.prisma.profileEscoClassification.deleteMany({
+      where: { profileId },
+    });
+    await this.prisma.profileNaceClassification.deleteMany({
+      where: { profileId },
+    });
+    await this.prisma.profileUniclassClassification.deleteMany({
+      where: { profileId },
+    });
 
     const languageIds = await this.resolveLanguageIds(body);
     const escoSkillIds = await this.resolveEscoSkillIds(body);
@@ -491,17 +572,21 @@ export class ProfilesService {
           update: {
             headline: body.professionalProfile.headline?.trim() ?? null,
             yearsExperience: body.professionalProfile.yearsExperience ?? null,
-            portfolioFocus: body.professionalProfile.portfolioFocus?.trim() ?? null,
+            portfolioFocus:
+              body.professionalProfile.portfolioFocus?.trim() ?? null,
           },
           create: {
             profileId,
             headline: body.professionalProfile.headline?.trim() ?? null,
             yearsExperience: body.professionalProfile.yearsExperience ?? null,
-            portfolioFocus: body.professionalProfile.portfolioFocus?.trim() ?? null,
+            portfolioFocus:
+              body.professionalProfile.portfolioFocus?.trim() ?? null,
           },
         });
       } else {
-        await this.prisma.professionalProfile.deleteMany({ where: { profileId } });
+        await this.prisma.professionalProfile.deleteMany({
+          where: { profileId },
+        });
       }
 
       return;
@@ -542,15 +627,25 @@ export class ProfilesService {
       },
     });
 
-    const portfolioUrls = this.parseStringArray(profile?.portfolioUrlsJson ?? null);
+    const portfolioUrls = this.parseStringArray(
+      profile?.portfolioUrlsJson ?? null,
+    );
 
     await this.prisma.profile.update({
       where: { id: profileId },
       data: {
-        ...(document.assetKind === ProfileAssetKind.LOGO ? { logoUrl: assetUrl } : {}),
-        ...(document.assetKind === ProfileAssetKind.PHOTO ? { photoUrl: assetUrl } : {}),
-        ...(document.assetKind === ProfileAssetKind.BANNER ? { bannerUrl: assetUrl } : {}),
-        ...(document.assetKind === ProfileAssetKind.CV ? { cvUrl: assetUrl } : {}),
+        ...(document.assetKind === ProfileAssetKind.LOGO
+          ? { logoUrl: assetUrl }
+          : {}),
+        ...(document.assetKind === ProfileAssetKind.PHOTO
+          ? { photoUrl: assetUrl }
+          : {}),
+        ...(document.assetKind === ProfileAssetKind.BANNER
+          ? { bannerUrl: assetUrl }
+          : {}),
+        ...(document.assetKind === ProfileAssetKind.CV
+          ? { cvUrl: assetUrl }
+          : {}),
         ...(document.assetKind === ProfileAssetKind.PORTFOLIO
           ? {
               portfolioUrlsJson: JSON.stringify(
@@ -671,7 +766,9 @@ export class ProfilesService {
       visibility: profile.visibility,
       moderationStatus: profile.moderationStatus,
       status: profile.status,
-      supportedEngagementModels: this.parseStringArray(profile.supportedEngagementModels),
+      supportedEngagementModels: this.parseStringArray(
+        profile.supportedEngagementModels,
+      ),
       certificationsText: profile.certificationsText,
       availabilityStatus: profile.availabilityStatus,
       rating: profile.rating,
@@ -681,9 +778,13 @@ export class ProfilesService {
         city: profile.city,
       },
       languages: profile.languages.map((item: any) => item.language),
-      escoSkills: profile.escoClassifications.map((item: any) => item.escoSkill),
+      escoSkills: profile.escoClassifications.map(
+        (item: any) => item.escoSkill,
+      ),
       naceCodes: profile.naceClassifications.map((item: any) => item.nace),
-      uniclassCodes: profile.uniclassClassifications.map((item: any) => item.uniclass),
+      uniclassCodes: profile.uniclassClassifications.map(
+        (item: any) => item.uniclass,
+      ),
       contractorProfile: profile.contractorProfile,
       professionalProfile: profile.professionalProfile,
       assets: ownedAssetUrls,
@@ -700,7 +801,7 @@ export class ProfilesService {
   }
 
   private toPublicProfileResponse(profile: any) {
-    const ownedAssetUrls = this.resolveOwnedAssetUrls(profile);
+    const ownedAssetUrls = this.resolveOwnedAssetUrls(profile, true);
     const trustStatus = this.trustService.derivePublicTrustStatus({
       user: profile.user ?? null,
       moderationStatus: profile.moderationStatus,
@@ -730,15 +831,20 @@ export class ProfilesService {
         city: profile.city,
       },
       languages: profile.languages.map((item: any) => item.language),
-      escoSkills: profile.escoClassifications.map((item: any) => item.escoSkill),
+      escoSkills: profile.escoClassifications.map(
+        (item: any) => item.escoSkill,
+      ),
       naceCodes: profile.naceClassifications.map((item: any) => item.nace),
-      uniclassCodes: profile.uniclassClassifications.map((item: any) => item.uniclass),
+      uniclassCodes: profile.uniclassClassifications.map(
+        (item: any) => item.uniclass,
+      ),
       contractorProfile: profile.contractorProfile,
       professionalProfile: profile.professionalProfile,
       assets: ownedAssetUrls,
       trust: {
         status: trustStatus,
-        verificationStatus: profile.user?.identityProfile?.verificationStatus ?? 'UNVERIFIED',
+        verificationStatus:
+          profile.user?.identityProfile?.verificationStatus ?? 'UNVERIFIED',
       },
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
@@ -747,7 +853,7 @@ export class ProfilesService {
 
   private toPublicCompanyProfileResponse(profile: any, latestReluSummary: any) {
     const base = this.toPublicProfileResponse(profile);
-    const ownedAssetUrls = this.resolveOwnedAssetUrls(profile);
+    const ownedAssetUrls = this.resolveOwnedAssetUrls(profile, true);
     const projects = Array.isArray(profile.publicPosts)
       ? profile.publicPosts.map((post: any) => ({
           id: post.id,
@@ -767,7 +873,10 @@ export class ProfilesService {
           },
           media: Array.isArray(post.media)
             ? post.media
-                .filter((item: any) => item.status === PublicModerationStatus.APPROVED)
+                .filter(
+                  (item: any) =>
+                    item.status === PublicModerationStatus.APPROVED,
+                )
                 .map((item: any) => ({
                   id: item.id,
                   url: `/public-posts/media/${item.id}`,
@@ -778,7 +887,10 @@ export class ProfilesService {
             : [],
           documents: Array.isArray(post.documents)
             ? post.documents
-                .filter((item: any) => item.status === PublicModerationStatus.APPROVED)
+                .filter(
+                  (item: any) =>
+                    item.status === PublicModerationStatus.APPROVED,
+                )
                 .map((item: any) => ({
                   id: item.id,
                   title: item.title,
@@ -795,7 +907,9 @@ export class ProfilesService {
         : null;
     const aiSummary =
       latestReluSummary?.explanation ??
-      (typeof reluOutput?.explanation === 'string' ? reluOutput.explanation : null) ??
+      (typeof reluOutput?.explanation === 'string'
+        ? reluOutput.explanation
+        : null) ??
       profile.summary ??
       profile.description ??
       `${profile.displayName} is an approved OpenStaff company profile.`;
@@ -845,6 +959,7 @@ export class ProfilesService {
       profileId: document.profileId,
       type: document.type,
       assetKind: document.assetKind,
+      moderationStatus: document.moderationStatus,
       title: document.title,
       description: document.description,
       fileName: document.fileName,
@@ -863,7 +978,9 @@ export class ProfilesService {
       urls: {
         download: `/profiles/${document.profileId}/documents/${document.id}`,
         asset:
-          document.assetKind !== null ? `/profiles/assets/${document.id}` : null,
+          document.assetKind !== null
+            ? `/profiles/assets/${document.id}`
+            : null,
       },
     };
   }
@@ -908,7 +1025,9 @@ export class ProfilesService {
       return ProfileType.INVESTOR;
     }
 
-    return role === 'PROFESSIONAL' ? ProfileType.PROFESSIONAL : ProfileType.CONTRACTOR;
+    return role === 'PROFESSIONAL'
+      ? ProfileType.PROFESSIONAL
+      : ProfileType.CONTRACTOR;
   }
 
   private usesProfessionalWorkspace(profileType: ProfileType) {
@@ -960,7 +1079,8 @@ export class ProfilesService {
     profileId: string,
     file: UploadedProfileFile,
   ): Promise<PersistedProfileFile> {
-    const extension = extname(file.originalname) || this.extensionFromMime(file.mimetype);
+    const extension =
+      extname(file.originalname) || this.extensionFromMime(file.mimetype);
     const uniqueFileName = `${randomUUID()}${extension}`;
     const storageKey = `profiles/${profileId}/${uniqueFileName}`;
 
@@ -1011,10 +1131,15 @@ export class ProfilesService {
     if (document.storageProvider === 'gcs') {
       const bucketName = document.storageBucket || this.storageBucket;
       if (!bucketName || !this.storage) {
-        throw new BadRequestException('Profile asset storage is not configured.');
+        throw new BadRequestException(
+          'Profile asset storage is not configured.',
+        );
       }
 
-      return this.storage.bucket(bucketName).file(document.storageKey).createReadStream();
+      return this.storage
+        .bucket(bucketName)
+        .file(document.storageKey)
+        .createReadStream();
     }
 
     return createReadStream(this.resolveStoragePath(document.storageKey));
@@ -1028,10 +1153,15 @@ export class ProfilesService {
     if (document.storageProvider === 'gcs') {
       const bucketName = document.storageBucket || this.storageBucket;
       if (!bucketName || !this.storage) {
-        throw new BadRequestException('Profile asset storage is not configured.');
+        throw new BadRequestException(
+          'Profile asset storage is not configured.',
+        );
       }
 
-      const [buffer] = await this.storage.bucket(bucketName).file(document.storageKey).download();
+      const [buffer] = await this.storage
+        .bucket(bucketName)
+        .file(document.storageKey)
+        .download();
       return buffer;
     }
 
@@ -1058,8 +1188,14 @@ export class ProfilesService {
 
   private async resolveGeographySelection(body: UpsertProfileDto) {
     const selectedCountry = await this.resolveCountry(body);
-    const selectedRegion = await this.resolveRegion(body, selectedCountry?.id ?? null);
-    const selectedCity = await this.resolveCity(body, selectedRegion?.id ?? null);
+    const selectedRegion = await this.resolveRegion(
+      body,
+      selectedCountry?.id ?? null,
+    );
+    const selectedCity = await this.resolveCity(
+      body,
+      selectedRegion?.id ?? null,
+    );
 
     return {
       countryId: selectedCountry?.id ?? null,
@@ -1106,7 +1242,10 @@ export class ProfilesService {
     });
   }
 
-  private async resolveRegion(body: UpsertProfileDto, countryId: string | null) {
+  private async resolveRegion(
+    body: UpsertProfileDto,
+    countryId: string | null,
+  ) {
     if (body.regionId) {
       const existingRegion = await this.prisma.region.findUnique({
         where: { id: body.regionId },
@@ -1215,7 +1354,10 @@ export class ProfilesService {
       explicitIds: body.escoSkillIds,
       codes: body.escoCodes,
       findExistingByIds: (ids) =>
-        this.prisma.escoSkill.findMany({ where: { id: { in: ids } }, select: { id: true } }),
+        this.prisma.escoSkill.findMany({
+          where: { id: { in: ids } },
+          select: { id: true },
+        }),
       upsertByCode: async (code) => {
         const taxonomy = await this.prisma.taxonomy.findUnique({
           where: { code_type: { code, type: 'ESCO' } },
@@ -1243,7 +1385,10 @@ export class ProfilesService {
       explicitIds: body.naceIds,
       codes: body.naceCodes,
       findExistingByIds: (ids) =>
-        this.prisma.nace.findMany({ where: { id: { in: ids } }, select: { id: true } }),
+        this.prisma.nace.findMany({
+          where: { id: { in: ids } },
+          select: { id: true },
+        }),
       upsertByCode: async (code) => {
         const taxonomy = await this.prisma.taxonomy.findUnique({
           where: { code_type: { code, type: 'NACE' } },
@@ -1271,7 +1416,10 @@ export class ProfilesService {
       explicitIds: body.uniclassIds,
       codes: body.uniclassCodes,
       findExistingByIds: (ids) =>
-        this.prisma.uniclass.findMany({ where: { id: { in: ids } }, select: { id: true } }),
+        this.prisma.uniclass.findMany({
+          where: { id: { in: ids } },
+          select: { id: true },
+        }),
       upsertByCode: async (code) => {
         const taxonomy = await this.prisma.taxonomy.findUnique({
           where: { code_type: { code, type: 'UNICLASS' } },
@@ -1372,7 +1520,8 @@ export class ProfilesService {
     const mimeMap: Record<string, string> = {
       'application/pdf': '.pdf',
       'application/msword': '.doc',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+        '.docx',
       'image/jpeg': '.jpg',
       'image/png': '.png',
       'image/webp': '.webp',
@@ -1503,34 +1652,63 @@ export class ProfilesService {
     },
   } as const;
 
-  private resolveOwnedAssetUrls(profile: any) {
+  private resolveOwnedAssetUrls(profile: any, publicOnly = false) {
     const byKind = new Map<string, any>();
 
     for (const document of profile.documents) {
-      if (document.assetKind) {
+      if (
+        document.assetKind &&
+        (!publicOnly ||
+          document.moderationStatus === PublicModerationStatus.APPROVED)
+      ) {
         byKind.set(document.assetKind, document);
       }
     }
 
     const portfolioUrls = profile.documents
-      .filter((document: any) => document.assetKind === ProfileAssetKind.PORTFOLIO)
-      .map((document: any) => `/profiles/${profile.id}/documents/${document.id}`);
+      .filter(
+        (document: any) =>
+          document.assetKind === ProfileAssetKind.PORTFOLIO &&
+          (!publicOnly ||
+            document.moderationStatus === PublicModerationStatus.APPROVED),
+      )
+      .map((document: any) => `/profiles/assets/${document.id}`);
 
     return {
       logoUrl: byKind.get(ProfileAssetKind.LOGO)
-        ? `/profiles/${profile.id}/documents/${byKind.get(ProfileAssetKind.LOGO).id}`
-        : profile.logoUrl,
+        ? `/profiles/assets/${byKind.get(ProfileAssetKind.LOGO).id}`
+        : this.publicSafeStoredAssetUrl(profile.logoUrl, publicOnly),
       photoUrl: byKind.get(ProfileAssetKind.PHOTO)
-        ? `/profiles/${profile.id}/documents/${byKind.get(ProfileAssetKind.PHOTO).id}`
-        : profile.photoUrl,
+        ? `/profiles/assets/${byKind.get(ProfileAssetKind.PHOTO).id}`
+        : this.publicSafeStoredAssetUrl(profile.photoUrl, publicOnly),
       bannerUrl: byKind.get(ProfileAssetKind.BANNER)
-        ? `/profiles/${profile.id}/documents/${byKind.get(ProfileAssetKind.BANNER).id}`
-        : profile.bannerUrl,
+        ? `/profiles/assets/${byKind.get(ProfileAssetKind.BANNER).id}`
+        : this.publicSafeStoredAssetUrl(profile.bannerUrl, publicOnly),
       cvUrl: byKind.get(ProfileAssetKind.CV)
         ? `/profiles/${profile.id}/documents/${byKind.get(ProfileAssetKind.CV).id}`
         : profile.cvUrl,
       portfolioUrls:
-        portfolioUrls.length > 0 ? portfolioUrls : this.parseStringArray(profile.portfolioUrlsJson),
+        portfolioUrls.length > 0
+          ? portfolioUrls
+          : this.parseStringArray(profile.portfolioUrlsJson).filter(
+              (entry) =>
+                this.publicSafeStoredAssetUrl(entry, publicOnly) !== null,
+            ),
     };
+  }
+
+  private publicSafeStoredAssetUrl(
+    value: string | null | undefined,
+    publicOnly: boolean,
+  ) {
+    if (!value) {
+      return null;
+    }
+
+    if (!publicOnly) {
+      return value;
+    }
+
+    return value.startsWith('/profiles/') ? null : value;
   }
 }

@@ -15,7 +15,9 @@ import { UploadProjectDocumentDto } from './dto/upload-project-document.dto';
 import { ProjectAccessPolicy } from './project-access.policy';
 import { ProjectResponseMapper } from './project-response.mapper';
 
-const pdfParse: (buffer: Buffer) => Promise<{ text: string }> = require('pdf-parse');
+const pdfParse: (
+  buffer: Buffer,
+) => Promise<{ text: string }> = require('pdf-parse');
 
 export type UploadedProjectFile = {
   originalname: string;
@@ -76,7 +78,11 @@ export class ProjectDocumentsService {
     };
   }
 
-  async findOne(projectId: string, documentId: string, user: AuthenticatedUser) {
+  async findOne(
+    projectId: string,
+    documentId: string,
+    user: AuthenticatedUser,
+  ) {
     const document = await this.getDocumentForRead(projectId, documentId, user);
 
     if (document.storageProvider !== 'local') {
@@ -107,7 +113,10 @@ export class ProjectDocumentsService {
     }
 
     if (body.jobRequestId) {
-      await this.ensureJobRequestBelongsToProject(project.id, body.jobRequestId);
+      await this.ensureJobRequestBelongsToProject(
+        project.id,
+        body.jobRequestId,
+      );
     }
 
     const document = await this.prisma.projectDocument.create({
@@ -167,7 +176,10 @@ export class ProjectDocumentsService {
     }
 
     if (body.jobRequestId) {
-      await this.ensureJobRequestBelongsToProject(project.id, body.jobRequestId);
+      await this.ensureJobRequestBelongsToProject(
+        project.id,
+        body.jobRequestId,
+      );
     }
 
     const relativeStorageKey = await this.persistUploadedFile(project.id, file);
@@ -214,7 +226,11 @@ export class ProjectDocumentsService {
     documentId: string,
     user: AuthenticatedUser,
   ) {
-    const document = await this.getDocumentForWrite(projectId, documentId, user);
+    const document = await this.getDocumentForWrite(
+      projectId,
+      documentId,
+      user,
+    );
 
     if (document.storageProvider !== 'local') {
       throw new BadRequestException(
@@ -271,11 +287,7 @@ export class ProjectDocumentsService {
     }
   }
 
-  async remove(
-    projectId: string,
-    documentId: string,
-    user: AuthenticatedUser,
-  ) {
+  async remove(projectId: string, documentId: string, user: AuthenticatedUser) {
     const project = await this.getProjectForWrite(projectId, user);
     const existing = await this.prisma.projectDocument.findFirst({
       where: {
@@ -370,7 +382,10 @@ export class ProjectDocumentsService {
     return document;
   }
 
-  private async ensureJobRequestBelongsToProject(projectId: string, jobRequestId: string) {
+  private async ensureJobRequestBelongsToProject(
+    projectId: string,
+    jobRequestId: string,
+  ) {
     const jobRequest = await this.prisma.projectJobRequest.findFirst({
       where: {
         id: jobRequestId,
@@ -383,10 +398,14 @@ export class ProjectDocumentsService {
     }
   }
 
-  private async persistUploadedFile(projectId: string, file: UploadedProjectFile) {
+  private async persistUploadedFile(
+    projectId: string,
+    file: UploadedProjectFile,
+  ) {
     const uploadsRoot = this.getUploadsRoot();
     const projectFolder = join(uploadsRoot, 'projects', projectId);
-    const extension = extname(file.originalname) || this.extensionFromMime(file.mimetype);
+    const extension =
+      extname(file.originalname) || this.extensionFromMime(file.mimetype);
     const uniqueFileName = `${randomUUID()}${extension}`;
     const relativeStorageKey = `projects/${projectId}/${uniqueFileName}`;
 

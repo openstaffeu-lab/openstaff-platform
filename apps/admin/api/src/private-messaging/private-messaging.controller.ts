@@ -23,13 +23,17 @@ import { PrivateMessagingService } from './private-messaging.service';
 
 @Controller()
 export class PrivateMessagingController {
-  constructor(private readonly privateMessagingService: PrivateMessagingService) {}
+  constructor(
+    private readonly privateMessagingService: PrivateMessagingService,
+  ) {}
 
   @UseGuards(JwtGuard)
   @Get('private-conversations')
   async listConversations(@Req() req: any) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     try {
@@ -42,15 +46,26 @@ export class PrivateMessagingController {
 
   @UseGuards(JwtGuard)
   @Post('private-conversations')
-  async createConversation(@Body() body: Record<string, unknown>, @Req() req: any) {
+  async createConversation(
+    @Body() body: Record<string, unknown>,
+    @Req() req: any,
+  ) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     try {
-      return await this.privateMessagingService.createConversation(body, req.user.sub);
+      return await this.privateMessagingService.createConversation(
+        body,
+        req.user.sub,
+      );
     } catch (error) {
-      if (error instanceof HttpException || error instanceof ForbiddenException) {
+      if (
+        error instanceof HttpException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       logEndpointError('PrivateMessagingController.createConversation', error);
@@ -62,7 +77,9 @@ export class PrivateMessagingController {
   @Get('private-conversations/:id/messages')
   async listMessages(@Param('id') id: string, @Req() req: any) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     try {
@@ -81,7 +98,9 @@ export class PrivateMessagingController {
     @Req() req: any,
   ) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     try {
@@ -99,7 +118,10 @@ export class PrivateMessagingController {
     try {
       return await this.privateMessagingService.listConversationsForAdmin();
     } catch (error) {
-      logEndpointError('PrivateMessagingController.listConversationsForAdmin', error);
+      logEndpointError(
+        'PrivateMessagingController.listConversationsForAdmin',
+        error,
+      );
       return buildInternalErrorResponse(error);
     }
   }
@@ -117,7 +139,10 @@ export class PrivateMessagingController {
         typeof body.status === 'string' ? body.status : 'OPEN',
       );
     } catch (error) {
-      logEndpointError('PrivateMessagingController.updateConversationStatus', error);
+      logEndpointError(
+        'PrivateMessagingController.updateConversationStatus',
+        error,
+      );
       return buildInternalErrorResponse(error);
     }
   }

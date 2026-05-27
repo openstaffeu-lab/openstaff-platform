@@ -45,7 +45,10 @@ export class TimesheetsService {
   ) {}
 
   async createTimesheet(body: CreateTimesheetDto, user: AuthUser) {
-    const assignment = await this.getOwnedAssignment(body.workforceAssignmentId, user.sub);
+    const assignment = await this.getOwnedAssignment(
+      body.workforceAssignmentId,
+      user.sub,
+    );
     this.assertTimesheetCreationAllowed(assignment);
 
     const periodStart = this.parseDate(body.periodStart, 'periodStart');
@@ -64,7 +67,9 @@ export class TimesheetsService {
     });
 
     if (existing) {
-      throw new BadRequestException('A timesheet already exists for this period.');
+      throw new BadRequestException(
+        'A timesheet already exists for this period.',
+      );
     }
 
     const created = await this.prisma.timesheet.create({
@@ -95,7 +100,11 @@ export class TimesheetsService {
     return this.toTimesheetResponse(created);
   }
 
-  async addTimesheetEntry(id: string, body: AddTimesheetEntryDto, user: AuthUser) {
+  async addTimesheetEntry(
+    id: string,
+    body: AddTimesheetEntryDto,
+    user: AuthUser,
+  ) {
     const timesheet = await this.getOwnedTimesheet(id, user.sub);
     this.assertTimesheetEditable(timesheet.status);
 
@@ -158,7 +167,9 @@ export class TimesheetsService {
       });
 
       if (!fresh.entries.length) {
-        throw new BadRequestException('A timesheet must include at least one entry before submit.');
+        throw new BadRequestException(
+          'A timesheet must include at least one entry before submit.',
+        );
       }
 
       this.assertOperationalEligibility(fresh.workforceAssignment, true);
@@ -207,7 +218,10 @@ export class TimesheetsService {
   }
 
   async checkIn(body: AttendanceCheckInDto, user: AuthUser) {
-    const assignment = await this.getOwnedAssignment(body.workforceAssignmentId, user.sub);
+    const assignment = await this.getOwnedAssignment(
+      body.workforceAssignmentId,
+      user.sub,
+    );
     this.assertAttendanceAllowed(assignment);
 
     const existingOpen = await this.prisma.attendanceRecord.findFirst({
@@ -220,7 +234,9 @@ export class TimesheetsService {
     });
 
     if (existingOpen) {
-      throw new BadRequestException('Check-out is required before a new check-in.');
+      throw new BadRequestException(
+        'Check-out is required before a new check-in.',
+      );
     }
 
     const created = await this.prisma.attendanceRecord.create({
@@ -252,7 +268,10 @@ export class TimesheetsService {
   }
 
   async checkOut(body: AttendanceCheckOutDto, user: AuthUser) {
-    const assignment = await this.getOwnedAssignment(body.workforceAssignmentId, user.sub);
+    const assignment = await this.getOwnedAssignment(
+      body.workforceAssignmentId,
+      user.sub,
+    );
 
     const openAttendance = await this.prisma.attendanceRecord.findFirst({
       where: {
@@ -266,7 +285,9 @@ export class TimesheetsService {
     });
 
     if (!openAttendance) {
-      throw new NotFoundException('No open attendance session found for this assignment.');
+      throw new NotFoundException(
+        'No open attendance session found for this assignment.',
+      );
     }
 
     const updated = await this.prisma.attendanceRecord.update({
@@ -292,7 +313,10 @@ export class TimesheetsService {
       before: this.toAttendanceResponse(openAttendance),
       after: this.toAttendanceResponse(updated),
       metadata: {
-        durationHours: this.calculateDurationHours(updated.checkInAt, updated.checkOutAt),
+        durationHours: this.calculateDurationHours(
+          updated.checkInAt,
+          updated.checkOutAt,
+        ),
       },
     });
 
@@ -327,7 +351,11 @@ export class TimesheetsService {
       const query = filters.q.trim();
       where.OR = [
         { user: { email: { contains: query, mode: 'insensitive' } } },
-        { workforceAssignment: { job: { title: { contains: query, mode: 'insensitive' } } } },
+        {
+          workforceAssignment: {
+            job: { title: { contains: query, mode: 'insensitive' } },
+          },
+        },
         { project: { name: { contains: query, mode: 'insensitive' } } },
       ];
     }
@@ -355,11 +383,17 @@ export class TimesheetsService {
     return this.toTimesheetResponse(timesheet);
   }
 
-  async approveTimesheet(id: string, body: ApproveTimesheetDto, user: AuthUser) {
+  async approveTimesheet(
+    id: string,
+    body: ApproveTimesheetDto,
+    user: AuthUser,
+  ) {
     const timesheet = await this.getManagedTimesheet(id, user);
 
     if (timesheet.status !== TimesheetStatus.SUBMITTED) {
-      throw new BadRequestException('Only SUBMITTED timesheets can be approved.');
+      throw new BadRequestException(
+        'Only SUBMITTED timesheets can be approved.',
+      );
     }
 
     const updated = await this.prisma.timesheet.update({
@@ -393,7 +427,9 @@ export class TimesheetsService {
     const timesheet = await this.getManagedTimesheet(id, user);
 
     if (timesheet.status !== TimesheetStatus.SUBMITTED) {
-      throw new BadRequestException('Only SUBMITTED timesheets can be rejected.');
+      throw new BadRequestException(
+        'Only SUBMITTED timesheets can be rejected.',
+      );
     }
 
     const updated = await this.prisma.timesheet.update({
@@ -437,7 +473,11 @@ export class TimesheetsService {
       const query = filters.q.trim();
       where.OR = [
         { user: { email: { contains: query, mode: 'insensitive' } } },
-        { workforceAssignment: { job: { title: { contains: query, mode: 'insensitive' } } } },
+        {
+          workforceAssignment: {
+            job: { title: { contains: query, mode: 'insensitive' } },
+          },
+        },
       ];
     }
 
@@ -512,24 +552,36 @@ export class TimesheetsService {
     this.assertOperationalEligibility(assignment, false);
   }
 
-  private assertOperationalEligibility(assignment: any, requireProject: boolean) {
+  private assertOperationalEligibility(
+    assignment: any,
+    requireProject: boolean,
+  ) {
     if (assignment.status !== AssignmentStatus.ACTIVE) {
-      throw new BadRequestException('Only ACTIVE assignments can perform this operation.');
+      throw new BadRequestException(
+        'Only ACTIVE assignments can perform this operation.',
+      );
     }
 
     if (requireProject && !assignment.projectId) {
-      throw new BadRequestException('An assignment project is required for timesheet operations.');
+      throw new BadRequestException(
+        'An assignment project is required for timesheet operations.',
+      );
     }
 
     const lifecycleStatus = assignment.contract.lifecycleStatus;
     if (lifecycleStatus !== ContractLifecycleStatus.ACTIVE) {
-      throw new BadRequestException('Only ACTIVE contracts can perform this operation.');
+      throw new BadRequestException(
+        'Only ACTIVE contracts can perform this operation.',
+      );
     }
 
     if (
-      assignment.user.identityProfile?.verificationStatus !== VerificationStatus.VERIFIED
+      assignment.user.identityProfile?.verificationStatus !==
+      VerificationStatus.VERIFIED
     ) {
-      throw new BadRequestException('Verification must remain valid for workforce execution.');
+      throw new BadRequestException(
+        'Verification must remain valid for workforce execution.',
+      );
     }
   }
 
@@ -539,7 +591,9 @@ export class TimesheetsService {
     }
 
     if (status === TimesheetStatus.SUBMITTED) {
-      throw new BadRequestException('Submitted timesheets lock entries until reviewed.');
+      throw new BadRequestException(
+        'Submitted timesheets lock entries until reviewed.',
+      );
     }
   }
 
@@ -559,8 +613,14 @@ export class TimesheetsService {
       select: { hoursWorked: true, overtimeHours: true },
     });
 
-    const totalHours = entries.reduce((sum, entry) => sum + entry.hoursWorked, 0);
-    const overtimeHours = entries.reduce((sum, entry) => sum + entry.overtimeHours, 0);
+    const totalHours = entries.reduce(
+      (sum, entry) => sum + entry.hoursWorked,
+      0,
+    );
+    const overtimeHours = entries.reduce(
+      (sum, entry) => sum + entry.overtimeHours,
+      0,
+    );
 
     await tx.timesheet.update({
       where: { id: timesheetId },
@@ -571,14 +631,19 @@ export class TimesheetsService {
     });
   }
 
-  private async assertRecruiterAccess(job: { actorId: string }, user: AuthUser) {
+  private async assertRecruiterAccess(
+    job: { actorId: string },
+    user: AuthUser,
+  ) {
     if (this.isAdmin(user.role)) {
       return;
     }
 
     const recruiterActor = await this.findActorForUser(user);
     if (!recruiterActor || recruiterActor.id !== job.actorId) {
-      throw new ForbiddenException('Only the job owner or an admin can access this operational data.');
+      throw new ForbiddenException(
+        'Only the job owner or an admin can access this operational data.',
+      );
     }
   }
 
@@ -621,7 +686,11 @@ export class TimesheetsService {
       return null;
     }
 
-    return Number((((checkOutAt.getTime() - checkInAt.getTime()) / 1000 / 60 / 60)).toFixed(2));
+    return Number(
+      ((checkOutAt.getTime() - checkInAt.getTime()) / 1000 / 60 / 60).toFixed(
+        2,
+      ),
+    );
   }
 
   private toTimesheetResponse(timesheet: any) {
@@ -645,7 +714,8 @@ export class TimesheetsService {
               id: timesheet.user.identityProfile.id,
               publicSlug: timesheet.user.identityProfile.publicSlug,
               displayName: timesheet.user.identityProfile.displayName,
-              verificationStatus: timesheet.user.identityProfile.verificationStatus,
+              verificationStatus:
+                timesheet.user.identityProfile.verificationStatus,
             }
           : null,
       },
@@ -699,7 +769,10 @@ export class TimesheetsService {
       locationMetadata: attendance.locationMetadata,
       createdAt: attendance.createdAt,
       updatedAt: attendance.updatedAt,
-      durationHours: this.calculateDurationHours(attendance.checkInAt, attendance.checkOutAt),
+      durationHours: this.calculateDurationHours(
+        attendance.checkInAt,
+        attendance.checkOutAt,
+      ),
       user: {
         id: attendance.user.id,
         email: attendance.user.email,
@@ -710,7 +783,8 @@ export class TimesheetsService {
       },
       contract: {
         id: attendance.workforceAssignment.contract.id,
-        lifecycleStatus: attendance.workforceAssignment.contract.lifecycleStatus,
+        lifecycleStatus:
+          attendance.workforceAssignment.contract.lifecycleStatus,
       },
       job: {
         id: attendance.workforceAssignment.job.id,

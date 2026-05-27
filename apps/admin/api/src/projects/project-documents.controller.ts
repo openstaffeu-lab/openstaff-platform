@@ -19,7 +19,10 @@ import { JwtGuard } from '../auth/jwt.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { CreateProjectDocumentDto } from './dto/create-project-document.dto';
 import { UploadProjectDocumentDto } from './dto/upload-project-document.dto';
-import { ProjectDocumentsService, UploadedProjectFile } from './project-documents.service';
+import {
+  ProjectDocumentsService,
+  UploadedProjectFile,
+} from './project-documents.service';
 
 @Controller('projects/:projectId/documents')
 export class ProjectDocumentsController {
@@ -40,7 +43,11 @@ export class ProjectDocumentsController {
     @Param('documentId') documentId: string,
     @Req() req: any,
   ) {
-    return this.projectDocumentsService.getExtractedText(projectId, documentId, req.user);
+    return this.projectDocumentsService.getExtractedText(
+      projectId,
+      documentId,
+      req.user,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -81,7 +88,9 @@ export class ProjectDocumentsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectDocumentsService.create(projectId, body, user);
@@ -102,7 +111,9 @@ export class ProjectDocumentsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectDocumentsService.upload(projectId, body, file, user);
@@ -121,7 +132,9 @@ export class ProjectDocumentsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectDocumentsService.extract(projectId, documentId, user);
@@ -140,7 +153,9 @@ export class ProjectDocumentsController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectDocumentsService.remove(projectId, documentId, user);

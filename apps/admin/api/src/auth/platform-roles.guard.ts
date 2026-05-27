@@ -31,7 +31,9 @@ export class PlatformRolesGuard implements CanActivate {
     }
 
     if (!requiredRoles.includes(actor.role)) {
-      throw new ForbiddenException('Actor does not have the required platform role');
+      throw new ForbiddenException(
+        'Actor does not have the required platform role',
+      );
     }
 
     return true;

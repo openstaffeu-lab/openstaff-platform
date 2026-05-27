@@ -23,7 +23,13 @@ export class ProjectWorkerAssignmentsController {
 
   @UseGuards(
     JwtGuard,
-    new RolesGuard(['ADMIN', 'EMPLOYER', 'CONTRACTOR', 'GENERAL_CONTRACTOR', 'PROFESSIONAL']),
+    new RolesGuard([
+      'ADMIN',
+      'EMPLOYER',
+      'CONTRACTOR',
+      'GENERAL_CONTRACTOR',
+      'PROFESSIONAL',
+    ]),
   )
   @Post(':projectId/worker-assignments')
   async create(
@@ -33,7 +39,9 @@ export class ProjectWorkerAssignmentsController {
   ) {
     const user = req.user;
     if (!user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectWorkerAssignmentsService.create(projectId, body, user);
@@ -47,7 +55,13 @@ export class ProjectWorkerAssignmentsController {
 
   @UseGuards(
     JwtGuard,
-    new RolesGuard(['ADMIN', 'EMPLOYER', 'CONTRACTOR', 'GENERAL_CONTRACTOR', 'PROFESSIONAL']),
+    new RolesGuard([
+      'ADMIN',
+      'EMPLOYER',
+      'CONTRACTOR',
+      'GENERAL_CONTRACTOR',
+      'PROFESSIONAL',
+    ]),
   )
   @Patch(':projectId/worker-assignments/:assignmentId/status')
   async updateStatus(
@@ -58,7 +72,9 @@ export class ProjectWorkerAssignmentsController {
   ) {
     const user = req.user;
     if (!user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectWorkerAssignmentsService.updateStatus(

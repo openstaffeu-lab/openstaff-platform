@@ -87,7 +87,10 @@ export class RolloutIntelligenceService {
       channel: NotificationChannel.SYSTEM,
       channels: [NotificationChannel.SYSTEM],
       title: this.titleForFunnelEvent(input.eventType as FunnelEventType),
-      message: this.messageForFunnelEvent(input.eventType as FunnelEventType, surface),
+      message: this.messageForFunnelEvent(
+        input.eventType as FunnelEventType,
+        surface,
+      ),
       metadata: {
         surface,
         role: user?.role ?? 'anonymous',
@@ -218,7 +221,9 @@ export class RolloutIntelligenceService {
 
     return Object.fromEntries(
       Object.entries(metadata)
-        .filter(([key]) => !/(token|secret|password|authorization|cookie)/i.test(key))
+        .filter(
+          ([key]) => !/(token|secret|password|authorization|cookie)/i.test(key),
+        )
         .slice(0, 12)
         .map(([key, value]) => [key, this.normalizeValue(value)]),
     );

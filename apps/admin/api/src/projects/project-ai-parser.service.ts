@@ -54,13 +54,7 @@ type ParsedAIInterpretation = {
     matchedKeywords: string[];
   }>;
   suggestedConditions: Array<{
-    type:
-      | 'SAFETY'
-      | 'PAYMENT'
-      | 'INSURANCE'
-      | 'TECHNICAL'
-      | 'LEGAL'
-      | 'CUSTOM';
+    type: 'SAFETY' | 'PAYMENT' | 'INSURANCE' | 'TECHNICAL' | 'LEGAL' | 'CUSTOM';
     title: string;
     content: string;
     reason: string;
@@ -93,7 +87,8 @@ export class ProjectAIParserService {
   parse(input: ParserInput): ParsedAIInterpretation {
     const sourceText = this.normalizeFreeText(input.sourceText);
     const extractedDocuments = input.documents.filter(
-      (document) => document.extractedText && document.extractedText.trim().length > 0,
+      (document) =>
+        document.extractedText && document.extractedText.trim().length > 0,
     );
     const extractedText = extractedDocuments
       .map((document) => document.extractedText?.trim() ?? '')
@@ -119,23 +114,62 @@ export class ProjectAIParserService {
     const suggestedJobRequests = this.collectJobRequests(normalized);
     const suggestedConditions = this.collectConditions(normalized);
     const riskFlags = this.collectFlags(normalized, [
-      { title: 'Urgent mobilization required', terms: ['urgent', 'immediate mobilization', 'asap'] },
-      { title: 'Penalty exposure detected', terms: ['penalty', 'penalties', 'liquidated damages'] },
-      { title: 'Night or shutdown work mentioned', terms: ['night shift', 'shutdown', 'out of hours'] },
-      { title: 'Hazardous or high-risk site activity', terms: ['hazardous', 'confined space', 'working at height'] },
+      {
+        title: 'Urgent mobilization required',
+        terms: ['urgent', 'immediate mobilization', 'asap'],
+      },
+      {
+        title: 'Penalty exposure detected',
+        terms: ['penalty', 'penalties', 'liquidated damages'],
+      },
+      {
+        title: 'Night or shutdown work mentioned',
+        terms: ['night shift', 'shutdown', 'out of hours'],
+      },
+      {
+        title: 'Hazardous or high-risk site activity',
+        terms: ['hazardous', 'confined space', 'working at height'],
+      },
     ]);
     const financeFlags = this.collectFlags(normalized, [
-      { title: 'Advance payment requested', terms: ['advance payment', 'mobilization advance'] },
-      { title: 'Retention clause likely required', terms: ['retention', 'retainage'] },
-      { title: 'Extended payment terms detected', terms: ['net 30', 'net 45', 'net 60', 'invoice'] },
-      { title: 'Budget or price cap language detected', terms: ['budget', 'price cap', 'lump sum', 'fixed price'] },
+      {
+        title: 'Advance payment requested',
+        terms: ['advance payment', 'mobilization advance'],
+      },
+      {
+        title: 'Retention clause likely required',
+        terms: ['retention', 'retainage'],
+      },
+      {
+        title: 'Extended payment terms detected',
+        terms: ['net 30', 'net 45', 'net 60', 'invoice'],
+      },
+      {
+        title: 'Budget or price cap language detected',
+        terms: ['budget', 'price cap', 'lump sum', 'fixed price'],
+      },
     ]);
     const complianceFlags = this.collectFlags(normalized, [
-      { title: 'Permit or approval language detected', terms: ['permit', 'approval', 'authority'] },
-      { title: 'Insurance requirement detected', terms: ['insurance', 'liability coverage'] },
-      { title: 'Certification requirement detected', terms: ['certification', 'certified', 'licensed'] },
-      { title: 'HSE or safety compliance language detected', terms: ['hse', 'safety plan', 'method statement'] },
-      { title: 'Inspection or warranty language detected', terms: ['inspection', 'warranty', 'commissioning'] },
+      {
+        title: 'Permit or approval language detected',
+        terms: ['permit', 'approval', 'authority'],
+      },
+      {
+        title: 'Insurance requirement detected',
+        terms: ['insurance', 'liability coverage'],
+      },
+      {
+        title: 'Certification requirement detected',
+        terms: ['certification', 'certified', 'licensed'],
+      },
+      {
+        title: 'HSE or safety compliance language detected',
+        terms: ['hse', 'safety plan', 'method statement'],
+      },
+      {
+        title: 'Inspection or warranty language detected',
+        terms: ['inspection', 'warranty', 'commissioning'],
+      },
     ]);
 
     return {
@@ -144,16 +178,30 @@ export class ProjectAIParserService {
       suggestedJobRequests,
       suggestedConditions,
       taxonomySuggestions: {
-        esco: this.scoreTaxonomySuggestions(input.escoSkills, normalized, tokens),
-        nace: this.scoreTaxonomySuggestions(input.naceCodes, normalized, tokens),
-        uniclass: this.scoreTaxonomySuggestions(input.uniclassCodes, normalized, tokens),
+        esco: this.scoreTaxonomySuggestions(
+          input.escoSkills,
+          normalized,
+          tokens,
+        ),
+        nace: this.scoreTaxonomySuggestions(
+          input.naceCodes,
+          normalized,
+          tokens,
+        ),
+        uniclass: this.scoreTaxonomySuggestions(
+          input.uniclassCodes,
+          normalized,
+          tokens,
+        ),
       },
       riskFlags,
       financeFlags,
       complianceFlags,
       sourceStats: {
         documentIds: input.documents.map((document) => document.id),
-        documentsWithExtractedText: extractedDocuments.map((document) => document.id),
+        documentsWithExtractedText: extractedDocuments.map(
+          (document) => document.id,
+        ),
         totalCharacters: combinedText.length,
         sourceTextCharacters: sourceText.length,
         extractedDocumentCharacters: extractedText.length,
@@ -166,7 +214,8 @@ export class ProjectAIParserService {
     sourceText: string,
     extractedText: string,
   ) {
-    const seedText = sourceText || extractedText || project.summary || project.name;
+    const seedText =
+      sourceText || extractedText || project.summary || project.name;
     const sentences = seedText
       .replace(/\s+/g, ' ')
       .split(/(?<=[.!?])\s+/)
@@ -238,7 +287,8 @@ export class ProjectAIParserService {
       },
       {
         title: 'HVAC Installation Crew',
-        reason: 'HVAC and mechanical systems are referenced in the source material.',
+        reason:
+          'HVAC and mechanical systems are referenced in the source material.',
         matches: [
           { keyword: 'hvac', weight: 2 },
           { keyword: 'ventilation', weight: 2 },
@@ -283,7 +333,8 @@ export class ProjectAIParserService {
       },
       {
         title: 'Site Supervision and Coordination',
-        reason: 'Supervision or coordination roles are implied by project language.',
+        reason:
+          'Supervision or coordination roles are implied by project language.',
         matches: [
           { keyword: 'site manager', weight: 2 },
           { keyword: 'supervision', weight: 2 },
@@ -318,7 +369,13 @@ export class ProjectAIParserService {
         content:
           'Contractors should provide method statements, PPE compliance, and task risk controls before mobilization.',
         reason: 'Safety-oriented language was detected in the project intake.',
-        matches: ['safety', 'hse', 'ppe', 'method statement', 'risk assessment'],
+        matches: [
+          'safety',
+          'hse',
+          'ppe',
+          'method statement',
+          'risk assessment',
+        ],
       },
       {
         type: 'PAYMENT' as const,
@@ -326,7 +383,14 @@ export class ProjectAIParserService {
         content:
           'Commercial submission should clearly confirm invoice timing, payment milestones, retention, and supporting documentation.',
         reason: 'Payment timing or invoice language was detected.',
-        matches: ['invoice', 'payment', 'net 30', 'net 45', 'retention', 'advance payment'],
+        matches: [
+          'invoice',
+          'payment',
+          'net 30',
+          'net 45',
+          'retention',
+          'advance payment',
+        ],
       },
       {
         type: 'INSURANCE' as const,
@@ -342,7 +406,13 @@ export class ProjectAIParserService {
         content:
           'Execution should align with drawings, tolerances, technical specifications, and approved submittals.',
         reason: 'Technical delivery terms were found.',
-        matches: ['drawing', 'specification', 'technical', 'tolerance', 'submittal'],
+        matches: [
+          'drawing',
+          'specification',
+          'technical',
+          'tolerance',
+          'submittal',
+        ],
       },
       {
         type: 'LEGAL' as const,
@@ -400,20 +470,31 @@ export class ProjectAIParserService {
     return records
       .map((record) => {
         const normalizedTitle = this.normalizeForMatching(record.title);
-        const normalizedDescription = this.normalizeForMatching(record.description ?? '');
-        const titleTokens = this.tokenize(normalizedTitle).filter((token) => token.length > 2);
+        const normalizedDescription = this.normalizeForMatching(
+          record.description ?? '',
+        );
+        const titleTokens = this.tokenize(normalizedTitle).filter(
+          (token) => token.length > 2,
+        );
         const descriptionTokens = this.tokenize(normalizedDescription).filter(
           (token) => token.length > 3,
         );
         const matchedKeywords = [
           ...titleTokens.filter((token) => tokenSet.has(token)),
-          ...descriptionTokens.filter((token) => tokenSet.has(token)).slice(0, 2),
-          ...(normalizedText.includes(record.code.toLowerCase()) ? [record.code] : []),
-        ].filter((value, index, collection) => collection.indexOf(value) === index);
+          ...descriptionTokens
+            .filter((token) => tokenSet.has(token))
+            .slice(0, 2),
+          ...(normalizedText.includes(record.code.toLowerCase())
+            ? [record.code]
+            : []),
+        ].filter(
+          (value, index, collection) => collection.indexOf(value) === index,
+        );
 
-        const phraseBonus = normalizedTitle.length > 0 && normalizedText.includes(normalizedTitle)
-          ? 3
-          : 0;
+        const phraseBonus =
+          normalizedTitle.length > 0 && normalizedText.includes(normalizedTitle)
+            ? 3
+            : 0;
         const score =
           matchedKeywords.length +
           phraseBonus +
@@ -439,8 +520,12 @@ export class ProjectAIParserService {
   private collectMatchedKeywords(text: string, matches: SuggestionMatch[]) {
     return matches
       .filter((match) => text.includes(match.keyword))
-      .flatMap((match) => Array.from({ length: match.weight ?? 1 }, () => match.keyword))
-      .filter((value, index, collection) => collection.indexOf(value) === index);
+      .flatMap((match) =>
+        Array.from({ length: match.weight ?? 1 }, () => match.keyword),
+      )
+      .filter(
+        (value, index, collection) => collection.indexOf(value) === index,
+      );
   }
 
   private countMatches(text: string, keywords: string[]) {

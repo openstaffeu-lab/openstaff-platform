@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { JwtGuard } from '../auth/jwt.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -28,7 +37,10 @@ export class WorkforceAdminController {
   constructor(private readonly workforceService: WorkforceService) {}
 
   @Post('assignments')
-  async createAssignment(@Body() body: CreateWorkforceAssignmentDto, @Req() req: any) {
+  async createAssignment(
+    @Body() body: CreateWorkforceAssignmentDto,
+    @Req() req: any,
+  ) {
     try {
       return buildSuccessResponse(
         await this.workforceService.createAssignment(body, req.user),
@@ -63,7 +75,9 @@ export class WorkforceAdminController {
   @Get('assignments/:id')
   async getAssignment(@Param('id') id: string, @Req() req: any) {
     try {
-      return buildSuccessResponse(await this.workforceService.getAssignment(id, req.user));
+      return buildSuccessResponse(
+        await this.workforceService.getAssignment(id, req.user),
+      );
     } catch (error) {
       logEndpointError('WorkforceAdminController.getAssignment', error);
       throw error;
@@ -73,7 +87,9 @@ export class WorkforceAdminController {
   @Post('contracts/:id/send')
   async sendContract(@Param('id') id: string, @Req() req: any) {
     try {
-      return buildSuccessResponse(await this.workforceService.sendContract(id, req.user));
+      return buildSuccessResponse(
+        await this.workforceService.sendContract(id, req.user),
+      );
     } catch (error) {
       logEndpointError('WorkforceAdminController.sendContract', error);
       throw error;
@@ -149,7 +165,9 @@ export class WorkforceWorkerController {
   @Get('me')
   async getMyAssignments(@Req() req: any) {
     try {
-      return buildSuccessResponse(await this.workforceService.getMyAssignments(req.user));
+      return buildSuccessResponse(
+        await this.workforceService.getMyAssignments(req.user),
+      );
     } catch (error) {
       logEndpointError('WorkforceWorkerController.getMyAssignments', error);
       throw error;

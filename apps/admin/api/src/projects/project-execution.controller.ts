@@ -19,11 +19,19 @@ import { ProjectExecutionService } from './project-execution.service';
 
 @Controller()
 export class ProjectExecutionController {
-  constructor(private readonly projectExecutionService: ProjectExecutionService) {}
+  constructor(
+    private readonly projectExecutionService: ProjectExecutionService,
+  ) {}
 
   @UseGuards(
     JwtGuard,
-    new RolesGuard(['ADMIN', 'EMPLOYER', 'CONTRACTOR', 'GENERAL_CONTRACTOR', 'PROFESSIONAL']),
+    new RolesGuard([
+      'ADMIN',
+      'EMPLOYER',
+      'CONTRACTOR',
+      'GENERAL_CONTRACTOR',
+      'PROFESSIONAL',
+    ]),
   )
   @Post('projects/:projectId/attendance/check-in')
   async checkIn(
@@ -32,7 +40,9 @@ export class ProjectExecutionController {
     @Req() req: any,
   ) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectExecutionService.checkIn(projectId, body, req.user);
@@ -40,7 +50,13 @@ export class ProjectExecutionController {
 
   @UseGuards(
     JwtGuard,
-    new RolesGuard(['ADMIN', 'EMPLOYER', 'CONTRACTOR', 'GENERAL_CONTRACTOR', 'PROFESSIONAL']),
+    new RolesGuard([
+      'ADMIN',
+      'EMPLOYER',
+      'CONTRACTOR',
+      'GENERAL_CONTRACTOR',
+      'PROFESSIONAL',
+    ]),
   )
   @Post('projects/:projectId/attendance/check-out')
   async checkOut(
@@ -49,7 +65,9 @@ export class ProjectExecutionController {
     @Req() req: any,
   ) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectExecutionService.checkOut(projectId, body, req.user);
@@ -63,7 +81,13 @@ export class ProjectExecutionController {
 
   @UseGuards(
     JwtGuard,
-    new RolesGuard(['ADMIN', 'EMPLOYER', 'CONTRACTOR', 'GENERAL_CONTRACTOR', 'PROFESSIONAL']),
+    new RolesGuard([
+      'ADMIN',
+      'EMPLOYER',
+      'CONTRACTOR',
+      'GENERAL_CONTRACTOR',
+      'PROFESSIONAL',
+    ]),
   )
   @Post('projects/:projectId/work-logs')
   async createWorkLog(
@@ -72,10 +96,16 @@ export class ProjectExecutionController {
     @Req() req: any,
   ) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectExecutionService.createWorkLog(projectId, body, req.user);
+    return this.projectExecutionService.createWorkLog(
+      projectId,
+      body,
+      req.user,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -86,7 +116,13 @@ export class ProjectExecutionController {
 
   @UseGuards(
     JwtGuard,
-    new RolesGuard(['ADMIN', 'EMPLOYER', 'CONTRACTOR', 'GENERAL_CONTRACTOR', 'PROFESSIONAL']),
+    new RolesGuard([
+      'ADMIN',
+      'EMPLOYER',
+      'CONTRACTOR',
+      'GENERAL_CONTRACTOR',
+      'PROFESSIONAL',
+    ]),
   )
   @Patch('projects/:projectId/work-logs/:logId/status')
   async updateWorkLogStatus(
@@ -96,10 +132,17 @@ export class ProjectExecutionController {
     @Req() req: any,
   ) {
     if (!req.user?.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
-    return this.projectExecutionService.updateWorkLogStatus(projectId, logId, body, req.user);
+    return this.projectExecutionService.updateWorkLogStatus(
+      projectId,
+      logId,
+      body,
+      req.user,
+    );
   }
 
   @UseGuards(JwtGuard)

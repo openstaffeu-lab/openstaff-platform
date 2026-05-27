@@ -60,10 +60,22 @@ export const DEFAULT_PUBLIC_UI_CONFIG: PublicUiConfig = {
       {
         title: 'Support & Contact',
         links: [
-          { label: 'General: info@openstaff.eu', href: 'mailto:info@openstaff.eu' },
-          { label: 'Commercial: contact@openstaff.eu', href: 'mailto:contact@openstaff.eu' },
-          { label: 'Contracts: office@openstaff.eu', href: 'mailto:office@openstaff.eu' },
-          { label: 'GDPR: gdpr@openstaff.eu', href: 'mailto:gdpr@openstaff.eu' },
+          {
+            label: 'General: info@openstaff.eu',
+            href: 'mailto:info@openstaff.eu',
+          },
+          {
+            label: 'Commercial: contact@openstaff.eu',
+            href: 'mailto:contact@openstaff.eu',
+          },
+          {
+            label: 'Contracts: office@openstaff.eu',
+            href: 'mailto:office@openstaff.eu',
+          },
+          {
+            label: 'GDPR: gdpr@openstaff.eu',
+            href: 'mailto:gdpr@openstaff.eu',
+          },
         ],
       },
       {

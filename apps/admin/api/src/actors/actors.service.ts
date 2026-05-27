@@ -29,7 +29,9 @@ export class ActorsService {
     const limit = Math.min(Math.max(query.limit ?? 20, 1), 100);
     const where = {
       ...(query.type ? { actorType: query.type as any } : {}),
-      ...(typeof query.verified === 'boolean' ? { isVerified: query.verified } : {}),
+      ...(typeof query.verified === 'boolean'
+        ? { isVerified: query.verified }
+        : {}),
       ...(query.region ? { regionCode: query.region } : {}),
       ...(query.nace ? { naceCode: query.nace } : {}),
     };
@@ -115,7 +117,9 @@ export class ActorsService {
     });
 
     if (existing) {
-      throw new ConflictException('Actor already exists for this Firebase user');
+      throw new ConflictException(
+        'Actor already exists for this Firebase user',
+      );
     }
 
     return this.prisma.actor.create({
@@ -145,7 +149,8 @@ export class ActorsService {
           ? {
               create: {
                 ...body.companyProfile,
-                currency: body.companyProfile.currency ?? body.currency ?? 'RON',
+                currency:
+                  body.companyProfile.currency ?? body.currency ?? 'RON',
                 statusFirma: body.companyProfile.statusFirma ?? 'ACTIVA',
                 obiectActivitate: body.companyProfile.obiectActivitate ?? [],
                 certificariUrls: body.companyProfile.certificariUrls ?? [],
@@ -169,7 +174,9 @@ export class ActorsService {
     }
 
     if (!this.isAdmin(currentActor) && currentActor?.id !== id) {
-      throw new ForbiddenException('You do not have permission to update this actor');
+      throw new ForbiddenException(
+        'You do not have permission to update this actor',
+      );
     }
 
     return this.prisma.actor.update({

@@ -4,11 +4,20 @@ import { AuthModule } from '../auth/auth.module';
 import { MessagingModule } from '../messaging/messaging.module';
 import { NotificationModule } from '../notifications/notification.module';
 import { PrismaModule } from '../prisma/prisma.module';
-import { PayrollAdminController, PayrollWorkerController } from './payroll.controller';
+import {
+  PayrollAdminController,
+  PayrollWorkerController,
+} from './payroll.controller';
 import { PayrollService } from './payroll.service';
 
 @Module({
-  imports: [PrismaModule, AuditModule, AuthModule, MessagingModule, NotificationModule],
+  imports: [
+    PrismaModule,
+    AuditModule,
+    AuthModule,
+    MessagingModule,
+    NotificationModule,
+  ],
   controllers: [PayrollAdminController, PayrollWorkerController],
   providers: [PayrollService],
 })

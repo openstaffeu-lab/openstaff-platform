@@ -47,7 +47,9 @@ export class SubscriptionsController {
   async getMySubscription(@Req() req: any) {
     try {
       return buildSuccessResponse(
-        await this.subscriptionsService.getCurrentSubscriptionSummary(req.user.sub),
+        await this.subscriptionsService.getCurrentSubscriptionSummary(
+          req.user.sub,
+        ),
       );
     } catch (error) {
       logEndpointError('SubscriptionsController.getMySubscription', error);
@@ -91,7 +93,10 @@ export class AdminSubscriptionUpgradeRequestsController {
         await this.subscriptionsService.listAdminUpgradeRequests(),
       );
     } catch (error) {
-      logEndpointError('AdminSubscriptionUpgradeRequestsController.listRequests', error);
+      logEndpointError(
+        'AdminSubscriptionUpgradeRequestsController.listRequests',
+        error,
+      );
       return buildInternalErrorResponse(error);
     }
   }
@@ -103,10 +108,16 @@ export class AdminSubscriptionUpgradeRequestsController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.subscriptionsService.updateUpgradeRequestStatus(id, body.status),
+        await this.subscriptionsService.updateUpgradeRequestStatus(
+          id,
+          body.status,
+        ),
       );
     } catch (error) {
-      logEndpointError('AdminSubscriptionUpgradeRequestsController.updateStatus', error);
+      logEndpointError(
+        'AdminSubscriptionUpgradeRequestsController.updateStatus',
+        error,
+      );
       throw error;
     }
   }
@@ -119,10 +130,17 @@ export class AdminSubscriptionUpgradeRequestsController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.subscriptionsService.approveUpgradeRequest(id, body, req.user.sub),
+        await this.subscriptionsService.approveUpgradeRequest(
+          id,
+          body,
+          req.user.sub,
+        ),
       );
     } catch (error) {
-      logEndpointError('AdminSubscriptionUpgradeRequestsController.approveRequest', error);
+      logEndpointError(
+        'AdminSubscriptionUpgradeRequestsController.approveRequest',
+        error,
+      );
       throw error;
     }
   }
@@ -141,14 +159,23 @@ export class AdminUserSubscriptionsController {
   ) {
     try {
       if (body.status && body.status !== 'ACTIVE') {
-        throw new BadRequestException('Only ACTIVE manual subscription changes are supported.');
+        throw new BadRequestException(
+          'Only ACTIVE manual subscription changes are supported.',
+        );
       }
 
       return buildSuccessResponse(
-        await this.subscriptionsService.changeUserSubscription(userId, body, req.user.sub),
+        await this.subscriptionsService.changeUserSubscription(
+          userId,
+          body,
+          req.user.sub,
+        ),
       );
     } catch (error) {
-      logEndpointError('AdminUserSubscriptionsController.changeUserSubscription', error);
+      logEndpointError(
+        'AdminUserSubscriptionsController.changeUserSubscription',
+        error,
+      );
       throw error;
     }
   }

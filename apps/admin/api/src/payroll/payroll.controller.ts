@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import {
   PayrollCycleStatus,
   Role,
@@ -34,15 +43,23 @@ export class PayrollAdminController {
         await this.payrollService.createCompensationAgreement(body, req.user),
       );
     } catch (error) {
-      logEndpointError('PayrollAdminController.createCompensationAgreement', error);
+      logEndpointError(
+        'PayrollAdminController.createCompensationAgreement',
+        error,
+      );
       throw error;
     }
   }
 
   @Post('cycles')
-  async createPayrollCycle(@Body() body: CreatePayrollCycleDto, @Req() req: any) {
+  async createPayrollCycle(
+    @Body() body: CreatePayrollCycleDto,
+    @Req() req: any,
+  ) {
     try {
-      return buildSuccessResponse(await this.payrollService.createPayrollCycle(body, req.user));
+      return buildSuccessResponse(
+        await this.payrollService.createPayrollCycle(body, req.user),
+      );
     } catch (error) {
       logEndpointError('PayrollAdminController.createPayrollCycle', error);
       throw error;
@@ -67,7 +84,9 @@ export class PayrollAdminController {
   @Get('cycles/:id')
   async getPayrollCycle(@Param('id') id: string, @Req() req: any) {
     try {
-      return buildSuccessResponse(await this.payrollService.getPayrollCycle(id, req.user));
+      return buildSuccessResponse(
+        await this.payrollService.getPayrollCycle(id, req.user),
+      );
     } catch (error) {
       logEndpointError('PayrollAdminController.getPayrollCycle', error);
       throw error;
@@ -99,7 +118,11 @@ export class PayrollAdminController {
   ) {
     try {
       return buildSuccessResponse(
-        await this.payrollService.listSettlements(req.user, { q, status, cycleId }),
+        await this.payrollService.listSettlements(req.user, {
+          q,
+          status,
+          cycleId,
+        }),
       );
     } catch (error) {
       logEndpointError('PayrollAdminController.listSettlements', error);
@@ -110,7 +133,9 @@ export class PayrollAdminController {
   @Get('settlements/:id')
   async getSettlement(@Param('id') id: string, @Req() req: any) {
     try {
-      return buildSuccessResponse(await this.payrollService.getSettlement(id, req.user));
+      return buildSuccessResponse(
+        await this.payrollService.getSettlement(id, req.user),
+      );
     } catch (error) {
       logEndpointError('PayrollAdminController.getSettlement', error);
       throw error;
@@ -150,13 +175,22 @@ export class PayrollAdminController {
   }
 
   @Post('settlements/:id/create-billing-event')
-  async createBillingEventFromSettlement(@Param('id') id: string, @Req() req: any) {
+  async createBillingEventFromSettlement(
+    @Param('id') id: string,
+    @Req() req: any,
+  ) {
     try {
       return buildSuccessResponse(
-        await this.payrollService.createBillingEventFromSettlement(id, req.user),
+        await this.payrollService.createBillingEventFromSettlement(
+          id,
+          req.user,
+        ),
       );
     } catch (error) {
-      logEndpointError('PayrollAdminController.createBillingEventFromSettlement', error);
+      logEndpointError(
+        'PayrollAdminController.createBillingEventFromSettlement',
+        error,
+      );
       throw error;
     }
   }
@@ -168,7 +202,10 @@ export class PayrollAdminController {
         await this.payrollService.createBillingEventsForCycle(id, req.user),
       );
     } catch (error) {
-      logEndpointError('PayrollAdminController.createBillingEventsForCycle', error);
+      logEndpointError(
+        'PayrollAdminController.createBillingEventsForCycle',
+        error,
+      );
       throw error;
     }
   }
@@ -201,7 +238,9 @@ export class PayrollWorkerController {
   @Get('me')
   async getMyPayrollOverview(@Req() req: any) {
     try {
-      return buildSuccessResponse(await this.payrollService.getMyPayrollOverview(req.user));
+      return buildSuccessResponse(
+        await this.payrollService.getMyPayrollOverview(req.user),
+      );
     } catch (error) {
       logEndpointError('PayrollWorkerController.getMyPayrollOverview', error);
       throw error;
@@ -211,9 +250,14 @@ export class PayrollWorkerController {
   @Get('me/settlements')
   async getMyPayrollSettlements(@Req() req: any) {
     try {
-      return buildSuccessResponse(await this.payrollService.getMyPayrollSettlements(req.user));
+      return buildSuccessResponse(
+        await this.payrollService.getMyPayrollSettlements(req.user),
+      );
     } catch (error) {
-      logEndpointError('PayrollWorkerController.getMyPayrollSettlements', error);
+      logEndpointError(
+        'PayrollWorkerController.getMyPayrollSettlements',
+        error,
+      );
       throw error;
     }
   }

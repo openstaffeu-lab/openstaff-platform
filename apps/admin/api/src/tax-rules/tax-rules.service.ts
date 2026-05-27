@@ -66,7 +66,8 @@ export class TaxRulesService {
         socialContributionRate: body.socialContributionRate ?? undefined,
         employerContributionRate: body.employerContributionRate ?? undefined,
         currencyCode: body.currencyCode?.trim(),
-        notes: body.notes !== undefined ? body.notes?.trim() ?? null : undefined,
+        notes:
+          body.notes !== undefined ? (body.notes?.trim() ?? null) : undefined,
         isActive: body.isActive ?? undefined,
       },
       include: {

@@ -51,7 +51,10 @@ function buildRuntimeFeatureFlags(env: NodeJS.ProcessEnv): RuntimeFeatureFlags {
     DEMO_MODE: parseBooleanFlag(env.DEMO_MODE, false),
     ENABLE_DEV_AUTH_BYPASS: parseBooleanFlag(env.ENABLE_DEV_AUTH_BYPASS, false),
     ENABLE_AI_FALLBACK: parseBooleanFlag(env.ENABLE_AI_FALLBACK, !isProduction),
-    ENABLE_DEMO_PUBLIC_FEED: parseBooleanFlag(env.ENABLE_DEMO_PUBLIC_FEED, false),
+    ENABLE_DEMO_PUBLIC_FEED: parseBooleanFlag(
+      env.ENABLE_DEMO_PUBLIC_FEED,
+      false,
+    ),
     ENABLE_DEMO_MESSAGING: parseBooleanFlag(env.ENABLE_DEMO_MESSAGING, false),
     ENABLE_BILLING_PLACEHOLDERS: parseBooleanFlag(
       env.ENABLE_BILLING_PLACEHOLDERS,
@@ -61,7 +64,10 @@ function buildRuntimeFeatureFlags(env: NodeJS.ProcessEnv): RuntimeFeatureFlags {
       env.ENABLE_WEBHOOK_PLACEHOLDER,
       !isProduction,
     ),
-    ENABLE_SMS_PLACEHOLDER: parseBooleanFlag(env.ENABLE_SMS_PLACEHOLDER, !isProduction),
+    ENABLE_SMS_PLACEHOLDER: parseBooleanFlag(
+      env.ENABLE_SMS_PLACEHOLDER,
+      !isProduction,
+    ),
     ENABLE_DEBUG_LOGS: parseBooleanFlag(env.ENABLE_DEBUG_LOGS, !isProduction),
   };
 }
@@ -106,7 +112,10 @@ export function validateRuntimeEnvironment(
     }
   }
 
-  if (isProduction && (env.SKIP_FIREBASE_AUTH === 'true' || env.SKIP_JWT_AUTH === 'true')) {
+  if (
+    isProduction &&
+    (env.SKIP_FIREBASE_AUTH === 'true' || env.SKIP_JWT_AUTH === 'true')
+  ) {
     errors.push('Auth bypass env flags are not allowed in production.');
   }
 
@@ -132,7 +141,9 @@ export function validateRuntimeEnvironment(
         'GEMINI_API_KEY is missing; AI requests will rely on explicit fallback behavior.',
       );
     } else {
-      warnings.push('GEMINI_API_KEY is missing; AI features may be unavailable.');
+      warnings.push(
+        'GEMINI_API_KEY is missing; AI features may be unavailable.',
+      );
     }
   }
 

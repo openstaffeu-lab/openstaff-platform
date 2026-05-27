@@ -30,9 +30,15 @@ export class VerificationService {
     const context = await this.getVerificationContext(userId);
     return {
       identityProfile: this.toIdentitySummary(context.identityProfile),
-      companyProfile: context.companyProfile ? this.toCompanySummary(context.companyProfile) : null,
-      identityCase: context.identityCase ? this.toCaseSummary(context.identityCase) : null,
-      companyCase: context.companyCase ? this.toCaseSummary(context.companyCase) : null,
+      companyProfile: context.companyProfile
+        ? this.toCompanySummary(context.companyProfile)
+        : null,
+      identityCase: context.identityCase
+        ? this.toCaseSummary(context.identityCase)
+        : null,
+      companyCase: context.companyCase
+        ? this.toCaseSummary(context.companyCase)
+        : null,
       availableEvidence: {
         profileDocuments: context.profileDocuments.map((item) => ({
           id: item.id,
@@ -56,15 +62,17 @@ export class VerificationService {
           verifiedAt: item.verifiedAt,
           expiresAt: item.expiresAt,
         })),
-        medicalFitnessCertificates: context.medicalFitnessCertificates.map((item) => ({
-          id: item.id,
-          title: item.title,
-          category: item.category,
-          status: item.status,
-          fitnessDecision: item.fitnessDecision,
-          verifiedAt: item.verifiedAt,
-          expiresAt: item.expiresAt,
-        })),
+        medicalFitnessCertificates: context.medicalFitnessCertificates.map(
+          (item) => ({
+            id: item.id,
+            title: item.title,
+            category: item.category,
+            status: item.status,
+            fitnessDecision: item.fitnessDecision,
+            verifiedAt: item.verifiedAt,
+            expiresAt: item.expiresAt,
+          }),
+        ),
       },
     };
   }
@@ -82,11 +90,17 @@ export class VerificationService {
       (latestCase.status === VerificationCaseStatus.SUBMITTED ||
         latestCase.status === VerificationCaseStatus.IN_REVIEW)
     ) {
-      throw new BadRequestException('Identity verification is already under review');
+      throw new BadRequestException(
+        'Identity verification is already under review',
+      );
     }
 
     const links = this.buildDocumentLinks(body);
-    const linkedAssets = await this.validateLinkedAssets(userId, links, context.profileId);
+    const linkedAssets = await this.validateLinkedAssets(
+      userId,
+      links,
+      context.profileId,
+    );
 
     const before = latestCase ? this.toCaseSummary(latestCase) : null;
     const previousStatus = latestCase?.status;
@@ -203,11 +217,17 @@ export class VerificationService {
       (latestCase.status === VerificationCaseStatus.SUBMITTED ||
         latestCase.status === VerificationCaseStatus.IN_REVIEW)
     ) {
-      throw new BadRequestException('Company verification is already under review');
+      throw new BadRequestException(
+        'Company verification is already under review',
+      );
     }
 
     const links = this.buildDocumentLinks(body);
-    const linkedAssets = await this.validateLinkedAssets(userId, links, context.profileId);
+    const linkedAssets = await this.validateLinkedAssets(
+      userId,
+      links,
+      context.profileId,
+    );
 
     const before = latestCase ? this.toCaseSummary(latestCase) : null;
     const previousStatus = latestCase?.status;
@@ -325,8 +345,16 @@ export class VerificationService {
       const query = filters.q.trim();
       where.OR = [
         { user: { email: { contains: query, mode: 'insensitive' } } },
-        { identityProfile: { displayName: { contains: query, mode: 'insensitive' } } },
-        { companyProfile: { companyName: { contains: query, mode: 'insensitive' } } },
+        {
+          identityProfile: {
+            displayName: { contains: query, mode: 'insensitive' },
+          },
+        },
+        {
+          companyProfile: {
+            companyName: { contains: query, mode: 'insensitive' },
+          },
+        },
       ];
     }
 
@@ -352,7 +380,11 @@ export class VerificationService {
     return this.toAdminCaseDetail(verificationCase);
   }
 
-  async reviewCase(id: string, actorUserId: string, body: ReviewVerificationCaseDto) {
+  async reviewCase(
+    id: string,
+    actorUserId: string,
+    body: ReviewVerificationCaseDto,
+  ) {
     const existing = await this.prisma.verificationCase.findUnique({
       where: { id },
       include: this.caseInclude,
@@ -363,7 +395,9 @@ export class VerificationService {
     }
 
     if (existing.status === VerificationCaseStatus.DRAFT) {
-      throw new BadRequestException('Draft verification cases cannot be reviewed');
+      throw new BadRequestException(
+        'Draft verification cases cannot be reviewed',
+      );
     }
 
     const targetStatus = this.resolveTargetStatus(body.decision);
@@ -574,7 +608,9 @@ export class VerificationService {
     for (const link of links) {
       if (link.profileDocumentId) {
         if (!profileId) {
-          throw new BadRequestException('Profile document linkage requires a profile');
+          throw new BadRequestException(
+            'Profile document linkage requires a profile',
+          );
         }
         const record = await this.prisma.profileDocument.findFirst({
           where: { id: link.profileDocumentId, profileId },
@@ -608,7 +644,9 @@ export class VerificationService {
           where: { id: link.actorCertificationId, userId },
         });
         if (!record) {
-          throw new BadRequestException('Invalid actor certification reference');
+          throw new BadRequestException(
+            'Invalid actor certification reference',
+          );
         }
         validated.push({
           ...link,
@@ -622,7 +660,9 @@ export class VerificationService {
           where: { id: link.medicalFitnessCertificateId, userId },
         });
         if (!record) {
-          throw new BadRequestException('Invalid medical fitness certificate reference');
+          throw new BadRequestException(
+            'Invalid medical fitness certificate reference',
+          );
         }
         validated.push({
           ...link,
@@ -687,7 +727,9 @@ export class VerificationService {
             role: item.reviewedBy.role,
           }
         : null,
-      documents: item.documentLinks.map((link: any) => this.toDocumentLinkSummary(link)),
+      documents: item.documentLinks.map((link: any) =>
+        this.toDocumentLinkSummary(link),
+      ),
       decisions: item.decisions.map((decision: any) => ({
         id: decision.id,
         decision: decision.decision,
@@ -716,8 +758,12 @@ export class VerificationService {
         email: item.user.email,
         role: item.user.role,
       },
-      identityProfile: item.identityProfile ? this.toIdentitySummary(item.identityProfile) : null,
-      companyProfile: item.companyProfile ? this.toCompanySummary(item.companyProfile) : null,
+      identityProfile: item.identityProfile
+        ? this.toIdentitySummary(item.identityProfile)
+        : null,
+      companyProfile: item.companyProfile
+        ? this.toCompanySummary(item.companyProfile)
+        : null,
     };
   }
 

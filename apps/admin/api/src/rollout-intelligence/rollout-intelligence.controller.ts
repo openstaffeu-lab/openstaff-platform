@@ -1,5 +1,9 @@
 import { Body, Controller, Post, Req } from '@nestjs/common';
-import { buildInternalErrorResponse, buildSuccessResponse, logEndpointError } from '../common/api-response';
+import {
+  buildInternalErrorResponse,
+  buildSuccessResponse,
+  logEndpointError,
+} from '../common/api-response';
 import { RolloutIntelligenceService } from './rollout-intelligence.service';
 
 @Controller('ops')
@@ -35,7 +39,10 @@ export class RolloutIntelligenceController {
         ),
       );
     } catch (error) {
-      logEndpointError('RolloutIntelligenceController.recordFunnelEvent', error);
+      logEndpointError(
+        'RolloutIntelligenceController.recordFunnelEvent',
+        error,
+      );
       return buildInternalErrorResponse(error);
     }
   }
@@ -65,7 +72,10 @@ export class RolloutIntelligenceController {
         ),
       );
     } catch (error) {
-      logEndpointError('RolloutIntelligenceController.recordOperationalFeedback', error);
+      logEndpointError(
+        'RolloutIntelligenceController.recordOperationalFeedback',
+        error,
+      );
       return buildInternalErrorResponse(error);
     }
   }

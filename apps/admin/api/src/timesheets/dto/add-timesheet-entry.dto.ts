@@ -1,4 +1,11 @@
-import { IsISO8601, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import {
+  IsISO8601,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class AddTimesheetEntryDto {
   @IsISO8601()

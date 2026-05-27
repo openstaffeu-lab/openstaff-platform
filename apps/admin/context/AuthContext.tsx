@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const currentUser = await fetchCurrentAdmin(accessToken);
           if (!cancelled) {
             setUser(currentUser);
-            setIsAdmin(currentUser.role === "ADMIN" || currentUser.role === "SUPERADMIN");
+            setIsAdmin(hasBackofficeAccess(currentUser.role));
           }
           return;
         }
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        if (refreshed.user.role !== "ADMIN" && refreshed.user.role !== "SUPERADMIN") {
+        if (!hasBackofficeAccess(refreshed.user.role)) {
           throw new Error("This account does not have backoffice access.");
         }
 
@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return response;
           }
 
-          if (response.user.role !== "ADMIN" && response.user.role !== "SUPERADMIN") {
+          if (!hasBackofficeAccess(response.user.role)) {
             throw new Error("This account does not have backoffice access.");
           }
 
@@ -166,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return response;
         },
         completeSession: (response) => {
-          if (response.user.role !== "ADMIN" && response.user.role !== "SUPERADMIN") {
+          if (!hasBackofficeAccess(response.user.role)) {
             throw new Error("This account does not have backoffice access.");
           }
 
@@ -185,7 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           const response = await refreshAdminToken(refreshToken);
 
-          if (response.user.role !== "ADMIN" && response.user.role !== "SUPERADMIN") {
+          if (!hasBackofficeAccess(response.user.role)) {
             throw new Error("This account does not have backoffice access.");
           }
 
@@ -212,6 +212,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+function hasBackofficeAccess(role?: string | null) {
+  return role === "ADMIN" || role === "SUPERADMIN" || role === "AI_MODERATOR";
 }
 
 export function useAuth() {

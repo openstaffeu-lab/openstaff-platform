@@ -15,7 +15,10 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Permission, PublicModerationStatus } from '@prisma/client';
 import type { Response } from 'express';
+import { RequirePermissions } from '../access-control/permissions.decorator';
+import { PermissionsGuard } from '../access-control/permissions.guard';
 import { JwtGuard } from '../auth/jwt.guard';
 import { UploadProfileDocumentDto } from './dto/upload-profile-document.dto';
 import { UpsertProfileDto } from './dto/upsert-profile.dto';
@@ -37,7 +40,9 @@ export class ProfilesController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.profilesService.upsertCurrentProfile(body, user);
@@ -77,7 +82,9 @@ export class ProfilesController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.profilesService.uploadDocument(profileId, body, file, user);
@@ -91,7 +98,11 @@ export class ProfilesController {
     @Req() req: any,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const file = await this.profilesService.getDocument(profileId, documentId, req.user);
+    const file = await this.profilesService.getDocument(
+      profileId,
+      documentId,
+      req.user,
+    );
 
     res.setHeader('Content-Type', file.mimeType);
     res.setHeader(
@@ -129,7 +140,11 @@ export class ProfilesController {
     @Param('documentId') documentId: string,
     @Req() req: any,
   ) {
-    return this.profilesService.getExtractedText(profileId, documentId, req.user);
+    return this.profilesService.getExtractedText(
+      profileId,
+      documentId,
+      req.user,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -142,10 +157,29 @@ export class ProfilesController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.profilesService.extractDocument(profileId, documentId, user);
+  }
+
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @RequirePermissions(Permission.MANAGE_USERS)
+  @Put('profiles/:profileId/documents/:documentId/moderation-status')
+  async updateDocumentModerationStatus(
+    @Param('profileId') profileId: string,
+    @Param('documentId') documentId: string,
+    @Body() body: { status?: PublicModerationStatus },
+    @Req() req: any,
+  ) {
+    return this.profilesService.updateDocumentModerationStatus(
+      profileId,
+      documentId,
+      body.status,
+      req.user,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -158,7 +192,9 @@ export class ProfilesController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.profilesService.removeDocument(profileId, documentId, user);

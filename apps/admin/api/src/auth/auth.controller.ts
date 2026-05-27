@@ -98,7 +98,11 @@ export class AuthController {
     @Body() body: CompleteAccountRecoveryDto,
     @Req() req: any,
   ) {
-    return this.authService.completeAccountRecovery(body.token, body.password, req);
+    return this.authService.completeAccountRecovery(
+      body.token,
+      body.password,
+      req,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -121,8 +125,16 @@ export class AuthController {
 
   @UseGuards(JwtGuard)
   @Post('2fa/verify-setup')
-  async verifyTwoFactorSetup(@Req() req: any, @Body() body: VerifyTwoFactorSetupDto) {
-    return this.authService.verifyTwoFactorSetup(req.user.sub, body.challengeId, body.code, req);
+  async verifyTwoFactorSetup(
+    @Req() req: any,
+    @Body() body: VerifyTwoFactorSetupDto,
+  ) {
+    return this.authService.verifyTwoFactorSetup(
+      req.user.sub,
+      body.challengeId,
+      body.code,
+      req,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -155,7 +167,11 @@ export class AuthController {
     @Body() body: VerifyTwoFactorChallengeDto,
     @Req() req: any,
   ) {
-    return this.authService.verifyTwoFactorChallenge(body.challengeId, body.code, req);
+    return this.authService.verifyTwoFactorChallenge(
+      body.challengeId,
+      body.code,
+      req,
+    );
   }
 
   @Public()
@@ -173,7 +189,10 @@ export class AuthController {
   @UseGuards(JwtGuard)
   @Post('logout')
   @HttpCode(204)
-  async logout(@Req() req: any, @Res({ passthrough: true }) response: Response) {
+  async logout(
+    @Req() req: any,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     await this.authService.logout(req.user.sub, req);
     response.status(204);
   }

@@ -118,7 +118,22 @@ type ProjectDetailRecord = Prisma.ProjectGetPayload<{
 type JobRequestRecord = ProjectDetailRecord['jobRequests'][number];
 type ConditionRecord = ProjectDetailRecord['conditions'][number];
 type DocumentRecord = ProjectDetailRecord['documents'][number];
-type AIInterpretationRecord = NonNullable<ProjectDetailRecord['aiInterpretation']>;
+type AIInterpretationRecord = {
+  id: string;
+  projectId: string;
+  status: string;
+  sourceText: string | null;
+  extractedJson: string | null;
+  documentIds: string | null;
+  confidenceScore: number | null;
+  modelName: string | null;
+  modelVersion: string | null;
+  promptVersion: string | null;
+  reviewedById: string | null;
+  reviewNotes: string | null;
+  createdAt: Date;
+  updatedAt?: Date | null;
+};
 
 @Injectable()
 export class ProjectResponseMapper {
@@ -189,8 +204,12 @@ export class ProjectResponseMapper {
         latitude: project.latitude,
         longitude: project.longitude,
       },
-      conditions: project.conditions.map((condition) => this.toConditionResponse(condition)),
-      documents: project.documents.map((document) => this.toDocumentResponse(document)),
+      conditions: project.conditions.map((condition) =>
+        this.toConditionResponse(condition),
+      ),
+      documents: project.documents.map((document) =>
+        this.toDocumentResponse(document),
+      ),
       jobRequests: project.jobRequests.map((jobRequest) =>
         this.toJobRequestResponse(jobRequest),
       ),
@@ -202,8 +221,9 @@ export class ProjectResponseMapper {
         mandatoryConditionCount: project.conditions.filter(
           (condition) => condition.isMandatory,
         ).length,
-        publicDocumentCount: project.documents.filter((document) => document.isPublic)
-          .length,
+        publicDocumentCount: project.documents.filter(
+          (document) => document.isPublic,
+        ).length,
       },
     };
   }
@@ -212,7 +232,9 @@ export class ProjectResponseMapper {
     const classifications = {
       escoSkills: jobRequest.escoClassifications.map((item) => item.escoSkill),
       naceCodes: jobRequest.naceClassifications.map((item) => item.nace),
-      uniclassCodes: jobRequest.uniclassClassifications.map((item) => item.uniclass),
+      uniclassCodes: jobRequest.uniclassClassifications.map(
+        (item) => item.uniclass,
+      ),
     };
 
     return {
@@ -244,8 +266,12 @@ export class ProjectResponseMapper {
         conditions: jobRequest.conditions.length,
         documents: jobRequest.documents.length,
       },
-      conditions: jobRequest.conditions.map((condition) => this.toConditionResponse(condition)),
-      documents: jobRequest.documents.map((document) => this.toDocumentResponse(document)),
+      conditions: jobRequest.conditions.map((condition) =>
+        this.toConditionResponse(condition),
+      ),
+      documents: jobRequest.documents.map((document) =>
+        this.toDocumentResponse(document),
+      ),
     };
   }
 
@@ -308,7 +334,7 @@ export class ProjectResponseMapper {
       reviewedById: aiInterpretation.reviewedById,
       reviewNotes: aiInterpretation.reviewNotes,
       createdAt: aiInterpretation.createdAt,
-      updatedAt: aiInterpretation.updatedAt,
+      updatedAt: aiInterpretation.updatedAt ?? aiInterpretation.createdAt,
     };
   }
 
@@ -321,7 +347,9 @@ export class ProjectResponseMapper {
     return {
       escoSkills: project.escoClassifications.map((item) => item.escoSkill),
       naceCodes: project.naceClassifications.map((item) => item.nace),
-      uniclassCodes: project.uniclassClassifications.map((item) => item.uniclass),
+      uniclassCodes: project.uniclassClassifications.map(
+        (item) => item.uniclass,
+      ),
     };
   }
 
@@ -353,7 +381,8 @@ export class ProjectResponseMapper {
       const parsed = JSON.parse(value);
       return Array.isArray(parsed)
         ? parsed.filter(
-            (item): item is string => typeof item === 'string' && item.length > 0,
+            (item): item is string =>
+              typeof item === 'string' && item.length > 0,
           )
         : [];
     } catch {

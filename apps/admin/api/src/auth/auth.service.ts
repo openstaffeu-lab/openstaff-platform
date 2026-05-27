@@ -103,7 +103,8 @@ type AuthenticatedUserSummary = {
 
 @Injectable()
 export class AuthService {
-  private static readonly PASSWORD_RESET_EVENT_TYPE = 'PASSWORD_RESET_REQUESTED';
+  private static readonly PASSWORD_RESET_EVENT_TYPE =
+    'PASSWORD_RESET_REQUESTED';
   private static readonly PASSWORD_RESET_SOURCE_TYPE = 'PASSWORD_RESET';
   private static readonly PASSWORD_RESET_EXPIRY_MINUTES = 30;
   private readonly logger = new Logger(AuthService.name);
@@ -128,7 +129,8 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
-    const profileType = data.profileType ?? this.mapActorTypeToProfileType(data.actorType);
+    const profileType =
+      data.profileType ?? this.mapActorTypeToProfileType(data.actorType);
     const role = this.mapProfileTypeToRole(profileType);
     const displayName = data.displayName.trim();
     const slug = await this.generateUniqueProfileSlug(displayName);
@@ -188,7 +190,8 @@ export class AuthService {
       userId: user.id,
       category: NotificationCategory.ACCOUNT,
       title: 'Account registered',
-      message: 'Your OpenStaff account was created successfully. Complete onboarding to unlock the platform.',
+      message:
+        'Your OpenStaff account was created successfully. Complete onboarding to unlock the platform.',
       relatedEntityType: 'User',
       relatedEntityId: user.id,
       metadata: {
@@ -341,11 +344,24 @@ export class AuthService {
     note?: string,
     request?: any,
   ) {
-    return this.trustService.requestAccountRecovery(email, reason, note, request);
+    return this.trustService.requestAccountRecovery(
+      email,
+      reason,
+      note,
+      request,
+    );
   }
 
-  async completeAccountRecovery(token: string, nextPassword: string, request?: any) {
-    return this.trustService.completeAccountRecovery(token, nextPassword, request);
+  async completeAccountRecovery(
+    token: string,
+    nextPassword: string,
+    request?: any,
+  ) {
+    return this.trustService.completeAccountRecovery(
+      token,
+      nextPassword,
+      request,
+    );
   }
 
   async getTwoFactorStatus(userId: string) {
@@ -356,10 +372,13 @@ export class AuthService {
       emailOtpEnabled: settings.emailOtpEnabled,
       adminEnforced: settings.adminEnforced,
       lockedUntil: settings.lockoutUntil?.toISOString() ?? null,
-      lastChallengeVerifiedAt: settings.lastChallengeVerifiedAt?.toISOString() ?? null,
+      lastChallengeVerifiedAt:
+        settings.lastChallengeVerifiedAt?.toISOString() ?? null,
       lastRecoveryCodesRegeneratedAt:
         settings.lastRecoveryCodesRegeneratedAt?.toISOString() ?? null,
-      recoveryCodesRemaining: this.countRemainingRecoveryCodes(settings.recoveryCodesJson),
+      recoveryCodesRemaining: this.countRemainingRecoveryCodes(
+        settings.recoveryCodesJson,
+      ),
       failedAttemptCount: settings.failedAttemptCount,
     };
   }
@@ -390,7 +409,8 @@ export class AuthService {
       subjectRo: 'Confirmare activare autentificare in doi pasi',
       subjectEn: 'Confirm your two-factor authentication setup',
       title: 'Two-factor authentication setup',
-      message: 'Use the short-lived one-time code from this message to enable two-factor authentication.',
+      message:
+        'Use the short-lived one-time code from this message to enable two-factor authentication.',
       code: challenge.plainCode,
       expiresAt: challenge.expiresAt,
       metadata: {
@@ -417,7 +437,12 @@ export class AuthService {
     };
   }
 
-  async verifyTwoFactorSetup(userId: string, challengeId: string, code: string, request?: any) {
+  async verifyTwoFactorSetup(
+    userId: string,
+    challengeId: string,
+    code: string,
+    request?: any,
+  ) {
     const settings = await this.ensureTwoFactorSettings(userId);
     await this.verifyTwoFactorOtp({
       userId,
@@ -471,7 +496,9 @@ export class AuthService {
     }
 
     if (user.twoFactorSettings.adminEnforced) {
-      throw new ForbiddenException('Two-factor authentication is required by an administrator');
+      throw new ForbiddenException(
+        'Two-factor authentication is required by an administrator',
+      );
     }
 
     const matches = await bcrypt.compare(password, user.password);
@@ -524,7 +551,9 @@ export class AuthService {
     });
 
     if (!user || !user.twoFactorSettings?.enabled) {
-      throw new ForbiddenException('Two-factor authentication is not enabled for this account');
+      throw new ForbiddenException(
+        'Two-factor authentication is not enabled for this account',
+      );
     }
 
     const recoveryCodes = this.generateRecoveryCodes();
@@ -543,7 +572,8 @@ export class AuthService {
       subjectRo: 'Codurile de recuperare OpenStaff au fost regenerate',
       subjectEn: 'Your OpenStaff recovery codes were regenerated',
       title: 'Recovery codes regenerated',
-      message: 'Your previous recovery codes are no longer valid. Review the new set in your account security settings.',
+      message:
+        'Your previous recovery codes are no longer valid. Review the new set in your account security settings.',
       metadata: {
         purpose: 'RECOVERY_CODES_REGENERATION',
       },
@@ -566,7 +596,11 @@ export class AuthService {
     };
   }
 
-  async verifyTwoFactorChallenge(challengeId: string, code: string, request?: any) {
+  async verifyTwoFactorChallenge(
+    challengeId: string,
+    code: string,
+    request?: any,
+  ) {
     const challenge = await this.prisma.userTwoFactorChallenge.findUnique({
       where: { id: challengeId },
       include: {
@@ -576,11 +610,15 @@ export class AuthService {
     });
 
     if (!challenge || !challenge.settings) {
-      throw new UnauthorizedException('This two-factor challenge is invalid or has expired');
+      throw new UnauthorizedException(
+        'This two-factor challenge is invalid or has expired',
+      );
     }
 
     if (challenge.purpose !== 'LOGIN') {
-      throw new UnauthorizedException('This two-factor challenge is invalid or has expired');
+      throw new UnauthorizedException(
+        'This two-factor challenge is invalid or has expired',
+      );
     }
 
     await this.verifyTwoFactorOtp({
@@ -623,15 +661,25 @@ export class AuthService {
     });
 
     if (!existing || !existing.settings || !existing.user) {
-      throw new UnauthorizedException('This two-factor challenge is invalid or has expired');
+      throw new UnauthorizedException(
+        'This two-factor challenge is invalid or has expired',
+      );
     }
 
-    if (existing.consumedAt || existing.invalidatedAt || existing.expiresAt.getTime() < Date.now()) {
-      throw new UnauthorizedException('This two-factor challenge is invalid or has expired');
+    if (
+      existing.consumedAt ||
+      existing.invalidatedAt ||
+      existing.expiresAt.getTime() < Date.now()
+    ) {
+      throw new UnauthorizedException(
+        'This two-factor challenge is invalid or has expired',
+      );
     }
 
     if (existing.resendCount >= 3) {
-      throw new ForbiddenException('Two-factor resend limit reached. Start login again.');
+      throw new ForbiddenException(
+        'Two-factor resend limit reached. Start login again.',
+      );
     }
 
     await this.prisma.userTwoFactorChallenge.update({
@@ -770,7 +818,9 @@ export class AuthService {
     const claimedRole = this.resolveFirebaseRole(decoded);
 
     if (!normalizedEmail) {
-      throw new UnauthorizedException('Firebase account does not provide an email');
+      throw new UnauthorizedException(
+        'Firebase account does not provide an email',
+      );
     }
 
     let user = await this.prisma.user.findFirst({
@@ -899,7 +949,9 @@ export class AuthService {
     };
   }
 
-  private async buildUserSummary(userId: string): Promise<AuthenticatedUserSummary> {
+  private async buildUserSummary(
+    userId: string,
+  ): Promise<AuthenticatedUserSummary> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -912,7 +964,9 @@ export class AuthService {
     }
 
     const displayName =
-      user.profile?.displayName?.trim() || user.email.split('@')[0] || 'OpenStaff User';
+      user.profile?.displayName?.trim() ||
+      user.email.split('@')[0] ||
+      'OpenStaff User';
     const actorType = this.mapProfileTypeToActorType(user.profile?.profileType);
     const onboardingDone = Boolean(user.profile);
     const subscription = await this.buildCurrentSubscriptionSummary(user.id);
@@ -965,7 +1019,9 @@ export class AuthService {
       return null;
     }
 
-    const { features, contactLimit } = this.mapEntitlements(subscription.plan.entitlements);
+    const { features, contactLimit } = this.mapEntitlements(
+      subscription.plan.entitlements,
+    );
     const usageMeter = await this.prisma.usageMeter.findFirst({
       where: {
         userId,
@@ -1020,7 +1076,11 @@ export class AuthService {
   }
 
   private mapEntitlements(
-    entitlements: Array<{ featureKey: string; enabled: boolean; limitInt: number | null }>,
+    entitlements: Array<{
+      featureKey: string;
+      enabled: boolean;
+      limitInt: number | null;
+    }>,
   ) {
     const features: Record<string, boolean> = {};
     let contactLimit = 0;
@@ -1031,7 +1091,8 @@ export class AuthService {
         continue;
       }
 
-      features[this.toFeatureFlagKey(entitlement.featureKey)] = entitlement.enabled;
+      features[this.toFeatureFlagKey(entitlement.featureKey)] =
+        entitlement.enabled;
     }
 
     return { features, contactLimit };
@@ -1042,7 +1103,9 @@ export class AuthService {
       .toLowerCase()
       .split('_')
       .map((segment, index) =>
-        index === 0 ? segment : `${segment.charAt(0).toUpperCase()}${segment.slice(1)}`,
+        index === 0
+          ? segment
+          : `${segment.charAt(0).toUpperCase()}${segment.slice(1)}`,
       )
       .join('');
   }
@@ -1120,7 +1183,9 @@ export class AuthService {
     lockoutUntil: Date | null;
   }) {
     if (settings.lockoutUntil && settings.lockoutUntil.getTime() > Date.now()) {
-      throw new ForbiddenException('Two-factor authentication is temporarily locked. Please try again later.');
+      throw new ForbiddenException(
+        'Two-factor authentication is temporarily locked. Please try again later.',
+      );
     }
 
     return settings.enabled || settings.adminEnforced;
@@ -1164,7 +1229,11 @@ export class AuthService {
         request,
       });
 
-      await this.trustService.requestSuspiciousLoginConfirmation(user.id, securityEvent.id, request);
+      await this.trustService.requestSuspiciousLoginConfirmation(
+        user.id,
+        securityEvent.id,
+        request,
+      );
     }
 
     await this.sendTwoFactorEmail(user.email, {
@@ -1174,7 +1243,8 @@ export class AuthService {
       subjectRo: 'Cod de autentificare OpenStaff',
       subjectEn: 'Your OpenStaff login code',
       title: 'Two-factor login code',
-      message: 'Use this short-lived one-time code to complete your OpenStaff login.',
+      message:
+        'Use this short-lived one-time code to complete your OpenStaff login.',
       code: challenge.plainCode,
       expiresAt: challenge.expiresAt,
       metadata: {
@@ -1215,7 +1285,9 @@ export class AuthService {
   ) {
     const code = this.generateOtpCode();
     const codeHash = this.hashTwoFactorCode(code);
-    const expiresAt = new Date(Date.now() + this.getTwoFactorOtpTtlSeconds() * 1000);
+    const expiresAt = new Date(
+      Date.now() + this.getTwoFactorOtpTtlSeconds() * 1000,
+    );
 
     await this.prisma.userTwoFactorChallenge.updateMany({
       where: {
@@ -1283,30 +1355,49 @@ export class AuthService {
       where: { id: input.challengeId },
     });
 
-    if (!challenge || challenge.userId !== input.userId || challenge.purpose !== input.expectedPurpose) {
-      throw new UnauthorizedException('This two-factor challenge is invalid or has expired');
+    if (
+      !challenge ||
+      challenge.userId !== input.userId ||
+      challenge.purpose !== input.expectedPurpose
+    ) {
+      throw new UnauthorizedException(
+        'This two-factor challenge is invalid or has expired',
+      );
     }
 
-    if (input.settings.lockoutUntil && input.settings.lockoutUntil.getTime() > Date.now()) {
-      throw new ForbiddenException('Two-factor authentication is temporarily locked. Please try again later.');
+    if (
+      input.settings.lockoutUntil &&
+      input.settings.lockoutUntil.getTime() > Date.now()
+    ) {
+      throw new ForbiddenException(
+        'Two-factor authentication is temporarily locked. Please try again later.',
+      );
     }
 
-    if (challenge.invalidatedAt || challenge.consumedAt || challenge.expiresAt.getTime() < Date.now()) {
+    if (
+      challenge.invalidatedAt ||
+      challenge.consumedAt ||
+      challenge.expiresAt.getTime() < Date.now()
+    ) {
       await this.auditService.logSecurityEvent({
         userId: input.userId,
         type: 'MFA_EVENT',
         category: 'AUTH',
         sourceType: 'TWO_FACTOR_VERIFY',
         sourceId: input.challengeId,
-        message: 'Two-factor challenge verification failed because the code was expired or already used',
+        message:
+          'Two-factor challenge verification failed because the code was expired or already used',
         severity: 'WARNING',
         request: input.request,
       });
-      throw new UnauthorizedException('This two-factor challenge is invalid or has expired');
+      throw new UnauthorizedException(
+        'This two-factor challenge is invalid or has expired',
+      );
     }
 
     const codeNormalized = input.code.trim().replace(/\s+/g, '').toUpperCase();
-    const otpMatches = this.hashTwoFactorCode(codeNormalized) === challenge.codeHash;
+    const otpMatches =
+      this.hashTwoFactorCode(codeNormalized) === challenge.codeHash;
 
     if (otpMatches) {
       await this.prisma.$transaction([
@@ -1358,8 +1449,12 @@ export class AuthService {
     const nextAttemptCount = challenge.attemptCount + 1;
     const nextFailedAttemptCount = input.settings.failedAttemptCount + 1;
     const maxAttempts = challenge.maxAttempts || this.getTwoFactorMaxAttempts();
-    const shouldLock = nextAttemptCount >= maxAttempts || nextFailedAttemptCount >= this.getTwoFactorMaxAttempts();
-    const lockoutUntil = shouldLock ? new Date(Date.now() + this.getTwoFactorLockoutMinutes() * 60_000) : null;
+    const shouldLock =
+      nextAttemptCount >= maxAttempts ||
+      nextFailedAttemptCount >= this.getTwoFactorMaxAttempts();
+    const lockoutUntil = shouldLock
+      ? new Date(Date.now() + this.getTwoFactorLockoutMinutes() * 60_000)
+      : null;
 
     await this.prisma.$transaction([
       this.prisma.userTwoFactorChallenge.update({
@@ -1401,7 +1496,9 @@ export class AuthService {
     });
 
     if (shouldLock) {
-      throw new ForbiddenException('Too many invalid two-factor attempts. Please try again later.');
+      throw new ForbiddenException(
+        'Too many invalid two-factor attempts. Please try again later.',
+      );
     }
 
     throw new UnauthorizedException('Invalid two-factor code');
@@ -1414,7 +1511,9 @@ export class AuthService {
   ) {
     const recoveryCodes = this.parseRecoveryCodes(recoveryCodesJson);
     const codeHash = this.hashTwoFactorCode(code);
-    const index = recoveryCodes.findIndex((item) => item.codeHash === codeHash && !item.usedAt);
+    const index = recoveryCodes.findIndex(
+      (item) => item.codeHash === codeHash && !item.usedAt,
+    );
 
     if (index < 0) {
       return false;
@@ -1437,17 +1536,28 @@ export class AuthService {
 
   private parseRecoveryCodes(value: Prisma.JsonValue | null) {
     if (!Array.isArray(value)) {
-      return [] as Array<{ label: string; codeHash: string; usedAt: string | null }>;
+      return [] as Array<{
+        label: string;
+        codeHash: string;
+        usedAt: string | null;
+      }>;
     }
 
     return value
-      .filter((item) => item && typeof item === 'object' && !Array.isArray(item))
+      .filter(
+        (item) => item && typeof item === 'object' && !Array.isArray(item),
+      )
       .map((item) => {
         const candidate = item as Record<string, unknown>;
         return {
-          label: typeof candidate.label === 'string' ? candidate.label : 'Recovery code',
-          codeHash: typeof candidate.codeHash === 'string' ? candidate.codeHash : '',
-          usedAt: typeof candidate.usedAt === 'string' ? candidate.usedAt : null,
+          label:
+            typeof candidate.label === 'string'
+              ? candidate.label
+              : 'Recovery code',
+          codeHash:
+            typeof candidate.codeHash === 'string' ? candidate.codeHash : '',
+          usedAt:
+            typeof candidate.usedAt === 'string' ? candidate.usedAt : null,
         };
       })
       .filter((item) => Boolean(item.codeHash));
@@ -1466,8 +1576,10 @@ export class AuthService {
   }
 
   private generateRecoveryCodes() {
-    return Array.from({ length: 8 }, () =>
-      `${randomBytes(2).toString('hex').toUpperCase()}-${randomBytes(2).toString('hex').toUpperCase()}`,
+    return Array.from(
+      { length: 8 },
+      () =>
+        `${randomBytes(2).toString('hex').toUpperCase()}-${randomBytes(2).toString('hex').toUpperCase()}`,
     );
   }
 
@@ -1477,7 +1589,9 @@ export class AuthService {
 
   private hashTwoFactorCode(code: string) {
     return createHash('sha256')
-      .update(`${this.getTwoFactorPepper()}::${code.trim().replace(/\s+/g, '').toUpperCase()}`)
+      .update(
+        `${this.getTwoFactorPepper()}::${code.trim().replace(/\s+/g, '').toUpperCase()}`,
+      )
       .digest('hex');
   }
 
@@ -1553,7 +1667,9 @@ export class AuthService {
   private async isSuspiciousLoginAttempt(userId: string, request?: any) {
     const context = this.auditService.extractRequestContext(request);
     const fingerprintHash = createHash('sha256')
-      .update(`${context.userAgent ?? 'unknown'}|${context.ipAddress ?? 'unknown'}`)
+      .update(
+        `${context.userAgent ?? 'unknown'}|${context.ipAddress ?? 'unknown'}`,
+      )
       .digest('hex');
 
     const known = await this.prisma.userDeviceFingerprint.findUnique({
@@ -1667,16 +1783,14 @@ export class AuthService {
   }
 
   private getPasswordResetEligibility(
-    user:
-      | {
-          id: string;
-          email: string;
-          password: string;
-          firebaseUid: string | null;
-          approvalStatus: AccountApprovalStatus;
-          accountStatus: AccountLifecycleStatus;
-        }
-      | null,
+    user: {
+      id: string;
+      email: string;
+      password: string;
+      firebaseUid: string | null;
+      approvalStatus: AccountApprovalStatus;
+      accountStatus: AccountLifecycleStatus;
+    } | null,
   ): PasswordResetEligibilityStatus {
     if (!user) {
       return 'not_found';
@@ -1720,7 +1834,9 @@ export class AuthService {
   }
 
   private buildPasswordResetEmailSubject(locale?: string | null) {
-    return String(locale ?? '').toLowerCase().startsWith('ro')
+    return String(locale ?? '')
+      .toLowerCase()
+      .startsWith('ro')
       ? 'Resetare parola OpenStaff'
       : 'Reset your OpenStaff password';
   }
@@ -1731,7 +1847,11 @@ export class AuthService {
     expiresAt: Date;
   }) {
     const expiresLabel = input.expiresAt.toISOString();
-    if (String(input.locale ?? '').toLowerCase().startsWith('ro')) {
+    if (
+      String(input.locale ?? '')
+        .toLowerCase()
+        .startsWith('ro')
+    ) {
       return [
         'Ai cerut resetarea parolei pentru contul tau OpenStaff.',
         '',
@@ -1758,7 +1878,11 @@ export class AuthService {
     expiresAt: Date;
   }) {
     const expiresLabel = input.expiresAt.toISOString();
-    if (String(input.locale ?? '').toLowerCase().startsWith('ro')) {
+    if (
+      String(input.locale ?? '')
+        .toLowerCase()
+        .startsWith('ro')
+    ) {
       return `
         <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.6">
           <h1 style="font-size:22px;margin-bottom:16px">Resetare parola OpenStaff</h1>

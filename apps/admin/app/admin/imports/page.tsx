@@ -7,10 +7,19 @@ import {
   type TaxonomyImportOption,
   type TaxonomyImportType,
 } from "@/lib/api";
+import { TechnicalModeGate } from "@/components/TechnicalModeGate";
 
 type LoadState = "loading" | "success" | "error";
 
 export default function AdminImportsPage() {
+  return (
+    <TechnicalModeGate>
+      <AdminImportsWorkspace />
+    </TechnicalModeGate>
+  );
+}
+
+function AdminImportsWorkspace() {
   const [options, setOptions] = useState<TaxonomyImportOption[]>([]);
   const [selectedType, setSelectedType] = useState<TaxonomyImportType>("ESCO");
   const [file, setFile] = useState<File | null>(null);

@@ -50,15 +50,19 @@ export class ProjectWorkerAssignmentsService {
   ) {
     const access = await this.getAssignmentAccess(projectId, user);
     const profileId = access.isOwner
-      ? body.profileId ?? access.currentProfile?.id
+      ? (body.profileId ?? access.currentProfile?.id)
       : access.currentProfile?.id;
 
     if (!profileId) {
-      throw new BadRequestException('A contractor profile is required for worker assignment');
+      throw new BadRequestException(
+        'A contractor profile is required for worker assignment',
+      );
     }
 
     if (!access.isOwner && body.profileId && body.profileId !== profileId) {
-      throw new ForbiddenException('You can only assign workers from your own contractor profile');
+      throw new ForbiddenException(
+        'You can only assign workers from your own contractor profile',
+      );
     }
 
     const profile = await this.getProfile(profileId);
@@ -68,7 +72,11 @@ export class ProjectWorkerAssignmentsService {
       : null;
     const contract =
       body.contractId !== undefined
-        ? await this.getContractForProfile(projectId, profile.id, body.contractId)
+        ? await this.getContractForProfile(
+            projectId,
+            profile.id,
+            body.contractId,
+          )
         : await this.findDefaultContract(projectId, profile.id);
 
     if (!contract) {
@@ -77,30 +85,34 @@ export class ProjectWorkerAssignmentsService {
       );
     }
 
-    const existingAssignment = await this.prisma.projectWorkerAssignment.findFirst({
-      where: {
-        projectId,
-        profileId: profile.id,
-        workerId: worker.id,
-        jobRequestId: jobRequest?.id ?? null,
-        status: {
-          not: ProjectWorkerAssignmentStatus.REMOVED,
+    const existingAssignment =
+      await this.prisma.projectWorkerAssignment.findFirst({
+        where: {
+          projectId,
+          profileId: profile.id,
+          workerId: worker.id,
+          jobRequestId: jobRequest?.id ?? null,
+          status: {
+            not: ProjectWorkerAssignmentStatus.REMOVED,
+          },
         },
-      },
-    });
+      });
 
     if (existingAssignment) {
-      throw new BadRequestException('This worker is already assigned or proposed for that scope');
+      throw new BadRequestException(
+        'This worker is already assigned or proposed for that scope',
+      );
     }
 
-    const eligibility = await this.complianceEligibilityService.evaluateWorkerForProjectByIds(
-      projectId,
-      profile.id,
-      worker.id,
-      {
-        jobRequestId: jobRequest?.id,
-      },
-    );
+    const eligibility =
+      await this.complianceEligibilityService.evaluateWorkerForProjectByIds(
+        projectId,
+        profile.id,
+        worker.id,
+        {
+          jobRequestId: jobRequest?.id,
+        },
+      );
 
     const isBlocked =
       eligibility.projectEligibility === 'BLOCKED' ||
@@ -184,7 +196,10 @@ export class ProjectWorkerAssignmentsService {
           eligibility.workerEligibility === 'NOT_ELIGIBLE');
 
       let effectiveAssignment = assignment;
-      if (mustBlock && assignment.status !== ProjectWorkerAssignmentStatus.BLOCKED) {
+      if (
+        mustBlock &&
+        assignment.status !== ProjectWorkerAssignmentStatus.BLOCKED
+      ) {
         effectiveAssignment = await this.prisma.projectWorkerAssignment.update({
           where: {
             id: assignment.id,
@@ -214,10 +229,15 @@ export class ProjectWorkerAssignmentsService {
           },
         });
 
-        await this.registerBlockedAssignmentSignals(effectiveAssignment, eligibility);
+        await this.registerBlockedAssignmentSignals(
+          effectiveAssignment,
+          eligibility,
+        );
       }
 
-      responses.push(this.toAssignmentResponse(effectiveAssignment, eligibility));
+      responses.push(
+        this.toAssignmentResponse(effectiveAssignment, eligibility),
+      );
     }
 
     return responses;
@@ -247,12 +267,16 @@ export class ProjectWorkerAssignmentsService {
       assignment.profile.userId === user.sub;
 
     if (!access.isOwner && !isProfileOwner) {
-      throw new ForbiddenException('You do not have access to update this worker assignment');
+      throw new ForbiddenException(
+        'You do not have access to update this worker assignment',
+      );
     }
 
     if (body.status === ProjectWorkerAssignmentStatus.APPROVED) {
       if (!access.isOwner) {
-        throw new ForbiddenException('Only the project owner can approve worker assignments');
+        throw new ForbiddenException(
+          'Only the project owner can approve worker assignments',
+        );
       }
 
       const eligibility =
@@ -305,11 +329,15 @@ export class ProjectWorkerAssignmentsService {
 
     if (body.status === ProjectWorkerAssignmentStatus.ACTIVE) {
       if (!access.isOwner) {
-        throw new ForbiddenException('Only the project owner can activate worker assignments');
+        throw new ForbiddenException(
+          'Only the project owner can activate worker assignments',
+        );
       }
 
       if (assignment.status !== ProjectWorkerAssignmentStatus.APPROVED) {
-        throw new BadRequestException('Only approved worker assignments can become active');
+        throw new BadRequestException(
+          'Only approved worker assignments can become active',
+        );
       }
 
       const updated = await this.prisma.projectWorkerAssignment.update({
@@ -346,7 +374,9 @@ export class ProjectWorkerAssignmentsService {
 
     if (body.status === ProjectWorkerAssignmentStatus.BLOCKED) {
       if (!access.isOwner) {
-        throw new ForbiddenException('Only the project owner can block worker assignments');
+        throw new ForbiddenException(
+          'Only the project owner can block worker assignments',
+        );
       }
 
       const updated = await this.prisma.projectWorkerAssignment.update({
@@ -417,7 +447,9 @@ export class ProjectWorkerAssignmentsService {
 
     if (body.status === ProjectWorkerAssignmentStatus.PROPOSED) {
       if (!access.isOwner && !isProfileOwner) {
-        throw new ForbiddenException('You cannot re-propose this worker assignment');
+        throw new ForbiddenException(
+          'You cannot re-propose this worker assignment',
+        );
       }
 
       const eligibility =
@@ -472,9 +504,16 @@ export class ProjectWorkerAssignmentsService {
     throw new BadRequestException('Unsupported assignment status transition');
   }
 
-  private async registerBlockedAssignmentSignals(assignment: any, eligibility: any) {
-    const workerName = `${assignment.worker.firstName} ${assignment.worker.lastName}`.trim();
-    const reasons = [...eligibility.blockingReasons, ...eligibility.missingItems]
+  private async registerBlockedAssignmentSignals(
+    assignment: any,
+    eligibility: any,
+  ) {
+    const workerName =
+      `${assignment.worker.firstName} ${assignment.worker.lastName}`.trim();
+    const reasons = [
+      ...eligibility.blockingReasons,
+      ...eligibility.missingItems,
+    ]
       .filter(Boolean)
       .slice(0, 5)
       .join(' | ');
@@ -487,7 +526,9 @@ export class ProjectWorkerAssignmentsService {
         status: UserTaskStatus.OPEN,
         priority: UserTaskPriority.CRITICAL,
         title: `Resolve worker eligibility for ${workerName}`,
-        description: reasons || 'Worker assignment is blocked by missing compliance evidence.',
+        description:
+          reasons ||
+          'Worker assignment is blocked by missing compliance evidence.',
         projectId: assignment.projectId,
         contractId: assignment.contractId,
         profileId: assignment.profileId,
@@ -501,7 +542,9 @@ export class ProjectWorkerAssignmentsService {
         profileId: assignment.profileId,
         type: UserTaskType.REVIEW_COMPLIANCE,
         title: `Resolve worker eligibility for ${workerName}`,
-        description: reasons || 'Worker assignment is blocked by missing compliance evidence.',
+        description:
+          reasons ||
+          'Worker assignment is blocked by missing compliance evidence.',
         status: UserTaskStatus.OPEN,
         priority: UserTaskPriority.CRITICAL,
       },
@@ -542,7 +585,10 @@ export class ProjectWorkerAssignmentsService {
     }
   }
 
-  private async getAssignmentAccess(projectId: string, user: AuthenticatedUser) {
+  private async getAssignmentAccess(
+    projectId: string,
+    user: AuthenticatedUser,
+  ) {
     const project = await this.prisma.project.findUnique({
       where: {
         id: projectId,
@@ -568,7 +614,9 @@ export class ProjectWorkerAssignmentsService {
     });
 
     if (!currentProfile) {
-      throw new ForbiddenException('You do not have access to this project worker workspace');
+      throw new ForbiddenException(
+        'You do not have access to this project worker workspace',
+      );
     }
 
     const linkedContract = await this.prisma.projectContract.findFirst({
@@ -582,7 +630,9 @@ export class ProjectWorkerAssignmentsService {
     });
 
     if (!linkedContract) {
-      throw new ForbiddenException('You do not have access to this project worker workspace');
+      throw new ForbiddenException(
+        'You do not have access to this project worker workspace',
+      );
     }
 
     return {
@@ -665,7 +715,9 @@ export class ProjectWorkerAssignmentsService {
     });
 
     if (!contract) {
-      throw new NotFoundException('Project contract not found for that profile');
+      throw new NotFoundException(
+        'Project contract not found for that profile',
+      );
     }
 
     return contract;
@@ -740,7 +792,8 @@ export class ProjectWorkerAssignmentsService {
             profileId: assignment.worker.profileId,
             firstName: assignment.worker.firstName,
             lastName: assignment.worker.lastName,
-            fullName: `${assignment.worker.firstName} ${assignment.worker.lastName}`.trim(),
+            fullName:
+              `${assignment.worker.firstName} ${assignment.worker.lastName}`.trim(),
             email: assignment.worker.email,
             phone: assignment.worker.phone,
             roleTitle: assignment.worker.roleTitle,

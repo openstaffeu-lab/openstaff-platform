@@ -42,7 +42,15 @@ import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
 
 @Module({
-  imports: [PrismaModule, AuthModule, AccessControlModule, ComplianceModule, AuditModule, NotificationModule, MessagingModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    AccessControlModule,
+    ComplianceModule,
+    AuditModule,
+    NotificationModule,
+    MessagingModule,
+  ],
   controllers: [
     ProjectsController,
     ProjectJobRequestsController,

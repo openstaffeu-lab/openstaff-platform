@@ -34,7 +34,12 @@ type DeliveryAttemptResult = {
   metadata?: Record<string, unknown> | null;
 };
 
-type ResolvedEmailProvider = 'smtp' | 'resend' | 'sendgrid' | 'postmark' | 'mailgun';
+type ResolvedEmailProvider =
+  | 'smtp'
+  | 'resend'
+  | 'sendgrid'
+  | 'postmark'
+  | 'mailgun';
 
 type EmitEventInput = {
   key?: string;
@@ -125,9 +130,15 @@ export class NotificationService implements OnModuleInit {
       ? await this.ensureNotificationPreferences(input.userId)
       : null;
     const channels = this.resolveChannels(input.channels, channel, preferences);
-    let notification: Awaited<ReturnType<NotificationService['createUserNotification']>> | null = null;
+    let notification: Awaited<
+      ReturnType<NotificationService['createUserNotification']>
+    > | null = null;
 
-    if (input.userId && !input.skipNotification && this.canCreateInAppNotification(preferences, input.category)) {
+    if (
+      input.userId &&
+      !input.skipNotification &&
+      this.canCreateInAppNotification(preferences, input.category)
+    ) {
       notification = await this.createUserNotification({
         eventId: event.id,
         key:
@@ -148,12 +159,17 @@ export class NotificationService implements OnModuleInit {
       });
     }
 
-    const deliveries: Array<Awaited<ReturnType<NotificationService['queueDelivery']>>> = [];
+    const deliveries: Array<
+      Awaited<ReturnType<NotificationService['queueDelivery']>>
+    > = [];
     for (const deliveryChannel of channels) {
       deliveries.push(
         await this.queueDelivery({
           eventId: event.id,
-          notificationId: deliveryChannel === NotificationChannel.IN_APP ? notification?.id ?? null : null,
+          notificationId:
+            deliveryChannel === NotificationChannel.IN_APP
+              ? (notification?.id ?? null)
+              : null,
           userId: input.userId ?? null,
           channel: deliveryChannel,
           metadata,
@@ -240,8 +256,17 @@ export class NotificationService implements OnModuleInit {
     metadata?: Record<string, unknown> | null;
   }) {
     const now = new Date();
-    const { status, deliveredAt, failedAt, failureReason, metadata: deliveryMetadata } =
-      await this.resolveDeliveryOutcome(input.channel, input.metadata, input.userId ?? null);
+    const {
+      status,
+      deliveredAt,
+      failedAt,
+      failureReason,
+      metadata: deliveryMetadata,
+    } = await this.resolveDeliveryOutcome(
+      input.channel,
+      input.metadata,
+      input.userId ?? null,
+    );
 
     const delivery = await this.prisma.notificationDelivery.create({
       data: {
@@ -287,15 +312,19 @@ export class NotificationService implements OnModuleInit {
       where: { id: deliveryId },
       data: {
         retryCount: { increment: 1 },
-        failedAt: delivery.channel === NotificationChannel.IN_APP || delivery.channel === NotificationChannel.SYSTEM
-          ? null
-          : new Date(),
+        failedAt:
+          delivery.channel === NotificationChannel.IN_APP ||
+          delivery.channel === NotificationChannel.SYSTEM
+            ? null
+            : new Date(),
         deliveredAt:
-          delivery.channel === NotificationChannel.IN_APP || delivery.channel === NotificationChannel.SYSTEM
+          delivery.channel === NotificationChannel.IN_APP ||
+          delivery.channel === NotificationChannel.SYSTEM
             ? new Date()
             : null,
         status:
-          delivery.channel === NotificationChannel.IN_APP || delivery.channel === NotificationChannel.SYSTEM
+          delivery.channel === NotificationChannel.IN_APP ||
+          delivery.channel === NotificationChannel.SYSTEM
             ? NotificationStatus.SENT
             : NotificationStatus.FAILED,
         metadata: this.normalizeMetadata(this.parseJson(delivery.metadata), {
@@ -326,12 +355,20 @@ export class NotificationService implements OnModuleInit {
   async listForUser(user: AuthenticatedUser) {
     const notifications = await this.prisma.notification.findMany({
       where: { userId: user.sub },
-      orderBy: [{ status: 'asc' }, { scheduledFor: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [
+        { status: 'asc' },
+        { scheduledFor: 'desc' },
+        { createdAt: 'desc' },
+      ],
     });
 
     return {
-      unreadCount: notifications.filter((item) => !this.isReadLikeStatus(item.status)).length,
-      items: notifications.map((notification) => this.toNotificationResponse(notification)),
+      unreadCount: notifications.filter(
+        (item) => !this.isReadLikeStatus(item.status),
+      ).length,
+      items: notifications.map((notification) =>
+        this.toNotificationResponse(notification),
+      ),
     };
   }
 
@@ -358,7 +395,9 @@ export class NotificationService implements OnModuleInit {
     }
 
     if (user.role !== 'ADMIN' && notification.userId !== user.sub) {
-      throw new ForbiddenException('You do not have access to this notification');
+      throw new ForbiddenException(
+        'You do not have access to this notification',
+      );
     }
 
     const now = new Date();
@@ -413,7 +452,9 @@ export class NotificationService implements OnModuleInit {
     }
 
     if (user.role !== 'ADMIN' && notification.userId !== user.sub) {
-      throw new ForbiddenException('You do not have access to this notification');
+      throw new ForbiddenException(
+        'You do not have access to this notification',
+      );
     }
 
     const updated = await this.prisma.notification.update({
@@ -450,9 +491,15 @@ export class NotificationService implements OnModuleInit {
     const updated = await this.prisma.notificationPreference.update({
       where: { userId: user.sub },
       data: {
-        ...(typeof input.inAppEnabled === 'boolean' ? { inAppEnabled: input.inAppEnabled } : {}),
-        ...(typeof input.emailEnabled === 'boolean' ? { emailEnabled: input.emailEnabled } : {}),
-        ...(typeof input.smsEnabled === 'boolean' ? { smsEnabled: input.smsEnabled } : {}),
+        ...(typeof input.inAppEnabled === 'boolean'
+          ? { inAppEnabled: input.inAppEnabled }
+          : {}),
+        ...(typeof input.emailEnabled === 'boolean'
+          ? { emailEnabled: input.emailEnabled }
+          : {}),
+        ...(typeof input.smsEnabled === 'boolean'
+          ? { smsEnabled: input.smsEnabled }
+          : {}),
         categoryPreferences,
       },
     });
@@ -541,12 +588,19 @@ export class NotificationService implements OnModuleInit {
     });
 
     return {
-      unreadCount: notifications.filter((item) => !this.isReadLikeStatus(item.status)).length,
-      items: notifications.map((notification) => this.toNotificationResponse(notification)),
+      unreadCount: notifications.filter(
+        (item) => !this.isReadLikeStatus(item.status),
+      ).length,
+      items: notifications.map((notification) =>
+        this.toNotificationResponse(notification),
+      ),
     };
   }
 
-  async markActorNotificationRead(notificationId: string, actor: { id: string; role?: string }) {
+  async markActorNotificationRead(
+    notificationId: string,
+    actor: { id: string; role?: string },
+  ) {
     const notification = await this.prisma.notification.findUnique({
       where: { id: notificationId },
     });
@@ -556,10 +610,14 @@ export class NotificationService implements OnModuleInit {
     }
 
     if (
-      !['ADMIN', 'SUPERADMIN', 'COMPLIANCE_OFFICER'].includes(actor.role ?? '') &&
+      !['ADMIN', 'SUPERADMIN', 'COMPLIANCE_OFFICER'].includes(
+        actor.role ?? '',
+      ) &&
       notification.actorId !== actor.id
     ) {
-      throw new ForbiddenException('You do not have access to this notification');
+      throw new ForbiddenException(
+        'You do not have access to this notification',
+      );
     }
 
     const updated = await this.prisma.notification.update({
@@ -757,7 +815,9 @@ export class NotificationService implements OnModuleInit {
     fallbackChannel: NotificationChannel,
     preferences: any,
   ) {
-    const channels = new Set<NotificationChannel>(requestedChannels?.length ? requestedChannels : [fallbackChannel]);
+    const channels = new Set<NotificationChannel>(
+      requestedChannels?.length ? requestedChannels : [fallbackChannel],
+    );
     channels.add(NotificationChannel.IN_APP);
 
     if (preferences?.emailEnabled === false) {
@@ -774,12 +834,17 @@ export class NotificationService implements OnModuleInit {
     return Array.from(channels);
   }
 
-  private canCreateInAppNotification(preferences: any, category: NotificationCategory | null | undefined) {
+  private canCreateInAppNotification(
+    preferences: any,
+    category: NotificationCategory | null | undefined,
+  ) {
     if (!preferences || preferences.inAppEnabled !== false) {
       if (!category) {
         return true;
       }
-      const categories = this.parseCategoryPreferences(preferences.categoryPreferences);
+      const categories = this.parseCategoryPreferences(
+        preferences.categoryPreferences,
+      );
       return categories[category] !== false;
     }
 
@@ -792,7 +857,9 @@ export class NotificationService implements OnModuleInit {
     }
 
     const parsed = { ...DEFAULT_CATEGORY_PREFERENCES };
-    for (const category of Object.keys(DEFAULT_CATEGORY_PREFERENCES) as NotificationCategory[]) {
+    for (const category of Object.keys(
+      DEFAULT_CATEGORY_PREFERENCES,
+    ) as NotificationCategory[]) {
       const next = (value as Record<string, unknown>)[category];
       if (typeof next === 'boolean') {
         parsed[category] = next;
@@ -824,7 +891,10 @@ export class NotificationService implements OnModuleInit {
     metadata?: Record<string, unknown> | null,
     userId?: string | null,
   ): Promise<DeliveryAttemptResult> {
-    if (channel === NotificationChannel.IN_APP || channel === NotificationChannel.SYSTEM) {
+    if (
+      channel === NotificationChannel.IN_APP ||
+      channel === NotificationChannel.SYSTEM
+    ) {
       return {
         status: NotificationStatus.SENT,
         deliveredAt: new Date(),
@@ -842,9 +912,10 @@ export class NotificationService implements OnModuleInit {
       deliveredAt: null,
       failedAt: new Date(),
       failureReason:
-        channel === NotificationChannel.SMS_PLACEHOLDER || channel === NotificationChannel.SMS
-            ? 'sms_provider_placeholder_only'
-            : 'delivery_channel_not_configured',
+        channel === NotificationChannel.SMS_PLACEHOLDER ||
+        channel === NotificationChannel.SMS
+          ? 'sms_provider_placeholder_only'
+          : 'delivery_channel_not_configured',
     };
   }
 
@@ -875,14 +946,24 @@ export class NotificationService implements OnModuleInit {
       };
     }
 
-    const subject = this.readMetadataString(metadata, 'emailSubject') ?? this.readMetadataString(metadata, 'title') ?? 'OpenStaff notification';
+    const subject =
+      this.readMetadataString(metadata, 'emailSubject') ??
+      this.readMetadataString(metadata, 'title') ??
+      'OpenStaff notification';
     const html =
       this.readMetadataString(metadata, 'emailHtml') ??
-      this.defaultEmailHtmlTemplate(subject, this.readMetadataString(metadata, 'message'));
+      this.defaultEmailHtmlTemplate(
+        subject,
+        this.readMetadataString(metadata, 'message'),
+      );
     const text =
       this.readMetadataString(metadata, 'emailText') ??
-      this.defaultEmailTextTemplate(subject, this.readMetadataString(metadata, 'message'));
-    const eventType = this.readMetadataString(metadata, 'eventType') ?? 'unknown';
+      this.defaultEmailTextTemplate(
+        subject,
+        this.readMetadataString(metadata, 'message'),
+      );
+    const eventType =
+      this.readMetadataString(metadata, 'eventType') ?? 'unknown';
     const recipientSummary = this.maskEmailRecipient(recipient);
 
     this.logger.log(
@@ -894,12 +975,12 @@ export class NotificationService implements OnModuleInit {
         provider === 'smtp'
           ? await this.sendWithSmtp(recipient, subject, html, text)
           : provider === 'resend'
-          ? await this.sendWithResend(recipient, subject, html, text)
-          : provider === 'sendgrid'
-            ? await this.sendWithSendGrid(recipient, subject, html, text)
-            : provider === 'postmark'
-          ? await this.sendWithPostmark(recipient, subject, html, text)
-          : await this.sendWithMailgun(recipient, subject, html, text);
+            ? await this.sendWithResend(recipient, subject, html, text)
+            : provider === 'sendgrid'
+              ? await this.sendWithSendGrid(recipient, subject, html, text)
+              : provider === 'postmark'
+                ? await this.sendWithPostmark(recipient, subject, html, text)
+                : await this.sendWithMailgun(recipient, subject, html, text);
 
       this.logger.log(
         `email delivery success provider=${provider} eventType=${eventType} recipient=${recipientSummary} messageId=${
@@ -991,13 +1072,22 @@ export class NotificationService implements OnModuleInit {
     if (configuredProvider === 'smtp' && process.env.SMTP_URL?.trim()) {
       return 'smtp' as const;
     }
-    if (configuredProvider === 'resend' && this.getEmailProviderToken('resend')) {
+    if (
+      configuredProvider === 'resend' &&
+      this.getEmailProviderToken('resend')
+    ) {
       return 'resend' as const;
     }
-    if (configuredProvider === 'sendgrid' && this.getEmailProviderToken('sendgrid')) {
+    if (
+      configuredProvider === 'sendgrid' &&
+      this.getEmailProviderToken('sendgrid')
+    ) {
       return 'sendgrid' as const;
     }
-    if (configuredProvider === 'postmark' && this.getEmailProviderToken('postmark')) {
+    if (
+      configuredProvider === 'postmark' &&
+      this.getEmailProviderToken('postmark')
+    ) {
       return 'postmark' as const;
     }
     if (
@@ -1019,14 +1109,19 @@ export class NotificationService implements OnModuleInit {
     if (process.env.POSTMARK_SERVER_TOKEN?.trim()) {
       return 'postmark' as const;
     }
-    if (process.env.MAILGUN_API_KEY?.trim() && process.env.MAILGUN_DOMAIN?.trim()) {
+    if (
+      process.env.MAILGUN_API_KEY?.trim() &&
+      process.env.MAILGUN_DOMAIN?.trim()
+    ) {
       return 'mailgun' as const;
     }
 
     return null;
   }
 
-  private getEmailProviderToken(provider: Exclude<ResolvedEmailProvider, 'smtp'>) {
+  private getEmailProviderToken(
+    provider: Exclude<ResolvedEmailProvider, 'smtp'>,
+  ) {
     const genericProvider = process.env.EMAIL_PROVIDER?.trim().toLowerCase();
     const genericToken = process.env.EMAIL_API_KEY?.trim();
     if (genericToken && genericProvider === provider) {
@@ -1085,10 +1180,14 @@ export class NotificationService implements OnModuleInit {
       code: candidate.code ?? null,
       command: candidate.command ?? null,
       responseCode:
-        typeof candidate.responseCode === 'number' || typeof candidate.responseCode === 'string'
+        typeof candidate.responseCode === 'number' ||
+        typeof candidate.responseCode === 'string'
           ? candidate.responseCode
           : null,
-      message: candidate.message || candidate.response || 'unknown_email_provider_error',
+      message:
+        candidate.message ||
+        candidate.response ||
+        'unknown_email_provider_error',
     };
   }
 
@@ -1108,9 +1207,14 @@ export class NotificationService implements OnModuleInit {
       const parsed = nodemailerShared.parseConnectionUrl(value);
       return {
         valid: Boolean(parsed.host),
-        host: typeof parsed.host === 'string' && parsed.host.trim() ? parsed.host.trim() : null,
+        host:
+          typeof parsed.host === 'string' && parsed.host.trim()
+            ? parsed.host.trim()
+            : null,
         port:
-          typeof parsed.port === 'number' && Number.isFinite(parsed.port) ? parsed.port : null,
+          typeof parsed.port === 'number' && Number.isFinite(parsed.port)
+            ? parsed.port
+            : null,
         secure: Boolean(parsed.secure),
         hasAuthUser: Boolean(parsed.auth?.user),
         parseError: null as string | null,
@@ -1127,7 +1231,12 @@ export class NotificationService implements OnModuleInit {
     }
   }
 
-  private async sendWithSmtp(recipient: string, subject: string, html: string, text: string) {
+  private async sendWithSmtp(
+    recipient: string,
+    subject: string,
+    html: string,
+    text: string,
+  ) {
     const smtpUrl = process.env.SMTP_URL?.trim();
     if (!smtpUrl) {
       throw new Error('smtp_url_missing');
@@ -1146,7 +1255,9 @@ export class NotificationService implements OnModuleInit {
       throw new Error(transport.parseError ?? 'smtp_url_unparsable');
     }
 
-    const transporter = nodemailer.createTransport(nodemailerShared.parseConnectionUrl(smtpUrl));
+    const transporter = nodemailer.createTransport(
+      nodemailerShared.parseConnectionUrl(smtpUrl),
+    );
     const response = await transporter.sendMail({
       from: this.getEmailFromAddress(),
       to: recipient,
@@ -1175,7 +1286,12 @@ export class NotificationService implements OnModuleInit {
     );
   }
 
-  private async sendWithResend(recipient: string, subject: string, html: string, text: string) {
+  private async sendWithResend(
+    recipient: string,
+    subject: string,
+    html: string,
+    text: string,
+  ) {
     const response = await this.fetchJson('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -1194,29 +1310,42 @@ export class NotificationService implements OnModuleInit {
     return { messageId: this.readUnknownString((response as any)?.id) };
   }
 
-  private async sendWithSendGrid(recipient: string, subject: string, html: string, text: string) {
-    const response = await this.fetchJson('https://api.sendgrid.com/v3/mail/send', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.getEmailProviderToken('sendgrid') ?? ''}`,
-        'Content-Type': 'application/json',
+  private async sendWithSendGrid(
+    recipient: string,
+    subject: string,
+    html: string,
+    text: string,
+  ) {
+    const response = await this.fetchJson(
+      'https://api.sendgrid.com/v3/mail/send',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.getEmailProviderToken('sendgrid') ?? ''}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          personalizations: [{ to: [{ email: recipient }] }],
+          from: this.parseEmailIdentity(this.getEmailFromAddress()),
+          subject,
+          content: [
+            { type: 'text/plain', value: text },
+            { type: 'text/html', value: html },
+          ],
+        }),
+        allowEmptyResponse: true,
       },
-      body: JSON.stringify({
-        personalizations: [{ to: [{ email: recipient }] }],
-        from: this.parseEmailIdentity(this.getEmailFromAddress()),
-        subject,
-        content: [
-          { type: 'text/plain', value: text },
-          { type: 'text/html', value: html },
-        ],
-      }),
-      allowEmptyResponse: true,
-    });
+    );
 
     return { messageId: this.readUnknownString((response as any)?.messageId) };
   }
 
-  private async sendWithPostmark(recipient: string, subject: string, html: string, text: string) {
+  private async sendWithPostmark(
+    recipient: string,
+    subject: string,
+    html: string,
+    text: string,
+  ) {
     const response = await this.fetchJson('https://api.postmarkapp.com/email', {
       method: 'POST',
       headers: {
@@ -1240,7 +1369,12 @@ export class NotificationService implements OnModuleInit {
     };
   }
 
-  private async sendWithMailgun(recipient: string, subject: string, html: string, text: string) {
+  private async sendWithMailgun(
+    recipient: string,
+    subject: string,
+    html: string,
+    text: string,
+  ) {
     const domain = process.env.MAILGUN_DOMAIN?.trim();
     if (!domain) {
       throw new Error('mailgun_domain_missing');
@@ -1253,16 +1387,21 @@ export class NotificationService implements OnModuleInit {
       text,
       html,
     });
-    const credentials = Buffer.from(`api:${this.getEmailProviderToken('mailgun') ?? ''}`).toString('base64');
+    const credentials = Buffer.from(
+      `api:${this.getEmailProviderToken('mailgun') ?? ''}`,
+    ).toString('base64');
 
-    const response = await this.fetchJson(`https://api.mailgun.net/v3/${domain}/messages`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${credentials}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
+    const response = await this.fetchJson(
+      `https://api.mailgun.net/v3/${domain}/messages`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${credentials}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString(),
       },
-      body: formData.toString(),
-    });
+    );
 
     return { messageId: this.readUnknownString((response as any)?.id) };
   }
@@ -1338,7 +1477,10 @@ export class NotificationService implements OnModuleInit {
       .replace(/'/g, '&#39;');
   }
 
-  private readMetadataString(metadata: Record<string, unknown> | null | undefined, key: string) {
+  private readMetadataString(
+    metadata: Record<string, unknown> | null | undefined,
+    key: string,
+  ) {
     const value = metadata?.[key];
     return typeof value === 'string' && value.trim() ? value.trim() : null;
   }
@@ -1353,9 +1495,15 @@ export class NotificationService implements OnModuleInit {
       select: { status: true, deliveredAt: true, failedAt: true, readAt: true },
     });
 
-    const hasRead = deliveries.some((item) => item.status === NotificationStatus.READ || item.readAt);
-    const hasSent = deliveries.some((item) => item.status === NotificationStatus.SENT || item.deliveredAt);
-    const hasFailed = deliveries.some((item) => item.status === NotificationStatus.FAILED || item.failedAt);
+    const hasRead = deliveries.some(
+      (item) => item.status === NotificationStatus.READ || item.readAt,
+    );
+    const hasSent = deliveries.some(
+      (item) => item.status === NotificationStatus.SENT || item.deliveredAt,
+    );
+    const hasFailed = deliveries.some(
+      (item) => item.status === NotificationStatus.FAILED || item.failedAt,
+    );
 
     await this.prisma.notificationEvent.update({
       where: { id: eventId },
@@ -1375,8 +1523,18 @@ export class NotificationService implements OnModuleInit {
   }
 
   private async createWorkflowRunForEvent(
-    event: { id: string; eventType: string; sourceType: string; sourceId: string; userId: string | null },
-    deliveries: Array<{ id: string; channel: NotificationChannel; status: NotificationStatus }>,
+    event: {
+      id: string;
+      eventType: string;
+      sourceType: string;
+      sourceId: string;
+      userId: string | null;
+    },
+    deliveries: Array<{
+      id: string;
+      channel: NotificationChannel;
+      status: NotificationStatus;
+    }>,
     input: EmitEventInput,
   ) {
     const matchingRules = await this.prisma.workflowAutomationRule.findMany({
@@ -1535,7 +1693,10 @@ export class NotificationService implements OnModuleInit {
   }
 
   private isReadLikeStatus(status: NotificationStatus) {
-    return status === NotificationStatus.READ || status === NotificationStatus.DISMISSED;
+    return (
+      status === NotificationStatus.READ ||
+      status === NotificationStatus.DISMISSED
+    );
   }
 
   private toNotificationResponse(notification: any) {
@@ -1664,6 +1825,8 @@ export class NotificationService implements OnModuleInit {
   }
 
   private daysBetween(left: Date, right: Date) {
-    return Math.floor((right.getTime() - left.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.floor(
+      (right.getTime() - left.getTime()) / (1000 * 60 * 60 * 24),
+    );
   }
 }

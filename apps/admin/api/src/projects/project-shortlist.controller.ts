@@ -16,7 +16,9 @@ import { ProjectShortlistService } from './project-shortlist.service';
 
 @Controller('projects')
 export class ProjectShortlistController {
-  constructor(private readonly projectShortlistService: ProjectShortlistService) {}
+  constructor(
+    private readonly projectShortlistService: ProjectShortlistService,
+  ) {}
 
   @UseGuards(
     JwtGuard,
@@ -31,7 +33,9 @@ export class ProjectShortlistController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectShortlistService.create(projectId, body, user);
@@ -46,7 +50,9 @@ export class ProjectShortlistController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectShortlistService.list(projectId, user);
@@ -65,7 +71,9 @@ export class ProjectShortlistController {
     const user = req.user;
 
     if (!user || !user.sub) {
-      throw new UnauthorizedException('Authenticated user not found in request');
+      throw new UnauthorizedException(
+        'Authenticated user not found in request',
+      );
     }
 
     return this.projectShortlistService.remove(projectId, shortlistId, user);

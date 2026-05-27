@@ -1,6 +1,45 @@
 ﻿# OpenStaff Platform Status
 
-Last updated: 2026-05-25
+Last updated: 2026-05-26
+
+## EXEC-75 Remediation for EXEC-74 Findings
+
+Verdict: `PASS LOCALLY - PRODUCTION PROOF PENDING. EXEC-75 closes the EXEC-74 code-level failures for backend technical API isolation, a real AI Moderator role/permission model, public-safe company/profile asset routing, per-asset profile media moderation, append-only project AI interpretation history, and remaining raw backoffice direct-route leakage. Local browser proof now covers approved anonymous company assets, normal admin isolation, AI Moderator RELU access, SUPERADMIN technical access, and mobile overflow. This is not yet a production PASS because the new Prisma migration, production deploy, credentialed live role probes, anonymous live approved-asset proof, and live project AI history proof still need to be executed after rollout.`
+
+### EXEC-75 Closure Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| backend technical isolation | PASS locally | `MANAGE_TECHNICAL_OPERATIONS` now gates RELU config/prompts/queue, Gemini agents, taxonomy imports/browser, AI/security audit diagnostics, and notification delivery diagnostics |
+| AI Moderator role | PASS locally | `Role.AI_MODERATOR` and `Permission.MODERATE_AI` were added; AI Moderator can access RELU moderation review but not technical tooling |
+| public profile/company assets | PASS locally | public assets now route through `/profiles/assets/:documentId` and require approved profile plus approved asset |
+| profile media moderation | PASS locally | `ProfileDocument.moderationStatus` defaults to `PENDING`; admin moderation endpoint can approve/reject public-safe profile assets |
+| project AI history | PASS locally | `ProjectAIInterpretationRun` preserves append-only success/failure history; failed reruns no longer overwrite the current successful interpretation |
+| backoffice direct-route cleanup | PASS locally | `/admin/imports` is technical-gated; `/admin/workforce` renders filtered operational metadata chips instead of raw JSON |
+| API tests | PASS locally | permissions guard, public asset delivery, and project AI history tests pass under `npm.cmd test -- --runInBand` |
+| local browser/mobile proof | PASS locally | `docs/proof/exec75/browser-proof.json` shows approved logo/banner/gallery asset `200`s, admin/AI Moderator/SUPERADMIN route behavior, no console/page/bad responses, and no mobile overflow |
+| production deploy and live browser proof | NOT YET | migration/deploy, credentialed live role probes, anonymous live approved-asset browser proof, and live AI history proof remain pending |
+
+### EXEC-75 Validation Proof
+
+- `apps/admin/api -> npx.cmd prisma validate`
+- `apps/admin/api -> npx.cmd prisma generate`
+- `apps/admin/api -> npm.cmd test -- --runInBand`
+- `apps/admin/api -> npm.cmd run build`
+- `apps/admin/api -> npm.cmd run lint`
+- `apps/admin -> npm.cmd run build`
+- `apps/admin -> npm.cmd run lint`
+- `apps/admin/web -> npm.cmd run build`
+- `apps/admin/web -> npm.cmd run lint`
+- `node docs/proof/exec75/browser-check.cjs`
+
+### EXEC-75 Artifacts
+
+- remediation summary: `docs/EXEC75_REMEDIATION.md`
+- role isolation proof: `docs/EXEC75_ROLE_ISOLATION_PROOF.md`
+- public asset proof: `docs/EXEC75_PUBLIC_ASSET_DELIVERY_PROOF.md`
+- AI history proof: `docs/EXEC75_AI_HISTORY_PROOF.md`
+- proof index: `docs/proof/exec75/README.md`
 
 ## EXEC-67 API Startup Fix, Production Migration, Push Recovery & Live 2FA Proof
 

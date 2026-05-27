@@ -11,7 +11,12 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ActorType, FirmaStatus, LegalType, PlatformRole } from '@prisma/client';
+import {
+  ActorType,
+  FirmaStatus,
+  LegalType,
+  PlatformRole,
+} from '@prisma/client';
 
 class UpdateCompanyProfileDto {
   @IsOptional()

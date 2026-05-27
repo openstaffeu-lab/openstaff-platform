@@ -79,7 +79,9 @@ export class ProjectContractsService {
     }
 
     if (proposal.status !== ProjectProposalStatus.ACCEPTED) {
-      throw new BadRequestException('A contract can only be created from an accepted proposal');
+      throw new BadRequestException(
+        'A contract can only be created from an accepted proposal',
+      );
     }
 
     const existingContract = await this.prisma.projectContract.findFirst({
@@ -89,7 +91,9 @@ export class ProjectContractsService {
     });
 
     if (existingContract) {
-      throw new BadRequestException('A contract already exists for this proposal');
+      throw new BadRequestException(
+        'A contract already exists for this proposal',
+      );
     }
 
     await this.complianceEligibilityService.assertCanCreateContract(
@@ -112,7 +116,8 @@ export class ProjectContractsService {
           proposal.message?.trim() ||
           project.summary?.trim() ||
           null,
-        commercialTerms: body.commercialTerms?.trim() ?? proposal.terms?.trim() ?? null,
+        commercialTerms:
+          body.commercialTerms?.trim() ?? proposal.terms?.trim() ?? null,
         paymentTerms:
           body.paymentTerms?.trim() ??
           this.defaultPaymentTerms(proposal.priceCents, proposal.currencyCode),
@@ -122,13 +127,15 @@ export class ProjectContractsService {
         insuranceTerms:
           body.insuranceTerms?.trim() ??
           'Provide valid insurance and certifications required by project conditions before active site access.',
-        startDate: this.toDate(body.startDate) ?? proposal.estimatedStartDate ?? null,
+        startDate:
+          this.toDate(body.startDate) ?? proposal.estimatedStartDate ?? null,
         endDate: this.toDate(body.endDate) ?? proposal.estimatedEndDate ?? null,
         escrowAccount: {
           create: {
             projectId: project.id,
             status: ProjectEscrowStatus.NOT_FUNDED,
-            currencyCode: proposal.currencyCode ?? project.currencyCode ?? 'EUR',
+            currencyCode:
+              proposal.currencyCode ?? project.currencyCode ?? 'EUR',
             totalAmountCents: proposal.priceCents ?? 0,
             fundedAmountCents: 0,
             releasedAmountCents: 0,
@@ -186,10 +193,13 @@ export class ProjectContractsService {
         id: true,
       },
     });
-    const isOwner = this.accessPolicy.isAdmin(user) || project.createdById === user.sub;
+    const isOwner =
+      this.accessPolicy.isAdmin(user) || project.createdById === user.sub;
 
     if (!isOwner && !currentProfile) {
-      throw new ForbiddenException('You do not have access to this contract workspace');
+      throw new ForbiddenException(
+        'You do not have access to this contract workspace',
+      );
     }
 
     const contracts = await this.prisma.projectContract.findMany({
@@ -210,7 +220,11 @@ export class ProjectContractsService {
     return contracts.map((contract) => this.toContractResponse(contract));
   }
 
-  async findOne(projectId: string, contractId: string, user: AuthenticatedUser) {
+  async findOne(
+    projectId: string,
+    contractId: string,
+    user: AuthenticatedUser,
+  ) {
     const project = await this.getProjectForRead(projectId, user);
     const contract = await this.prisma.projectContract.findFirst({
       where: {
@@ -233,7 +247,11 @@ export class ProjectContractsService {
     body: UpdateProjectContractStatusDto,
     user: AuthenticatedUser,
   ) {
-    const contract = await this.getContractForOwner(projectId, contractId, user);
+    const contract = await this.getContractForOwner(
+      projectId,
+      contractId,
+      user,
+    );
     const updatedContract = await this.prisma.projectContract.update({
       where: {
         id: contract.id,
@@ -261,7 +279,11 @@ export class ProjectContractsService {
     return this.toContractResponse(updatedContract);
   }
 
-  async getEscrow(projectId: string, contractId: string, user: AuthenticatedUser) {
+  async getEscrow(
+    projectId: string,
+    contractId: string,
+    user: AuthenticatedUser,
+  ) {
     const contract = await this.getContractForRead(projectId, contractId, user);
 
     if (!contract.escrowAccount) {
@@ -277,14 +299,20 @@ export class ProjectContractsService {
     body: UpdateProjectEscrowDto,
     user: AuthenticatedUser,
   ) {
-    const contract = await this.getContractForOwner(projectId, contractId, user);
+    const contract = await this.getContractForOwner(
+      projectId,
+      contractId,
+      user,
+    );
 
     if (!contract.escrowAccount) {
       throw new NotFoundException('Escrow account not found');
     }
 
-    const nextTotal = body.totalAmountCents ?? contract.escrowAccount.totalAmountCents;
-    const nextFunded = body.fundedAmountCents ?? contract.escrowAccount.fundedAmountCents;
+    const nextTotal =
+      body.totalAmountCents ?? contract.escrowAccount.totalAmountCents;
+    const nextFunded =
+      body.fundedAmountCents ?? contract.escrowAccount.fundedAmountCents;
     const nextReleased =
       body.releasedAmountCents ?? contract.escrowAccount.releasedAmountCents;
 
@@ -293,7 +321,9 @@ export class ProjectContractsService {
     }
 
     if (nextReleased > nextFunded) {
-      throw new BadRequestException('Released amount cannot exceed funded amount');
+      throw new BadRequestException(
+        'Released amount cannot exceed funded amount',
+      );
     }
 
     const escrow = await this.prisma.projectEscrowAccount.update({
@@ -331,7 +361,11 @@ export class ProjectContractsService {
     body: CreateProjectMilestoneDto,
     user: AuthenticatedUser,
   ) {
-    const contract = await this.getContractForOwner(projectId, contractId, user);
+    const contract = await this.getContractForOwner(
+      projectId,
+      contractId,
+      user,
+    );
     const milestone = await this.prisma.projectMilestone.create({
       data: {
         projectId: contract.projectId,
@@ -359,7 +393,11 @@ export class ProjectContractsService {
     return this.toMilestoneResponse(milestone);
   }
 
-  async listMilestones(projectId: string, contractId: string, user: AuthenticatedUser) {
+  async listMilestones(
+    projectId: string,
+    contractId: string,
+    user: AuthenticatedUser,
+  ) {
     const contract = await this.getContractForRead(projectId, contractId, user);
     const milestones = await this.prisma.projectMilestone.findMany({
       where: {
@@ -380,7 +418,11 @@ export class ProjectContractsService {
     body: UpdateProjectMilestoneStatusDto,
     user: AuthenticatedUser,
   ) {
-    const contract = await this.getContractForOwner(projectId, contractId, user);
+    const contract = await this.getContractForOwner(
+      projectId,
+      contractId,
+      user,
+    );
     const milestone = await this.prisma.projectMilestone.findFirst({
       where: {
         id: milestoneId,
@@ -393,10 +435,11 @@ export class ProjectContractsService {
     }
 
     if (body.status === ProjectMilestoneStatus.RELEASED) {
-      const activeDispute = await this.projectDisputesService.hasActiveBlockingDispute({
-        contractId: contract.id,
-        milestoneId: milestone.id,
-      });
+      const activeDispute =
+        await this.projectDisputesService.hasActiveBlockingDispute({
+          contractId: contract.id,
+          milestoneId: milestone.id,
+        });
 
       if (activeDispute) {
         throw new BadRequestException(
@@ -413,9 +456,9 @@ export class ProjectContractsService {
         status: body.status,
         completedAt:
           body.completedAt !== undefined
-            ? this.toDate(body.completedAt) ?? null
+            ? (this.toDate(body.completedAt) ?? null)
             : body.status === 'COMPLETED' || body.status === 'RELEASED'
-              ? milestone.completedAt ?? new Date()
+              ? (milestone.completedAt ?? new Date())
               : null,
       },
     });
@@ -441,7 +484,11 @@ export class ProjectContractsService {
     contractId: string,
     user: AuthenticatedUser,
   ) {
-    const contract = await this.getContractForOwner(projectId, contractId, user);
+    const contract = await this.getContractForOwner(
+      projectId,
+      contractId,
+      user,
+    );
     const country = contract.project.country;
     const exactRule = country
       ? await this.prisma.taxRule.findFirst({
@@ -472,7 +519,10 @@ export class ProjectContractsService {
 
     const calculation = this.financialRulesService.calculate({
       contractType: contract.contractType,
-      baseAmountCents: contract.proposal.priceCents ?? contract.escrowAccount?.totalAmountCents ?? 0,
+      baseAmountCents:
+        contract.proposal.priceCents ??
+        contract.escrowAccount?.totalAmountCents ??
+        0,
       country: country
         ? {
             id: country.id,
@@ -548,7 +598,11 @@ export class ProjectContractsService {
     body: CreateProjectInvoiceDto,
     user: AuthenticatedUser,
   ) {
-    const contract = await this.getContractForActor(projectId, contractId, user);
+    const contract = await this.getContractForActor(
+      projectId,
+      contractId,
+      user,
+    );
     this.assertContractProfileOwner(contract, user);
 
     await this.complianceEligibilityService.assertCanCreateInvoice(
@@ -571,7 +625,9 @@ export class ProjectContractsService {
     }
 
     if (milestone && body.amountCents !== milestone.amountCents) {
-      throw new BadRequestException('Invoice amount must match the linked milestone amount');
+      throw new BadRequestException(
+        'Invoice amount must match the linked milestone amount',
+      );
     }
 
     const latestSnapshot = contract.financialSnapshots[0] ?? null;
@@ -583,7 +639,11 @@ export class ProjectContractsService {
       'EUR';
     const vatCents =
       body.vatCents ??
-      this.calculateDefaultVatCents(body.amountCents, latestSnapshot?.grossAmountCents ?? null, latestSnapshot?.vatAmountCents ?? null);
+      this.calculateDefaultVatCents(
+        body.amountCents,
+        latestSnapshot?.grossAmountCents ?? null,
+        latestSnapshot?.vatAmountCents ?? null,
+      );
     const invoice = await this.prisma.projectInvoice.create({
       data: {
         projectId: contract.projectId,
@@ -624,7 +684,11 @@ export class ProjectContractsService {
     return this.toInvoiceResponse(invoice);
   }
 
-  async listInvoices(projectId: string, contractId: string, user: AuthenticatedUser) {
+  async listInvoices(
+    projectId: string,
+    contractId: string,
+    user: AuthenticatedUser,
+  ) {
     const contract = await this.getContractForRead(projectId, contractId, user);
     const invoices = await this.prisma.projectInvoice.findMany({
       where: {
@@ -646,7 +710,11 @@ export class ProjectContractsService {
     body: UpdateProjectInvoiceStatusDto,
     user: AuthenticatedUser,
   ) {
-    const contract = await this.getContractForActor(projectId, contractId, user);
+    const contract = await this.getContractForActor(
+      projectId,
+      contractId,
+      user,
+    );
     const invoice = await this.prisma.projectInvoice.findFirst({
       where: {
         id: invoiceId,
@@ -670,8 +738,13 @@ export class ProjectContractsService {
         throw new BadRequestException('Paid invoices cannot be cancelled');
       }
     } else if (body.status === ProjectInvoiceStatus.PAID) {
-      if (!this.accessPolicy.isAdmin(user) && user.sub !== contract.project.createdById) {
-        throw new ForbiddenException('Only the project owner or admin can mark invoices paid directly');
+      if (
+        !this.accessPolicy.isAdmin(user) &&
+        user.sub !== contract.project.createdById
+      ) {
+        throw new ForbiddenException(
+          'Only the project owner or admin can mark invoices paid directly',
+        );
       }
     } else {
       throw new BadRequestException('Unsupported invoice status transition');
@@ -685,11 +758,11 @@ export class ProjectContractsService {
         status: body.status,
         issuedAt:
           body.status === ProjectInvoiceStatus.ISSUED
-            ? this.toDate(body.issuedAt) ?? invoice.issuedAt ?? new Date()
+            ? (this.toDate(body.issuedAt) ?? invoice.issuedAt ?? new Date())
             : invoice.issuedAt,
         paidAt:
           body.status === ProjectInvoiceStatus.PAID
-            ? this.toDate(body.paidAt) ?? invoice.paidAt ?? new Date()
+            ? (this.toDate(body.paidAt) ?? invoice.paidAt ?? new Date())
             : body.status === ProjectInvoiceStatus.CANCELLED
               ? null
               : invoice.paidAt,
@@ -702,7 +775,8 @@ export class ProjectContractsService {
       projectId: contract.projectId,
       entityType: 'ProjectInvoice',
       entityId: invoice.id,
-      action: body.status === ProjectInvoiceStatus.ISSUED ? 'ISSUE' : 'STATUS_CHANGE',
+      action:
+        body.status === ProjectInvoiceStatus.ISSUED ? 'ISSUE' : 'STATUS_CHANGE',
       before: this.toInvoiceResponse(invoice),
       after: this.toInvoiceResponse(updatedInvoice),
       metadata: {
@@ -727,7 +801,11 @@ export class ProjectContractsService {
     return this.toInvoiceResponse(updatedInvoice);
   }
 
-  async listPayments(projectId: string, contractId: string, user: AuthenticatedUser) {
+  async listPayments(
+    projectId: string,
+    contractId: string,
+    user: AuthenticatedUser,
+  ) {
     const contract = await this.getContractForRead(projectId, contractId, user);
     const payments = await this.prisma.projectPayment.findMany({
       where: {
@@ -748,7 +826,11 @@ export class ProjectContractsService {
     body: CreateProjectPaymentRequestDto,
     user: AuthenticatedUser,
   ) {
-    const contract = await this.getContractForActor(projectId, contractId, user);
+    const contract = await this.getContractForActor(
+      projectId,
+      contractId,
+      user,
+    );
     this.assertContractProfileOwner(contract, user);
 
     await this.complianceEligibilityService.assertCanRequestPayment(
@@ -774,7 +856,9 @@ export class ProjectContractsService {
     }
 
     if (invoice.status !== ProjectInvoiceStatus.ISSUED) {
-      throw new BadRequestException('Only issued invoices can be used for payment requests');
+      throw new BadRequestException(
+        'Only issued invoices can be used for payment requests',
+      );
     }
 
     const existingPayment = await this.prisma.projectPayment.findFirst({
@@ -791,7 +875,9 @@ export class ProjectContractsService {
     });
 
     if (existingPayment) {
-      throw new BadRequestException('A payment already exists for this invoice');
+      throw new BadRequestException(
+        'A payment already exists for this invoice',
+      );
     }
 
     const payment = await this.prisma.projectPayment.create({
@@ -858,7 +944,9 @@ export class ProjectContractsService {
 
     if (body.status === ProjectPaymentStatus.APPROVED) {
       if (payment.status !== ProjectPaymentStatus.REQUESTED) {
-        throw new BadRequestException('Only requested payments can be approved');
+        throw new BadRequestException(
+          'Only requested payments can be approved',
+        );
       }
 
       if (
@@ -877,7 +965,8 @@ export class ProjectContractsService {
         },
         data: {
           status: ProjectPaymentStatus.APPROVED,
-          approvedAt: this.toDate(body.approvedAt) ?? payment.approvedAt ?? new Date(),
+          approvedAt:
+            this.toDate(body.approvedAt) ?? payment.approvedAt ?? new Date(),
         },
         include: this.paymentInclude,
       });
@@ -917,12 +1006,13 @@ export class ProjectContractsService {
         throw new BadRequestException('Only approved payments can be released');
       }
 
-      const activeDispute = await this.projectDisputesService.hasActiveBlockingDispute({
-        contractId: payment.contractId,
-        invoiceId: payment.invoiceId,
-        paymentId: payment.id,
-        milestoneId: payment.invoice.milestoneId,
-      });
+      const activeDispute =
+        await this.projectDisputesService.hasActiveBlockingDispute({
+          contractId: payment.contractId,
+          invoiceId: payment.invoiceId,
+          paymentId: payment.id,
+          milestoneId: payment.invoice.milestoneId,
+        });
 
       if (activeDispute) {
         throw new BadRequestException(
@@ -930,9 +1020,12 @@ export class ProjectContractsService {
         );
       }
 
-      const nextReleased = payment.escrowAccount.releasedAmountCents + payment.amountCents;
+      const nextReleased =
+        payment.escrowAccount.releasedAmountCents + payment.amountCents;
       if (nextReleased > payment.escrowAccount.fundedAmountCents) {
-        throw new BadRequestException('Escrow release would exceed funded escrow amount');
+        throw new BadRequestException(
+          'Escrow release would exceed funded escrow amount',
+        );
       }
 
       const updatedPayment = await this.prisma.$transaction(async (tx) => {
@@ -956,7 +1049,8 @@ export class ProjectContractsService {
           },
           data: {
             status: ProjectPaymentStatus.RELEASED,
-            releasedAt: this.toDate(body.releasedAt) ?? payment.releasedAt ?? new Date(),
+            releasedAt:
+              this.toDate(body.releasedAt) ?? payment.releasedAt ?? new Date(),
           },
           include: this.paymentInclude,
         });
@@ -1037,7 +1131,9 @@ export class ProjectContractsService {
         payment.status !== ProjectPaymentStatus.REQUESTED &&
         payment.status !== ProjectPaymentStatus.APPROVED
       ) {
-        throw new BadRequestException('Only requested or approved payments can fail');
+        throw new BadRequestException(
+          'Only requested or approved payments can fail',
+        );
       }
 
       const updatedPayment = await this.prisma.projectPayment.update({
@@ -1135,7 +1231,9 @@ export class ProjectContractsService {
       throw new NotFoundException('Contract not found');
     }
 
-    const isOwner = this.accessPolicy.isAdmin(user) || contract.project.createdById === user.sub;
+    const isOwner =
+      this.accessPolicy.isAdmin(user) ||
+      contract.project.createdById === user.sub;
     const isContractProfileOwner = contract.profile.userId === user.sub;
 
     if (!isOwner && !isContractProfileOwner) {
@@ -1147,7 +1245,9 @@ export class ProjectContractsService {
 
   private assertContractProfileOwner(contract: any, user: AuthenticatedUser) {
     if (contract.profile.userId !== user.sub) {
-      throw new ForbiddenException('Only the contract profile owner can perform this action');
+      throw new ForbiddenException(
+        'Only the contract profile owner can perform this action',
+      );
     }
   }
 
@@ -1173,7 +1273,11 @@ export class ProjectContractsService {
     snapshotGrossAmountCents: number | null,
     snapshotVatAmountCents: number | null,
   ) {
-    if (!snapshotGrossAmountCents || !snapshotVatAmountCents || snapshotGrossAmountCents <= 0) {
+    if (
+      !snapshotGrossAmountCents ||
+      !snapshotVatAmountCents ||
+      snapshotGrossAmountCents <= 0
+    ) {
       return 0;
     }
 
@@ -1247,14 +1351,24 @@ export class ProjectContractsService {
         companyName: contract.profile.companyName,
         summary: contract.profile.summary,
       },
-      escrow: contract.escrowAccount ? this.toEscrowResponse(contract.escrowAccount) : null,
-      milestones: contract.milestones.map((milestone: any) => this.toMilestoneResponse(milestone)),
+      escrow: contract.escrowAccount
+        ? this.toEscrowResponse(contract.escrowAccount)
+        : null,
+      milestones: contract.milestones.map((milestone: any) =>
+        this.toMilestoneResponse(milestone),
+      ),
       financialSnapshot: contract.financialSnapshots[0]
         ? this.toFinancialSnapshotResponse(contract.financialSnapshots[0])
         : null,
-      invoices: contract.invoices.map((invoice: any) => this.toInvoiceResponse(invoice)),
-      payments: contract.payments.map((payment: any) => this.toPaymentResponse(payment)),
-      disputes: contract.disputes.map((dispute: any) => this.toDisputeResponse(dispute)),
+      invoices: contract.invoices.map((invoice: any) =>
+        this.toInvoiceResponse(invoice),
+      ),
+      payments: contract.payments.map((payment: any) =>
+        this.toPaymentResponse(payment),
+      ),
+      disputes: contract.disputes.map((dispute: any) =>
+        this.toDisputeResponse(dispute),
+      ),
     };
   }
 
@@ -1357,9 +1471,13 @@ export class ProjectContractsService {
             role: invoice.issuedBy.role,
           }
         : null,
-      milestone: invoice.milestone ? this.toMilestoneResponse(invoice.milestone) : null,
+      milestone: invoice.milestone
+        ? this.toMilestoneResponse(invoice.milestone)
+        : null,
       payments: invoice.payments
-        ? invoice.payments.map((payment: any) => this.toPaymentResponse(payment))
+        ? invoice.payments.map((payment: any) =>
+            this.toPaymentResponse(payment),
+          )
         : [],
     };
   }
@@ -1492,11 +1610,14 @@ export class ProjectContractsService {
     }
   }
 
-  private defaultPaymentTerms(priceCents: number | null, currencyCode: string | null) {
+  private defaultPaymentTerms(
+    priceCents: number | null,
+    currencyCode: string | null,
+  ) {
     if (priceCents && priceCents > 0) {
-      return `Escrow target ${currencyCode ?? 'EUR'} ${(priceCents / 100).toFixed(
-        2,
-      )}; release by approved milestones.`;
+      return `Escrow target ${currencyCode ?? 'EUR'} ${(
+        priceCents / 100
+      ).toFixed(2)}; release by approved milestones.`;
     }
 
     return 'Escrow to be funded and released against approved milestones.';

@@ -29,10 +29,9 @@ export class RateLimitGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const metadata = this.reflector.getAllAndOverride<RateLimitMetadata | undefined>(
-      RATE_LIMIT_METADATA_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const metadata = this.reflector.getAllAndOverride<
+      RateLimitMetadata | undefined
+    >(RATE_LIMIT_METADATA_KEY, [context.getHandler(), context.getClass()]);
 
     if (!metadata) {
       return true;
@@ -69,10 +68,13 @@ export class RateLimitGuard implements CanActivate {
         request,
       });
 
-      throw new HttpException({
-        message: 'Rate limit exceeded',
-        code: 'RATE_LIMITED',
-      }, 429);
+      throw new HttpException(
+        {
+          message: 'Rate limit exceeded',
+          code: 'RATE_LIMITED',
+        },
+        429,
+      );
     }
 
     current.count += 1;
@@ -81,7 +83,11 @@ export class RateLimitGuard implements CanActivate {
   }
 
   private buildBucketKey(scope: string, request: any) {
-    const actor = request?.user?.sub ?? request?.ip ?? request?.headers?.['x-forwarded-for'] ?? 'anonymous';
+    const actor =
+      request?.user?.sub ??
+      request?.ip ??
+      request?.headers?.['x-forwarded-for'] ??
+      'anonymous';
     return `${scope}:${actor}`;
   }
 
@@ -91,7 +97,9 @@ export class RateLimitGuard implements CanActivate {
   }
 
   private getMaxRequests() {
-    const raw = Number(process.env.RATE_LIMIT_MAX_REQUESTS ?? DEFAULT_MAX_REQUESTS);
+    const raw = Number(
+      process.env.RATE_LIMIT_MAX_REQUESTS ?? DEFAULT_MAX_REQUESTS,
+    );
     return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_MAX_REQUESTS;
   }
 }
