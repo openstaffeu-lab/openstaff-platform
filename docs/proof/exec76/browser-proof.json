@@ -1,0 +1,226 @@
+{
+  "checkedAtUtc": "2026-05-27T13:04:08.669Z",
+  "adminBase": "https://backoffice.openstaff.eu",
+  "webBase": "https://openstaff.eu",
+  "apiBase": "https://api.openstaff.eu",
+  "companySlug": "exec76-1779886408789-company",
+  "summary": {
+    "pass": true,
+    "consoleErrors": [],
+    "pageErrors": [],
+    "badResponses": [],
+    "failedChecks": [],
+    "overflowPages": []
+  },
+  "results": [
+    {
+      "label": "ADMIN technical direct routes",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "failedChecks": [],
+      "pages": [
+        {
+          "url": "https://backoffice.openstaff.eu/ai-config",
+          "status": 200,
+          "overflow": {
+            "viewportWidth": 1440,
+            "documentScrollWidth": 1440,
+            "bodyScrollWidth": 1440,
+            "hasOverflow": false
+          }
+        },
+        {
+          "url": "https://backoffice.openstaff.eu/admin/imports",
+          "status": 200,
+          "overflow": {
+            "viewportWidth": 1440,
+            "documentScrollWidth": 1440,
+            "bodyScrollWidth": 1440,
+            "hasOverflow": false
+          }
+        },
+        {
+          "url": "https://backoffice.openstaff.eu/admin/workforce",
+          "status": 200,
+          "overflow": {
+            "viewportWidth": 1440,
+            "documentScrollWidth": 1440,
+            "bodyScrollWidth": 1440,
+            "hasOverflow": false
+          }
+        }
+      ]
+    },
+    {
+      "label": "AI_MODERATOR RELU access",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "failedChecks": [],
+      "pages": [
+        {
+          "url": "https://backoffice.openstaff.eu/admin/relu",
+          "status": 200,
+          "overflow": {
+            "viewportWidth": 1440,
+            "documentScrollWidth": 1440,
+            "bodyScrollWidth": 1440,
+            "hasOverflow": false
+          }
+        },
+        {
+          "url": "https://backoffice.openstaff.eu/ai-queue",
+          "status": 200,
+          "overflow": {
+            "viewportWidth": 1440,
+            "documentScrollWidth": 1440,
+            "bodyScrollWidth": 1440,
+            "hasOverflow": false
+          }
+        }
+      ]
+    },
+    {
+      "label": "SUPERADMIN technical access",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "failedChecks": [],
+      "pages": [
+        {
+          "url": "https://backoffice.openstaff.eu/ai-config",
+          "status": 200,
+          "overflow": {
+            "viewportWidth": 1440,
+            "documentScrollWidth": 1440,
+            "bodyScrollWidth": 1440,
+            "hasOverflow": false
+          }
+        },
+        {
+          "url": "https://backoffice.openstaff.eu/admin/imports",
+          "status": 200,
+          "overflow": {
+            "viewportWidth": 1440,
+            "documentScrollWidth": 1440,
+            "bodyScrollWidth": 1440,
+            "hasOverflow": false
+          }
+        }
+      ]
+    },
+    {
+      "label": "Chrome public company/profile",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "failedChecks": [],
+      "pages": [
+        {
+          "url": "https://openstaff.eu/companies/exec76-1779886408789-company",
+          "status": 200,
+          "overflow": {
+            "viewportWidth": 1440,
+            "documentScrollWidth": 1440,
+            "bodyScrollWidth": 1440,
+            "hasOverflow": false
+          }
+        },
+        {
+          "url": "https://openstaff.eu/profiles/exec76-1779886408789-company",
+          "status": 200,
+          "overflow": {
+            "viewportWidth": 1440,
+            "documentScrollWidth": 1440,
+            "bodyScrollWidth": 1440,
+            "hasOverflow": false
+          }
+        }
+      ],
+      "assetResponses": [
+        {
+          "url": "https://api.openstaff.eu/profiles/assets/[document-id]",
+          "status": 200
+        },
+        {
+          "url": "https://api.openstaff.eu/profiles/assets/[document-id]",
+          "status": 200
+        },
+        {
+          "url": "https://api.openstaff.eu/profiles/assets/[document-id]",
+          "status": 200
+        },
+        {
+          "url": "https://api.openstaff.eu/profiles/assets/[document-id]",
+          "status": 200
+        },
+        {
+          "url": "https://api.openstaff.eu/profiles/assets/[document-id]",
+          "status": 200
+        },
+        {
+          "url": "https://api.openstaff.eu/profiles/assets/[document-id]",
+          "status": 403,
+          "expectedHidden": true
+        }
+      ]
+    },
+    {
+      "label": "Mobile Chrome public company/profile",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "failedChecks": [],
+      "pages": [
+        {
+          "url": "https://openstaff.eu/companies/exec76-1779886408789-company",
+          "status": 200,
+          "overflow": {
+            "viewportWidth": 393,
+            "documentScrollWidth": 393,
+            "bodyScrollWidth": 393,
+            "hasOverflow": false
+          }
+        },
+        {
+          "url": "https://openstaff.eu/profiles/exec76-1779886408789-company",
+          "status": 200,
+          "overflow": {
+            "viewportWidth": 393,
+            "documentScrollWidth": 393,
+            "bodyScrollWidth": 393,
+            "hasOverflow": false
+          }
+        }
+      ],
+      "assetResponses": [
+        {
+          "url": "https://api.openstaff.eu/profiles/assets/[document-id]",
+          "status": 200
+        },
+        {
+          "url": "https://api.openstaff.eu/profiles/assets/[document-id]",
+          "status": 200
+        },
+        {
+          "url": "https://api.openstaff.eu/profiles/assets/[document-id]",
+          "status": 200
+        },
+        {
+          "url": "https://api.openstaff.eu/profiles/assets/[document-id]",
+          "status": 200
+        },
+        {
+          "url": "https://api.openstaff.eu/profiles/assets/[document-id]",
+          "status": 200
+        },
+        {
+          "url": "https://api.openstaff.eu/profiles/assets/[document-id]",
+          "status": 403,
+          "expectedHidden": true
+        }
+      ]
+    }
+  ]
+}

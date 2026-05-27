@@ -1,0 +1,116 @@
+{
+    "checkedAtUtc":  "2026-05-27T13:10:50.1360822Z",
+    "migration":  {
+                      "completionTime":  "2026-05-27T06:20:46.317662Z",
+                      "completionStatus":  "True",
+                      "message":  "Execution completed successfully in 37.66s.",
+                      "execution":  "openstaff-api-migrate-exec76-lczlj",
+                      "job":  "openstaff-api-migrate-exec76"
+                  },
+    "schemaCheck":  {
+                        "message":  "Execution completed successfully in 20.93s.",
+                        "execution":  "openstaff-api-schema-check-exec76-ldgg7",
+                        "job":  "openstaff-api-schema-check-exec76"
+                    },
+    "liveProof":  {
+                      "message":  "Execution completed successfully in 38.82s.",
+                      "execution":  "openstaff-api-exec76-live-proof-fvdvj",
+                      "job":  "openstaff-api-exec76-live-proof"
+                  },
+    "services":  {
+                     "admin":  {
+                                   "traffic":  [
+                                                   {
+                                                       "latestRevision":  true,
+                                                       "percent":  100,
+                                                       "revisionName":  "openstaff-admin-00023-cgd"
+                                                   }
+                                               ],
+                                   "latestReadyRevisionName":  "openstaff-admin-00023-cgd"
+                               },
+                     "api":  {
+                                 "traffic":  [
+                                                 {
+                                                     "latestRevision":  true,
+                                                     "percent":  100,
+                                                     "revisionName":  "openstaff-api-00034-mtj"
+                                                 }
+                                             ],
+                                 "latestReadyRevisionName":  "openstaff-api-00034-mtj"
+                             },
+                     "web":  {
+                                 "traffic":  [
+                                                 {
+                                                     "latestRevision":  true,
+                                                     "percent":  100,
+                                                     "revisionName":  "openstaff-web-00028-gwb"
+                                                 }
+                                             ],
+                                 "latestReadyRevisionName":  "openstaff-web-00028-gwb"
+                             }
+                 },
+    "health":  {
+                   "status":  "ok",
+                   "service":  "openstaff-api",
+                   "environment":  "production",
+                   "timestamp":  "2026-05-27T13:10:50.784Z",
+                   "uptimeSeconds":  23206
+               },
+    "status":  {
+                   "status":  "ok",
+                   "api":  "ok",
+                   "readiness":  {
+                                     "warnings":  [
+
+                                                  ],
+                                     "errors":  [
+
+                                                ]
+                                 },
+                   "integrations":  {
+                                        "firebaseAuth":  "configured",
+                                        "firestore":  "not_required",
+                                        "cloudStorage":  "configured",
+                                        "secretManager":  "ready",
+                                        "commercial":  {
+                                                           "launchMode":  "manual_only",
+                                                           "publicUpgradeFlow":  "request_upgrade",
+                                                           "operatorReviewRequired":  true,
+                                                           "webhookProvider":  "stripe",
+                                                           "emailDelivery":  "configured",
+                                                           "smsDelivery":  "not_required"
+                                                       },
+                                        "gemini":  {
+                                                       "apiKeyConfigured":  true,
+                                                       "fallbackEnabled":  false
+                                                   },
+                                        "billingWebhook":  {
+                                                               "mode":  "configured",
+                                                               "provider":  "stripe",
+                                                               "signatureVerification":  "enabled",
+                                                               "autoProcessing":  "enabled",
+                                                               "placeholderEnabled":  false,
+                                                               "secretsConfigured":  true
+                                                           },
+                                        "billingPlaceholders":  {
+                                                                    "enabled":  false,
+                                                                    "mode":  "disabled"
+                                                                },
+                                        "billingPayments":  {
+                                                                "mode":  "manual_only",
+                                                                "providerBackedCheckout":  false,
+                                                                "operatorOverrideEnabled":  true
+                                                            },
+                                        "emailDelivery":  {
+                                                              "mode":  "configured",
+                                                              "provider":  "configured_provider"
+                                                          },
+                                        "smsDelivery":  {
+                                                            "mode":  "not_required",
+                                                            "provider":  "not_configured",
+                                                            "publicEnabled":  false,
+                                                            "placeholderEnabled":  false
+                                                        }
+                                    }
+               }
+}

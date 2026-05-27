@@ -1,6 +1,38 @@
 ﻿# OpenStaff Platform Status
 
-Last updated: 2026-05-26
+Last updated: 2026-05-27
+
+## EXEC-76 Production Rollout & Live Verification for EXEC-75
+
+Verdict: `IN PROGRESS - EXEC-75 was migrated and promoted to production successfully, live role isolation now blocks normal ADMIN and AI_MODERATOR users from technical APIs while allowing SUPERADMIN, approved public profile/company assets now render anonymously through /profiles/assets/:documentId, browser/mobile proof is clean, and successful project AI reruns append history. Final PASS is not honest yet because the required failed project AI rerun append proof could not be produced through a safe live endpoint; the attempted bad rerun returned 400 before the failed-run append branch while preserving the last successful current interpretation.`
+
+### EXEC-76 Closure Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| pre-rollout safety | PASS | local/origin alignment was confirmed at `90e06a2b6c4b690ffb8c386f430727a66c5f2aca`, working tree was clean before rollout, and migration `20260526190000_exec75_role_asset_ai_history` existed |
+| production migration | PASS | Cloud Run job `openstaff-api-migrate-exec76`, execution `openstaff-api-migrate-exec76-lczlj`, completed successfully and applied the EXEC-75 migration |
+| schema object proof | PASS | schema check job `openstaff-api-schema-check-exec76-ldgg7` confirmed `AI_MODERATOR`, `MANAGE_TECHNICAL_OPERATIONS`, `MODERATE_AI`, `ProfileDocument.moderationStatus`, and `ProjectAIInterpretationRun` |
+| production deploy | PASS | API `openstaff-api-00034-mtj`, web `openstaff-web-00028-gwb`, and admin `openstaff-admin-00023-cgd` are ready with 100% traffic |
+| health/readiness | PASS | `/health = ok`; `/status = ok`; `readiness.errors = []`; `readiness.warnings = []` |
+| backend role isolation | PASS | live proof shows technical endpoints return anonymous `401`, ADMIN `403`, AI_MODERATOR `403`, and SUPERADMIN `200`; AI_MODERATOR gets `200` on `/admin/relu/results` |
+| public asset delivery | PASS | controlled uploads defaulted to `PENDING`, pending media returned `403`, approved logo/banner/gallery returned `200`, and visitor HTML did not expose authenticated profile document URLs |
+| browser/mobile proof | PASS | production browser proof returned `consoleErrors = []`, `pageErrors = []`, `badResponses = []`, `failedChecks = []`, and no mobile overflow |
+| project AI success history | PASS | two successful `PUT /projects/:projectId/ai-interpretation` calls appended two `COMPLETED` history runs and wrote `PROJECT_AI_INTERPRETATION_RUN_APPENDED` audit entries |
+| project AI failed-rerun history | NOT YET | invalid rerun returned `400` and preserved the current successful interpretation, but did not append a failed history run because the safe failure was rejected before the append-on-catch path |
+| validation gates | PASS with warnings | Prisma validate/generate, API test/build/lint, public web build/lint, backoffice build/lint, production ops check, and production browser proof passed; lint exits were `0` with existing warnings |
+
+### EXEC-76 Exact Remaining Blocker
+
+1. Failed project AI rerun append history still needs a safe production-testable path. Current live proof confirms failed invalid input does not overwrite the last successful current interpretation, but it does not create `ProjectAIInterpretationRun(status=FAILED)` or `PROJECT_AI_INTERPRETATION_FAILED_RUN_APPENDED` audit evidence through the public endpoint.
+
+### EXEC-76 Artifacts
+
+- Rollout: `docs/EXEC76_PRODUCTION_ROLLOUT.md`
+- Role isolation: `docs/EXEC76_LIVE_ROLE_ISOLATION_PROOF.md`
+- Public assets: `docs/EXEC76_LIVE_PUBLIC_ASSET_PROOF.md`
+- AI history: `docs/EXEC76_LIVE_AI_HISTORY_PROOF.md`
+- Proof index: `docs/proof/exec76/README.md`
 
 ## EXEC-75 Remediation for EXEC-74 Findings
 

@@ -1,0 +1,161 @@
+{
+    "runKey":  "exec76-1779886408789",
+    "users":  {
+                  "admin":  "exec76-1779886408789-admin@openstaff.eu",
+                  "aiModerator":  "exec76-1779886408789-ai-moderator@openstaff.eu",
+                  "superadmin":  "exec76-1779886408789-superadmin@openstaff.eu",
+                  "company":  "exec76-1779886408789-company@openstaff.eu"
+              },
+    "roleIsolation":  {
+                          "technical":  {
+                                            "/relu/config":  {
+                                                                 "anonymous":  401,
+                                                                 "admin":  403,
+                                                                 "aiModerator":  403,
+                                                                 "superadmin":  200
+                                                             },
+                                            "/relu/prompts-policies":  {
+                                                                           "anonymous":  401,
+                                                                           "admin":  403,
+                                                                           "aiModerator":  403,
+                                                                           "superadmin":  200
+                                                                       },
+                                            "/relu/queue":  {
+                                                                "anonymous":  401,
+                                                                "admin":  403,
+                                                                "aiModerator":  403,
+                                                                "superadmin":  200
+                                                            },
+                                            "/gemini/agents":  {
+                                                                   "anonymous":  401,
+                                                                   "admin":  403,
+                                                                   "aiModerator":  403,
+                                                                   "superadmin":  200
+                                                               },
+                                            "/taxonomy/admin/import-options":  {
+                                                                                   "anonymous":  401,
+                                                                                   "admin":  403,
+                                                                                   "aiModerator":  403,
+                                                                                   "superadmin":  200
+                                                                               },
+                                            "/taxonomy/admin/imports":  {
+                                                                            "anonymous":  401,
+                                                                            "admin":  403,
+                                                                            "aiModerator":  403,
+                                                                            "superadmin":  200
+                                                                        },
+                                            "/audit/ai-actions":  {
+                                                                      "anonymous":  401,
+                                                                      "admin":  403,
+                                                                      "aiModerator":  403,
+                                                                      "superadmin":  200
+                                                                  },
+                                            "/admin/security/audit-logs":  {
+                                                                               "anonymous":  401,
+                                                                               "admin":  403,
+                                                                               "aiModerator":  403,
+                                                                               "superadmin":  200
+                                                                           },
+                                            "/admin/security/events":  {
+                                                                           "anonymous":  401,
+                                                                           "admin":  403,
+                                                                           "aiModerator":  403,
+                                                                           "superadmin":  200
+                                                                       },
+                                            "/admin/notifications/deliveries":  {
+                                                                                    "anonymous":  401,
+                                                                                    "admin":  403,
+                                                                                    "aiModerator":  403,
+                                                                                    "superadmin":  200
+                                                                                }
+                                        },
+                          "aiModeratorReluResultsStatus":  200,
+                          "adminReluResultsStatus":  200,
+                          "anonymousReluResultsStatus":  401
+                      },
+    "publicAssets":  {
+                         "profileId":  "573ed3db-02e8-4057-82cd-523b55c5182c",
+                         "companySlug":  "exec76-1779886408789-company",
+                         "uploadStatuses":  [
+                                                {
+                                                    "id":  "c5c10572-ebd2-4e70-86cd-cf83297df70c",
+                                                    "assetKind":  "LOGO",
+                                                    "moderationStatus":  "PENDING",
+                                                    "assetUrl":  "/profiles/assets/c5c10572-ebd2-4e70-86cd-cf83297df70c",
+                                                    "authenticatedDownloadUrl":  "/profiles/573ed3db-02e8-4057-82cd-523b55c5182c/documents/c5c10572-ebd2-4e70-86cd-cf83297df70c"
+                                                },
+                                                {
+                                                    "id":  "024b614c-4a6a-4bc0-8dd2-8b57423a6fd9",
+                                                    "assetKind":  "BANNER",
+                                                    "moderationStatus":  "PENDING",
+                                                    "assetUrl":  "/profiles/assets/024b614c-4a6a-4bc0-8dd2-8b57423a6fd9",
+                                                    "authenticatedDownloadUrl":  "/profiles/573ed3db-02e8-4057-82cd-523b55c5182c/documents/024b614c-4a6a-4bc0-8dd2-8b57423a6fd9"
+                                                },
+                                                {
+                                                    "id":  "617d1415-550b-4673-8958-fc9e1bc814fd",
+                                                    "assetKind":  "PORTFOLIO",
+                                                    "moderationStatus":  "PENDING",
+                                                    "assetUrl":  "/profiles/assets/617d1415-550b-4673-8958-fc9e1bc814fd",
+                                                    "authenticatedDownloadUrl":  "/profiles/573ed3db-02e8-4057-82cd-523b55c5182c/documents/617d1415-550b-4673-8958-fc9e1bc814fd"
+                                                },
+                                                {
+                                                    "id":  "0b5f7299-36a4-48eb-8477-d431c1e0c502",
+                                                    "assetKind":  "PHOTO",
+                                                    "moderationStatus":  "PENDING",
+                                                    "assetUrl":  "/profiles/assets/0b5f7299-36a4-48eb-8477-d431c1e0c502",
+                                                    "authenticatedDownloadUrl":  "/profiles/573ed3db-02e8-4057-82cd-523b55c5182c/documents/0b5f7299-36a4-48eb-8477-d431c1e0c502"
+                                                }
+                                            ],
+                         "publicBeforeApproveAssets":  null,
+                         "pendingAssetStatuses":  {
+                                                      "LOGO":  403,
+                                                      "BANNER":  403,
+                                                      "PORTFOLIO":  403,
+                                                      "PHOTO":  403
+                                                  },
+                         "publicAfterApproveStatus":  200,
+                         "publicAfterApproveAssets":  [
+                                                          "/profiles/assets/617d1415-550b-4673-8958-fc9e1bc814fd"
+                                                      ],
+                         "approvedAssetStatuses":  {
+                                                       "LOGO":  200,
+                                                       "BANNER":  200,
+                                                       "PORTFOLIO":  200
+                                                   },
+                         "pendingStillHiddenStatus":  403,
+                         "publicPageStatus":  200,
+                         "publicPageHasAuthenticatedDocumentUrl":  false
+                     },
+    "aiHistory":  {
+                      "projectId":  "a463d629-f9e4-467a-a6cb-ba5ec7adcfcf",
+                      "firstStatus":  200,
+                      "secondStatus":  200,
+                      "badRerunStatus":  400,
+                      "currentAfterFirstPrompt":  "exec76-success-1",
+                      "currentAfterSecondPrompt":  "exec76-success-2",
+                      "currentAfterBadRerunPrompt":  "exec76-success-2",
+                      "historyStatus":  200,
+                      "historyRuns":  [
+                                          {
+                                              "id":  "d16d64f5-af4a-417d-be7b-8615bbf75432",
+                                              "status":  "COMPLETED",
+                                              "promptVersion":  "exec76-success-2",
+                                              "modelName":  "exec76-live-local-rules",
+                                              "createdAt":  "2026-05-27T12:53:33.292Z"
+                                          },
+                                          {
+                                              "id":  "7934f73c-1fdc-4359-9d50-463b5e8a8060",
+                                              "status":  "COMPLETED",
+                                              "promptVersion":  "exec76-success-1",
+                                              "modelName":  "exec76-live-local-rules",
+                                              "createdAt":  "2026-05-27T12:53:33.184Z"
+                                          }
+                                      ],
+                      "auditActions":  [
+                                           "PROJECT_AI_INTERPRETATION_RUN_APPENDED",
+                                           "PROJECT_AI_INTERPRETATION_RUN_APPENDED"
+                                       ],
+                      "failureAppendLiveEndpointVerified":  false,
+                      "failureAppendGap":  "Invalid live failure input is rejected before the service catch branch; deterministic parser did not expose a safe production failure trigger."
+                  }
+}
