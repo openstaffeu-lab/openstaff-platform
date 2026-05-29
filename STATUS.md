@@ -1,6 +1,31 @@
 ﻿# OpenStaff Platform Status
 
-Last updated: 2026-05-27
+Last updated: 2026-05-29
+
+## EXEC-77A.2 Real DB / Production Verification
+
+Verdict: `PASS - RELU Builder backend hardening is verified against the real Cloud SQL PostgreSQL environment, migration status is clean after applying 20260529110000_exec77a1_relu_builder_domains, and local backend build/test/lint gates pass with lint warnings only. No frontend or UI files were changed.`
+
+### EXEC-77A.2 Closure Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| git/worktree safety | PASS | scoped backend/security/migration/docs changes only; root `src/` and `OPENSTAFF_AUDIT_2026-05*.md` remain untracked and unstaged |
+| real DB reachability | PASS | Cloud Run job `openstaff-api-exec77a2-migrate-status` reached Cloud SQL `openstaff_prod` through connector-enforced Cloud SQL |
+| migration apply | PASS | Cloud Run job `openstaff-api-exec77a2-migrate-deploy`, execution `openstaff-api-exec77a2-migrate-deploy-qgs8t`, applied `20260529110000_exec77a1_relu_builder_domains` |
+| post-apply migration status | PASS | Cloud Run job execution `openstaff-api-exec77a2-migrate-status-fmnxz` returned `PRISMA_STATUS_EXIT:0` and `Database schema is up to date!` |
+| enum proof | PASS | Cloud Run job `openstaff-api-exec77a2-enum-proof`, execution `openstaff-api-exec77a2-enum-proof-rvlxh`, returned `DB_ENUM_LABELS:["ESCO","GEOGRAPHY","INTENT","NACE","SUMMARY","UNICLASS"]` |
+| generated client proof | PASS | local Prisma client exposes `ESCO`, `NACE`, `UNICLASS`, `INTENT`, `SUMMARY`, and `GEOGRAPHY` in `ReluProcessingDomain` |
+| authorization proof | PASS | `ReluAiBuilderController` uses `JwtGuard`, `PermissionsGuard`, and `MANAGE_TECHNICAL_OPERATIONS`; `PermissionsGuard` enforces the permission as SUPERADMIN-only even if DB rows grant it to other roles |
+| persistence proof | PASS | tests verify Gemini invocation, append-only run creation, success/failure run updates, and audit logging |
+| validation gates | PASS with warnings | `npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`, `npm.cmd test -- --runInBand`, and `npm.cmd run lint` all exited `0`; lint reported 413 warnings and 0 errors |
+
+### EXEC-77A.2 Remaining Risks
+
+1. Application deployment of the new backend image is still a separate rollout step; this pass verified migration and production-safe backend code, then commits/pushes the change set.
+2. Temporary Artifact Registry image push for an EXEC-77A.2 proof image was blocked by Cloud Build service account IAM; migration proof used an existing API image plus injected migration/status scripts instead.
+3. Root `src/` contains untracked `src/relu/ai-builder.ts` outside the monorepo app layout and is treated as accidental/unrelated until the owner decides whether to delete it.
+4. `OPENSTAFF_AUDIT_2026-05.md` and `OPENSTAFF_AUDIT_2026-05_BACKUP.md` are zero-byte untracked audit files and are intentionally not staged.
 
 ## EXEC-76 Production Rollout & Live Verification for EXEC-75
 

@@ -3450,6 +3450,12 @@ enum ReluProcessingDomain {
   MATCH
   MODERATION
   RECOMMENDATION
+  ESCO
+  NACE
+  UNICLASS
+  INTENT
+  SUMMARY
+  GEOGRAPHY
 }
 
 enum ReluResultStatus {

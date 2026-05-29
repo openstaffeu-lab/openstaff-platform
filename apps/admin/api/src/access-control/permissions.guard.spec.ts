@@ -48,6 +48,7 @@ describe('PermissionsGuard EXEC-75 role isolation', () => {
       Permission.DELETE,
       Permission.MANAGE_USERS,
       Permission.MODERATE_AI,
+      Permission.MANAGE_TECHNICAL_OPERATIONS,
     ]);
 
     await expect(
@@ -55,6 +56,8 @@ describe('PermissionsGuard EXEC-75 role isolation', () => {
         contextFor(Role.ADMIN),
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(accessControlService.getPermissionsForRole).not.toHaveBeenCalled();
   });
 
   it('allows SUPERADMIN through technical operations APIs', async () => {

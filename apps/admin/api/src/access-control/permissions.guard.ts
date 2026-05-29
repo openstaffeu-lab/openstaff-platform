@@ -49,6 +49,23 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
+    if (requiredPermissions.includes(Permission.MANAGE_TECHNICAL_OPERATIONS)) {
+      await this.auditService.logSecurityEvent({
+        userId: request?.user?.sub ?? null,
+        type: 'PERMISSION_DENIED' as any,
+        category: 'RBAC',
+        sourceType: 'HTTP_ROUTE',
+        sourceId: `${request?.method ?? 'GET'} ${request?.url ?? ''}`,
+        message: 'Technical operations require SUPERADMIN role',
+        metadata: {
+          requiredPermissions,
+          role: user.role,
+        },
+        request,
+      });
+      throw new ForbiddenException('Technical operations require SUPERADMIN');
+    }
+
     const permissions = await this.accessControlService.getPermissionsForRole(
       user.role,
     );

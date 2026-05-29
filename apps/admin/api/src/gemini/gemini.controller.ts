@@ -97,7 +97,7 @@ export class GeminiController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Post('compliance-check')
   async complianceCheck(@Body() body: { content?: string }) {
     try {
@@ -115,7 +115,7 @@ export class GeminiController {
   }
 
   @UseGuards(JwtGuard, PermissionsGuard)
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Post('pcb-assist')
   async pcbAssist(@Body() body: { prompt?: string; context?: string }) {
     try {

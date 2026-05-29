@@ -120,7 +120,8 @@ export class NotificationController {
     }
   }
 
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, PermissionsGuard)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Post('notifications/recompute-compliance-reminders')
   async recomputeComplianceReminders(@Req() req: any) {
     try {
@@ -195,7 +196,7 @@ export class NotificationController {
   @UseGuards(JwtGuard, PermissionsGuard)
   @UseGuards(RateLimitGuard)
   @RateLimit({ key: 'notification-manual-send', maxRequests: 10 })
-  @RequirePermissions(Permission.MANAGE_USERS)
+  @RequirePermissions(Permission.MANAGE_TECHNICAL_OPERATIONS)
   @Post('notifications/send')
   async sendManual(@Body() body: any) {
     try {

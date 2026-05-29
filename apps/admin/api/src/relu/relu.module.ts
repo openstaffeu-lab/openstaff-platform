@@ -9,6 +9,8 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { AdminReluController } from './admin-relu.controller';
 import { ReluController } from './relu.controller';
 import { ReluService } from './relu.service';
+import { ReluAiBuilderService } from './relu-ai-builder.service';
+import { ReluAiBuilderController } from './relu-ai-builder.controller';
 
 @Module({
   imports: [
@@ -20,8 +22,8 @@ import { ReluService } from './relu.service';
     MessagingModule,
     NotificationModule,
   ],
-  controllers: [ReluController, AdminReluController],
-  providers: [ReluService],
+  controllers: [ReluController, AdminReluController, ReluAiBuilderController],
+  providers: [ReluService, ReluAiBuilderService],
   exports: [ReluService],
 })
 export class ReluModule {}
