@@ -83,3 +83,80 @@ Unit tests verify:
 - The new backend image still requires the normal deployment rollout after commit/push.
 - Temporary proof-image push failed because the Cloud Build service account lacked Artifact Registry upload permission; this did not block DB verification because Cloud Run jobs reached Cloud SQL and executed Prisma proof commands.
 - Root `src/` and `OPENSTAFF_AUDIT_2026-05*.md` remain untracked and are excluded from EXEC-77A.2.
+
+## EXEC-77A.3 Backend Deployment Rollout & Live Smoke Proof
+
+### Rollout
+
+Normal API Cloud Build config: `apps/admin/api/cloudbuild.api.yaml`
+
+First build:
+
+- ID: `f76f72c3-dbf3-46c7-b553-b46c0ad12662`
+- Result: FAILED at `push-api`
+- Cause: default Cloud Build service account did not have enough Artifact Registry/log/deploy IAM for the normal path.
+
+Successful build:
+
+- ID: `b7d4ac09-3167-4265-81d1-567dc3ba7abf`
+- Result: SUCCESS
+- Image: `europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api:b7d4ac09-3167-4265-81d1-567dc3ba7abf`
+
+Cloud Run:
+
+- Service: `openstaff-api`
+- Region: `europe-west1`
+- Revision: `openstaff-api-00035-d5r`
+- Ready: yes
+- Traffic: 100%
+
+### Health And Status Proof
+
+- `/health`: `status=ok`
+- `/status`: `status=ok`
+- `/status.db`: `healthy`
+- `/status.readiness.errors`: `[]`
+- `/status.readiness.warnings`: `[]`
+
+### Authorization Live Proof
+
+Job: `openstaff-api-exec77a3-live-proof-v2`
+
+Execution: `openstaff-api-exec77a3-live-proof-v2-gcwgd`
+
+Endpoint: `POST /relu-ai-builder/summary`
+
+| Actor | Status |
+|---|---:|
+| anonymous | 401 |
+| ADMIN | 403 |
+| AI_MODERATOR | 403 |
+| SUPERADMIN | 201 |
+
+### Persistence Live Proof
+
+The SUPERADMIN request created run `94182de3-1923-4979-82e3-cea7e30f34c5`.
+
+| Field | Value |
+|---|---|
+| domain | `SUMMARY` |
+| status | `FAILED` |
+| completedAt | present |
+| audit log id | `5859c867-baf8-406a-a0a5-eb57dd9329d4` |
+| audit action | `GENERATE_SUMMARY_FAILED` |
+
+The deployed endpoint reached the Gemini path and persisted the provider failure safely. The provider response was `API_KEY_INVALID` / `API key expired`, so a successful `COMPLETED` live run could not be proven.
+
+### Validation Results
+
+- `npx.cmd prisma validate`: PASS
+- `npx.cmd prisma generate`: PASS
+- `npm.cmd run build`: PASS
+- `npm.cmd test -- --runInBand`: PASS, 19 suites / 38 tests
+- `npm.cmd run lint`: PASS, 413 warnings / 0 errors
+
+### Verdict
+
+BLOCKED
+
+EXEC-77B is not unblocked. Renew `GEMINI_API_KEY`, rerun live RELU Builder smoke proof, and require a `COMPLETED` run plus audit proof before frontend integration.

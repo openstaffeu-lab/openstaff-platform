@@ -27,6 +27,28 @@ Verdict: `PASS - RELU Builder backend hardening is verified against the real Clo
 3. Root `src/` contains untracked `src/relu/ai-builder.ts` outside the monorepo app layout and is treated as accidental/unrelated until the owner decides whether to delete it.
 4. `OPENSTAFF_AUDIT_2026-05.md` and `OPENSTAFF_AUDIT_2026-05_BACKUP.md` are zero-byte untracked audit files and are intentionally not staged.
 
+## EXEC-77A.3 Backend Deployment Rollout & Live Smoke Proof
+
+Verdict: `BLOCKED - the EXEC-77A backend image was deployed through the normal API Cloud Build path and the live API is healthy, but RELU Builder cannot produce a completed Gemini-backed smoke run because the production Gemini API key is expired. Authorization and failed-run persistence are live-proven; successful live persistence is not. EXEC-77B remains blocked.`
+
+### EXEC-77A.3 Rollout Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| git safety | PASS | branch `feature/work-in-progress` was aligned with `origin/feature/work-in-progress` at `7f2852dc2aadfb64870b8dcdd8676a9ec94b360b`; only untracked root `src/` and `OPENSTAFF_AUDIT_2026-05*.md` remained |
+| normal API build/deploy | PASS | Cloud Build `b7d4ac09-3167-4265-81d1-567dc3ba7abf` using `apps/admin/api/cloudbuild.api.yaml` succeeded |
+| IAM unblock | PASS | first normal build `f76f72c3-dbf3-46c7-b553-b46c0ad12662` failed at `push-api`; default build service account was missing Artifact Registry/log/deploy roles and was granted rollout permissions |
+| API revision | PASS | Cloud Run revision `openstaff-api-00035-d5r` is ready with 100% traffic |
+| health/status | PASS | `/health` returned `status=ok`; `/status` returned `status=ok`, `db=healthy`, `readiness.errors=[]`, `readiness.warnings=[]` |
+| live authorization | PASS | proof execution `openstaff-api-exec77a3-live-proof-v2-gcwgd` returned anonymous `401`, ADMIN `403`, AI_MODERATOR `403`, SUPERADMIN `201` for `/relu-ai-builder/summary` |
+| failed-run persistence | PASS | live run `94182de3-1923-4979-82e3-cea7e30f34c5` persisted as `FAILED`, completedAt present, audit `5859c867-baf8-406a-a0a5-eb57dd9329d4` action `GENERATE_SUMMARY_FAILED` |
+| success-run persistence | BLOCKED | Gemini returned `API_KEY_INVALID` / `API key expired`; no `COMPLETED` live builder run could be produced |
+| validation gates | PASS with warnings | Prisma validate/generate, API build, API tests, and API lint exited `0`; lint reported 413 warnings and 0 errors |
+
+### EXEC-77A.3 Exact Blocker
+
+Production `GEMINI_API_KEY` is expired. The deployed RELU Builder reaches the Gemini path and persists the provider failure, but a production-safe successful smoke run cannot pass until the secret is renewed and the smoke proof is rerun.
+
 ## EXEC-76 Production Rollout & Live Verification for EXEC-75
 
 Verdict: `IN PROGRESS - EXEC-75 was migrated and promoted to production successfully, live role isolation now blocks normal ADMIN and AI_MODERATOR users from technical APIs while allowing SUPERADMIN, approved public profile/company assets now render anonymously through /profiles/assets/:documentId, browser/mobile proof is clean, and successful project AI reruns append history. Final PASS is not honest yet because the required failed project AI rerun append proof could not be produced through a safe live endpoint; the attempted bad rerun returned 400 before the failed-run append branch while preserving the last successful current interpretation.`

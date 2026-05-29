@@ -103,3 +103,73 @@ Tests verify that RELU Builder invokes `GeminiService.executeAgent`, creates app
 ### Deploy Readiness
 
 Backend migration and security verification are production-ready. Frontend integration must not start until the committed backend change set is deployed through the normal release path.
+
+## EXEC-77A.3 Backend Deployment Rollout & Live Smoke Proof
+
+STATUS: BLOCKED
+
+The committed EXEC-77A backend image was deployed through the normal OpenStaff API Cloud Build path, but live RELU Builder success smoke proof is blocked by an expired production Gemini API key.
+
+### Deployment
+
+| Item | Result |
+| --- | --- |
+| Cloud Build config | `apps/admin/api/cloudbuild.api.yaml` |
+| failed pre-IAM build | `f76f72c3-dbf3-46c7-b553-b46c0ad12662`, failed in `push-api` |
+| successful build | `b7d4ac09-3167-4265-81d1-567dc3ba7abf` |
+| deployed image | `europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api:b7d4ac09-3167-4265-81d1-567dc3ba7abf` |
+| new API revision | `openstaff-api-00035-d5r` |
+| traffic | 100% to `openstaff-api-00035-d5r` |
+
+The default Cloud Build service account initially lacked Artifact Registry/log/deploy permissions. Rollout IAM was corrected, and the same normal API Cloud Build config then succeeded.
+
+### Health And Status
+
+- `https://api.openstaff.eu/health`: `status=ok`
+- `https://api.openstaff.eu/status`: `status=ok`
+- DB: `healthy`
+- `readiness.errors`: `[]`
+- `readiness.warnings`: `[]`
+
+### Live Authorization Proof
+
+Cloud Run job `openstaff-api-exec77a3-live-proof-v2`, execution `openstaff-api-exec77a3-live-proof-v2-gcwgd`, called `POST /relu-ai-builder/summary` with controlled short-lived tokens.
+
+| Actor | Result |
+| --- | ---: |
+| anonymous | 401 |
+| ADMIN | 403 |
+| AI_MODERATOR | 403 |
+| SUPERADMIN | 201 |
+
+### Live Persistence Proof
+
+The SUPERADMIN request created `ReluProcessingRun` `94182de3-1923-4979-82e3-cea7e30f34c5`.
+
+Observed state:
+
+- domain: `SUMMARY`
+- status: `FAILED`
+- `completedAt`: present
+- audit log: `5859c867-baf8-406a-a0a5-eb57dd9329d4`
+- audit action: `GENERATE_SUMMARY_FAILED`
+
+Failure reason:
+
+`GEMINI_API_KEY` is expired. Gemini returned `API_KEY_INVALID` / `API key expired`.
+
+This proves the deployed builder reaches the Gemini execution path and persists provider failure safely. It does not prove a successful `COMPLETED` live run.
+
+### Validation Results
+
+- `npx.cmd prisma validate`: PASS
+- `npx.cmd prisma generate`: PASS
+- `npm.cmd run build`: PASS
+- `npm.cmd test -- --runInBand`: PASS, 19 suites / 38 tests
+- `npm.cmd run lint`: PASS, 413 warnings / 0 errors
+
+### Remaining Risks
+
+- Renew production `GEMINI_API_KEY`.
+- Rerun the EXEC-77A.3 live smoke proof and require `COMPLETED` RELU Builder persistence before frontend integration.
+- EXEC-77B remains blocked until that success proof exists.
