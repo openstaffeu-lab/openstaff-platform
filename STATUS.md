@@ -89,6 +89,28 @@ Verdict: `BLOCKED - Gemini authentication remains recovered and Cloud Run still 
 
 Gemini provider response remains: prepayment credits are depleted. This cannot be fixed from repository code or Cloud Run configuration. Restore Google AI Studio/Gemini prepaid credits, or provide an approved funded Gemini project/key for Secret Manager rotation.
 
+## EXEC-77A.3C Gemini Root Cause Analysis
+
+Verdict: `PASS - exact Gemini 429 root cause is proven. The active key belongs to project openstaff-platform, Generative Language API is enabled, project billing is linked and open, Cloud Run consumes GEMINI_API_KEY:latest version 2, and the provider REST response is HTTP 429 RESOURCE_EXHAUSTED with the explicit message that prepayment credits are depleted. No quota preference overrides are configured.`
+
+### EXEC-77A.3C Findings
+
+| Area | Status | Evidence |
+|---|---|---|
+| git safety | PASS | branch `feature/work-in-progress`; only untracked root `src/` and `OPENSTAFF_AUDIT_2026-05*.md` remained unstaged |
+| billing account | PASS | project `openstaff-platform` billing is enabled on open account `0188D8-886DC3-5B8D75` |
+| API enablement | PASS | `generativelanguage.googleapis.com` is enabled in project `605639023972` |
+| key/project linkage | PASS | active key UID `3d954e2a-67cb-4b17-ae13-2353d8d0dd31` is in `projects/605639023972`, restricted to `generativelanguage.googleapis.com` |
+| runtime linkage | PASS | active Cloud Run revision `openstaff-api-00036-gx2` maps `GEMINI_API_KEY` from Secret Manager `latest`, with marker `GEMINI_SECRET_VERSION=2` |
+| quota configuration | PASS | Cloud Quotas lists configured Gemini generate-content limits for `gemini-2.5-flash`; `gcloud beta quotas preferences list` returned no override preferences |
+| provider error | PASS | direct REST smoke returned HTTP `429`, error status `RESOURCE_EXHAUSTED`, message `Your prepayment credits are depleted` |
+
+### EXEC-77A.3C Root Cause
+
+The blocker is Gemini/AI Studio prepaid credit depletion, not key authentication, API enablement, Cloud Run secret mounting, or repository code.
+
+Required remediation: add/restore Gemini prepaid credits in AI Studio for the active project/key, or provide an approved funded Gemini key and rotate `GEMINI_API_KEY` to a new Secret Manager version.
+
 ## EXEC-76 Production Rollout & Live Verification for EXEC-75
 
 Verdict: `IN PROGRESS - EXEC-75 was migrated and promoted to production successfully, live role isolation now blocks normal ADMIN and AI_MODERATOR users from technical APIs while allowing SUPERADMIN, approved public profile/company assets now render anonymously through /profiles/assets/:documentId, browser/mobile proof is clean, and successful project AI reruns append history. Final PASS is not honest yet because the required failed project AI rerun append proof could not be produced through a safe live endpoint; the attempted bad rerun returned 400 before the failed-run append branch while preserving the last successful current interpretation.`

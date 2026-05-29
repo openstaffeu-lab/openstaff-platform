@@ -159,6 +159,104 @@ The deployed endpoint reached the Gemini path and persisted the provider failure
 
 BLOCKED
 
+## EXEC-77A.3C Gemini Root Cause Analysis
+
+### Billing Findings
+
+Project: `openstaff-platform`
+
+Project number: `605639023972`
+
+Billing:
+
+- billing enabled: yes
+- billing account: `0188D8-886DC3-5B8D75`
+- billing account open: yes
+
+This proves the GCP project has a linked/open billing account. It does not override the provider response that Gemini prepaid credits are depleted.
+
+### Project Linkage Findings
+
+Gemini API:
+
+- `generativelanguage.googleapis.com`: enabled
+
+Active API key:
+
+- UID: `3d954e2a-67cb-4b17-ae13-2353d8d0dd31`
+- project: `projects/605639023972`
+- restriction: `generativelanguage.googleapis.com`
+
+Cloud Run:
+
+- service: `openstaff-api`
+- active revision: `openstaff-api-00036-gx2`
+- traffic: 100%
+- `GEMINI_API_KEY`: Secret Manager `GEMINI_API_KEY:latest`
+- `GEMINI_SECRET_VERSION`: `2`
+
+This proves the active runtime, key, API, and project are aligned.
+
+### Quota Findings
+
+Cloud Quotas metadata for `generativelanguage.googleapis.com` lists configured generate-content limits for `gemini-2.5-flash`, including request-per-minute, request-per-day, and input-token-per-minute dimensions across free/paid tiers.
+
+Quota preferences:
+
+- `gcloud beta quotas preferences list --project=openstaff-platform`: `[]`
+
+No project-level quota override preference is configured.
+
+The direct provider error did not include quota metric metadata or a specific rate-limit bucket. It returned a billing/prepayment message instead.
+
+### Provider Response Evidence
+
+Job: `openstaff-api-exec77a3c-gemini-rest-error`
+
+Execution: `openstaff-api-exec77a3c-gemini-rest-error-zcdq8`
+
+Request type: direct REST call to `gemini-2.5-flash:generateContent` using mounted `GEMINI_API_KEY:latest`.
+
+Sanitized provider result:
+
+- HTTP status: `429`
+- HTTP text: `Too Many Requests`
+- Gemini error code: `429`
+- Gemini error status: `RESOURCE_EXHAUSTED`
+- Gemini error message: `Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing.`
+- error details: `[]`
+- generated response: not present
+
+No API key value was logged.
+
+### Root Cause
+
+Exact root cause: Gemini / Google AI Studio prepaid credits are depleted for the active project/key.
+
+Ruled out by evidence:
+
+- expired key: ruled out after version `2` rotation; no `API_KEY_INVALID`
+- auth failure: no `AUTHENTICATION_ERROR`
+- permission failure: no `PERMISSION_DENIED`
+- disabled API: `generativelanguage.googleapis.com` is enabled
+- wrong project/key linkage: key UID belongs to `projects/605639023972`
+- missing runtime secret: Cloud Run maps `GEMINI_API_KEY:latest`
+- local code failure: direct REST call fails before RELU Builder logic
+
+### Required Remediation
+
+Add or restore Gemini prepaid credits in AI Studio for the active project/key, or provide an approved funded Gemini key. After funding is restored:
+
+1. rerun direct Gemini REST smoke and require provider success / 2xx
+2. rerun RELU Builder live smoke and require `ReluProcessingRun.status = COMPLETED`
+3. confirm audit log creation for the completed run
+
+### Verdict
+
+PASS
+
+The exact 429 root cause is proven. Runtime success is still blocked until Gemini prepaid credits are restored.
+
 EXEC-77B is not unblocked. Renew `GEMINI_API_KEY`, rerun live RELU Builder smoke proof, and require a `COMPLETED` run plus audit proof before frontend integration.
 
 ## EXEC-77A.3A Gemini Secret Recovery
