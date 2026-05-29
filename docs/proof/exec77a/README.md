@@ -243,3 +243,89 @@ This proves the authentication blocker was removed, but a successful `2xx` Gemin
 BLOCKED
 
 Gemini authentication is recovered, Cloud Run uses the rotated secret, and API health is clean. Gemini runtime success is still blocked by provider billing/prepayment depletion.
+
+## EXEC-77A.3B Gemini Billing/Credit Recovery
+
+### Git Safety
+
+Branch: `feature/work-in-progress`
+
+No code, schema, migration, frontend, guard, or RELU Builder files were modified. The following unrelated files remained untracked and unstaged:
+
+- `src/`
+- `OPENSTAFF_AUDIT_2026-05.md`
+- `OPENSTAFF_AUDIT_2026-05_BACKUP.md`
+
+### Billing/Credit Status
+
+GCP project billing:
+
+- project: `openstaff-platform`
+- billing enabled: yes
+- billing account: `0188D8-886DC3-5B8D75`
+- billing account open: yes
+
+Gemini API:
+
+- `generativelanguage.googleapis.com`: enabled
+
+Direct Gemini smoke still reports provider-side prepaid credit depletion. No approved alternate funded Gemini project/key was available in the current environment, and no repository or application code change can restore AI Studio prepaid credits.
+
+### Active Secret Version
+
+Secret: `GEMINI_API_KEY`
+
+Active version: `2`
+
+State: enabled
+
+No secret value is documented or committed.
+
+### Active Runtime
+
+Cloud Run service: `openstaff-api`
+
+Active revision: `openstaff-api-00036-gx2`
+
+Traffic: 100%
+
+Runtime mapping:
+
+- `GEMINI_API_KEY`: Secret Manager `GEMINI_API_KEY:latest`
+- `GEMINI_SECRET_VERSION`: `2`
+
+### Direct Gemini Smoke Proof
+
+Job: `openstaff-api-exec77a3a-gemini-smoke`
+
+Latest execution result:
+
+- `API_KEY_INVALID`: not present
+- `AUTHENTICATION_ERROR`: not present
+- `PERMISSION_DENIED`: not present
+- `429 Too Many Requests`: present
+- provider cause: prepayment credits are depleted
+- provider success / 2xx: not achieved
+
+### Health Proof
+
+- `https://api.openstaff.eu/health`: `status=ok`
+- `https://api.openstaff.eu/status`: `status=ok`
+- DB: `healthy`
+- `readiness.errors`: `[]`
+- `readiness.warnings`: `[]`
+
+### Remaining Risks
+
+- Restore Google AI Studio / Gemini prepaid credits on the active project/key, or provide an approved funded Gemini key.
+- Rotate `GEMINI_API_KEY` again only if a new funded key is provided.
+- Rerun direct Gemini smoke and require provider success / 2xx.
+- Only after direct Gemini success, rerun RELU Builder live smoke and require a `COMPLETED` run plus audit proof.
+
+### EXEC-77A.4 Readiness
+
+EXEC-77A.4 is not unblocked. Direct Gemini 2xx proof is still missing.
+
+### Verdict
+
+BLOCKED

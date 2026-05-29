@@ -69,6 +69,26 @@ Verdict: `BLOCKED - the expired Gemini secret was rotated and Cloud Run was refr
 
 Google AI Studio / Gemini billing or prepaid credits must be restored. After that, rerun direct Gemini smoke and then rerun RELU Builder live smoke requiring a `COMPLETED` run.
 
+## EXEC-77A.3B Gemini Billing/Credit Recovery
+
+Verdict: `BLOCKED - Gemini authentication remains recovered and Cloud Run still consumes Secret Manager version 2, but direct Gemini smoke continues to fail with 429 because prepaid credits are depleted. GCP project billing is linked and open, and the Generative Language API is enabled, but no funded Gemini prepaid balance or approved alternate funded key was available from the current environment. EXEC-77A.4 remains blocked.`
+
+### EXEC-77A.3B Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| git safety | PASS | branch `feature/work-in-progress`; only untracked root `src/` and `OPENSTAFF_AUDIT_2026-05*.md` remained unstaged |
+| GCP billing link | PASS | project `openstaff-platform` has billing enabled on open billing account `0188D8-886DC3-5B8D75` |
+| Gemini API enablement | PASS | `generativelanguage.googleapis.com` is enabled |
+| active secret | PASS | `GEMINI_API_KEY` version `2` is enabled and remains latest |
+| active runtime | PASS | `openstaff-api-00036-gx2` remains ready with 100% traffic and maps `GEMINI_API_KEY:latest` |
+| direct Gemini smoke | BLOCKED | job `openstaff-api-exec77a3a-gemini-smoke` still returns `429 Too Many Requests`; no `API_KEY_INVALID`, `AUTHENTICATION_ERROR`, or `PERMISSION_DENIED` |
+| health/status | PASS | `/health` returned `status=ok`; `/status` returned `status=ok`, `db=healthy`, `readiness.errors=[]`, `readiness.warnings=[]` |
+
+### EXEC-77A.3B Exact Blocker
+
+Gemini provider response remains: prepayment credits are depleted. This cannot be fixed from repository code or Cloud Run configuration. Restore Google AI Studio/Gemini prepaid credits, or provide an approved funded Gemini project/key for Secret Manager rotation.
+
 ## EXEC-76 Production Rollout & Live Verification for EXEC-75
 
 Verdict: `IN PROGRESS - EXEC-75 was migrated and promoted to production successfully, live role isolation now blocks normal ADMIN and AI_MODERATOR users from technical APIs while allowing SUPERADMIN, approved public profile/company assets now render anonymously through /profiles/assets/:documentId, browser/mobile proof is clean, and successful project AI reruns append history. Final PASS is not honest yet because the required failed project AI rerun append proof could not be produced through a safe live endpoint; the attempted bad rerun returned 400 before the failed-run append branch while preserving the last successful current interpretation.`
