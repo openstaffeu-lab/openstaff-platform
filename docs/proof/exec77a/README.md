@@ -160,3 +160,86 @@ The deployed endpoint reached the Gemini path and persisted the provider failure
 BLOCKED
 
 EXEC-77B is not unblocked. Renew `GEMINI_API_KEY`, rerun live RELU Builder smoke proof, and require a `COMPLETED` run plus audit proof before frontend integration.
+
+## EXEC-77A.3A Gemini Secret Recovery
+
+### Git Safety
+
+Branch: `feature/work-in-progress`
+
+No EXEC-77A code changes were pending. The following unrelated untracked files remained unstaged:
+
+- `src/`
+- `OPENSTAFF_AUDIT_2026-05.md`
+- `OPENSTAFF_AUDIT_2026-05_BACKUP.md`
+
+### Secret Manager Status
+
+Secret: `GEMINI_API_KEY`
+
+Status:
+
+- secret exists
+- version `1`: enabled, created `2026-05-15T18:15:47`
+- version `2`: enabled, created `2026-05-29T16:46:47`
+
+Version `1` was proven invalid by direct Gemini smoke:
+
+- result: `API_KEY_INVALID`
+- provider message class: API key expired
+
+Version `2` was created from replacement Gemini API key UID `3d954e2a-67cb-4b17-ae13-2353d8d0dd31`. The secret value is not stored in the repository or documentation.
+
+A transient key created during CLI testing was deleted immediately after the CLI printed the operation result. That deleted key is not the active Secret Manager version.
+
+### Cloud Run Runtime
+
+Service: `openstaff-api`
+
+Region: `europe-west1`
+
+Active revision after refresh: `openstaff-api-00036-gx2`
+
+Traffic: 100%
+
+Runtime mapping:
+
+- `GEMINI_API_KEY`: Secret Manager `GEMINI_API_KEY:latest`
+- non-secret refresh marker: `GEMINI_SECRET_VERSION=2`
+
+### Gemini Smoke Proof
+
+Job: `openstaff-api-exec77a3a-gemini-smoke`
+
+Direct Gemini smoke uses `@google/generative-ai` against `gemini-2.5-flash` with the mounted `GEMINI_API_KEY`.
+
+After rotation to version `2`:
+
+- `API_KEY_INVALID`: not present
+- `AUTHENTICATION_ERROR`: not present
+- `PERMISSION_DENIED`: not present
+- response: `429 Too Many Requests`
+- provider cause: prepayment credits are depleted
+
+This proves the authentication blocker was removed, but a successful `2xx` Gemini response is still blocked by billing/prepayment state.
+
+### Health Proof
+
+- `https://api.openstaff.eu/health`: `status=ok`
+- `https://api.openstaff.eu/status`: `status=ok`
+- DB: `healthy`
+- `readiness.errors`: `[]`
+- `readiness.warnings`: `[]`
+
+### Remaining Risks
+
+- Restore Google AI Studio / Gemini prepaid credits or billing for the active project/key.
+- Rerun direct Gemini smoke and require a `2xx` response.
+- Rerun RELU Builder live smoke and require a `COMPLETED` `ReluProcessingRun` plus audit proof.
+- EXEC-77B remains blocked until those smoke proofs pass.
+
+### Verdict
+
+BLOCKED
+
+Gemini authentication is recovered, Cloud Run uses the rotated secret, and API health is clean. Gemini runtime success is still blocked by provider billing/prepayment depletion.
