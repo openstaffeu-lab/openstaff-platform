@@ -231,9 +231,33 @@ Verdict: `PASS - the RELU-integrated profile, post publishing, and project workf
 2. RELU Builder endpoints remain SUPERADMIN-only, so broader user-facing AI access still requires an explicit later product/permission decision.
 3. Browser proof validated route behavior and fallback states, but did not create live production profile/post/project records.
 
-### EXEC-77C Boundary
+## EXEC-77C.1 OpenStaff Product Hardening & Release Proof
 
-EXEC-77C was not started. The next step is a separate rollout or product-permission planning pass, not a hidden backend/security change.
+Verdict: `PASS - company onboarding has been release-hardened with clearer required/optional field guidance, safer fiscal/VAT lookup messaging, explicit manual override language, generic non-leaking error states, and unchanged save semantics. Profile, publish/post, and project RELU workflows remain advisory-only and unchanged. Public web build and lint pass with 0 errors and the existing 21 warnings. No backend, Prisma schema, migration, guard, permission, JWT, Cloud Run, or RELU endpoint files were modified.`
+
+### EXEC-77C.1 Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| git safety | PASS | branch `feature/work-in-progress`; local and origin started aligned at `4824ab4abfa9e7dab40fc4fee4e680e5ce334555`; root `src/` and `OPENSTAFF_AUDIT_2026-05*.md` remained untracked and unstaged |
+| mandatory discovery | PASS | company onboarding, profile/company drafting, post publishing, project create/edit, and shared release-critical UI owners were inspected before implementation |
+| company onboarding refinement | PASS | `apps/admin/web/app/onboarding/company/page.tsx` now labels required vs optional fields, explains fiscal/VAT lookup as optional, preserves manual setup, and keeps the existing `upsertCompanyProfile` save flow |
+| provider lookup fallback | PASS | lookup failure now shows generic manual-setup guidance and does not render backend exception text |
+| manual override clarity | PASS | lookup copy states filled values are reviewable, editable, ignorable, and not saved until the user presses `Continua` |
+| profile/post/project stability | PASS | no code changes were made to `apps/admin/web/app/profile/page.tsx`, `apps/admin/web/app/publish/page.tsx`, or `apps/admin/web/components/projects/ProjectWorkspaceForm.tsx`; existing RELU advisory-only save boundaries remain intact |
+| RELU advisory boundary | PASS | no RELU client, hook, endpoint, or workflow persistence behavior changed; users still must ask, review, apply, manually edit, and save/publish/submit normally |
+| raw data exposure | PASS | no raw JSON, run IDs, actor IDs, entity IDs, stack traces, Gemini internals, secrets, or technical provider payloads were added to rendered UI |
+| validation | PASS with warnings | `apps/admin/web -> npm.cmd run build` exited `0`; `npm.cmd run lint` exited `0` with 21 existing warnings and 0 errors |
+
+### EXEC-77C.1 Remaining Risks
+
+1. EXEC-77C.1 is a local release-hardening and validation pass; it does not deploy a new public web revision.
+2. Company onboarding still uses the existing provider lookup contract and does not add new backend normalization or provider coverage.
+3. A fresh production browser matrix can be run in a later rollout proof if EXEC-77C proceeds toward deployment.
+
+### EXEC-77C.2 Boundary
+
+EXEC-77C.2 was not started.
 
 ## EXEC-76 Production Rollout & Live Verification for EXEC-75
 

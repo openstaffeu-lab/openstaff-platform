@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -73,40 +73,58 @@ export default function OnboardingCompanyPage() {
   }
 
   const companyRequired = user?.actorType !== "INDIVIDUAL";
+  const canContinue = !companyRequired || form.companyName.trim().length > 0;
+
+  function updateField<Key extends keyof typeof form>(key: Key, value: (typeof form)[Key]) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
 
   return (
     <section style={{ background: "white", borderRadius: 18, padding: 24, border: "1px solid #E8EBF5" }}>
       <div style={{ display: "grid", gap: 16 }}>
         <h2 style={{ color: "#1B2A6B", fontSize: 28, fontWeight: 800, margin: 0 }}>Company identity</h2>
         <p style={{ color: "#334155", margin: 0 }}>
-          For individual accounts you can skip this step. For companies, the fiscal or VAT code can
-          prefill legal details before you review and override them manually.
+          For companies, add the business name first, then use fiscal or VAT lookup when it helps.
+          Every lookup value is a suggestion you can review, change, or ignore before continuing.
         </p>
 
-        <div
-          style={{
-            borderRadius: 16,
-            background: "#F8FAFC",
-            border: "1px solid #E8EBF5",
-            padding: 16,
-            color: "#334155",
-          }}
-        >
-          Start with the VAT or fiscal code when you have it. OpenStaff will suggest company data
-          where possible, explain what was inferred, and still let you edit every field.
+        <div style={releaseNoteStyle}>
+          Company name is required for company accounts. Fiscal or VAT lookup, legal details,
+          website, and address details are optional helpers, and manual setup remains available if
+          lookup or AI assistance is unavailable.
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-          <input value={form.companyName} onChange={(event) => setForm((current) => ({ ...current, companyName: event.target.value }))} placeholder="Company name" style={inputStyle} />
-          <input value={form.legalName} onChange={(event) => setForm((current) => ({ ...current, legalName: event.target.value }))} placeholder="Legal name" style={inputStyle} />
-          <input value={form.registrationNumber} onChange={(event) => setForm((current) => ({ ...current, registrationNumber: event.target.value }))} placeholder="Registration number" style={inputStyle} />
-          <input value={form.vatId} onChange={(event) => setForm((current) => ({ ...current, vatId: event.target.value }))} placeholder="VAT ID" style={inputStyle} />
-          <input value={form.country} onChange={(event) => setForm((current) => ({ ...current, country: event.target.value }))} placeholder="Country" style={inputStyle} />
-          <input value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" style={inputStyle} />
-          <input value={form.addressLine1} onChange={(event) => setForm((current) => ({ ...current, addressLine1: event.target.value }))} placeholder="Address line 1" style={inputStyle} />
-          <input value={form.addressLine2} onChange={(event) => setForm((current) => ({ ...current, addressLine2: event.target.value }))} placeholder="Address line 2" style={inputStyle} />
-          <input value={form.postalCode} onChange={(event) => setForm((current) => ({ ...current, postalCode: event.target.value }))} placeholder="Postal code" style={inputStyle} />
-          <input value={form.website} onChange={(event) => setForm((current) => ({ ...current, website: event.target.value }))} placeholder="Website URL" style={inputStyle} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
+          <CompanyField label="Company name" required={companyRequired} helper="The public-facing business name shown in OpenStaff.">
+            <input value={form.companyName} onChange={(event) => updateField("companyName", event.target.value)} placeholder="Example: OpenStaff Construction SRL" style={inputStyle} />
+          </CompanyField>
+          <CompanyField label="Legal name" helper="Use the registered legal name if it differs from the display name.">
+            <input value={form.legalName} onChange={(event) => updateField("legalName", event.target.value)} placeholder="Registered legal name" style={inputStyle} />
+          </CompanyField>
+          <CompanyField label="Registration number" helper="Optional registry or trade register number for review context.">
+            <input value={form.registrationNumber} onChange={(event) => updateField("registrationNumber", event.target.value)} placeholder="Registration number" style={inputStyle} />
+          </CompanyField>
+          <CompanyField label="Fiscal or VAT code" helper="Use this to request autofill when available; it is not required for manual setup.">
+            <input value={form.vatId} onChange={(event) => updateField("vatId", event.target.value)} placeholder="Example: RO12345678" style={inputStyle} />
+          </CompanyField>
+          <CompanyField label="Country" helper="Used for lookup routing and marketplace context.">
+            <input value={form.country} onChange={(event) => updateField("country", event.target.value)} placeholder="Country" style={inputStyle} />
+          </CompanyField>
+          <CompanyField label="City" helper="Optional city or main operating location.">
+            <input value={form.city} onChange={(event) => updateField("city", event.target.value)} placeholder="City" style={inputStyle} />
+          </CompanyField>
+          <CompanyField label="Address line 1" helper="Optional registered or operating address.">
+            <input value={form.addressLine1} onChange={(event) => updateField("addressLine1", event.target.value)} placeholder="Street and number" style={inputStyle} />
+          </CompanyField>
+          <CompanyField label="Address line 2" helper="Optional building, floor, suite, or locality detail.">
+            <input value={form.addressLine2} onChange={(event) => updateField("addressLine2", event.target.value)} placeholder="Additional address detail" style={inputStyle} />
+          </CompanyField>
+          <CompanyField label="Postal code" helper="Optional postal code for company records.">
+            <input value={form.postalCode} onChange={(event) => updateField("postalCode", event.target.value)} placeholder="Postal code" style={inputStyle} />
+          </CompanyField>
+          <CompanyField label="Website" helper="Optional public website, if available.">
+            <input value={form.website} onChange={(event) => updateField("website", event.target.value)} placeholder="https://example.com" style={inputStyle} />
+          </CompanyField>
         </div>
 
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -138,12 +156,8 @@ export default function OnboardingCompanyPage() {
                   companyName: result.company.companyName ?? form.companyName,
                   companyCui: result.company.vatId ?? form.vatId,
                 });
-              } catch (lookupError) {
-                setError(
-                  lookupError instanceof Error
-                    ? lookupError.message
-                    : "We could not look up that company automatically.",
-                );
+              } catch {
+                setError("Company lookup is unavailable. You can continue manually.");
               } finally {
                 setLookingUp(false);
               }
@@ -154,7 +168,7 @@ export default function OnboardingCompanyPage() {
             {lookingUp ? "Looking up company..." : "Autofill from fiscal / VAT code"}
           </button>
           <span style={{ alignSelf: "center", color: "#64748B", fontSize: 14 }}>
-            Manual edit always stays available after autofill.
+            Lookup never saves automatically. Keep, change, or ignore any filled value.
           </span>
         </div>
 
@@ -173,8 +187,12 @@ export default function OnboardingCompanyPage() {
             </div>
             <div style={{ marginTop: 6 }}>{lookup.explanation}</div>
             <div style={{ marginTop: 8, fontSize: 14, color: "#475569" }}>
-              Provider label: {lookup.providerLabel} · Trusted source:{" "}
-              {lookup.verifiedSource ? "yes" : "manual review still needed"} · Checked at:{" "}
+              Review the filled fields above before continuing. This step still saves only when you
+              press Continua.
+            </div>
+            <div style={{ marginTop: 8, fontSize: 14, color: "#475569" }}>
+              Source: {lookup.providerLabel} | Review status:{" "}
+              {lookup.verifiedSource ? "trusted source" : "manual review still needed"} | Checked at:{" "}
               {new Date(lookup.lookupTimestamp).toLocaleString("ro-RO")}
             </div>
             {lookup.company.legalStatus ? (
@@ -183,13 +201,13 @@ export default function OnboardingCompanyPage() {
               </div>
             ) : null}
             <div style={{ marginTop: 10, fontSize: 14, color: "#475569" }}>
-              Provider: {lookup.provider} · Verification: {lookup.verificationStatus} · Normalized
-              code: {lookup.normalizedFiscalCode || "-"}
+              Verification: {lookup.verificationStatus}. Normalized fiscal code:{" "}
+              {lookup.normalizedFiscalCode || "-"}.
             </div>
           </div>
         ) : null}
 
-        {error ? <div style={{ color: "#DC2626" }}>{error}</div> : null}
+        {error ? <div style={errorStyle}>{error} Manual company setup remains available.</div> : null}
 
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <button onClick={() => router.push("/onboarding/identity")} style={secondaryButton}>
@@ -229,7 +247,7 @@ export default function OnboardingCompanyPage() {
                 }
 
                 if (!form.companyName.trim()) {
-                  setError("Company name este obligatoriu pentru acest pas.");
+                  setError("Company name is required for company accounts.");
                   return;
                 }
 
@@ -252,17 +270,14 @@ export default function OnboardingCompanyPage() {
                     currentStep: "completion",
                   });
                   router.push("/onboarding/completion");
-                } catch (saveError) {
-                  setError(
-                    saveError instanceof Error
-                      ? saveError.message
-                      : "Nu am putut salva company profile.",
-                  );
+                } catch {
+                  setError("We could not save the company profile.");
                 } finally {
                   setSaving(false);
                 }
               }}
-              disabled={saving}
+              disabled={saving || !canContinue}
+              title={!canContinue ? "Add a company name to continue." : undefined}
               style={primaryButton}
             >
               {saving ? "Se salveaza..." : "Continua"}
@@ -273,6 +288,67 @@ export default function OnboardingCompanyPage() {
     </section>
   );
 }
+
+function CompanyField({
+  label,
+  helper,
+  required = false,
+  children,
+}: {
+  label: string;
+  helper: string;
+  required?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <label style={{ display: "grid", gap: 6 }}>
+      <span style={{ display: "flex", alignItems: "center", gap: 8, color: "#0F172A", fontWeight: 700 }}>
+        {label}
+        <span style={required ? requiredPillStyle : optionalPillStyle}>
+          {required ? "Required" : "Optional"}
+        </span>
+      </span>
+      {children}
+      <span style={{ color: "#64748B", fontSize: 13, lineHeight: 1.45 }}>{helper}</span>
+    </label>
+  );
+}
+
+const releaseNoteStyle: CSSProperties = {
+  borderRadius: 16,
+  border: "1px solid #BFDBFE",
+  background: "#EFF6FF",
+  color: "#1E3A8A",
+  padding: 14,
+  lineHeight: 1.55,
+};
+
+const errorStyle: CSSProperties = {
+  borderRadius: 14,
+  border: "1px solid #FECACA",
+  background: "#FEF2F2",
+  color: "#991B1B",
+  padding: 14,
+  lineHeight: 1.5,
+};
+
+const requiredPillStyle: CSSProperties = {
+  borderRadius: 999,
+  background: "#DBEAFE",
+  color: "#1D4ED8",
+  padding: "2px 8px",
+  fontSize: 11,
+  fontWeight: 800,
+};
+
+const optionalPillStyle: CSSProperties = {
+  borderRadius: 999,
+  background: "#F1F5F9",
+  color: "#475569",
+  padding: "2px 8px",
+  fontSize: 11,
+  fontWeight: 800,
+};
 
 const inputStyle: CSSProperties = {
   width: "100%",
