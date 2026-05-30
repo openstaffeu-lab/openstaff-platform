@@ -1,0 +1,314 @@
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  name: openstaff-api-exec77a4r-live-proof
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cloudsql-instances: openstaff-platform:europe-west1:openstaff-db
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      taskCount: 1
+      template:
+        spec:
+          serviceAccountName: 605639023972-compute@developer.gserviceaccount.com
+          maxRetries: 0
+          timeoutSeconds: 900
+          containers:
+            - image: europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api:b7d4ac09-3167-4265-81d1-567dc3ba7abf
+              command:
+                - node
+              args:
+                - -e
+                - |
+                  const { PrismaClient } = require('@prisma/client');
+                  const crypto = require('node:crypto');
+
+                  const prisma = new PrismaClient();
+                  const apiBase = process.env.API_BASE || 'https://api.openstaff.eu';
+                  const jwtSecret = process.env.JWT_SECRET?.trim();
+                  const runKey = `exec77a4r-${Date.now()}`;
+                  const previousFailedRunId = '94182de3-1923-4979-82e3-cea7e30f34c5';
+
+                  if (!jwtSecret) throw new Error('JWT_SECRET missing');
+
+                  function b64url(input) {
+                    const value = typeof input === 'string' ? input : JSON.stringify(input);
+                    return Buffer.from(value).toString('base64url');
+                  }
+
+                  function sign(user, ttlSeconds = 3600) {
+                    const now = Math.floor(Date.now() / 1000);
+                    const header = b64url({ alg: 'HS256', typ: 'JWT' });
+                    const payload = b64url({
+                      sub: user.id,
+                      email: user.email,
+                      role: user.role,
+                      approvalStatus: user.approvalStatus,
+                      accountStatus: user.accountStatus,
+                      iat: now,
+                      exp: now + ttlSeconds,
+                    });
+                    const signature = crypto
+                      .createHmac('sha256', jwtSecret)
+                      .update(`${header}.${payload}`)
+                      .digest('base64url');
+                    return `${header}.${payload}.${signature}`;
+                  }
+
+                  async function upsertUser(email, role) {
+                    return prisma.user.upsert({
+                      where: { email },
+                      update: {
+                        role,
+                        approvalStatus: 'APPROVED',
+                        accountStatus: 'LIVE',
+                        approvedAt: new Date(),
+                      },
+                      create: {
+                        email,
+                        password: `token-only-${runKey}`,
+                        role,
+                        approvalStatus: 'APPROVED',
+                        accountStatus: 'LIVE',
+                        approvedAt: new Date(),
+                      },
+                    });
+                  }
+
+                  async function api(path, token, options = {}) {
+                    const headers = new Headers(options.headers || {});
+                    if (token) headers.set('Authorization', `Bearer ${token}`);
+                    if (options.json !== undefined) {
+                      headers.set('Content-Type', 'application/json');
+                      options.body = JSON.stringify(options.json);
+                    }
+                    const response = await fetch(`${apiBase}${path}`, {
+                      ...options,
+                      headers,
+                      cache: 'no-store',
+                    });
+                    const contentType = response.headers.get('content-type') || '';
+                    const body = contentType.includes('application/json')
+                      ? await response.json().catch(() => null)
+                      : await response.text().catch(() => '');
+                    return { status: response.status, ok: response.ok, body };
+                  }
+
+                  function dataOf(result) {
+                    if (result.body && result.body.status === 'ok' && result.body.data) {
+                      return result.body.data;
+                    }
+                    return result.body;
+                  }
+
+                  function assert(condition, message) {
+                    if (!condition) throw new Error(message);
+                  }
+
+                  function responseSummary(result) {
+                    const data = dataOf(result) || {};
+                    const outputData = data.outputData || {};
+                    return {
+                      httpStatus: result.status,
+                      ok: result.ok,
+                      id: data.id || null,
+                      domain: data.domain || null,
+                      runStatus: data.status || null,
+                      hasOutputData: Boolean(data.outputData),
+                      hasAgentName: Boolean(outputData.agentName),
+                      hasResponse: Boolean(outputData.response),
+                      responseLength: outputData.response ? String(outputData.response).length : 0,
+                      hasError: Boolean(outputData.error),
+                      hasStackTrace: /(?:\n\s*at\s+|Error:|UnhandledPromiseRejection)/.test(JSON.stringify(data)),
+                      leaksSecretLikeValue: /AIza[0-9A-Za-z_-]{20,}/.test(JSON.stringify(data)),
+                    };
+                  }
+
+                  async function main() {
+                    const admin = await upsertUser(`${runKey}-admin@openstaff.eu`, 'ADMIN');
+                    const aiModerator = await upsertUser(`${runKey}-ai-moderator@openstaff.eu`, 'AI_MODERATOR');
+                    const superadmin = await upsertUser(`${runKey}-superadmin@openstaff.eu`, 'SUPERADMIN');
+
+                    const tokens = {
+                      admin: sign(admin),
+                      aiModerator: sign(aiModerator),
+                      superadmin: sign(superadmin),
+                    };
+
+                    const health = await api('/health', null, { method: 'GET' });
+                    const status = await api('/status', null, { method: 'GET' });
+                    assert(health.status === 200 && dataOf(health)?.status === 'ok', 'health not ok');
+                    const statusBody = dataOf(status);
+                    assert(status.status === 200 && statusBody?.status === 'ok', 'status not ok');
+                    assert(statusBody?.db === 'healthy' || statusBody?.database?.status === 'healthy', 'db not healthy');
+                    assert(Array.isArray(statusBody?.readiness?.errors) && statusBody.readiness.errors.length === 0, 'readiness errors present');
+                    assert(Array.isArray(statusBody?.readiness?.warnings) && statusBody.readiness.warnings.length === 0, 'readiness warnings present');
+
+                    const authPayload = {
+                      text: `EXEC-77A.4R authorization smoke ${runKey}: return a compact JSON success marker.`,
+                    };
+                    const anonymous = await api('/relu-ai-builder/summary', null, { method: 'POST', json: authPayload });
+                    const adminDenied = await api('/relu-ai-builder/summary', tokens.admin, { method: 'POST', json: authPayload });
+                    const aiDenied = await api('/relu-ai-builder/summary', tokens.aiModerator, { method: 'POST', json: authPayload });
+                    const superAllowed = await api('/relu-ai-builder/summary', tokens.superadmin, { method: 'POST', json: authPayload });
+
+                    assert(anonymous.status === 401, `anonymous expected 401, got ${anonymous.status}`);
+                    assert(adminDenied.status === 403, `admin expected 403, got ${adminDenied.status}`);
+                    assert(aiDenied.status === 403, `ai moderator expected 403, got ${aiDenied.status}`);
+                    assert(superAllowed.status >= 200 && superAllowed.status < 300, `superadmin expected 2xx, got ${superAllowed.status}`);
+
+                    const calls = [
+                      {
+                        label: 'summary',
+                        path: '/relu-ai-builder/summary',
+                        domain: 'SUMMARY',
+                        action: 'GENERATE_SUMMARY',
+                        payload: {
+                          text: `EXEC-77A.4R ${runKey}: summarize a live RELU Builder success proof with no secrets.`,
+                        },
+                        initialResult: superAllowed,
+                      },
+                      {
+                        label: 'taxonomy',
+                        path: '/relu-ai-builder/taxonomy',
+                        domain: 'TAXONOMY',
+                        action: 'SUGGEST_TAXONOMY',
+                        payload: { query: 'Romanian construction electrician profile taxonomy', limit: 3 },
+                      },
+                      {
+                        label: 'esco',
+                        path: '/relu-ai-builder/esco',
+                        domain: 'ESCO',
+                        action: 'SUGGEST_ESCO',
+                        payload: { query: 'electrician building installation maintenance', limit: 3 },
+                      },
+                      {
+                        label: 'nace',
+                        path: '/relu-ai-builder/nace',
+                        domain: 'NACE',
+                        action: 'SUGGEST_NACE',
+                        payload: { query: 'construction electrical installation contractor', limit: 3 },
+                      },
+                      {
+                        label: 'geography',
+                        path: '/relu-ai-builder/geography',
+                        domain: 'GEOGRAPHY',
+                        action: 'SUGGEST_GEOGRAPHY',
+                        payload: { query: 'Bucharest Romania construction workforce region', limit: 3 },
+                      },
+                    ];
+
+                    const callProof = [];
+                    for (const call of calls) {
+                      const result = call.initialResult || await api(call.path, tokens.superadmin, { method: 'POST', json: call.payload });
+                      assert(result.status >= 200 && result.status < 300, `${call.label} expected 2xx, got ${result.status}`);
+                      const summary = responseSummary(result);
+                      assert(summary.id, `${call.label} missing run id`);
+                      assert(summary.runStatus === 'COMPLETED', `${call.label} response status expected COMPLETED, got ${summary.runStatus}`);
+                      assert(summary.domain === call.domain, `${call.label} expected domain ${call.domain}, got ${summary.domain}`);
+                      assert(summary.hasAgentName, `${call.label} missing Gemini agent name`);
+                      assert(summary.hasResponse && summary.responseLength > 0, `${call.label} missing Gemini response`);
+                      assert(!summary.hasError, `${call.label} returned output error`);
+                      assert(!summary.hasStackTrace, `${call.label} returned stack-trace-like output`);
+                      assert(!summary.leaksSecretLikeValue, `${call.label} output looks like it leaked an API key`);
+
+                      const run = await prisma.reluProcessingRun.findUnique({
+                        where: { id: summary.id },
+                      });
+                      assert(run, `${call.label} ReluProcessingRun missing`);
+                      assert(run.status === 'COMPLETED', `${call.label} DB run status expected COMPLETED, got ${run.status}`);
+                      assert(run.domain === call.domain, `${call.label} DB domain mismatch`);
+                      assert(run.triggeredByUserId === superadmin.id, `${call.label} DB actor mismatch`);
+                      assert(Boolean(run.completedAt), `${call.label} completedAt missing`);
+                      assert(!run.errorMessage, `${call.label} DB errorMessage present`);
+
+                      const audit = await prisma.auditLog.findFirst({
+                        where: {
+                          actorUserId: superadmin.id,
+                          entityType: 'RELU_AI_BUILDER_RUN',
+                          entityId: run.id,
+                          action: call.action,
+                        },
+                        orderBy: { createdAt: 'desc' },
+                      });
+                      assert(audit, `${call.label} AuditLog missing`);
+                      assert(Boolean(audit.actorUserId), `${call.label} audit actorUserId missing`);
+                      assert(Boolean(audit.createdAt), `${call.label} audit timestamp missing`);
+
+                      callProof.push({
+                        label: call.label,
+                        endpoint: call.path,
+                        httpStatus: summary.httpStatus,
+                        runId: run.id,
+                        domain: run.domain,
+                        dbStatus: run.status,
+                        completedAtPresent: Boolean(run.completedAt),
+                        actorUserIdPresent: Boolean(run.triggeredByUserId),
+                        auditLogId: audit.id,
+                        auditAction: audit.action,
+                        auditActorUserIdPresent: Boolean(audit.actorUserId),
+                        auditTimestampPresent: Boolean(audit.createdAt),
+                        geminiAgentNamePresent: summary.hasAgentName,
+                        geminiResponsePresent: summary.hasResponse,
+                        geminiResponseLength: summary.responseLength,
+                      });
+                    }
+
+                    const completedRunsForProofActor = await prisma.reluProcessingRun.count({
+                      where: {
+                        triggeredByUserId: superadmin.id,
+                        status: 'COMPLETED',
+                      },
+                    });
+                    const previousFailedRun = await prisma.reluProcessingRun.findUnique({
+                      where: { id: previousFailedRunId },
+                    });
+
+                    console.log('EXEC77A4R_LIVE_PROOF:' + JSON.stringify({
+                      runKey,
+                      health: {
+                        healthStatus: dataOf(health)?.status,
+                        statusStatus: statusBody?.status,
+                        db: statusBody?.db || statusBody?.database?.status || null,
+                        readinessErrors: statusBody?.readiness?.errors || [],
+                        readinessWarnings: statusBody?.readiness?.warnings || [],
+                      },
+                      authorization: {
+                        anonymous: anonymous.status,
+                        admin: adminDenied.status,
+                        aiModerator: aiDenied.status,
+                        superadmin: superAllowed.status,
+                      },
+                      calls: callProof,
+                      persistence: {
+                        completedRunsForProofActor,
+                        expectedCompletedRunsForProofActor: calls.length,
+                        appendOnlyHistoryPreserved: completedRunsForProofActor >= calls.length,
+                        previousFailedRunId,
+                        previousFailedRunStatus: previousFailedRun?.status || null,
+                        previousFailedRunStillPresent: Boolean(previousFailedRun),
+                      },
+                    }));
+                  }
+
+                  main()
+                    .catch((error) => {
+                      console.error('EXEC77A4R_LIVE_PROOF_ERROR:' + (error && error.message ? error.message : String(error)));
+                      process.exit(1);
+                    })
+                    .finally(async () => prisma.$disconnect());
+              env:
+                - name: API_BASE
+                  value: https://api.openstaff.eu
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: DATABASE_URL
+                      key: latest
+                - name: JWT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: JWT_SECRET
+                      key: latest

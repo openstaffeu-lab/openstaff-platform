@@ -427,3 +427,193 @@ EXEC-77A.4 is not unblocked. Direct Gemini 2xx proof is still missing.
 ### Verdict
 
 BLOCKED
+
+## EXEC-77A.4 Live Gemini Success Proof
+
+Date: 2026-05-30
+
+### Git Safety
+
+No schema, migration, backend authorization, `MANAGE_TECHNICAL_OPERATIONS`, frontend, or EXEC-77B implementation files were modified. This proof update only records the blocked live provider check.
+
+The existing unrelated untracked files remain excluded:
+
+- `src/`
+- `OPENSTAFF_AUDIT_2026-05.md`
+- `OPENSTAFF_AUDIT_2026-05_BACKUP.md`
+
+### Direct Gemini Recovery Gate
+
+Job: `openstaff-api-exec77a3a-gemini-smoke`
+
+Execution: `openstaff-api-exec77a3a-gemini-smoke-q6dp2`
+
+Model: `gemini-2.5-flash`
+
+Observed result:
+
+- execution status: failed
+- provider success / 2xx: not achieved
+- provider response: `[429 Too Many Requests] Your prepayment credits are depleted`
+- `authErrors`: `[]`
+- `API_KEY_INVALID`: not present
+- `AUTHENTICATION_ERROR`: not present
+- `PERMISSION_DENIED`: not present
+
+This means the key/auth/runtime path remains valid enough to reach Gemini, but provider billing/prepaid credits still block generation.
+
+### RELU Builder Success Proof
+
+Not run.
+
+Reason: EXEC-77A.4 required stopping immediately if Gemini billing was still exhausted. Because direct Gemini smoke did not return 2xx, the taxonomy, ESCO, NACE, and geography builder calls were not executed.
+
+### Persistence And Audit Proof
+
+Not run.
+
+Reason: no successful live builder call was attempted after the Gemini gate failed, so no honest `ReluProcessingRun.status = COMPLETED` or successful `AuditLog` proof can be claimed for EXEC-77A.4.
+
+### Authorization And Health Recheck
+
+Not run.
+
+Reason: direct Gemini recovery failed first, so the remaining EXEC-77A.4 proof matrix remains blocked.
+
+### Verdict
+
+BLOCKED
+
+EXEC-77A.4 is still blocked by Gemini/AI Studio prepaid credit depletion. Restore credits or provide an approved funded Gemini key, then rerun from the direct Gemini smoke gate. EXEC-77B remains blocked.
+
+## EXEC-77A.4R Completed Live Gemini Success Proof
+
+Date: 2026-05-30
+
+### Git Safety
+
+Branch: `feature/work-in-progress`
+
+The following unrelated files remained untracked and unstaged:
+
+- `src/`
+- `OPENSTAFF_AUDIT_2026-05.md`
+- `OPENSTAFF_AUDIT_2026-05_BACKUP.md`
+
+No frontend/UI, backend logic, Prisma schema, migration, guard, or `MANAGE_TECHNICAL_OPERATIONS` files were modified. No EXEC-77B implementation was started.
+
+### Direct Gemini Smoke
+
+Job: `openstaff-api-exec77a3a-gemini-smoke`
+
+Execution: `openstaff-api-exec77a3a-gemini-smoke-khpk4`
+
+Structured result:
+
+- `ok`: `true`
+- `status`: `2xx`
+- model: `gemini-2.5-flash`
+- `responsePresent`: `true`
+- `authErrors`: `[]`
+
+Negative checks:
+
+- no `429`
+- no `RESOURCE_EXHAUSTED`
+- no `API_KEY_INVALID`
+- no `AUTHENTICATION_ERROR`
+- no `PERMISSION_DENIED`
+
+### Live RELU Builder Proof
+
+Job: `openstaff-api-exec77a4r-live-proof`
+
+Execution: `openstaff-api-exec77a4r-live-proof-4xh7x`
+
+Run key: `exec77a4r-1780144237943`
+
+| Label | Endpoint | HTTP | Run ID | Domain | DB status | Audit ID | Audit action |
+| --- | --- | ---: | --- | --- | --- | --- | --- |
+| summary | `/relu-ai-builder/summary` | 201 | `b8567013-4f36-4135-8014-cb80848f3a0d` | `SUMMARY` | `COMPLETED` | `2db025bf-447b-4be9-9060-63669c0f36f9` | `GENERATE_SUMMARY` |
+| taxonomy | `/relu-ai-builder/taxonomy` | 201 | `f5d87f1e-d65e-4b0e-a247-4a55b8539c88` | `TAXONOMY` | `COMPLETED` | `c59933b9-0ed5-48b5-a7d5-aace106a3d8b` | `SUGGEST_TAXONOMY` |
+| esco | `/relu-ai-builder/esco` | 201 | `bce2f211-79b7-46dd-9a9f-cb8d2b46756c` | `ESCO` | `COMPLETED` | `017fc8fd-9e54-4cef-9bf5-ddcd6c32f1a8` | `SUGGEST_ESCO` |
+| nace | `/relu-ai-builder/nace` | 201 | `b5d24d29-ad13-419b-8e85-df48ae8f7bab` | `NACE` | `COMPLETED` | `589212f0-dbeb-49b7-8a60-3423030d09fd` | `SUGGEST_NACE` |
+| geography | `/relu-ai-builder/geography` | 201 | `c7d93b72-d52b-4f2d-bbe4-05a1382b6f68` | `GEOGRAPHY` | `COMPLETED` | `a942404d-298a-4cc9-a37a-0b28350d7efc` | `SUGGEST_GEOGRAPHY` |
+
+For each endpoint:
+
+- response included controlled `outputData`
+- Gemini agent name was present
+- Gemini response was present and non-empty
+- no output error was present
+- no stack-trace-like output was present
+- no secret-like API key value was present
+
+### Persistence Proof
+
+Proof actor completed run count: `5`
+
+Expected completed run count: `5`
+
+Append-only history: PASS
+
+Previous failed run preservation:
+
+- run ID: `94182de3-1923-4979-82e3-cea7e30f34c5`
+- still present: yes
+- status: `FAILED`
+
+Each successful run had:
+
+- `ReluProcessingRun` row present
+- `status=COMPLETED`
+- `completedAt` present
+- `triggeredByUserId` present
+
+### Audit Proof
+
+Each successful run had a matching `AuditLog` row with:
+
+- `entityType=RELU_AI_BUILDER_RUN`
+- `actorUserId` present
+- success action recorded
+- timestamp present
+
+### Authorization Recheck
+
+| Actor | Result |
+| --- | ---: |
+| anonymous | 401 |
+| ADMIN | 403 |
+| AI_MODERATOR | 403 |
+| SUPERADMIN | 201 |
+
+### Health And Status
+
+- `/health`: `status=ok`
+- `/status`: `status=ok`
+- DB: `healthy`
+- `readiness.errors`: `[]`
+- `readiness.warnings`: `[]`
+
+### Validation Gates
+
+- `npx.cmd prisma validate`: PASS
+- `npx.cmd prisma generate`: PASS
+- `npm.cmd run build`: PASS
+- `npm.cmd test -- --runInBand`: PASS, 19 suites / 38 tests
+- `npm.cmd run lint`: PASS, 413 warnings / 0 errors
+
+### Runtime Manifest
+
+Proof job manifest:
+
+- `docs/proof/exec77a/runtime/openstaff-api-exec77a4r-live-proof.yaml`
+
+No secret values are stored in the manifest or this proof document.
+
+### Verdict
+
+PASS
+
+EXEC-77A.4R closes the live Gemini-backed RELU Builder success proof. EXEC-77B is now unblocked from the backend/live-AI proof standpoint, but remains a separate implementation pass.

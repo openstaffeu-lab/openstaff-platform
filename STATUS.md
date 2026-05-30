@@ -1,6 +1,6 @@
 ﻿# OpenStaff Platform Status
 
-Last updated: 2026-05-29
+Last updated: 2026-05-30
 
 ## EXEC-77A.2 Real DB / Production Verification
 
@@ -110,6 +110,53 @@ Verdict: `PASS - exact Gemini 429 root cause is proven. The active key belongs t
 The blocker is Gemini/AI Studio prepaid credit depletion, not key authentication, API enablement, Cloud Run secret mounting, or repository code.
 
 Required remediation: add/restore Gemini prepaid credits in AI Studio for the active project/key, or provide an approved funded Gemini key and rotate `GEMINI_API_KEY` to a new Secret Manager version.
+
+## EXEC-77A.4 Live Gemini Success Proof
+
+Verdict: `BLOCKED - direct Gemini recovery smoke was rerun after the requested credit-restoration checkpoint, but Gemini still returns HTTP 429 / Too Many Requests with the explicit prepaid credits depleted message. Authentication remains recovered: no API_KEY_INVALID, AUTHENTICATION_ERROR, or PERMISSION_DENIED was present. Per the EXEC-77A.4 hard gate, RELU Builder success, COMPLETED persistence, audit, and authorization reruns were not executed, and EXEC-77B remains blocked.`
+
+### EXEC-77A.4 Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| git safety | PASS | only documentation/status files were touched for this blocked proof update; existing untracked root `src/` and `OPENSTAFF_AUDIT_2026-05*.md` remain unrelated |
+| direct Gemini smoke | BLOCKED | Cloud Run job execution `openstaff-api-exec77a3a-gemini-smoke-q6dp2` exited nonzero |
+| auth/key errors | PASS | smoke log reported `authErrors=[]`; no `API_KEY_INVALID`, `AUTHENTICATION_ERROR`, or `PERMISSION_DENIED` |
+| provider billing | BLOCKED | Gemini returned `[429 Too Many Requests] Your prepayment credits are depleted` |
+| RELU Builder success run | NOT RUN | stopped immediately at direct Gemini gate as required |
+| COMPLETED persistence proof | NOT RUN | cannot honestly prove until Gemini returns 2xx |
+| audit proof | NOT RUN | cannot honestly prove successful builder audit until Gemini returns 2xx |
+| authorization recheck | NOT RUN | deferred because direct Gemini recovery failed |
+| production health recheck | NOT RUN | deferred because direct Gemini recovery failed |
+
+### EXEC-77A.4 Exact Blocker
+
+Gemini billing/prepaid credits are still depleted for the active runtime key. Restore Google AI Studio/Gemini prepaid credits, or provide an approved funded Gemini key and rotate `GEMINI_API_KEY`, then rerun EXEC-77A.4 from the direct Gemini smoke gate.
+
+## EXEC-77A.4R Completed Live Gemini Success Proof
+
+Verdict: `PASS - after Gemini prepaid credits were restored, direct Gemini smoke returned 2xx and the live deployed RELU Builder completed SUPERADMIN-only summary, taxonomy, ESCO, NACE, and geography executions. Each call returned HTTP 201 with Gemini-backed output, persisted a COMPLETED ReluProcessingRun with completedAt, wrote a success AuditLog, preserved the previous failed run, passed the authorization matrix, passed production health/readiness, and local backend validation gates passed with lint warnings only. EXEC-77B is now unblocked from the backend/live-AI proof standpoint.`
+
+### EXEC-77A.4R Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| git safety | PASS | branch `feature/work-in-progress`; root `src/` and `OPENSTAFF_AUDIT_2026-05*.md` remained untracked and unstaged |
+| direct Gemini smoke | PASS | Cloud Run job execution `openstaff-api-exec77a3a-gemini-smoke-khpk4` returned `ok=true`, `status=2xx`, `responsePresent=true`, `authErrors=[]` |
+| live RELU Builder summary | PASS | `POST /relu-ai-builder/summary` returned `201`; run `b8567013-4f36-4135-8014-cb80848f3a0d` persisted `COMPLETED`; audit `2db025bf-447b-4be9-9060-63669c0f36f9` action `GENERATE_SUMMARY` |
+| live RELU Builder taxonomy | PASS | `POST /relu-ai-builder/taxonomy` returned `201`; run `f5d87f1e-d65e-4b0e-a247-4a55b8539c88` persisted `COMPLETED`; audit `c59933b9-0ed5-48b5-a7d5-aace106a3d8b` action `SUGGEST_TAXONOMY` |
+| live RELU Builder ESCO | PASS | `POST /relu-ai-builder/esco` returned `201`; run `bce2f211-79b7-46dd-9a9f-cb8d2b46756c` persisted `COMPLETED`; audit `017fc8fd-9e54-4cef-9bf5-ddcd6c32f1a8` action `SUGGEST_ESCO` |
+| live RELU Builder NACE | PASS | `POST /relu-ai-builder/nace` returned `201`; run `b5d24d29-ad13-419b-8e85-df48ae8f7bab` persisted `COMPLETED`; audit `589212f0-dbeb-49b7-8a60-3423030d09fd` action `SUGGEST_NACE` |
+| live RELU Builder geography | PASS | `POST /relu-ai-builder/geography` returned `201`; run `c7d93b72-d52b-4f2d-bbe4-05a1382b6f68` persisted `COMPLETED`; audit `a942404d-298a-4cc9-a37a-0b28350d7efc` action `SUGGEST_GEOGRAPHY` |
+| Gemini-backed output | PASS | each response had `agentName`, non-empty Gemini `response`, no error payload, no stack trace, and no secret-like API key value |
+| append-only history | PASS | proof actor had 5 completed runs; previous failed run `94182de3-1923-4979-82e3-cea7e30f34c5` remained present with status `FAILED` |
+| authorization recheck | PASS | anonymous `401`, ADMIN `403`, AI_MODERATOR `403`, SUPERADMIN `201` |
+| production health | PASS | `/health status=ok`; `/status status=ok`; `db=healthy`; `readiness.errors=[]`; `readiness.warnings=[]` |
+| validation gates | PASS with warnings | `npx.cmd prisma validate`, `npx.cmd prisma generate`, `npm.cmd run build`, `npm.cmd test -- --runInBand`, and `npm.cmd run lint` exited `0`; lint reported 413 warnings and 0 errors |
+
+### EXEC-77A.4R Launch Decision
+
+EXEC-77A live backend/Gemini proof is closed. EXEC-77B may start only as a separate frontend integration pass; no EXEC-77B implementation was started in this execution.
 
 ## EXEC-76 Production Rollout & Live Verification for EXEC-75
 
