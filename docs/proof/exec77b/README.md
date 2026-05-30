@@ -288,3 +288,128 @@ The warnings are existing repository warnings; no lint errors were introduced.
 ### EXEC-77B.3 Readiness
 
 EXEC-77B.3 is unblocked for browser validation, structured mapping refinement, and rollout proof. EXEC-77B.3 was not started in this pass.
+
+## EXEC-77B.3 RELU Builder Browser Validation & Rollout Proof
+
+### Verdict
+
+PASS
+
+EXEC-77B.3 validates the existing RELU-integrated frontend workflows across desktop Chrome and mobile viewport using the compiled public web app plus controlled browser API mocks. No frontend fix was required after validation.
+
+### Git Safety
+
+Branch: `feature/work-in-progress`
+
+Starting local and origin commit:
+
+- `e1681700265e0a1e35d5c84e9ca5094bc23fb121`
+
+Unrelated untracked files remained unstaged:
+
+- `src/`
+- `OPENSTAFF_AUDIT_2026-05.md`
+- `OPENSTAFF_AUDIT_2026-05_BACKUP.md`
+
+No backend, Prisma schema, migration, guard, permission, Cloud Run, or GCP config files were modified. EXEC-77C was not started.
+
+### Static Validation
+
+From `apps/admin/web`:
+
+- `npm.cmd run build`: PASS
+- `npm.cmd run lint`: PASS, 21 warnings / 0 errors
+
+The warning count matches the existing repository warning baseline from EXEC-77B.1 and EXEC-77B.2.
+
+### Browser Matrix
+
+| Viewport | Route | Result |
+|---|---|---|
+| desktop Chrome | `/profile` | PASS |
+| desktop Chrome | `/publish` | PASS |
+| desktop Chrome | `/projects/new` | PASS |
+| desktop Chrome | `/projects/exec77b3-project/edit` | PASS with controlled safe project mock |
+| mobile viewport | `/profile` | PASS |
+| mobile viewport | `/publish` | PASS |
+| mobile viewport | `/projects/new` | PASS |
+
+All validated routes rendered without crash, console errors, page errors, unexpected 4xx/5xx UI requests, or mobile horizontal overflow.
+
+### Workflow Proof
+
+Profile workflow:
+
+- RELU assistance rendered in `apps/admin/web/app/profile/page.tsx`
+- manual `Save Profile` remained visible
+- manual summary editing remained possible
+- `Ask RELU AI` had to be clicked before suggestions appeared
+- `Apply suggestion` had to be clicked before the editable summary changed
+- no automatic profile save occurred after suggestion return
+
+Publish/post workflow:
+
+- RELU assistance rendered in `apps/admin/web/app/publish/page.tsx`
+- manual `Save changes` / post submit path remained visible
+- manual post editing remained possible
+- suggestions only updated editable fields after explicit apply
+- no auto-save or auto-publish occurred after suggestion return
+
+Project workflow:
+
+- RELU assistance rendered in `apps/admin/web/components/projects/ProjectWorkspaceForm.tsx`
+- `/projects/new` passed desktop and mobile validation
+- `/projects/exec77b3-project/edit` passed desktop validation with a controlled safe project mock
+- manual project submit remained visible
+- suggestions only updated editable fields after explicit apply
+- no automatic project create/update occurred after suggestion return
+
+### RELU State Proof
+
+Validated business-readable states:
+
+- `Ready`
+- `RELU AI is processing`
+- `AI suggestions ready`
+- `Human review needed`
+- `AI unavailable`
+- `Provider temporarily unavailable`
+
+The states were triggered through controlled RELU Builder responses in the browser proof. No backend permission weakening was used.
+
+### Authorization Fallback Proof
+
+Controlled browser responses confirmed UI-safe fallback behavior:
+
+- `401` became sign-in guidance
+- `403` became permission-safe optional AI guidance
+- `429` became provider temporarily unavailable guidance
+- `5xx` became service unavailable/manual editing guidance
+
+Manual editing and normal workflow buttons remained available after each fallback.
+
+### Raw Data Exposure Proof
+
+Rendered body text was checked for forbidden internal strings. The proof found no:
+
+- raw JSON
+- `runId`
+- `actorId`
+- `entityId`
+- stack trace text
+- Gemini internal payload text
+- secret-like API key values
+
+### Rollout Proof Notes
+
+The browser proof used the compiled local web app. Because this task prohibited Cloud Run/GCP configuration changes and did not request deployment, production rollout of this exact frontend commit remains a separate deployment step.
+
+### Remaining Risks
+
+1. Browser validation used controlled API mocks rather than a fresh production deployment with live authenticated accounts.
+2. RELU Builder endpoints remain SUPERADMIN-only; broader workflow availability requires a later product/permission decision.
+3. The proof validates frontend behavior and safety states, not live production record creation for profile/post/project data.
+
+### EXEC-77C Boundary
+
+EXEC-77C was not started.
