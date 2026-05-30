@@ -10,6 +10,8 @@ import {
   useMemo,
   useState,
 } from "react";
+import ReluSmartInput from "@/components/relu/ReluSmartInput";
+import type { ReluBuilderSuggestion } from "@/lib/relu-builder-api";
 import { useAuth } from "../../context/AuthContext";
 import { loginPathForCurrentLocation } from "../../lib/auth-redirect";
 import { ApiError, apiRequest, apiRequestBlob } from "../../lib/api";
@@ -70,6 +72,15 @@ const documentTypeOptions: ProjectDocumentType[] = [
   "PERMIT",
   "OTHER",
 ];
+
+function extractSuggestionCode(suggestion: ReluBuilderSuggestion) {
+  const source = `${suggestion.label} ${suggestion.description ?? ""}`;
+  return (
+    source.match(/\b[A-Z][A-Z0-9_]{1,}[_-]\d[\w.-]*/)?.[0] ??
+    source.match(/\b\d{2,5}(?:\.\d{1,3}){0,3}\b/)?.[0] ??
+    ""
+  );
+}
 
 type LookupState = {
   esco: TaxonomyOption[];
@@ -295,6 +306,10 @@ export default function ProjectWorkspaceForm({
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocumentState[]>([]);
   const [aiStatus, setAiStatus] = useState<AIInterpretationStatus>("PENDING");
   const [sourceText, setSourceText] = useState("");
+  const [reluTaxonomyQuery, setReluTaxonomyQuery] = useState("");
+  const [reluEscoQuery, setReluEscoQuery] = useState("");
+  const [reluNaceQuery, setReluNaceQuery] = useState("");
+  const [reluGeographyQuery, setReluGeographyQuery] = useState("");
   const [selectedAiDocumentIds, setSelectedAiDocumentIds] = useState<string[]>([]);
   const [wizardStep, setWizardStep] = useState(1);
 
@@ -610,6 +625,38 @@ export default function ProjectWorkspaceForm({
       setIsDeletingDocument(null);
     }
   };
+
+  function applyProjectTaxonomySuggestion(
+    group: "esco" | "nace",
+    suggestion: ReluBuilderSuggestion,
+  ) {
+    const code = extractSuggestionCode(suggestion);
+    const match = lookupState[group].find(
+      (option) =>
+        option.code.toLowerCase() === code.toLowerCase() ||
+        suggestion.label.toLowerCase().includes(option.code.toLowerCase()),
+    );
+
+    if (!match) {
+      setSourceText((current) =>
+        [current, `${group.toUpperCase()} suggestion: ${suggestion.label}`]
+          .filter(Boolean)
+          .join("\n"),
+      );
+      return;
+    }
+
+    if (group === "esco") {
+      setSelectedEscoIds((current) =>
+        current.includes(match.id) ? current : [...current, match.id],
+      );
+      return;
+    }
+
+    setSelectedNaceIds((current) =>
+      current.includes(match.id) ? current : [...current, match.id],
+    );
+  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -947,6 +994,79 @@ export default function ProjectWorkspaceForm({
                   </select>
                 </label>
               </div>
+            </section>
+
+            <section className="rounded-[2rem] border border-white/10 bg-slate-900/80 p-6">
+              <div className="text-xs uppercase tracking-[0.35em] text-cyan-300">
+                RELU AI Assistance
+              </div>
+              <p className="mt-3 text-sm leading-7 text-slate-300">
+                RELU suggestions are advisory. Apply them only after review, edit the draft,
+                and submit the project through the normal workflow.
+              </p>
+              <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                <ReluSmartInput
+                  label="Project summary suggestion"
+                  placeholder="Ask for a tender-ready summary"
+                  value={summary}
+                  type="summary"
+                  token={token}
+                  onChange={setSummary}
+                  onSuggestionSelect={(suggestion) => setSummary(suggestion.label)}
+                />
+                <ReluSmartInput
+                  label="Project taxonomy suggestion"
+                  placeholder="Describe the work package, trade, or scope"
+                  value={reluTaxonomyQuery}
+                  type="taxonomy"
+                  token={token}
+                  onChange={setReluTaxonomyQuery}
+                  onSuggestionSelect={(suggestion) =>
+                    setSourceText((current) =>
+                      [current, `Taxonomy suggestion: ${suggestion.label}`]
+                        .filter(Boolean)
+                        .join("\n"),
+                    )
+                  }
+                />
+                <ReluSmartInput
+                  label="ESCO suggestion"
+                  placeholder="e.g. site supervision, HVAC, electrical works"
+                  value={reluEscoQuery}
+                  type="esco"
+                  token={token}
+                  onChange={setReluEscoQuery}
+                  onSuggestionSelect={(suggestion) =>
+                    applyProjectTaxonomySuggestion("esco", suggestion)
+                  }
+                />
+                <ReluSmartInput
+                  label="NACE suggestion"
+                  placeholder="e.g. building construction or engineering activities"
+                  value={reluNaceQuery}
+                  type="nace"
+                  token={token}
+                  onChange={setReluNaceQuery}
+                  onSuggestionSelect={(suggestion) =>
+                    applyProjectTaxonomySuggestion("nace", suggestion)
+                  }
+                />
+                <div className="lg:col-span-2">
+                  <ReluSmartInput
+                    label="Geography suggestion"
+                    placeholder="e.g. Bucharest, Romania, cross-border delivery"
+                    value={reluGeographyQuery}
+                    type="geography"
+                    token={token}
+                    onChange={setReluGeographyQuery}
+                    onSuggestionSelect={(suggestion) => setLocation(suggestion.label)}
+                  />
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-7 text-slate-300">
+                AI availability never blocks project creation or editing. If access is denied,
+                continue manually and save normally.
+              </p>
             </section>
 
             <section className="rounded-[2rem] border border-white/10 bg-slate-900/80 p-6">

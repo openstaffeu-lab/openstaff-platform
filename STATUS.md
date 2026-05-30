@@ -183,9 +183,32 @@ Verdict: `PASS - the first reusable frontend foundation for RELU Builder is impl
 2. RELU Builder endpoints remain SUPERADMIN-only, so this preview is for technical operator validation until product-specific permissions and UX are designed in a later EXEC.
 3. The suggestion parser intentionally normalizes Gemini output into safe text/cards; richer structured labels can be improved after observing more provider outputs.
 
-### EXEC-77B.2 Readiness
+## EXEC-77B.2 RELU Builder Workflow Integration
 
-EXEC-77B.2 is unblocked to integrate the reusable foundation into a chosen workflow, but no EXEC-77B.2 implementation was started in EXEC-77B.1.
+Verdict: `PASS - the reusable RELU Builder frontend foundation is now integrated into real profile, post publishing, and project workspace workflows without backend, schema, migration, guard, permission, Cloud Run, or API-contract changes. RELU remains advisory-only: users must ask, review, explicitly apply suggestions, manually edit if needed, and save through the existing workflow buttons. Web build and lint pass with 0 errors and existing warnings only.`
+
+### EXEC-77B.2 Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| git safety | PASS | branch `feature/work-in-progress`; root `src/` and `OPENSTAFF_AUDIT_2026-05*.md` remained untracked and unstaged |
+| professional profile workflow | PASS | `apps/admin/web/app/profile/page.tsx` now offers advisory summary, taxonomy, ESCO, NACE, and geography suggestions before the existing `PUT /profile` save flow |
+| company profile workflow | PASS | the same profile workspace supports company/contractor profile summary, taxonomy, and service-area geography suggestions without bypassing normal profile save |
+| post publishing workflow | PASS | `apps/admin/web/app/publish/page.tsx` now offers advisory summary, taxonomy/domain, ESCO, NACE, and geography suggestions before the existing create/update post submit flow |
+| project workflow | PASS | `apps/admin/web/components/projects/ProjectWorkspaceForm.tsx` now offers advisory summary, taxonomy, ESCO, NACE, and geography suggestions before the existing project create/edit submit flow |
+| UX boundary | PASS | UI copy states suggestions are advisory, editable, never auto-saved, and manual creation continues if RELU is unavailable or denied |
+| authorization boundary | PASS | no backend permissions changed; 401/403 remain UI-safe optional-AI states through the existing RELU client/hook |
+| validation | PASS with warnings | `apps/admin/web -> npm.cmd run build` exited `0`; `npm.cmd run lint` exited `0` with 21 existing warnings and 0 errors |
+
+### EXEC-77B.2 Remaining Gaps
+
+1. Company onboarding creation remains primarily the existing fiscal/VAT autofill flow; company RELU drafting is integrated through the profile workspace rather than the onboarding company identity form.
+2. RELU endpoints remain SUPERADMIN-only, so non-authorized users continue manually while AI controls show permission-safe guidance.
+3. Browser matrix and production deployment are deferred to the next rollout/proof pass.
+
+### EXEC-77B.3 Readiness
+
+EXEC-77B.3 is unblocked for deeper browser validation, structured mapping refinement, and rollout proof. EXEC-77B.3 was not started in EXEC-77B.2.
 
 ## EXEC-76 Production Rollout & Live Verification for EXEC-75
 

@@ -167,6 +167,9 @@ export default function ReluSmartInput({
                     Confidence: {suggestion.confidence}%
                   </span>
                 ) : null}
+                <span className="mt-3 inline-flex rounded-md bg-white px-2 py-1 text-xs font-semibold text-brand-navy">
+                  Apply suggestion
+                </span>
               </button>
             ))}
           </div>

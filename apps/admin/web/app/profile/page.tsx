@@ -3,7 +3,9 @@
 
 import EscoMultiSelect from "@/components/EscoMultiSelect";
 import NaceSearchInput from "@/components/NaceSearchInput";
+import ReluSmartInput from "@/components/relu/ReluSmartInput";
 import UniclassMultiSelect from "@/components/UniclassMultiSelect";
+import type { ReluBuilderSuggestion } from "@/lib/relu-builder-api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
@@ -248,6 +250,15 @@ function usesProfessionalFields(profileType: ProfileType) {
   );
 }
 
+function extractSuggestionCode(suggestion: ReluBuilderSuggestion) {
+  const source = `${suggestion.label} ${suggestion.description ?? ""}`;
+  return (
+    source.match(/\b[A-Z][A-Z0-9_]{1,}[_-]\d[\w.-]*/)?.[0] ??
+    source.match(/\b\d{2,5}(?:\.\d{1,3}){0,3}\b/)?.[0] ??
+    ""
+  );
+}
+
 function syncForm(profile: ProfileResponse): FormState {
   return {
     slug: profile.slug,
@@ -299,6 +310,10 @@ export default function ProfilePage() {
   const [naceCodes, setNaceCodes] = useState<TaxonomyOption[]>([]);
   const [uniclassCodes, setUniclassCodes] = useState<TaxonomyOption[]>([]);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [reluTaxonomyQuery, setReluTaxonomyQuery] = useState("");
+  const [reluEscoQuery, setReluEscoQuery] = useState("");
+  const [reluNaceQuery, setReluNaceQuery] = useState("");
+  const [reluGeographyQuery, setReluGeographyQuery] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<ProfileAssetKind>("LOGO");
   const [isLoading, setIsLoading] = useState(true);
@@ -394,6 +409,42 @@ export default function ProfilePage() {
         ? current[key].filter((entry) => entry !== value)
         : [...current[key], value],
     }));
+  }
+
+  function addProfileCode(key: "escoCodes" | "naceCodes", suggestion: ReluBuilderSuggestion) {
+    const code = extractSuggestionCode(suggestion);
+    if (!code) {
+      return;
+    }
+
+    setForm((current) => ({
+      ...current,
+      [key]: current[key].includes(code) ? current[key] : [...current[key], code],
+    }));
+  }
+
+  function applyProfileGeographySuggestion(suggestion: ReluBuilderSuggestion) {
+    const value = suggestion.label;
+
+    setForm((current) => {
+      if (usesProfessionalFields(current.profileType)) {
+        return {
+          ...current,
+          professionalProfile: {
+            ...current.professionalProfile,
+            portfolioFocus: value,
+          },
+        };
+      }
+
+      return {
+        ...current,
+        contractorProfile: {
+          ...current.contractorProfile,
+          serviceArea: value,
+        },
+      };
+    });
   }
 
   async function handleSave() {
@@ -807,6 +858,61 @@ export default function ProfilePage() {
                   ))}
                 </div>
               </div>
+            </Panel>
+
+            <Panel title="RELU AI Assistance" description="AI suggestions are advisory. Apply only the suggestions you want, edit them, then save the profile normally.">
+              <div className="grid gap-4 lg:grid-cols-2">
+                <ReluSmartInput
+                  label="Summary suggestion"
+                  placeholder="Ask for a clearer business summary"
+                  value={form.summary}
+                  type="summary"
+                  token={token}
+                  onChange={(value) => updateField("summary", value)}
+                  onSuggestionSelect={(suggestion) => updateField("summary", suggestion.label)}
+                />
+                <ReluSmartInput
+                  label="Taxonomy suggestion"
+                  placeholder="Describe the trade, service, or company activity"
+                  value={reluTaxonomyQuery}
+                  type="taxonomy"
+                  token={token}
+                  onChange={setReluTaxonomyQuery}
+                  onSuggestionSelect={(suggestion) => updateField("description", suggestion.label)}
+                />
+                <ReluSmartInput
+                  label="ESCO suggestion"
+                  placeholder="e.g. electricians for retrofit packages"
+                  value={reluEscoQuery}
+                  type="esco"
+                  token={token}
+                  onChange={setReluEscoQuery}
+                  onSuggestionSelect={(suggestion) => addProfileCode("escoCodes", suggestion)}
+                />
+                <ReluSmartInput
+                  label="NACE suggestion"
+                  placeholder="e.g. building installation or construction services"
+                  value={reluNaceQuery}
+                  type="nace"
+                  token={token}
+                  onChange={setReluNaceQuery}
+                  onSuggestionSelect={(suggestion) => addProfileCode("naceCodes", suggestion)}
+                />
+                <div className="lg:col-span-2">
+                  <ReluSmartInput
+                    label="Geography suggestion"
+                    placeholder="e.g. Bucharest-Ilfov, Cluj, national coverage"
+                    value={reluGeographyQuery}
+                    type="geography"
+                    token={token}
+                    onChange={setReluGeographyQuery}
+                    onSuggestionSelect={applyProfileGeographySuggestion}
+                  />
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-slate-600">
+                RELU AI never saves changes here. Manual profile creation remains available even when AI is unavailable or permission is denied.
+              </p>
             </Panel>
 
             <Panel title="Classification & Languages" description="Choose the public taxonomy and language metadata that should follow your profile.">

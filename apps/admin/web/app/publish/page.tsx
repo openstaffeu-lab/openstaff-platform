@@ -4,8 +4,10 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import EscoMultiSelect from "@/components/EscoMultiSelect";
 import NaceSearchInput from "@/components/NaceSearchInput";
+import ReluSmartInput from "@/components/relu/ReluSmartInput";
 import UniclassMultiSelect from "@/components/UniclassMultiSelect";
 import { useAuth } from "@/context/AuthContext";
+import type { ReluBuilderSuggestion } from "@/lib/relu-builder-api";
 import {
   apiRequest,
   createPublicPost,
@@ -100,6 +102,15 @@ const emptyForm: PublishFormState = {
   uniclassCodes: [],
 };
 
+function extractSuggestionCode(suggestion: ReluBuilderSuggestion) {
+  const source = `${suggestion.label} ${suggestion.description ?? ""}`;
+  return (
+    source.match(/\b[A-Z][A-Z0-9_]{1,}[_-]\d[\w.-]*/)?.[0] ??
+    source.match(/\b\d{2,5}(?:\.\d{1,3}){0,3}\b/)?.[0] ??
+    ""
+  );
+}
+
 export default function PublishMarketplacePage() {
   const { token, user } = useAuth();
   const [posts, setPosts] = useState<MarketplacePost[]>([]);
@@ -115,6 +126,10 @@ export default function PublishMarketplacePage() {
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [documentTitle, setDocumentTitle] = useState("");
   const [externalLink, setExternalLink] = useState("");
+  const [reluTaxonomyQuery, setReluTaxonomyQuery] = useState("");
+  const [reluEscoQuery, setReluEscoQuery] = useState("");
+  const [reluNaceQuery, setReluNaceQuery] = useState("");
+  const [reluGeographyQuery, setReluGeographyQuery] = useState("");
 
   const selectedPost = useMemo(
     () => posts.find((post) => post.id === selectedId) ?? null,
@@ -237,6 +252,18 @@ export default function PublishMarketplacePage() {
       languageCodes: current.languageCodes.includes(code)
         ? current.languageCodes.filter((entry) => entry !== code)
         : [...current.languageCodes, code],
+    }));
+  }
+
+  function addPostCode(key: "escoCodes" | "naceCodes", suggestion: ReluBuilderSuggestion) {
+    const code = extractSuggestionCode(suggestion);
+    if (!code) {
+      return;
+    }
+
+    setForm((current) => ({
+      ...current,
+      [key]: current[key].includes(code) ? current[key] : [...current[key], code],
     }));
   }
 
@@ -659,6 +686,69 @@ export default function PublishMarketplacePage() {
                 />
               </Field>
             </div>
+
+            <section className="mt-6 rounded-2xl border border-cyan-300/20 bg-slate-950/50 p-4">
+              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <h2 className="text-base font-semibold text-white">RELU AI assistance</h2>
+                  <p className="mt-1 text-sm leading-6 text-slate-300">
+                    AI suggestions are advisory. Apply a suggestion only when it fits the post, edit it freely, then save normally.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                <ReluSmartInput
+                  label="Draft summary suggestion"
+                  placeholder="Ask for a concise marketplace summary"
+                  value={form.summary}
+                  type="summary"
+                  token={token}
+                  onChange={(value) => updateField("summary", value)}
+                  onSuggestionSelect={(suggestion) => updateField("summary", suggestion.label)}
+                />
+                <ReluSmartInput
+                  label="Taxonomy suggestion"
+                  placeholder="Describe the post activity or service need"
+                  value={reluTaxonomyQuery}
+                  type="taxonomy"
+                  token={token}
+                  onChange={setReluTaxonomyQuery}
+                  onSuggestionSelect={(suggestion) => updateField("domain", suggestion.label)}
+                />
+                <ReluSmartInput
+                  label="ESCO suggestion"
+                  placeholder="e.g. electrical installation, BIM coordination"
+                  value={reluEscoQuery}
+                  type="esco"
+                  token={token}
+                  onChange={setReluEscoQuery}
+                  onSuggestionSelect={(suggestion) => addPostCode("escoCodes", suggestion)}
+                />
+                <ReluSmartInput
+                  label="NACE suggestion"
+                  placeholder="e.g. construction, HVAC, engineering services"
+                  value={reluNaceQuery}
+                  type="nace"
+                  token={token}
+                  onChange={setReluNaceQuery}
+                  onSuggestionSelect={(suggestion) => addPostCode("naceCodes", suggestion)}
+                />
+                <div className="lg:col-span-2">
+                  <ReluSmartInput
+                    label="Geography suggestion"
+                    placeholder="e.g. Bucharest, national, cross-border"
+                    value={reluGeographyQuery}
+                    type="geography"
+                    token={token}
+                    onChange={setReluGeographyQuery}
+                    onSuggestionSelect={(suggestion) => updateField("location", suggestion.label)}
+                  />
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-slate-300">
+                RELU AI cannot publish or save this post. Manual publishing remains available if AI is unavailable or access is denied.
+              </p>
+            </section>
 
             <div className="mt-8 grid gap-4 md:grid-cols-3">
               <Field label="Country">

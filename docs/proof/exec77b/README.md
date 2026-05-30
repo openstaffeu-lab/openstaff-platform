@@ -173,3 +173,118 @@ Local browser/dev-server note:
 ### EXEC-77B.2 Readiness
 
 EXEC-77B.2 is unblocked to choose one real workflow and wire explicit apply-before-save behavior. EXEC-77B.2 was not started in this pass.
+
+## EXEC-77B.2 RELU Builder Workflow Integration
+
+### Verdict
+
+PASS
+
+EXEC-77B.2 integrates the reusable RELU Builder frontend foundation into real OpenStaff business workflows while keeping RELU advisory-only and preserving existing authorization and save boundaries.
+
+### Git Safety
+
+Branch: `feature/work-in-progress`
+
+Starting local and origin commit:
+
+- `041026724f8b4433e4d0fc4d66fcc7d7f5db744a`
+
+Unrelated untracked files remained unstaged:
+
+- `src/`
+- `OPENSTAFF_AUDIT_2026-05.md`
+- `OPENSTAFF_AUDIT_2026-05_BACKUP.md`
+
+No backend, Prisma schema, migration, guard, permission, Cloud Run, or GCP config files were modified.
+
+### Workflow Discovery Results
+
+Professional profile editing:
+
+- Route: `apps/admin/web/app/profile/page.tsx`
+- Component: `ProfileWorkspacePage`
+- Save flow: `handleSave()` calls the existing `PUT /profile` path through `apiRequest`
+- Integration point: advisory summary, taxonomy, ESCO, NACE, and geography controls before normal profile save
+
+Company editing:
+
+- Route: `apps/admin/web/app/profile/page.tsx`
+- Component: `ProfileWorkspacePage`
+- Save flow: same existing `PUT /profile` flow
+- Integration point: company/contractor profile summary, taxonomy, ESCO/NACE, and service-area geography suggestions
+
+Post publishing:
+
+- Route: `apps/admin/web/app/publish/page.tsx`
+- Component: `PublishMarketplacePage`
+- Save flow: `handleSubmit()` calls existing `createPublicPost` or `updatePublicPost`
+- Integration point: advisory draft summary, taxonomy/domain, ESCO, NACE, and geography suggestions before create/update submit
+
+Project create/edit:
+
+- Routes: `apps/admin/web/app/projects/new/page.tsx`, `apps/admin/web/app/projects/[id]/edit/page.tsx`
+- Component: `apps/admin/web/components/projects/ProjectWorkspaceForm.tsx`
+- Save flow: `handleSubmit()` creates or updates through the existing `/projects` API paths
+- Integration point: advisory project summary, taxonomy, ESCO, NACE, and geography suggestions before submit
+
+### Files Modified
+
+- `apps/admin/web/app/profile/page.tsx`
+- `apps/admin/web/app/publish/page.tsx`
+- `apps/admin/web/components/projects/ProjectWorkspaceForm.tsx`
+- `apps/admin/web/components/relu/ReluSmartInput.tsx`
+- `STATUS.md`
+- `docs/proof/exec77b/README.md`
+
+### Endpoints Consumed
+
+Only existing EXEC-77A endpoints are used through the existing frontend wrapper:
+
+- `POST /relu-ai-builder/summary`
+- `POST /relu-ai-builder/taxonomy`
+- `POST /relu-ai-builder/esco`
+- `POST /relu-ai-builder/nace`
+- `POST /relu-ai-builder/geography`
+
+No backend API contract was changed.
+
+### UX States and Boundaries
+
+The workflow integrations expose the existing business-readable states:
+
+- `Ready`
+- `RELU AI is processing`
+- `AI suggestions ready`
+- `Human review needed`
+- `AI unavailable`
+- `Provider temporarily unavailable`
+
+All integrated workflows preserve the apply model:
+
+- Ask RELU AI
+- Review suggestion
+- Apply suggestion
+- Manual edit
+- Save normally
+
+RELU never auto-saves, auto-publishes, or bypasses existing workflow buttons. If RELU returns 401, 403, 429, or 5xx, the workflow remains manually usable.
+
+### Validation Results
+
+From `apps/admin/web`:
+
+- `npm.cmd run build`: PASS
+- `npm.cmd run lint`: PASS, 21 warnings / 0 errors
+
+The warnings are existing repository warnings; no lint errors were introduced.
+
+### Remaining Gaps
+
+1. Company onboarding creation remains the existing fiscal/VAT identity flow; company RELU drafting is integrated through the profile workspace instead of the onboarding company identity form.
+2. RELU Builder endpoints remain SUPERADMIN-only, so broad user-facing AI access needs a later product/permission decision.
+3. Browser matrix, production deployment, and live UI proof are deferred to the next EXEC-77B pass.
+
+### EXEC-77B.3 Readiness
+
+EXEC-77B.3 is unblocked for browser validation, structured mapping refinement, and rollout proof. EXEC-77B.3 was not started in this pass.
