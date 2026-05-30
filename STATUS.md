@@ -158,6 +158,35 @@ Verdict: `PASS - after Gemini prepaid credits were restored, direct Gemini smoke
 
 EXEC-77A live backend/Gemini proof is closed. EXEC-77B may start only as a separate frontend integration pass; no EXEC-77B implementation was started in this execution.
 
+## EXEC-77B.1 RELU Builder Frontend Foundation
+
+Verdict: `PASS - the first reusable frontend foundation for RELU Builder is implemented in the public web app without backend, schema, migration, guard, Cloud Run, or API-contract changes. The foundation adds a typed RELU Builder API client, cancellation-safe hook, business-readable status badge, smart suggestion input, taxonomy suggestion panel, and a non-invasive internal preview route at /relu-builder. Web build and lint pass with existing warnings only, docs are updated, and EXEC-77B.2 is unblocked as a separate workflow integration pass.`
+
+### EXEC-77B.1 Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| git safety | PASS | branch `feature/work-in-progress`; local and origin started aligned at `3defa693fc46fa5590542ddfab15bf59cdf624b4`; root `src/` and `OPENSTAFF_AUDIT_2026-05*.md` remained untracked and unstaged |
+| frontend API wrapper | PASS | `apps/admin/web/lib/relu-builder-api.ts` wraps existing `/relu-ai-builder/summary`, `/taxonomy`, `/esco`, `/nace`, and `/geography` endpoints with TypeScript types, sanitized result mapping, and UI-safe errors |
+| hook | PASS | `apps/admin/web/hooks/useReluBuilder.ts` provides loading/error/success/lastResult, reset, retry, and run methods with stale-update protection |
+| status UI | PASS | `apps/admin/web/components/relu/ReluStatusBadge.tsx` implements Ready, processing, ready, review-needed, unavailable, and provider-unavailable states |
+| smart input | PASS | `apps/admin/web/components/relu/ReluSmartInput.tsx` adds debounced/manual RELU suggestions, keyboard-friendly controls, loading/error/empty/suggestion states, and no raw IDs |
+| suggestion panel | PASS | `apps/admin/web/components/relu/TaxonomySuggestionPanel.tsx` displays business-readable suggestions with apply/ignore callbacks, optional confidence, and advisory source labels |
+| preview integration | PASS | `apps/admin/web/app/relu-builder/page.tsx` provides a standalone internal preview route; it does not change profile save, onboarding, post, or marketplace flows |
+| UX boundary | PASS | UI states say suggestions are advisory, editable, never auto-saved, and manual creation remains available if AI is unavailable |
+| validation | PASS with warnings | `apps/admin/web -> npm.cmd run build` exited `0`; `npm.cmd run lint` exited `0` with 21 existing warnings and 0 errors |
+| browser/dev-server note | PARTIAL | in-app browser control was unavailable in this tool session; local dev-server fallback could not stay running through sandbox process launch, but Next build prerendered `/relu-builder` successfully |
+
+### EXEC-77B.1 Remaining Risks
+
+1. EXEC-77B.1 is a foundation and preview route only; it does not yet wire RELU suggestions into production profile, post, project, or company onboarding saves.
+2. RELU Builder endpoints remain SUPERADMIN-only, so this preview is for technical operator validation until product-specific permissions and UX are designed in a later EXEC.
+3. The suggestion parser intentionally normalizes Gemini output into safe text/cards; richer structured labels can be improved after observing more provider outputs.
+
+### EXEC-77B.2 Readiness
+
+EXEC-77B.2 is unblocked to integrate the reusable foundation into a chosen workflow, but no EXEC-77B.2 implementation was started in EXEC-77B.1.
+
 ## EXEC-76 Production Rollout & Live Verification for EXEC-75
 
 Verdict: `IN PROGRESS - EXEC-75 was migrated and promoted to production successfully, live role isolation now blocks normal ADMIN and AI_MODERATOR users from technical APIs while allowing SUPERADMIN, approved public profile/company assets now render anonymously through /profiles/assets/:documentId, browser/mobile proof is clean, and successful project AI reruns append history. Final PASS is not honest yet because the required failed project AI rerun append proof could not be produced through a safe live endpoint; the attempted bad rerun returned 400 before the failed-run append branch while preserving the last successful current interpretation.`
