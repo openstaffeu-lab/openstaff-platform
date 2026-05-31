@@ -283,9 +283,46 @@ Verdict: `PASS - the public homepage and global public layout are now aligned to
 3. App Store and Google Play badges remain placeholders until real distribution links exist.
 4. Existing mobile bottom navigation can overlap the bottom edge of very short mobile screenshots; it was not changed in this homepage alignment pass.
 
-### EXEC-77C.3 Boundary
+## EXEC-77C.3 Public Web Deployment & Production Browser Proof
 
-EXEC-77C.3 was not started.
+Verdict: `PASS - the EXEC-77C.2 premium public web layout was deployed through the normal public web Cloud Build path, Cloud Run revision openstaff-web-00029-6n4 is READY with 100% traffic, live https://openstaff.eu desktop/mobile browser proof passed across homepage and key public routes with no console errors, page errors, unexpected 4xx/5xx responses, horizontal overflow, or raw-data exposure, and production API health/readiness remains healthy. EXEC-77C.4 was not started.`
+
+### EXEC-77C.3 Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| git safety | PASS | branch `feature/work-in-progress`; local/origin started aligned at `c44bc7c25ea8afdcd4dac4bfa5637ab933a74a6b`; root `src/` and `OPENSTAFF_AUDIT_2026-05*.md` remained untracked and unstaged |
+| pre-deploy build | PASS | `apps/admin/web -> npm.cmd run build` exited `0` |
+| pre-deploy lint | PASS with warnings | `apps/admin/web -> npm.cmd run lint` exited `0` with 21 existing warnings and 0 errors |
+| public web Cloud Build | PASS | Cloud Build `9be58a7c-40a0-4a5d-8172-abeb01d7614a` using `apps/admin/web/cloudbuild.web.yaml` succeeded |
+| Cloud Run revision | PASS | `openstaff-web-00029-6n4` is latest ready revision |
+| traffic | PASS | `openstaff-web-00029-6n4` receives 100% traffic |
+| live desktop browser | PASS | `https://openstaff.eu` desktop proof covered `/`, `/projects`, `/professionals`, `/pricing`, `/login`, `/register`, and `/onboarding/company` |
+| live mobile browser | PASS | mobile viewport proof covered the same routes and verified no horizontal overflow |
+| homepage UI proof | PASS | live proof confirmed header, hero, quick-action board, footer, Login/Register, contact modal open/close, and footer Business & Operations |
+| mobile navigation | PASS | mobile menu button opened and exposed Login/Register links |
+| visual proof | PASS | screenshots saved under `docs/proof/exec77c/screenshots/` |
+| raw data exposure | PASS | rendered UI scan found no raw JSON, run IDs, actor IDs, entity IDs, stack traces, API keys, or Gemini internals |
+| production health | PASS | `https://api.openstaff.eu/health` returned `status=ok`; `/status` returned `status=ok`, `db=healthy`, `readiness.errors=[]`, `readiness.warnings=[]` |
+
+### EXEC-77C.3 Screenshot Proof
+
+- `docs/proof/exec77c/screenshots/homepage-desktop.png`
+- `docs/proof/exec77c/screenshots/homepage-mobile.png`
+- `docs/proof/exec77c/screenshots/footer-desktop.png`
+- `docs/proof/exec77c/screenshots/contact-modal.png`
+- `docs/proof/exec77c/screenshots/projects-page.png`
+- `docs/proof/exec77c/screenshots/professionals-page.png`
+
+### EXEC-77C.3 Remaining Risks
+
+1. The contact modal remains frontend-only by design and does not create backend contact records.
+2. App Store and Google Play footer badges remain placeholders until real distribution links exist.
+3. Browser proof validated public route stability and visual state, but did not create or mutate live business records.
+
+### EXEC-77C.4 Boundary
+
+EXEC-77C.4 was not started.
 
 ## EXEC-76 Production Rollout & Live Verification for EXEC-75
 

@@ -1,0 +1,280 @@
+{
+  "generatedAt": "2026-05-31T18:52:57.441Z",
+  "baseUrl": "https://openstaff.eu",
+  "routes": [
+    "/",
+    "/projects",
+    "/professionals",
+    "/pricing",
+    "/login",
+    "/register",
+    "/onboarding/company"
+  ],
+  "screenshots": [
+    "contact-modal.png",
+    "footer-desktop.png",
+    "homepage-desktop.png",
+    "homepage-mobile.png",
+    "professionals-page.png",
+    "projects-page.png"
+  ],
+  "failures": [],
+  "results": [
+    {
+      "route": "/",
+      "viewport": "desktop",
+      "pageStatus": 200,
+      "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "overflow": {
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "hasHorizontalOverflow": false
+      },
+      "rawExposure": [],
+      "checks": {
+        "header": true,
+        "hero": true,
+        "quickActionBoard": true,
+        "footer": true,
+        "login": true,
+        "register": true,
+        "contactModalOpen": true,
+        "contactModalClosed": true
+      }
+    },
+    {
+      "route": "/projects",
+      "viewport": "desktop",
+      "pageStatus": 200,
+      "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "overflow": {
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "hasHorizontalOverflow": false
+      },
+      "rawExposure": [],
+      "checks": {}
+    },
+    {
+      "route": "/professionals",
+      "viewport": "desktop",
+      "pageStatus": 200,
+      "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "overflow": {
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "hasHorizontalOverflow": false
+      },
+      "rawExposure": [],
+      "checks": {}
+    },
+    {
+      "route": "/pricing",
+      "viewport": "desktop",
+      "pageStatus": 200,
+      "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "overflow": {
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "hasHorizontalOverflow": false
+      },
+      "rawExposure": [],
+      "checks": {}
+    },
+    {
+      "route": "/login",
+      "viewport": "desktop",
+      "pageStatus": 200,
+      "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "overflow": {
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "hasHorizontalOverflow": false
+      },
+      "rawExposure": [],
+      "checks": {}
+    },
+    {
+      "route": "/register",
+      "viewport": "desktop",
+      "pageStatus": 200,
+      "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "overflow": {
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "hasHorizontalOverflow": false
+      },
+      "rawExposure": [],
+      "checks": {}
+    },
+    {
+      "route": "/onboarding/company",
+      "viewport": "desktop",
+      "pageStatus": 200,
+      "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "overflow": {
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "hasHorizontalOverflow": false
+      },
+      "rawExposure": [],
+      "checks": {}
+    },
+    {
+      "route": "/",
+      "viewport": "mobile",
+      "pageStatus": 200,
+      "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "overflow": {
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "hasHorizontalOverflow": false
+      },
+      "rawExposure": [],
+      "checks": {
+        "header": true,
+        "hero": true,
+        "quickActionBoard": true,
+        "footer": true,
+        "mobileMenuButton": true,
+        "mobileMenuLogin": true,
+        "mobileMenuRegister": true,
+        "loginRegisterAccessible": true
+      }
+    },
+    {
+      "route": "/projects",
+      "viewport": "mobile",
+      "pageStatus": 200,
+      "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "overflow": {
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "hasHorizontalOverflow": false
+      },
+      "rawExposure": [],
+      "checks": {}
+    },
+    {
+      "route": "/professionals",
+      "viewport": "mobile",
+      "pageStatus": 200,
+      "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "overflow": {
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "hasHorizontalOverflow": false
+      },
+      "rawExposure": [],
+      "checks": {}
+    },
+    {
+      "route": "/pricing",
+      "viewport": "mobile",
+      "pageStatus": 200,
+      "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "overflow": {
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "hasHorizontalOverflow": false
+      },
+      "rawExposure": [],
+      "checks": {}
+    },
+    {
+      "route": "/login",
+      "viewport": "mobile",
+      "pageStatus": 200,
+      "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "overflow": {
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "hasHorizontalOverflow": false
+      },
+      "rawExposure": [],
+      "checks": {}
+    },
+    {
+      "route": "/register",
+      "viewport": "mobile",
+      "pageStatus": 200,
+      "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "overflow": {
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "hasHorizontalOverflow": false
+      },
+      "rawExposure": [],
+      "checks": {}
+    },
+    {
+      "route": "/onboarding/company",
+      "viewport": "mobile",
+      "pageStatus": 200,
+      "title": "OpenStaff | AI-Driven Procurement & Staffing Ecosystem",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "overflow": {
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "hasHorizontalOverflow": false
+      },
+      "rawExposure": [],
+      "checks": {}
+    }
+  ]
+}

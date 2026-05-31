@@ -295,6 +295,132 @@ Warnings match the existing public web lint baseline and were not introduced by 
 3. App Store and Google Play badges remain placeholders until real app distribution links exist.
 4. The mobile bottom navigation remains an existing public-shell component and can overlap very low viewport screenshots; it was not changed in this homepage alignment pass.
 
-### EXEC-77C.3 Boundary
+## EXEC-77C.3 Public Web Deployment & Production Browser Proof
 
-EXEC-77C.3 was not started.
+### Verdict
+
+PASS
+
+EXEC-77C.3 deployed the EXEC-77C.2 premium public web layout to production through the normal public web Cloud Build path and validated the live public surface on desktop and mobile. No backend API, Prisma schema, migration, guard, permission, auth, API Cloud Run service, GCP config, RELU behavior, or backend contact form logic was changed.
+
+### Git Safety
+
+- Branch: `feature/work-in-progress`
+- Starting local commit: `c44bc7c25ea8afdcd4dac4bfa5637ab933a74a6b`
+- Starting origin commit: `c44bc7c25ea8afdcd4dac4bfa5637ab933a74a6b`
+- Unrelated untracked files remained unstaged:
+  - `src/`
+  - `OPENSTAFF_AUDIT_2026-05.md`
+  - `OPENSTAFF_AUDIT_2026-05_BACKUP.md`
+
+### Pre-Deploy Validation
+
+From `apps/admin/web`:
+
+- `npm.cmd run build`: PASS
+- `npm.cmd run lint`: PASS, 21 warnings / 0 errors
+
+Warnings match the existing public web lint baseline.
+
+### Deployment Proof
+
+- Cloud Build config: `apps/admin/web/cloudbuild.web.yaml`
+- Cloud Build ID: `9be58a7c-40a0-4a5d-8172-abeb01d7614a`
+- Build status: `SUCCESS`
+- Cloud Run service: `openstaff-web`
+- Region: `europe-west1`
+- New revision: `openstaff-web-00029-6n4`
+- Revision status: `READY`
+- Traffic: `100%` to `openstaff-web-00029-6n4`
+- Image: `europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-web:9be58a7c-40a0-4a5d-8172-abeb01d7614a`
+
+### Production Browser Matrix
+
+Live base URL: `https://openstaff.eu`
+
+Routes validated on desktop Chrome and mobile viewport:
+
+- `/`
+- `/projects`
+- `/professionals`
+- `/pricing`
+- `/login`
+- `/register`
+- `/onboarding/company`
+
+Result:
+
+- page status: `200` for all validated routes
+- console errors: `[]`
+- page errors: `[]`
+- unexpected 4xx/5xx responses: `[]`
+- horizontal overflow: `false` for all validated routes
+- homepage header: PASS
+- homepage hero: PASS
+- quick-action board: PASS
+- footer: PASS
+- Login/Register desktop accessibility: PASS
+- Login/Register mobile menu accessibility: PASS
+- contact modal open/close: PASS
+- footer Business & Operations visibility: PASS
+
+Detailed machine-readable proof:
+
+- `docs/proof/exec77c/exec77c3-browser-proof.json`
+- `docs/proof/exec77c/exec77c3-browser-proof.cjs`
+
+### Screenshot Proof
+
+Saved under `docs/proof/exec77c/screenshots/`:
+
+- `homepage-desktop.png`
+- `homepage-mobile.png`
+- `footer-desktop.png`
+- `contact-modal.png`
+- `projects-page.png`
+- `professionals-page.png`
+
+### Raw Data Exposure Proof
+
+Rendered live UI was scanned for:
+
+- raw JSON
+- run IDs
+- actor IDs
+- entity IDs
+- stack traces
+- API keys
+- Gemini internals
+
+Result: PASS. `rawExposure=[]` for every validated desktop and mobile route.
+
+### Production Health Proof
+
+- `https://api.openstaff.eu/health`: `status=ok`
+- `https://api.openstaff.eu/status`: `status=ok`
+- database: `db=healthy`
+- readiness errors: `[]`
+- readiness warnings: `[]`
+
+### Files Added Or Updated
+
+- `STATUS.md`
+- `docs/proof/exec77c/README.md`
+- `docs/proof/exec77c/exec77c3-browser-proof.cjs`
+- `docs/proof/exec77c/exec77c3-browser-proof.json`
+- `docs/proof/exec77c/screenshots/homepage-desktop.png`
+- `docs/proof/exec77c/screenshots/homepage-mobile.png`
+- `docs/proof/exec77c/screenshots/footer-desktop.png`
+- `docs/proof/exec77c/screenshots/contact-modal.png`
+- `docs/proof/exec77c/screenshots/projects-page.png`
+- `docs/proof/exec77c/screenshots/professionals-page.png`
+
+### Remaining Risks
+
+1. The contact modal remains frontend-only by design and does not persist contact requests.
+2. App Store and Google Play footer badges remain placeholders until real app distribution links exist.
+3. Browser proof validated public route stability and display safety, but did not create or mutate live profile, project, or account records.
+
+### EXEC-77C.4 Boundary
+
+EXEC-77C.4 was not started.
