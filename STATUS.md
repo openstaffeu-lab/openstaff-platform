@@ -255,9 +255,37 @@ Verdict: `PASS - company onboarding has been release-hardened with clearer requi
 2. Company onboarding still uses the existing provider lookup contract and does not add new backend normalization or provider coverage.
 3. A fresh production browser matrix can be run in a later rollout proof if EXEC-77C proceeds toward deployment.
 
-### EXEC-77C.2 Boundary
+## EXEC-77C.2 Premium Homepage & Global Layout UX/UI Alignment
 
-EXEC-77C.2 was not started.
+Verdict: `PASS - the public homepage and global public layout are now aligned to the premium OpenStaff marketplace direction without backend, Prisma, migration, auth, guard, permission, Cloud Run, GCP, or RELU backend changes. The pass adds a dark navy global header, Romanian search placeholder, ordered navigation, RO/EN language placeholder, frontend-only contact modal, premium hero with dashboard mockup, floating quick-action board, hardened category/project/profile cards, and a complete dark footer that preserves Business & Operations. Public web build passes, lint exits 0 with the existing 21 warnings, desktop/mobile homepage screenshots were captured, and mobile overflow checks pass.`
+
+### EXEC-77C.2 Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| git safety | PASS | scoped public web and docs/status changes only; root `src/` and `OPENSTAFF_AUDIT_2026-05*.md` remained untracked and unstaged |
+| mandatory discovery | PASS | inspected `Header`, `Navbar`, homepage hero/categories/projects/profiles, `JobCard`, `ActorCard`, `Footer`, pricing route, contact route availability, and language-selector availability before implementation |
+| global header | PASS | `apps/admin/web/components/Navbar.tsx` now uses `#0F172A`, white text/icons, `Caută joburi, NACE, ESCO...`, ordered nav, Login outline, Register `#22C55E`, mobile menu, and RO/EN placeholder |
+| contact modal | PASS | `Navbar` now includes a frontend-only contact modal with name, email, company, topic dropdown, message, local safe submit state, and `info@openstaff.eu`; no backend route was added |
+| premium hero | PASS | `apps/admin/web/app/page.tsx` now renders the required badge, headline, RELU/NACE description, Publish now `#22C55E`, Explore `#2563EB` after requested violet removal, trust row, and right-side dashboard mockup |
+| quick action board | PASS | floating white Business & Operations / Quick Contact board added below hero with icon-driven shortcuts and `info@openstaff.eu` |
+| categories/domains | PASS | category/domain selectors now cover Industrial, Construction, HORECA, Data Center, Energy, Logistics, Aviation, and Robotics / Drones with rounded icon tiles |
+| project cards | PASS | `JobCard` now uses white cards, `#E2E8F0` borders, amber category badges, green LIVE/match states, and dark details CTA without backend contract changes |
+| profile cards | PASS | `ActorCard` now uses approved profile badge, clear name, taxonomy/region summary, and bordered profile CTA without raw IDs or technical metadata |
+| footer | PASS | `Footer` now uses `#0F172A` and `#0B1329`, preserves complete Business & Operations, and adds support/legal, communications/apps, global coverage, and compliance badges |
+| validation | PASS with warnings | `apps/admin/web -> npm.cmd run build` passed; `npm.cmd run lint` exited `0` with 21 existing warnings and 0 errors |
+| browser smoke | PASS | built app served locally on `127.0.0.1:3007`; HTTP `200 OK`; desktop/mobile screenshots captured; mobile overflow returned `innerWidth=390`, `scrollWidth=390`, `bodyScrollWidth=390` |
+
+### EXEC-77C.2 Remaining Risks
+
+1. EXEC-77C.2 validates the premium homepage locally; it does not deploy a new public web revision.
+2. Contact modal submit is frontend-only and does not create a backend message record.
+3. App Store and Google Play badges remain placeholders until real distribution links exist.
+4. Existing mobile bottom navigation can overlap the bottom edge of very short mobile screenshots; it was not changed in this homepage alignment pass.
+
+### EXEC-77C.3 Boundary
+
+EXEC-77C.3 was not started.
 
 ## EXEC-76 Production Rollout & Live Verification for EXEC-75
 

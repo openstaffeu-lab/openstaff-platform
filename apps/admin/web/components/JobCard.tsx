@@ -3,12 +3,12 @@
 import Link from "next/link";
 import type { MarketplacePost } from "@/lib/api";
 
-const STATUS_COLORS: Record<string, string> = {
-  LIVE: "#00E87A",
-  PENDING: "#F59E0B",
-  OFFLINE: "#8892B0",
-  CLOSED: "#EF4444",
-  WARRANTY: "#3B82F6",
+const STATUS_LABELS: Record<string, string> = {
+  LIVE: "LIVE",
+  PENDING: "PENDING",
+  OFFLINE: "OFFLINE",
+  CLOSED: "CLOSED",
+  WARRANTY: "WARRANTY",
 };
 
 export default function JobCard({
@@ -24,7 +24,6 @@ export default function JobCard({
   createdAt,
   ownerName,
 }: Partial<MarketplacePost>) {
-  const statusColor = STATUS_COLORS[status ?? "LIVE"] ?? "#8892B0";
   const budgetLabel =
     typeof budgetMin === "number" || typeof budgetMax === "number"
       ? `${currencyCode || "EUR"} ${[
@@ -41,107 +40,63 @@ export default function JobCard({
   );
   const reluFit =
     reluMatch >= 86
-      ? "Strong Fit"
+      ? "Strong fit"
       : reluMatch >= 72
-        ? "Good Fit"
-        : "Requires Additional Certifications";
+        ? "Good fit"
+        : "Review needed";
+  const statusLabel = STATUS_LABELS[status ?? "LIVE"] ?? status ?? "LIVE";
 
   return (
-    <div
-      style={{
-        background: "white",
-        borderRadius: 12,
-        padding: 24,
-        boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
-        border: "1px solid #E8EBF5",
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-        <span
-          style={{
-            background: "#1B2A6B",
-            color: "white",
-            padding: "4px 10px",
-            borderRadius: 6,
-            fontSize: 11,
-            fontWeight: 700,
-          }}
-        >
+    <article className="flex h-full flex-col rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+      <div className="flex items-start justify-between gap-3">
+        <span className="rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-bold text-[#92400E]">
           {domain || "Marketplace Project"}
         </span>
-        <span
-          style={{
-            background: `${statusColor}20`,
-            color: statusColor,
-            padding: "4px 10px",
-            borderRadius: 6,
-            fontSize: 11,
-            fontWeight: 700,
-          }}
-        >
-          {status || "LIVE"}
+        <span className="rounded-full bg-[#DCFCE7] px-3 py-1 text-xs font-bold text-[#15803D]">
+          {statusLabel}
         </span>
       </div>
 
-      <h3 style={{ color: "#1B2A6B", fontSize: 16, fontWeight: 700, margin: 0 }}>{title}</h3>
+      <h3 className="mt-5 text-lg font-bold leading-6 text-[#1E293B]">{title || "Approved project"}</h3>
 
-      <div style={{ color: "#8892B0", fontSize: 13, display: "flex", gap: 16, flexWrap: "wrap" }}>
-        {location ? <span>📍 {location}</span> : null}
-        {naceCodes?.[0] ? <span>NACE {naceCodes[0]}</span> : null}
-        {createdAt ? <span>{new Date(createdAt).toLocaleDateString("ro-RO")}</span> : null}
+      <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-[#64748B]">
+        {location ? <span className="rounded-full bg-[#F8FAFC] px-3 py-1">{location}</span> : null}
+        {naceCodes?.[0] ? <span className="rounded-full bg-[#F8FAFC] px-3 py-1">NACE {naceCodes[0]}</span> : null}
+        {createdAt ? (
+          <span className="rounded-full bg-[#F8FAFC] px-3 py-1">
+            {new Date(createdAt).toLocaleDateString("ro-RO")}
+          </span>
+        ) : null}
       </div>
 
-      {budgetLabel ? (
-        <div style={{ color: "#00E87A", fontWeight: 800, fontSize: 20 }}>{budgetLabel}</div>
-      ) : null}
+      {budgetLabel ? <div className="mt-5 text-2xl font-black text-[#22C55E]">{budgetLabel}</div> : null}
 
-      <div
-        style={{
-          border: "1px solid #D6F5E5",
-          background: "#F0FDF7",
-          borderRadius: 10,
-          padding: 12,
-          display: "grid",
-          gap: 6,
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-          <strong style={{ color: "#0F766E" }}>{reluMatch}% Match</strong>
-          <span style={{ color: "#166534", fontSize: 12, fontWeight: 700 }}>{reluFit}</span>
+      <div className="mt-5 rounded-2xl border border-[#BBF7D0] bg-[#F0FDF4] p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold text-[#166534]">AI match score</p>
+            <p className="mt-1 text-2xl font-black text-[#22C55E]">{reluMatch}%</p>
+          </div>
+          <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#15803D]">{reluFit}</span>
         </div>
-        <div style={{ color: "#475569", fontSize: 12, lineHeight: 1.5 }}>
-          RELU Flash: duration 2-8 weeks, contract risk {budgetLabel ? "low" : "medium"},
-          certifications {naceCodes?.[0] ? `NACE ${naceCodes[0]}` : "pending validation"}.
-        </div>
+        <p className="mt-3 text-sm leading-6 text-[#475569]">
+          RELU signal: delivery fit is based on scope, location, and taxonomy coverage.
+        </p>
       </div>
 
       {ownerName ? (
-        <div style={{ color: "#8892B0", fontSize: 12 }}>
-          Postat de: <span style={{ color: "#1B2A6B", fontWeight: 600 }}>{ownerName}</span>
-        </div>
+        <p className="mt-4 text-sm text-[#64748B]">
+          Posted by <span className="font-semibold text-[#1E293B]">{ownerName}</span>
+        </p>
       ) : null}
 
       <Link
         href={`/jobs/${id}`}
         prefetch={false}
-        style={{
-          display: "block",
-          textAlign: "center",
-          background: "#1B2A6B",
-          color: "white",
-          padding: "10px 0",
-          borderRadius: 8,
-          textDecoration: "none",
-          fontWeight: 700,
-          fontSize: 14,
-          marginTop: "auto",
-        }}
+        className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#0F172A] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2"
       >
         Vezi detalii
       </Link>
-    </div>
+    </article>
   );
 }

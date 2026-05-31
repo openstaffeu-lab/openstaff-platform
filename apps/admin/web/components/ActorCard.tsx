@@ -28,104 +28,42 @@ export default function ActorCard({
   const initial = (title || "?").slice(0, 1).toUpperCase();
   const portrait = mediaAssets?.find((item) => item.role === "PHOTO" || item.role === "GALLERY");
   const portraitUrl = resolveAssetUrl(portrait?.assetUrl);
+  const taxonomy = naceCodes?.[0] ? `NACE ${naceCodes[0]}` : domain || ownerType || "Marketplace profile";
+  const summary = [experienceLabel || ownerType, location].filter(Boolean).join(" | ");
 
   return (
-    <div
-      style={{
-        background: "white",
-        borderRadius: 18,
-        padding: 20,
-        boxShadow: "0 2px 8px rgba(15,23,42,0.06)",
-        border: "1px solid #DCE5F5",
-      }}
-    >
-      {portraitUrl ? (
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: "50%",
-            backgroundImage: `url(${portraitUrl})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            marginBottom: 12,
-          }}
-        />
-      ) : (
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: "50%",
-            background: "#1B2A6B",
-            color: "white",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 22,
-            fontWeight: 700,
-            marginBottom: 12,
-          }}
-        >
-          {initial}
-        </div>
-      )}
+    <article className="flex h-full flex-col rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+      <div className="flex items-start justify-between gap-3">
+        {portraitUrl ? (
+          <div
+            className="h-16 w-16 rounded-2xl border border-[#E2E8F0] bg-cover bg-center"
+            style={{ backgroundImage: `url(${portraitUrl})` }}
+            aria-hidden="true"
+          />
+        ) : (
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#0F172A] text-2xl font-black text-white">
+            {initial}
+          </div>
+        )}
+        <span className="rounded-full bg-[#DCFCE7] px-3 py-1 text-xs font-bold text-[#15803D]">
+          Approved profile
+        </span>
+      </div>
 
-      <span
-        style={{
-          background: "#E8F0FF",
-          color: "#1B2A6B",
-          fontSize: 10,
-          fontWeight: 700,
-          padding: "3px 8px",
-          borderRadius: 999,
-          display: "inline-block",
-          marginBottom: 8,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-        }}
-      >
-        Approved profile
-      </span>
+      <h3 className="mt-5 text-lg font-bold leading-6 text-[#1E293B]">{title || "Verified profile"}</h3>
 
-      <h3 style={{ color: "#1B2A6B", fontSize: 16, fontWeight: 700, margin: "0 0 4px" }}>
-        {title}
-      </h3>
-
-      {domain ? (
-        <div style={{ color: "#1B2A6B", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
-          {domain}
-        </div>
-      ) : null}
-
-      {naceCodes?.[0] ? (
-        <div style={{ color: "#00A260", fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
-          NACE {naceCodes[0]}
-        </div>
-      ) : null}
-
-      <div style={{ color: "#64748B", fontSize: 12, marginBottom: 12, lineHeight: 1.6 }}>
-        {experienceLabel || ownerType || "Available for marketplace opportunities"}
-        {location ? ` | ${location}` : ""}
+      <div className="mt-4 grid gap-2 text-sm text-[#64748B]">
+        <span className="rounded-xl bg-[#F8FAFC] px-3 py-2 font-semibold text-[#334155]">{taxonomy}</span>
+        {summary ? <span className="leading-6">{summary}</span> : null}
       </div>
 
       <Link
         href={`/professionals/${id}`}
         prefetch={false}
-        style={{
-          display: "block",
-          textAlign: "center",
-          border: "2px solid #1B2A6B",
-          color: "#1B2A6B",
-          padding: "8px 0",
-          borderRadius: 10,
-          textDecoration: "none",
-          fontWeight: 700,
-          fontSize: 13,
-        }}
+        className="mt-auto inline-flex min-h-11 items-center justify-center rounded-xl border border-[#CBD5E1] bg-white px-4 py-3 text-sm font-bold text-[#1E293B] transition hover:border-[#2563EB] hover:text-[#2563EB] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2"
       >
         View profile
       </Link>
-    </div>
+    </article>
   );
 }

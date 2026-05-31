@@ -128,6 +128,173 @@ Warnings match the existing public web lint baseline and are outside the EXEC-77
 2. Company onboarding still depends on the existing provider lookup contract and does not add a new provider or backend field mapping.
 3. Broader browser matrix rerun can be handled in a later rollout proof if EXEC-77C proceeds toward production deployment.
 
-### EXEC-77C.2 Boundary
+## EXEC-77C.2 Premium Homepage & Global Layout UX/UI Alignment
 
-EXEC-77C.2 was not started.
+### Verdict
+
+PASS
+
+EXEC-77C.2 aligns the public homepage, global header, marketplace cards, profile cards, quick action board, contact modal, and footer with the approved premium global SaaS marketplace direction. The pass is public-web only; no backend API, Prisma schema, migration, guard, permission, auth, Cloud Run, GCP, or RELU backend file was changed.
+
+### Discovery Results
+
+Public global header / navbar:
+
+- Path: `apps/admin/web/components/layout/Header.tsx`
+- Component: `Header`
+- Current responsibility: shell wrapper that renders `Navbar`
+- Modification plan: no direct logic change; keep wrapper and update the owned navigation in `Navbar`
+
+Public navbar:
+
+- Path: `apps/admin/web/components/Navbar.tsx`
+- Component: `Navbar`
+- Current responsibility: logo, search, public nav, auth CTAs, mobile menu, session-aware profile/logout links
+- Modification plan: apply dark navy header, approved search placeholder, navigation order, language selector, login/register styling, and frontend-only contact modal
+
+Homepage hero section:
+
+- Path: `apps/admin/web/app/page.tsx`
+- Component: `HomePage`
+- Current responsibility: homepage hero, live marketplace project/profile loading, categories, and Gemini widget
+- Modification plan: replace sparse hero with premium copy, emerald/magenta CTAs, trust row, and right-side dashboard mockup
+
+Homepage category/domain section:
+
+- Path: `apps/admin/web/app/page.tsx`
+- Component: `HomePage`
+- Current responsibility: renders marketplace domain/category entry points
+- Modification plan: rebuild as icon-driven selectors for Industrial, Construction, HORECA, Data Center, Energy, Logistics, Aviation, and Robotics / Drones
+
+Project feed/cards section:
+
+- Paths: `apps/admin/web/app/page.tsx`, `apps/admin/web/components/JobCard.tsx`
+- Components: `HomePage`, `JobCard`
+- Current responsibility: fetch approved public projects and render card summaries
+- Modification plan: keep data contract, restyle section and cards with approved feed badge, blue view-all CTA, amber category badges, green live/match states, and dark details CTA
+
+Profiles/companies section:
+
+- Paths: `apps/admin/web/app/page.tsx`, `apps/admin/web/components/ActorCard.tsx`
+- Components: `HomePage`, `ActorCard`
+- Current responsibility: fetch public professional/subcontractor profiles and render summary cards
+- Modification plan: keep data contract, restyle cards with approved profile badge, public-safe taxonomy/region summary, and bordered profile CTA
+
+Footer:
+
+- Path: `apps/admin/web/components/layout/Footer.tsx`
+- Component: `Footer`
+- Current responsibility: public brand/footer navigation from UI config
+- Modification plan: rebuild the full footer on dark navy, preserve Business & Operations, add communications/apps, coverage badges, and compliance strip
+
+Contact modal/page:
+
+- Path: `apps/admin/web/components/Navbar.tsx`
+- Component: `Navbar` contact modal
+- Current responsibility before EXEC-77C.2: no public contact modal/page existed
+- Modification plan: create frontend-only modal with name, email, company, topic dropdown, message, safe local submit state, and `mailto:info@openstaff.eu`
+
+Pricing route:
+
+- Paths: `apps/admin/web/app/pricing/page.tsx`, `apps/admin/web/app/pricing/pricing-page-client.tsx`
+- Components: `PricingPage`, `PricingPageClient`
+- Current responsibility: pricing tiers route
+- Modification plan: no implementation change; global nav and quick action board link to existing `/pricing`
+
+Language selector:
+
+- Path: `apps/admin/web/components/Navbar.tsx`
+- Component: `Navbar`
+- Current responsibility before EXEC-77C.2: no global language selector existed
+- Modification plan: add RO / EN dropdown placeholder in desktop and mobile navigation
+
+### Files Modified
+
+- `apps/admin/web/app/page.tsx`
+- `apps/admin/web/components/Navbar.tsx`
+- `apps/admin/web/components/JobCard.tsx`
+- `apps/admin/web/components/ActorCard.tsx`
+- `apps/admin/web/components/layout/Footer.tsx`
+- `docs/proof/exec77c/README.md`
+- `STATUS.md`
+
+### Header Changes
+
+- Header now uses `#0F172A` with white text/icons.
+- Search placeholder is `Caută joburi, NACE, ESCO...`.
+- Navigation order is `Cum funcționează`, `Prețuri`, `Contact`, `Limba`.
+- Login is a dark outlined button; Register is solid `#22C55E`.
+- Mobile keeps Login/Register accessible through the compact menu.
+- A frontend-only contact modal was added without backend integration.
+
+### Hero Changes
+
+- Badge: `AI-POWERED PROCUREMENT & STAFFING`.
+- Headline: `Your place where projects find the right professionals.`
+- Required RELU/NACE workforce copy is now the main description.
+- Primary CTA `Publish now` uses `#22C55E`; secondary CTA `Explore` now uses `#2563EB` after the requested violet CTA removal.
+- Trust row renders Verified Companies, AI Matching, Secure Contracting, and Live Monitoring.
+- Right-side premium dashboard mockup renders AI Match Score, Active Projects, Verified Specialists, Industries covered, mini chart, and floating cards without external image dependencies.
+
+### Quick Action Board
+
+- Added a floating white quick-action board directly below hero.
+- Column 1: Business & Operations with Publish now, Find Talent, Logistics Services, Specialized Tests, and Pricing Tiers.
+- Column 2: Quick Contact with Contact Us and `info@openstaff.eu`.
+- The board is icon-driven, shadowed, rounded, and responsive.
+- Footer Business & Operations was not replaced or removed.
+
+### Category, Project, And Profile Changes
+
+- Category/domain section now uses white background, icon selectors, `#E2E8F0` borders, hover `#F1F5F9`, and labels in `#334155`.
+- Project section now uses `#F8FAFC`, `APPROVED PROJECT FEED`, blue View all projects CTA, white cards, amber category badges, green LIVE/match states, and dark `Vezi detalii` CTA.
+- Profile cards now render an approved profile badge, clear name, taxonomy/region summary, and bordered View profile CTA.
+- Data loading still uses the existing public marketplace client functions; no backend data contract changed.
+
+### Footer Changes
+
+- Footer now uses `#0F172A` with deep bottom bar `#0B1329`.
+- Brand column includes OpenStaff, tagline, required description, and social placeholders.
+- Business & Operations remains complete: Publish now, Find Talent, Logistics Services, Specialized Tests, Pricing Tiers, How It Works.
+- Support & Legal includes Contact Us, Help Center, FAQ, Terms, Privacy, Cookies.
+- Communications & Apps includes support hours, WhatsApp placeholder, support email, App Store placeholder, and Google Play placeholder.
+- Bottom area includes global coverage labels and compliance badges for ISO 27001, GDPR Compliant, and SOC 2 Type II.
+
+### Responsive And Browser Proof
+
+- Built Next app was served locally on `http://127.0.0.1:3007`.
+- Local homepage HTTP smoke returned `200 OK`.
+- Playwright CLI screenshots captured:
+  - `.logs/exec77c-homepage-desktop.png`
+  - `.logs/exec77c-homepage-mobile.png`
+- Mobile overflow check returned `innerWidth=390`, `scrollWidth=390`, `bodyScrollWidth=390`.
+- A first mobile screenshot revealed hero clipping; the hero grid was corrected with bounded `min-w-0` behavior before final validation.
+
+### Validation Results
+
+From `apps/admin/web`:
+
+- `npm.cmd run build`: PASS
+- `npm.cmd run lint`: PASS, 21 warnings / 0 errors
+
+Warnings match the existing public web lint baseline and were not introduced by EXEC-77C.2.
+
+### Git Safety
+
+- Scope remained public frontend and documentation/status files only.
+- No backend API, Prisma schema, migration, guard, permission, auth, Cloud Run, GCP, or RELU backend file was changed.
+- Unrelated untracked files remained unstaged:
+  - `src/`
+  - `OPENSTAFF_AUDIT_2026-05.md`
+  - `OPENSTAFF_AUDIT_2026-05_BACKUP.md`
+
+### Remaining Risks
+
+1. EXEC-77C.2 validates the premium homepage locally; it does not deploy a new public web revision.
+2. Contact modal submission is frontend-only and intentionally does not create a backend message record.
+3. App Store and Google Play badges remain placeholders until real app distribution links exist.
+4. The mobile bottom navigation remains an existing public-shell component and can overlap very low viewport screenshots; it was not changed in this homepage alignment pass.
+
+### EXEC-77C.3 Boundary
+
+EXEC-77C.3 was not started.

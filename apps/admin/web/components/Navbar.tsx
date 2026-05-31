@@ -2,22 +2,31 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { FormEvent } from "react";
 import { useState } from "react";
 import { OpenStaffLogo } from "./OpenStaffLogo";
-import { brand } from "../lib/brand";
 import { useAuth } from "../context/AuthContext";
 
-const links = [
-  { href: "/jobs", label: "Jobs" },
-  { href: "/professionals", label: "Professionals" },
-  { href: "/notifications", label: "Notifications" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/jobs?category=CONSTRUCTION", label: "Categories" },
-  { href: "/status", label: "Status" },
+const navLinks = [
+  { href: "/#how-it-works", label: "Cum funcționează", icon: "book" },
+  { href: "/pricing", label: "Prețuri", icon: "tag" },
+] as const;
+
+const topicOptions = [
+  "Hiring / Post a Job",
+  "Find Talent",
+  "Logistics",
+  "Specialized Tests",
+  "Pricing",
+  "Support",
+  "Partnership",
 ];
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [language, setLanguage] = useState("RO");
+  const [submitted, setSubmitted] = useState(false);
   const router = useRouter();
   const { isAuthenticated, logout, user } = useAuth();
 
@@ -27,47 +36,65 @@ export function Navbar() {
     router.replace("/login");
   }
 
+  function handleContactSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitted(true);
+  }
+
   return (
-    <div
-      className="border-b shadow-sm"
-      style={{
-        backgroundColor: brand.navy,
-        borderColor: "rgba(255,255,255,0.08)",
-      }}
-    >
-      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4">
-        <Link href="/" prefetch={false} className="shrink-0">
-          <OpenStaffLogo size="sm" variant="full" dark />
+    <div className="border-b border-white/10 bg-[#0F172A] text-white shadow-[0_10px_30px_rgba(15,23,42,0.18)]">
+      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 lg:px-6">
+        <Link href="/" prefetch={false} className="shrink-0" onClick={() => setOpen(false)}>
+          <OpenStaffLogo size="sm" variant="full" showTagline dark />
         </Link>
 
-        <div className="hidden min-w-0 flex-1 md:block">
-          <div className="flex items-center rounded-full border border-white/10 bg-white/10 px-4 py-2 text-white/80">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M21 21L16.65 16.65M18 10.5C18 14.6421 14.6421 18 10.5 18C6.35786 18 3 14.6421 3 10.5C3 6.35786 6.35786 3 10.5 3C14.6421 3 18 6.35786 18 10.5Z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
+        <div className="hidden min-w-[230px] max-w-[380px] flex-1 md:block">
+          <label className="flex items-center rounded-xl border border-white/15 bg-white px-4 py-2.5 text-[#1E293B] shadow-sm">
+            <Icon name="search" className="h-5 w-5 text-[#0F172A]" />
             <input
-              placeholder="Search jobs, NACE, ESCO, regions..."
-              className="ml-3 w-full border-0 bg-transparent text-sm font-medium text-white placeholder:text-white/55 focus:outline-none"
+              placeholder="Caută joburi, NACE, ESCO..."
+              className="ml-3 w-full border-0 bg-transparent text-sm font-medium text-[#1E293B] placeholder:text-[#64748B] focus:outline-none"
             />
-          </div>
+          </label>
         </div>
 
         <nav className="hidden items-center gap-2 lg:flex">
-          {links.map((item) => (
+          {navLinks.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               prefetch={false}
-              className="rounded-full px-4 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/10 hover:text-white"
+              className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
             >
+              <Icon name={item.icon} className="h-4 w-4" />
               {item.label}
             </Link>
           ))}
+          <button
+            type="button"
+            onClick={() => setContactOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
+          >
+            <Icon name="mail" className="h-4 w-4" />
+            Contact
+          </button>
+          <label className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-white/90">
+            <Icon name="globe" className="h-4 w-4" />
+            <span>Limba</span>
+            <select
+              value={language}
+              onChange={(event) => setLanguage(event.target.value)}
+              className="bg-transparent text-sm font-semibold text-white focus:outline-none"
+              aria-label="Limba"
+            >
+              <option className="text-[#0F172A]" value="RO">
+                RO
+              </option>
+              <option className="text-[#0F172A]" value="EN">
+                EN
+              </option>
+            </select>
+          </label>
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
@@ -76,8 +103,7 @@ export function Navbar() {
               <Link
                 href="/profile"
                 prefetch={false}
-                className="max-w-40 truncate rounded-full border px-4 py-2 text-sm font-bold"
-                style={{ borderColor: brand.green, color: brand.green }}
+                className="max-w-40 truncate rounded-xl border border-white/25 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
                 title={user?.email ?? "Profile"}
               >
                 Profile
@@ -85,8 +111,7 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => void handleLogout()}
-                className="rounded-full px-4 py-2 text-sm font-black"
-                style={{ backgroundColor: brand.green, color: brand.navy }}
+                className="rounded-xl bg-[#22C55E] px-4 py-2 text-sm font-black text-white transition hover:bg-[#16A34A] focus:outline-none focus:ring-2 focus:ring-white"
               >
                 Logout
               </button>
@@ -96,16 +121,14 @@ export function Navbar() {
               <Link
                 href="/login"
                 prefetch={false}
-                className="rounded-full border px-4 py-2 text-sm font-bold"
-                style={{ borderColor: brand.green, color: brand.green }}
+                className="rounded-xl border border-white/35 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
               >
                 Login
               </Link>
               <Link
                 href="/register"
                 prefetch={false}
-                className="rounded-full px-4 py-2 text-sm font-black"
-                style={{ backgroundColor: brand.green, color: brand.navy }}
+                className="rounded-xl bg-[#22C55E] px-4 py-2 text-sm font-black text-white shadow-[0_12px_22px_rgba(34,197,94,0.22)] transition hover:bg-[#16A34A] focus:outline-none focus:ring-2 focus:ring-white"
               >
                 Register
               </Link>
@@ -115,7 +138,7 @@ export function Navbar() {
 
         <button
           type="button"
-          className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/12 text-white md:hidden"
+          className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 text-white md:hidden"
           onClick={() => setOpen((current) => !current)}
           aria-label="Toggle navigation"
         >
@@ -129,32 +152,70 @@ export function Navbar() {
 
       {open ? (
         <div className="border-t border-white/10 px-4 pb-4 md:hidden">
-          <div className="mt-3 flex flex-col gap-2">
-            {links.map((item) => (
+          <div className="mt-3">
+            <label className="flex items-center rounded-xl border border-white/15 bg-white px-4 py-2.5 text-[#1E293B]">
+              <Icon name="search" className="h-5 w-5 text-[#0F172A]" />
+              <input
+                placeholder="Caută joburi, NACE, ESCO..."
+                className="ml-3 w-full border-0 bg-transparent text-sm font-medium text-[#1E293B] placeholder:text-[#64748B] focus:outline-none"
+              />
+            </label>
+          </div>
+          <div className="mt-3 grid gap-2">
+            {navLinks.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 prefetch={false}
-                className="rounded-2xl bg-white/8 px-4 py-3 text-sm font-semibold text-white"
+                className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white"
+                onClick={() => setOpen(false)}
               >
+                <Icon name={item.icon} className="h-4 w-4" />
                 {item.label}
               </Link>
             ))}
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setContactOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-left text-sm font-semibold text-white"
+            >
+              <Icon name="mail" className="h-4 w-4" />
+              Contact
+            </button>
+            <label className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white">
+              <Icon name="globe" className="h-4 w-4" />
+              Limba
+              <select
+                value={language}
+                onChange={(event) => setLanguage(event.target.value)}
+                className="ml-auto bg-transparent text-sm font-semibold text-white focus:outline-none"
+                aria-label="Limba"
+              >
+                <option className="text-[#0F172A]" value="RO">
+                  RO
+                </option>
+                <option className="text-[#0F172A]" value="EN">
+                  EN
+                </option>
+              </select>
+            </label>
             {isAuthenticated ? (
               <>
                 <Link
                   href="/profile"
                   prefetch={false}
-                  className="rounded-2xl border px-4 py-3 text-sm font-bold"
-                  style={{ borderColor: brand.green, color: brand.green }}
+                  className="rounded-2xl border border-white/25 px-4 py-3 text-sm font-bold text-white"
+                  onClick={() => setOpen(false)}
                 >
                   Profile
                 </Link>
                 <button
                   type="button"
                   onClick={() => void handleLogout()}
-                  className="rounded-2xl px-4 py-3 text-left text-sm font-black"
-                  style={{ backgroundColor: brand.green, color: brand.navy }}
+                  className="rounded-2xl bg-[#22C55E] px-4 py-3 text-left text-sm font-black text-white"
                 >
                   Logout
                 </button>
@@ -164,16 +225,16 @@ export function Navbar() {
                 <Link
                   href="/login"
                   prefetch={false}
-                  className="rounded-2xl border px-4 py-3 text-sm font-bold"
-                  style={{ borderColor: brand.green, color: brand.green }}
+                  className="rounded-2xl border border-white/25 px-4 py-3 text-sm font-bold text-white"
+                  onClick={() => setOpen(false)}
                 >
                   Login
                 </Link>
                 <Link
                   href="/register"
                   prefetch={false}
-                  className="rounded-2xl px-4 py-3 text-sm font-black"
-                  style={{ backgroundColor: brand.green, color: brand.navy }}
+                  className="rounded-2xl bg-[#22C55E] px-4 py-3 text-sm font-black text-white"
+                  onClick={() => setOpen(false)}
                 >
                   Register
                 </Link>
@@ -182,6 +243,140 @@ export function Navbar() {
           </div>
         </div>
       ) : null}
+
+      {contactOpen ? (
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-[#020617]/70 px-4 py-6">
+          <div className="w-full max-w-2xl rounded-3xl border border-white/20 bg-white p-6 text-[#1E293B] shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-sm font-bold uppercase text-[#2563EB]">Contact OpenStaff</div>
+                <h2 className="mt-2 text-2xl font-black text-[#0F172A]">Tell us what you need</h2>
+                <p className="mt-2 text-sm leading-6 text-[#64748B]">
+                  Share hiring, talent, logistics, pricing, or support context. For urgent
+                  requests, email info@openstaff.eu.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setContactOpen(false);
+                  setSubmitted(false);
+                }}
+                className="rounded-full border border-slate-200 px-3 py-1 text-sm font-bold text-[#0F172A]"
+                aria-label="Close contact modal"
+              >
+                Close
+              </button>
+            </div>
+
+            {submitted ? (
+              <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+                Thank you. Please send any urgent details to info@openstaff.eu.
+              </div>
+            ) : null}
+
+            <form onSubmit={handleContactSubmit} className="mt-5 grid gap-3">
+              <div className="grid gap-3 md:grid-cols-2">
+                <ContactField label="Name" name="name" />
+                <ContactField label="Email" name="email" type="email" />
+                <ContactField label="Company" name="company" />
+                <label className="grid gap-1 text-sm font-semibold text-[#334155]">
+                  Topic
+                  <select className="rounded-xl border border-slate-200 px-3 py-2.5 text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#22C55E]">
+                    {topicOptions.map((topic) => (
+                      <option key={topic}>{topic}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <label className="grid gap-1 text-sm font-semibold text-[#334155]">
+                Message
+                <textarea
+                  rows={4}
+                  className="resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
+                />
+              </label>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <a className="text-sm font-bold text-[#2563EB]" href="mailto:info@openstaff.eu">
+                  info@openstaff.eu
+                </a>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-[#22C55E] px-5 py-2.5 text-sm font-black text-white"
+                >
+                  Prepare message
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
+}
+
+function ContactField({ label, name, type = "text" }: { label: string; name: string; type?: string }) {
+  return (
+    <label className="grid gap-1 text-sm font-semibold text-[#334155]">
+      {label}
+      <input
+        name={name}
+        type={type}
+        className="rounded-xl border border-slate-200 px-3 py-2.5 text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
+      />
+    </label>
+  );
+}
+
+function Icon({ name, className = "h-5 w-5" }: { name: string; className?: string }) {
+  const common = {
+    className,
+    fill: "none",
+    stroke: "currentColor",
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    strokeWidth: 2,
+    viewBox: "0 0 24 24",
+    "aria-hidden": true,
+  };
+
+  switch (name) {
+    case "book":
+      return (
+        <svg {...common}>
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+          <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" />
+        </svg>
+      );
+    case "tag":
+      return (
+        <svg {...common}>
+          <path d="M20.5 13.5 13 21l-10-10V3h8l9.5 10.5z" />
+          <path d="M7.5 7.5h.01" />
+        </svg>
+      );
+    case "mail":
+      return (
+        <svg {...common}>
+          <path d="M4 4h16v16H4z" />
+          <path d="m4 7 8 6 8-6" />
+        </svg>
+      );
+    case "globe":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="10" />
+          <path d="M2 12h20" />
+          <path d="M12 2a15 15 0 0 1 0 20" />
+          <path d="M12 2a15 15 0 0 0 0 20" />
+        </svg>
+      );
+    default:
+      return (
+        <svg {...common}>
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
+      );
+  }
 }
