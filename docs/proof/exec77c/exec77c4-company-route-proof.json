@@ -1,0 +1,187 @@
+{
+  "verdict": "PASS",
+  "baseUrl": "http://127.0.0.1:3007",
+  "checkedAt": "2026-06-01T12:47:03.457Z",
+  "mockApiUrl": "http://127.0.0.1:3011",
+  "rootCompaniesResolution": {
+    "source": "/companies",
+    "target": "/professionals",
+    "strategy": "permanentRedirect"
+  },
+  "routesReviewed": [
+    "/companies",
+    "/companies/exec77c-company-proof",
+    "/",
+    "/professionals"
+  ],
+  "results": [
+    {
+      "name": "companies-index",
+      "path": "/companies",
+      "viewport": "desktop",
+      "initialStatus": 200,
+      "finalPathname": "/professionals",
+      "expectedFinalPath": "/professionals",
+      "expectedTextPresent": true,
+      "footerFindTalent": "/professionals",
+      "homepageCompanyDiscoveryLink": null,
+      "overflow": {
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "hasHorizontalOverflow": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "passed": true
+    },
+    {
+      "name": "company-detail",
+      "path": "/companies/exec77c-company-proof",
+      "viewport": "desktop",
+      "initialStatus": 200,
+      "finalPathname": "/companies/exec77c-company-proof",
+      "expectedFinalPath": "/companies/exec77c-company-proof",
+      "expectedTextPresent": true,
+      "footerFindTalent": "/professionals",
+      "homepageCompanyDiscoveryLink": null,
+      "overflow": {
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "hasHorizontalOverflow": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "passed": true
+    },
+    {
+      "name": "homepage-company-discovery",
+      "path": "/",
+      "viewport": "desktop",
+      "initialStatus": 200,
+      "finalPathname": "/",
+      "expectedFinalPath": "/",
+      "expectedTextPresent": true,
+      "footerFindTalent": "/professionals",
+      "homepageCompanyDiscoveryLink": "/professionals",
+      "overflow": {
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "hasHorizontalOverflow": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "passed": true
+    },
+    {
+      "name": "company-discovery-surface",
+      "path": "/professionals",
+      "viewport": "desktop",
+      "initialStatus": 200,
+      "finalPathname": "/professionals",
+      "expectedFinalPath": "/professionals",
+      "expectedTextPresent": true,
+      "footerFindTalent": "/professionals",
+      "homepageCompanyDiscoveryLink": null,
+      "overflow": {
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "hasHorizontalOverflow": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "passed": true
+    },
+    {
+      "name": "companies-index",
+      "path": "/companies",
+      "viewport": "mobile",
+      "initialStatus": 200,
+      "finalPathname": "/professionals",
+      "expectedFinalPath": "/professionals",
+      "expectedTextPresent": true,
+      "footerFindTalent": "/professionals",
+      "homepageCompanyDiscoveryLink": null,
+      "overflow": {
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "hasHorizontalOverflow": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "passed": true
+    },
+    {
+      "name": "company-detail",
+      "path": "/companies/exec77c-company-proof",
+      "viewport": "mobile",
+      "initialStatus": 200,
+      "finalPathname": "/companies/exec77c-company-proof",
+      "expectedFinalPath": "/companies/exec77c-company-proof",
+      "expectedTextPresent": true,
+      "footerFindTalent": "/professionals",
+      "homepageCompanyDiscoveryLink": null,
+      "overflow": {
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "hasHorizontalOverflow": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "passed": true
+    },
+    {
+      "name": "homepage-company-discovery",
+      "path": "/",
+      "viewport": "mobile",
+      "initialStatus": 200,
+      "finalPathname": "/",
+      "expectedFinalPath": "/",
+      "expectedTextPresent": true,
+      "footerFindTalent": "/professionals",
+      "homepageCompanyDiscoveryLink": "/professionals",
+      "overflow": {
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "hasHorizontalOverflow": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "passed": true
+    },
+    {
+      "name": "company-discovery-surface",
+      "path": "/professionals",
+      "viewport": "mobile",
+      "initialStatus": 200,
+      "finalPathname": "/professionals",
+      "expectedFinalPath": "/professionals",
+      "expectedTextPresent": true,
+      "footerFindTalent": "/professionals",
+      "homepageCompanyDiscoveryLink": null,
+      "overflow": {
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "hasHorizontalOverflow": false
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "badResponses": [],
+      "passed": true
+    }
+  ]
+}

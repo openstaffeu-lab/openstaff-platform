@@ -425,9 +425,11 @@ Result: PASS. `rawExposure=[]` for every validated desktop and mobile route.
 
 ### Verdict
 
-PARTIAL PASS
+PASS
 
-The public web visual system is now harmonized around the restored OpenStaff enterprise-blue identity without changing backend APIs, Prisma schema, migrations, guards, permissions, Cloud Run configuration, routing, marketplace behavior, RELU Builder logic, or user workflows. Full PASS is not claimed because `/companies` remains a pre-existing missing static route, and routing changes were explicitly out of scope.
+The public web visual system is now harmonized around the restored OpenStaff enterprise-blue identity without changing backend APIs, Prisma schema, migrations, guards, permissions, Cloud Run configuration, marketplace behavior, RELU Builder logic, homepage messaging, or user workflows.
+
+The remaining `/companies` navigation dead-end is now closed by a minimal permanent redirect to the existing `/professionals` company-discovery surface. The existing dynamic company detail route `/companies/[slug]` remains intact.
 
 ### Git Safety
 
@@ -458,7 +460,10 @@ Pages and surfaces audited:
 
 Route note:
 
-- `/companies` is not currently implemented as `apps/admin/web/app/companies/page.tsx`; only `apps/admin/web/app/companies/[slug]/page.tsx` exists. This was recorded as an existing route gap, not fixed, because the task forbids routing changes.
+- discovery found that only `apps/admin/web/app/companies/[slug]/page.tsx` existed while `apps/admin/web/app/companies/page.tsx` was missing
+- no `Navbar`, `Footer`, homepage, or card component directly linked to `/companies`
+- public company/subcontractor discovery already uses `/professionals` through `getMarketplaceProfessionals()`, which merges `PROFESSIONAL` and `SUBCONTRACTOR_POOL` posts
+- `/companies` now resolves with `permanentRedirect("/professionals")` to avoid duplicate listing behavior
 
 ### Components Harmonized
 
@@ -529,7 +534,8 @@ Validated on desktop Chrome and mobile viewport:
 - `/profile`: PASS
 - `/publish`: PASS
 - `/onboarding/company`: PASS
-- `/companies`: KNOWN ROUTE GAP, 404 because static route does not exist
+- `/companies`: PASS, permanent redirect to `/professionals`
+- `/companies/exec77c-company-proof`: PASS, dynamic company page rendered through the existing `/companies/[slug]` route with controlled API mock
 
 Existing route result:
 
@@ -545,6 +551,41 @@ Existing route result:
 - contact modal open/close: PASS
 
 Controlled API mocks were used to isolate visual proof from live network/data variance.
+
+### Company Route Resolution
+
+Root cause:
+
+- `apps/admin/web/app/companies/[slug]/page.tsx` existed for approved public company detail pages.
+- `apps/admin/web/app/companies/page.tsx` did not exist, so `/companies` returned 404.
+- No direct frontend link to `/companies` was found in `Navbar`, `Footer`, homepage, cards, or shared web components.
+- `getMarketplaceProfessionals()` is the current public discovery aggregator for professional and subcontractor/company-pool posts.
+- No dedicated public company-list API, client, or component exists in the web app.
+- Navbar search remains a visual search affordance in this scope and does not route to a dedicated company search page.
+
+Chosen solution:
+
+- Option B, safe redirect strategy.
+- Added `apps/admin/web/app/companies/page.tsx`.
+- The page uses `permanentRedirect("/professionals")`.
+- This preserves SEO, avoids duplicate listing functionality, keeps the existing marketplace architecture, and removes the 404 without changing workflows or backend contracts.
+
+Company route browser proof:
+
+- proof script: `docs/proof/exec77c/exec77c4-company-route-proof.cjs`
+- proof output: `docs/proof/exec77c/exec77c4-company-route-proof.json`
+- local built app: `http://127.0.0.1:3007`
+- mock API: `http://127.0.0.1:3011`
+- desktop Chrome: PASS
+- mobile viewport: PASS
+- `/companies`: final path `/professionals`, no 404, no infinite redirect
+- `/companies/exec77c-company-proof`: HTTP 200, dynamic company page rendered
+- homepage company-discovery link: `/professionals`
+- footer Find Talent link: `/professionals`
+- console errors: `[]`
+- page errors: `[]`
+- unexpected 4xx/5xx responses: `[]`
+- horizontal overflow: `false`
 
 ### Screenshot Proof
 
@@ -567,6 +608,9 @@ After screenshots saved under `docs/proof/exec77c/screenshots/`:
 - `visual-professionals-page.png`
 - `visual-profile-page.png`
 - `visual-publish-page.png`
+- `company-route-companies-desktop.png`
+- `company-route-companies-mobile.png`
+- `company-route-detail-desktop.png`
 
 ### Raw Data Exposure Proof
 
@@ -590,7 +634,10 @@ Result: PASS for audited existing routes. `rawExposure=[]`.
 - `apps/admin/web/components/relu/ReluSmartInput.tsx`
 - `apps/admin/web/components/relu/ReluStatusBadge.tsx`
 - `apps/admin/web/components/relu/TaxonomySuggestionPanel.tsx`
+- `apps/admin/web/app/companies/page.tsx`
 - `docs/proof/exec77c/README.md`
+- `docs/proof/exec77c/exec77c4-company-route-proof.cjs`
+- `docs/proof/exec77c/exec77c4-company-route-proof.json`
 - `docs/proof/exec77c/exec77c-visual-browser-proof.cjs`
 - `docs/proof/exec77c/exec77c-visual-browser-proof.json`
 - `docs/proof/exec77c/screenshots/visual-homepage-desktop.png`
@@ -601,10 +648,13 @@ Result: PASS for audited existing routes. `rawExposure=[]`.
 - `docs/proof/exec77c/screenshots/visual-professionals-page.png`
 - `docs/proof/exec77c/screenshots/visual-profile-page.png`
 - `docs/proof/exec77c/screenshots/visual-publish-page.png`
+- `docs/proof/exec77c/screenshots/company-route-companies-desktop.png`
+- `docs/proof/exec77c/screenshots/company-route-companies-mobile.png`
+- `docs/proof/exec77c/screenshots/company-route-detail-desktop.png`
 - `STATUS.md`
 
 ### Remaining Risks
 
-1. `/companies` remains a missing static listing page; this pass did not add it because routing changes were out of scope.
+1. `/companies` intentionally redirects to `/professionals` instead of introducing a duplicate company-listing page, because the current public discovery architecture aggregates company/subcontractor pool discovery there.
 2. Browser proof used local build plus controlled API mocks, not a fresh production deployment.
 3. Live marketplace data density may still expose card-height edge cases after the next public web deployment.

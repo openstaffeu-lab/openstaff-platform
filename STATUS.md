@@ -1,6 +1,6 @@
 ﻿# OpenStaff Platform Status
 
-Last updated: 2026-05-30
+Last updated: 2026-06-01
 
 ## EXEC-77A.2 Real DB / Production Verification
 
@@ -322,14 +322,14 @@ Verdict: `PASS - the EXEC-77C.2 premium public web layout was deployed through t
 
 ## EXEC-77C.4 Visual System Harmonization & Enterprise Branding Alignment
 
-Verdict: `PARTIAL PASS - the public web visual system was harmonized around the restored OpenStaff enterprise-blue family without backend, Prisma, migration, guard, permission, Cloud Run, RELU logic, route, or workflow changes. Header, homepage, footer, and RELU UI surfaces now use the lighter enterprise-blue palette, Explore is visually primary while Publish is secondary, section rhythm is aligned, build passes, lint exits 0 with existing warnings, and local desktop/mobile browser proof passes for existing audited routes. Full PASS is not honest because /companies is still not an existing static route, and routing changes were explicitly out of scope.`
+Verdict: `PASS - the public web visual system is harmonized around the restored OpenStaff enterprise-blue family and the remaining company navigation gap is closed. Header, homepage, footer, and RELU UI surfaces use the lighter enterprise-blue palette, Explore is visually primary while Publish is secondary, section rhythm is aligned, /companies now resolves through a permanent redirect to the existing /professionals company-discovery surface, /companies/[slug] remains intact, build passes, lint exits 0 with existing warnings, and desktop/mobile browser proof passes without backend, Prisma, migration, guard, permission, Cloud Run, RELU Builder, homepage-copy, or workflow changes.`
 
 ### EXEC-77C.4 Summary
 
 | Area | Status | Confirmed by |
 |---|---|---|
 | git safety | PASS | branch `feature/work-in-progress`; started aligned with `origin/feature/work-in-progress` at `007d6ef247622319fe96c3eaf171113ab4dd1c5e`; unrelated untracked `src/` and `OPENSTAFF_AUDIT_2026-05*.md` remained unstaged |
-| scope boundary | PASS | public web visual-only changes; no backend API, Prisma schema, migrations, guards, permissions, Cloud Run config, routing hierarchy, marketplace behavior, or RELU Builder logic changed |
+| scope boundary | PASS | public web visual and route-index-only changes; no backend API, Prisma schema, migrations, guards, permissions, Cloud Run config, marketplace behavior, homepage copy, or RELU Builder logic changed |
 | enterprise-blue palette | PASS | header, hero, footer, CTAs, focus states, badges, cards, and RELU suggestion surfaces aligned to `#1E3A8A`, `#1D4ED8`, `#172554`, `#2563EB`, `#10B981`, and `#14B8A6` |
 | header | PASS | `Navbar` now uses enterprise-blue background, teal focus rings, blue hover states, refined search affordance, and preserved login/register/mobile/contact behavior |
 | hero/homepage | PASS | homepage preserves structure and copy, restores enterprise-blue hero, makes Explore the primary CTA, moves Publish to secondary styling, and aligns section rhythm: blue hero, white quick actions, gray categories, white projects, gray professionals |
@@ -338,7 +338,9 @@ Verdict: `PARTIAL PASS - the public web visual system was harmonized around the 
 | accessibility | PASS | contrast improved for nav/search/footer/CTA/focus states; teal focus rings and stronger blue text hierarchy added across touched components |
 | build | PASS | `apps/admin/web -> npm.cmd run build` exited `0` |
 | lint | PASS with warnings | `apps/admin/web -> npm.cmd run lint` exited `0` with 21 existing warnings and 0 errors |
-| browser proof | PARTIAL PASS | local built app on `127.0.0.1:3007` passed desktop/mobile proof for `/`, `/projects`, `/professionals`, `/pricing`, `/profile`, `/publish`, and `/onboarding/company`; `/companies` remained an expected 404 because no static route exists |
+| company route root cause | PASS | discovery found `apps/admin/web/app/companies/[slug]/page.tsx` existed but `apps/admin/web/app/companies/page.tsx` did not; `/companies` was therefore a navigation dead-end while company discovery already lived under `/professionals` |
+| company route resolution | PASS | `apps/admin/web/app/companies/page.tsx` now uses `permanentRedirect("/professionals")`, preserving SEO and avoiding duplicate listing behavior |
+| browser proof | PASS | local built app on `127.0.0.1:3007` passed desktop/mobile proof for `/`, `/projects`, `/professionals`, `/pricing`, `/profile`, `/publish`, `/onboarding/company`, `/companies`, and `/companies/exec77c-company-proof`; no overflow, console errors, page errors, unexpected 4xx/5xx, or infinite redirects |
 | raw data exposure | PASS | browser scan found no raw JSON, run IDs, actor IDs, entity IDs, stack traces, API keys, or Gemini internals on audited existing routes |
 | visual proof | PASS | after screenshots saved under `docs/proof/exec77c/screenshots/` with `visual-*` filenames |
 
@@ -352,11 +354,14 @@ Verdict: `PARTIAL PASS - the public web visual system was harmonized around the 
 - `docs/proof/exec77c/screenshots/visual-professionals-page.png`
 - `docs/proof/exec77c/screenshots/visual-profile-page.png`
 - `docs/proof/exec77c/screenshots/visual-publish-page.png`
+- `docs/proof/exec77c/screenshots/company-route-companies-desktop.png`
+- `docs/proof/exec77c/screenshots/company-route-companies-mobile.png`
+- `docs/proof/exec77c/screenshots/company-route-detail-desktop.png`
 
 ### EXEC-77C.4 Remaining Risks
 
-1. `/companies` still has no static public listing route; this pass did not add one because routing changes were out of scope.
-2. Browser validation used local built app proof with controlled API mocks to isolate visual consistency from live data/network variance; it did not deploy a new public web revision.
+1. `/companies` intentionally redirects to `/professionals` instead of introducing a duplicate company-listing page, because the current public discovery architecture aggregates company/subcontractor pool discovery there.
+2. Browser validation used local built app proof with controlled API mocks to isolate route integrity from live data/network variance; it did not deploy a new public web revision.
 3. Broader marketplace card data variability can still produce edge-case visual density that should be watched after the next live deploy.
 
 ## EXEC-76 Production Rollout & Live Verification for EXEC-75
