@@ -111,32 +111,32 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#1E293B]">
-      <section className="relative overflow-hidden bg-[#0F172A] text-white">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(37,99,235,0.18),transparent_42%),linear-gradient(0deg,rgba(15,23,42,0.94),rgba(15,23,42,0.94))]" />
+      <section className="relative overflow-hidden bg-[#1E3A8A] text-white">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(20,184,166,0.20),transparent_42%),linear-gradient(0deg,rgba(30,58,138,0.94),rgba(30,58,138,0.94))]" />
         <div className="absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:48px_48px]" />
 
         <div className="relative mx-auto grid w-full max-w-7xl gap-12 px-4 pb-20 pt-14 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:px-8 lg:pb-24 lg:pt-18">
           <div className="flex min-w-0 flex-col justify-center">
-            <div className="mb-6 inline-flex w-fit items-center rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-[#BFDBFE]">
+            <div className="mb-6 inline-flex w-fit items-center rounded-full border border-white/25 bg-[#1D4ED8]/45 px-4 py-2 text-sm font-semibold text-[#DBEAFE]">
               AI-POWERED PROCUREMENT & STAFFING
             </div>
             <h1 className="max-w-3xl text-4xl font-bold leading-tight text-white md:text-5xl lg:text-6xl">
               Your place where projects find the right professionals.
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-[#CBD5E1] md:text-lg">
+            <p className="mt-6 max-w-2xl text-base leading-8 text-[#DBEAFE] md:text-lg">
               Simplify how you manage your workforce and contracts under NACE codes. Whether you are a government entity, an enterprise developer, or an independent specialist, RELU AI does the heavy lifting: scoring compatibility, automatically assessing skills through custom tests, and centralizing all your operations inside your digital workspace.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/publish"
-                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#22C55E] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-[#16A34A] focus:outline-none focus:ring-2 focus:ring-[#22C55E] focus:ring-offset-2 focus:ring-offset-[#0F172A]"
+                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/35 bg-white/10 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-950/10 transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-[#14B8A6] focus:ring-offset-2 focus:ring-offset-[#1E3A8A]"
               >
                 Publish now
               </Link>
               <Link
                 href="/jobs"
-                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-950/20 transition hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2 focus:ring-offset-[#0F172A]"
+                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-950/25 transition hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#14B8A6] focus:ring-offset-2 focus:ring-offset-[#1E3A8A]"
               >
                 Explore
               </Link>
@@ -144,7 +144,7 @@ export default function HomePage() {
 
             <div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {trustItems.map((item) => (
-                <div key={item.label} className="flex items-center gap-2 text-sm font-medium text-[#E2E8F0]">
+                <div key={item.label} className="flex items-center gap-2 text-sm font-medium text-[#EFF6FF]">
                   <CircleIcon icon={item.icon} tone="dark" />
                   <span>{item.label}</span>
                 </div>
@@ -167,7 +167,7 @@ export default function HomePage() {
           />
           <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             {workflowSteps.map((step, index) => (
-              <article key={step.title} className="rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
+              <article key={step.title} className="rounded-2xl border border-[#DBEAFE] bg-white p-6 shadow-sm shadow-blue-100/40">
                 <div className="flex items-center justify-between">
                   <CircleIcon icon={step.icon} tone="light" />
                   <span className="text-sm font-semibold text-[#94A3B8]">0{index + 1}</span>
@@ -180,7 +180,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-white py-16">
+      <section className="bg-[#F8FAFC] py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeading
             badge="GLOBAL DOMAINS"
@@ -192,9 +192,9 @@ export default function HomePage() {
               <Link
                 key={domain.label}
                 href={domain.href}
-                className="group flex min-h-32 flex-col items-center justify-center rounded-2xl border border-[#E2E8F0] bg-white px-4 py-6 text-center transition hover:bg-[#F1F5F9] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                className="group flex min-h-32 flex-col items-center justify-center rounded-2xl border border-[#DBEAFE] bg-white px-4 py-6 text-center shadow-sm shadow-blue-100/40 transition hover:border-[#93C5FD] hover:bg-[#EFF6FF] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
               >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F8FAFC] text-[#2563EB] transition group-hover:bg-white">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#EFF6FF] text-[#1D4ED8] transition group-hover:bg-white">
                   <CategoryIcon icon={domain.icon} />
                 </span>
                 <span className="mt-4 text-sm font-semibold text-[#334155]">{domain.label}</span>
@@ -204,7 +204,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-[#F8FAFC] py-16">
+      <section className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <SectionHeading
@@ -215,7 +215,7 @@ export default function HomePage() {
             />
             <Link
               href="/jobs"
-              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#2563EB] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#2563EB] px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#14B8A6] focus:ring-offset-2"
             >
               View all projects
             </Link>
@@ -225,8 +225,8 @@ export default function HomePage() {
             {loading ? (
               <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className="h-72 rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
-                    <div className="h-full animate-pulse rounded-2xl bg-[linear-gradient(90deg,#F8FAFC,#EEF2FF,#F8FAFC)]" />
+                  <div key={index} className="h-72 rounded-2xl border border-[#DBEAFE] bg-white shadow-sm">
+                    <div className="h-full animate-pulse rounded-2xl bg-[linear-gradient(90deg,#F8FAFC,#DBEAFE,#F8FAFC)]" />
                   </div>
                 ))}
               </div>
@@ -239,7 +239,7 @@ export default function HomePage() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-[#E2E8F0] bg-white p-8 text-center text-[#64748B]">
+              <div className="rounded-2xl border border-[#DBEAFE] bg-white p-8 text-center text-[#64748B]">
                 Approved project opportunities will appear here as soon as they are available.
               </div>
             )}
@@ -247,7 +247,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-white py-16">
+      <section className="bg-[#F8FAFC] py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <SectionHeading
@@ -258,7 +258,7 @@ export default function HomePage() {
             />
             <Link
               href="/professionals"
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#CBD5E1] bg-white px-5 py-3 text-sm font-semibold text-[#1E293B] transition hover:border-[#2563EB] hover:text-[#2563EB] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#BFDBFE] bg-white px-5 py-3 text-sm font-semibold text-[#1E3A8A] transition hover:border-[#2563EB] hover:text-[#2563EB] focus:outline-none focus:ring-2 focus:ring-[#14B8A6]"
             >
               View profiles
             </Link>
@@ -268,8 +268,8 @@ export default function HomePage() {
             {loading ? (
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {Array.from({ length: 8 }).map((_, index) => (
-                  <div key={index} className="h-72 rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
-                    <div className="h-full animate-pulse rounded-2xl bg-[linear-gradient(90deg,#F8FAFC,#EEF2FF,#F8FAFC)]" />
+                  <div key={index} className="h-72 rounded-2xl border border-[#DBEAFE] bg-white shadow-sm">
+                    <div className="h-full animate-pulse rounded-2xl bg-[linear-gradient(90deg,#F8FAFC,#DBEAFE,#F8FAFC)]" />
                   </div>
                 ))}
               </div>
@@ -280,7 +280,7 @@ export default function HomePage() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-[#E2E8F0] bg-white p-8 text-center text-[#64748B]">
+              <div className="rounded-2xl border border-[#DBEAFE] bg-white p-8 text-center text-[#64748B]">
                 Approved company and professional profiles will appear here after moderation.
               </div>
             )}
@@ -296,16 +296,16 @@ export default function HomePage() {
 function HeroDashboard() {
   return (
     <div className="relative min-h-[520px] min-w-0 overflow-hidden lg:min-h-[560px]">
-      <div className="absolute inset-x-6 top-10 mx-auto h-80 max-w-md rounded-full border border-[#1E3A8A]/40 bg-[#1E293B]/30" />
+      <div className="absolute inset-x-6 top-10 mx-auto h-80 max-w-md rounded-full border border-[#93C5FD]/35 bg-[#1D4ED8]/25" />
       <div className="relative mx-auto flex h-full w-full min-w-0 max-w-xl items-center justify-center">
-        <div className="w-full min-w-0 rounded-[2rem] border border-white/15 bg-white/10 p-5 shadow-2xl shadow-slate-950/40 backdrop-blur">
-          <div className="rounded-[1.5rem] border border-white/10 bg-[#F8FAFC] p-5 text-[#1E293B] shadow-xl">
+        <div className="w-full min-w-0 rounded-[2rem] border border-white/20 bg-white/10 p-5 shadow-2xl shadow-blue-950/35 backdrop-blur">
+          <div className="rounded-[1.5rem] border border-[#DBEAFE] bg-[#F8FAFC] p-5 text-[#1E293B] shadow-xl">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-[#64748B]">OpenStaff workspace</p>
-                <h2 className="mt-1 text-2xl font-bold text-[#0F172A]">Global delivery cockpit</h2>
+                <h2 className="mt-1 text-2xl font-bold text-[#172554]">Global delivery cockpit</h2>
               </div>
-              <span className="rounded-full bg-[#DCFCE7] px-3 py-1 text-xs font-semibold text-[#15803D]">LIVE</span>
+              <span className="rounded-full bg-[#D1FAE5] px-3 py-1 text-xs font-semibold text-[#047857]">LIVE</span>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -313,11 +313,11 @@ function HeroDashboard() {
               <MetricCard label="Industries covered" value="32" delta="NACE mapped" />
             </div>
 
-            <div className="mt-4 rounded-2xl border border-[#E2E8F0] bg-white p-4">
+            <div className="mt-4 rounded-2xl border border-[#DBEAFE] bg-white p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-[#64748B]">AI Match Score</p>
-                  <p className="mt-1 text-sm text-[#16A34A]">Excellent Match</p>
+                  <p className="mt-1 text-sm text-[#047857]">Excellent Match</p>
                 </div>
                 <div className="relative h-24 w-24">
                   <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
@@ -326,7 +326,7 @@ function HeroDashboard() {
                       cx="50"
                       cy="50"
                       r="40"
-                      stroke="#22C55E"
+                      stroke="#10B981"
                       strokeWidth="10"
                       fill="none"
                       strokeLinecap="round"
@@ -334,16 +334,16 @@ function HeroDashboard() {
                       strokeDashoffset="20"
                     />
                   </svg>
-                  <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-[#0F172A]">92%</div>
+                  <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-[#172554]">92%</div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-4 rounded-2xl border border-[#E2E8F0] bg-white p-4">
+            <div className="mt-4 rounded-2xl border border-[#DBEAFE] bg-white p-4">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-[#64748B]">Verified Specialists</p>
-                  <p className="mt-1 text-2xl font-bold text-[#0F172A]">24,350</p>
+                  <p className="mt-1 text-2xl font-bold text-[#172554]">24,350</p>
                 </div>
                 <div className="flex -space-x-2">
                   {["OS", "AI", "EU", "RO", "UK"].map((label) => (
@@ -354,14 +354,14 @@ function HeroDashboard() {
                       {label}
                     </span>
                   ))}
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[#22C55E] text-sm font-bold text-white">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[#10B981] text-sm font-bold text-white">
                     +
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-4 rounded-2xl border border-[#E2E8F0] bg-white p-4">
+            <div className="mt-4 rounded-2xl border border-[#DBEAFE] bg-white p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-[#64748B]">Procurement pulse</p>
@@ -373,13 +373,13 @@ function HeroDashboard() {
           </div>
         </div>
 
-        <div className="absolute left-0 top-24 hidden rounded-2xl border border-white/10 bg-white p-4 text-[#1E293B] shadow-2xl lg:block">
+        <div className="absolute left-0 top-24 hidden rounded-2xl border border-[#DBEAFE] bg-white p-4 text-[#1E293B] shadow-2xl lg:block">
           <p className="text-xs font-semibold text-[#64748B]">Tests completed</p>
-          <p className="mt-1 text-2xl font-bold text-[#0F172A]">8,940</p>
+          <p className="mt-1 text-2xl font-bold text-[#172554]">8,940</p>
         </div>
-        <div className="absolute bottom-16 right-0 hidden rounded-2xl border border-white/10 bg-white p-4 text-[#1E293B] shadow-2xl lg:block">
+        <div className="absolute bottom-16 right-0 hidden rounded-2xl border border-[#DBEAFE] bg-white p-4 text-[#1E293B] shadow-2xl lg:block">
           <p className="text-xs font-semibold text-[#64748B]">Secure contracting</p>
-          <p className="mt-1 text-sm font-semibold text-[#16A34A]">Ready for review</p>
+          <p className="mt-1 text-sm font-semibold text-[#047857]">Ready for review</p>
         </div>
       </div>
     </div>
@@ -388,11 +388,11 @@ function HeroDashboard() {
 
 function MetricCard({ label, value, delta }: { label: string; value: string; delta: string }) {
   return (
-    <div className="rounded-2xl border border-[#E2E8F0] bg-white p-4">
+    <div className="rounded-2xl border border-[#DBEAFE] bg-white p-4">
       <p className="text-sm font-semibold text-[#64748B]">{label}</p>
       <div className="mt-2 flex items-end justify-between gap-3">
-        <span className="text-3xl font-bold text-[#0F172A]">{value}</span>
-        <span className="rounded-full bg-[#DCFCE7] px-2 py-1 text-xs font-semibold text-[#15803D]">{delta}</span>
+        <span className="text-3xl font-bold text-[#172554]">{value}</span>
+        <span className="rounded-full bg-[#D1FAE5] px-2 py-1 text-xs font-semibold text-[#047857]">{delta}</span>
       </div>
     </div>
   );
@@ -401,18 +401,18 @@ function MetricCard({ label, value, delta }: { label: string; value: string; del
 function QuickActionBoard() {
   return (
     <section className="relative z-10 -mt-8 bg-[#F8FAFC] px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto grid max-w-7xl gap-6 rounded-3xl border border-[#E2E8F0] bg-white p-5 shadow-xl shadow-slate-200/70 md:grid-cols-[1.5fr_1fr] md:p-7">
+      <div className="mx-auto grid max-w-7xl gap-6 rounded-3xl border border-[#DBEAFE] bg-white p-5 shadow-xl shadow-blue-100/70 md:grid-cols-[1.5fr_1fr] md:p-7">
         <div>
           <div className="flex items-center gap-3">
             <CircleIcon icon="briefcase" tone="light" />
-            <h2 className="text-xl font-bold text-[#1E293B]">Business & Operations</h2>
+            <h2 className="text-xl font-bold text-[#172554]">Business & Operations</h2>
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {operationsLinks.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
-                className="flex min-h-20 flex-col items-start justify-center rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 text-sm font-semibold text-[#334155] transition hover:bg-[#F1F5F9] hover:text-[#2563EB] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                className="flex min-h-20 flex-col items-start justify-center rounded-2xl border border-[#DBEAFE] bg-white px-4 py-3 text-sm font-semibold text-[#334155] transition hover:border-[#93C5FD] hover:bg-[#EFF6FF] hover:text-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#14B8A6]"
               >
                 <CircleIcon icon={link.icon} tone="compact" />
                 <span className="mt-3">{link.label}</span>
@@ -421,24 +421,24 @@ function QuickActionBoard() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-5">
+        <div className="rounded-2xl border border-[#DBEAFE] bg-[#F8FAFC] p-5">
           <div className="flex items-center gap-3">
             <CircleIcon icon="phone" tone="light" />
             <div>
-              <h2 className="text-xl font-bold text-[#1E293B]">Quick Contact</h2>
+              <h2 className="text-xl font-bold text-[#172554]">Quick Contact</h2>
               <p className="mt-1 text-sm text-[#64748B]">Get in touch with our team</p>
             </div>
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2">
             <a
               href="mailto:info@openstaff.eu"
-              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#2563EB] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#2563EB] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#14B8A6] focus:ring-offset-2"
             >
               Contact Us
             </a>
             <a
               href="mailto:info@openstaff.eu"
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#CBD5E1] bg-white px-4 py-3 text-sm font-semibold text-[#2563EB] transition hover:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#BFDBFE] bg-white px-4 py-3 text-sm font-semibold text-[#1D4ED8] transition hover:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-[#14B8A6]"
             >
               info@openstaff.eu
             </a>
@@ -462,8 +462,8 @@ function SectionHeading({
 }) {
   return (
     <div className={align === "center" ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
-      <div className="inline-flex rounded-full bg-[#DBEAFE] px-3 py-1 text-xs font-bold text-[#2563EB]">{badge}</div>
-      <h2 className="mt-4 text-3xl font-bold leading-tight text-[#1E293B] md:text-4xl">{title}</h2>
+      <div className="inline-flex rounded-full bg-[#DBEAFE] px-3 py-1 text-xs font-bold text-[#1E3A8A]">{badge}</div>
+      <h2 className="mt-4 text-3xl font-bold leading-tight text-[#172554] md:text-4xl">{title}</h2>
       <p className="mt-4 text-base leading-7 text-[#64748B]">{description}</p>
     </div>
   );
@@ -472,10 +472,10 @@ function SectionHeading({
 function CircleIcon({ icon, tone }: { icon: string; tone: "dark" | "light" | "compact" }) {
   const classes =
     tone === "dark"
-      ? "h-8 w-8 bg-white/10 text-[#BFDBFE] border-white/10"
+      ? "h-8 w-8 bg-[#1D4ED8]/55 text-[#DBEAFE] border-white/20"
       : tone === "compact"
-        ? "h-8 w-8 bg-[#EFF6FF] text-[#2563EB] border-[#DBEAFE]"
-        : "h-12 w-12 bg-[#EFF6FF] text-[#2563EB] border-[#DBEAFE]";
+        ? "h-8 w-8 bg-[#EFF6FF] text-[#1D4ED8] border-[#DBEAFE]"
+        : "h-12 w-12 bg-[#EFF6FF] text-[#1D4ED8] border-[#DBEAFE]";
 
   return (
     <span className={`inline-flex shrink-0 items-center justify-center rounded-full border ${classes}`}>
@@ -653,7 +653,7 @@ function MiniChart() {
     <svg className="h-16 w-28 text-[#2563EB]" viewBox="0 0 112 64" fill="none" aria-hidden="true">
       <path d="M2 50 C18 48 20 37 34 39 C48 42 48 22 62 24 C74 26 73 14 84 16 C96 18 96 8 110 6" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
       <path d="M2 58h108" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="84" cy="16" r="4" fill="#22C55E" />
+      <circle cx="84" cy="16" r="4" fill="#10B981" />
     </svg>
   );
 }

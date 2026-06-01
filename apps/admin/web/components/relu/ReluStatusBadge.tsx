@@ -8,11 +8,11 @@ const statusCopy: Record<
 > = {
   idle: {
     label: "Ready",
-    className: "border-slate-200 bg-white text-slate-700",
+    className: "border-[#DBEAFE] bg-white text-[#1E3A8A]",
   },
   processing: {
     label: "RELU AI is processing",
-    className: "border-sky-200 bg-sky-50 text-sky-800",
+    className: "border-[#BFDBFE] bg-[#EFF6FF] text-[#1D4ED8]",
   },
   completed: {
     label: "AI suggestions ready",

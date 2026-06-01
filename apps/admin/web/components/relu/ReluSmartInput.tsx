@@ -88,9 +88,9 @@ export default function ReluSmartInput({
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
+    <div className="rounded-xl border border-[#DBEAFE] bg-white p-4 shadow-sm shadow-blue-100/40">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <label className="text-sm font-semibold text-brand-charcoal" htmlFor={`relu-${type}`}>
+        <label className="text-sm font-semibold text-[#172554]" htmlFor={`relu-${type}`}>
           {label}
         </label>
         <ReluStatusBadge status={builder.status} />
@@ -112,13 +112,13 @@ export default function ReluSmartInput({
             }
           }}
           placeholder={placeholder}
-          className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-sm text-brand-charcoal outline-none transition focus:border-brand-navy focus:ring-2 focus:ring-sky-100 disabled:bg-slate-100"
+          className="min-h-11 rounded-xl border border-[#CBD5E1] px-3 py-2 text-sm text-[#1E293B] outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#14B8A6]/25 disabled:bg-slate-100"
         />
         <button
           type="button"
           disabled={disabled || builder.loading || query.trim().length < 2}
           onClick={() => void runForType(query)}
-          className="min-h-11 rounded-lg bg-brand-navy px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="min-h-11 rounded-xl bg-[#2563EB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#14B8A6] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {builder.loading ? "Asking..." : "Ask RELU AI"}
         </button>
@@ -127,13 +127,13 @@ export default function ReluSmartInput({
       <p className="mt-2 text-xs leading-5 text-slate-500">{helperText}</p>
 
       {builder.error ? (
-        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           {builder.error.message}
         </div>
       ) : null}
 
       {builder.success && suggestions.length === 0 ? (
-        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+        <div className="mt-3 rounded-xl border border-[#DBEAFE] bg-[#F8FAFC] px-3 py-2 text-sm text-slate-600">
           RELU AI did not find a separate suggestion list. You can still use the summary
           result as editable guidance.
         </div>
@@ -141,7 +141,7 @@ export default function ReluSmartInput({
 
       {suggestions.length > 0 && result ? (
         <div className="mt-4" role="listbox" aria-label={`${label} RELU suggestions`}>
-          <div className="mb-2 text-xs font-semibold uppercase text-slate-500">
+          <div className="mb-2 text-xs font-semibold uppercase text-[#1E3A8A]">
             RELU AI suggestion
           </div>
           <div className="grid gap-2">
@@ -152,9 +152,9 @@ export default function ReluSmartInput({
                 role="option"
                 aria-selected="false"
                 onClick={() => onSuggestionSelect?.(suggestion, result)}
-                className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-left transition hover:border-brand-navy hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-100"
+                className="rounded-xl border border-[#DBEAFE] bg-[#F8FAFC] px-3 py-3 text-left transition hover:border-[#2563EB] hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#14B8A6]/30"
               >
-                <span className="block text-sm font-semibold text-brand-charcoal">
+                <span className="block text-sm font-semibold text-[#172554]">
                   {suggestion.label}
                 </span>
                 {suggestion.description ? (
@@ -167,7 +167,7 @@ export default function ReluSmartInput({
                     Confidence: {suggestion.confidence}%
                   </span>
                 ) : null}
-                <span className="mt-3 inline-flex rounded-md bg-white px-2 py-1 text-xs font-semibold text-brand-navy">
+                <span className="mt-3 inline-flex rounded-md bg-white px-2 py-1 text-xs font-semibold text-[#1D4ED8]">
                   Apply suggestion
                 </span>
               </button>

@@ -421,6 +421,190 @@ Result: PASS. `rawExposure=[]` for every validated desktop and mobile route.
 2. App Store and Google Play footer badges remain placeholders until real app distribution links exist.
 3. Browser proof validated public route stability and display safety, but did not create or mutate live profile, project, or account records.
 
-### EXEC-77C.4 Boundary
+## EXEC-77C.4 Visual System Harmonization & Enterprise Branding Alignment
 
-EXEC-77C.4 was not started.
+### Verdict
+
+PARTIAL PASS
+
+The public web visual system is now harmonized around the restored OpenStaff enterprise-blue identity without changing backend APIs, Prisma schema, migrations, guards, permissions, Cloud Run configuration, routing, marketplace behavior, RELU Builder logic, or user workflows. Full PASS is not claimed because `/companies` remains a pre-existing missing static route, and routing changes were explicitly out of scope.
+
+### Git Safety
+
+- Branch: `feature/work-in-progress`
+- Starting local commit: `007d6ef247622319fe96c3eaf171113ab4dd1c5e`
+- Starting origin commit: `007d6ef247622319fe96c3eaf171113ab4dd1c5e`
+- Unrelated untracked files remained unstaged:
+  - `src/`
+  - `OPENSTAFF_AUDIT_2026-05.md`
+  - `OPENSTAFF_AUDIT_2026-05_BACKUP.md`
+
+### Visual Audit Results
+
+Pages and surfaces audited:
+
+- `/`
+- `/projects`
+- `/professionals`
+- `/companies`
+- `/pricing`
+- `/profile`
+- `/publish`
+- `/onboarding/company`
+- global header/search/nav/contact modal
+- global footer
+- homepage hero, quick actions, categories, projects, professionals
+- RELU SmartInput, status badge, and taxonomy suggestion panel
+
+Route note:
+
+- `/companies` is not currently implemented as `apps/admin/web/app/companies/page.tsx`; only `apps/admin/web/app/companies/[slug]/page.tsx` exists. This was recorded as an existing route gap, not fixed, because the task forbids routing changes.
+
+### Components Harmonized
+
+- `apps/admin/web/components/Navbar.tsx`
+  - restored enterprise-blue header background
+  - refined search border/focus state
+  - aligned nav hover/focus states to blue/teal
+  - kept Login/Register/mobile/contact functionality unchanged
+- `apps/admin/web/components/layout/Footer.tsx`
+  - changed footer to `#1E3A8A`
+  - changed bottom bar to `#172554`
+  - preserved Business & Operations, support/legal, contact, social, mobile apps, coverage, and compliance content
+- `apps/admin/web/app/page.tsx`
+  - restored enterprise-blue hero
+  - made Explore visually primary
+  - made Publish secondary without moving CTA placement
+  - aligned section rhythm: blue hero, white quick actions, gray categories, white projects, gray professionals
+- `apps/admin/web/components/relu/ReluSmartInput.tsx`
+  - aligned input, button, suggestion rows, borders, focus rings, and shadows to the global blue/teal system
+- `apps/admin/web/components/relu/ReluStatusBadge.tsx`
+  - aligned idle and processing badge states to enterprise-blue
+- `apps/admin/web/components/relu/TaxonomySuggestionPanel.tsx`
+  - aligned borders, titles, suggestion cards, and apply/ignore buttons
+
+### Palette Refinements
+
+- Primary Enterprise Blue: `#1E3A8A`
+- Secondary Enterprise Blue: `#1D4ED8`
+- Deep Footer Blue: `#172554`
+- CTA Blue: `#2563EB`
+- Success Green: `#10B981`
+- Support Teal: `#14B8A6`
+
+Removed or reduced overuse of the prior darker navy `#0F172A` on the public header, hero, and footer so the product reads more like an enterprise marketplace and less like an internal admin surface.
+
+### Accessibility Improvements
+
+- stronger white-on-blue contrast in header and footer
+- teal focus rings on nav, modal fields, homepage CTAs, and RELU controls
+- clearer blue text hierarchy for headings, badges, and action labels
+- improved button contrast for Explore, Register, RELU action buttons, footer links, and modal actions
+- mobile proof confirmed no horizontal overflow on audited existing routes
+
+### Validation Results
+
+From `apps/admin/web`:
+
+- `npm.cmd run build`: PASS
+- `npm.cmd run lint`: PASS, 21 warnings / 0 errors
+
+Warnings match the existing public web lint baseline.
+
+### Browser Proof
+
+Local built app:
+
+- base URL: `http://127.0.0.1:3007`
+- server: `npm.cmd run start -- --hostname 127.0.0.1 --port 3007`
+- proof script: `docs/proof/exec77c/exec77c-visual-browser-proof.cjs`
+- proof output: `docs/proof/exec77c/exec77c-visual-browser-proof.json`
+
+Validated on desktop Chrome and mobile viewport:
+
+- `/`: PASS
+- `/projects`: PASS
+- `/professionals`: PASS
+- `/pricing`: PASS
+- `/profile`: PASS
+- `/publish`: PASS
+- `/onboarding/company`: PASS
+- `/companies`: KNOWN ROUTE GAP, 404 because static route does not exist
+
+Existing route result:
+
+- console errors: `[]`
+- page errors: `[]`
+- unexpected 4xx/5xx responses: `[]`
+- horizontal overflow: `false`
+- raw exposure: `[]`
+- homepage enterprise-blue hero: PASS
+- Explore primary CTA: PASS
+- header, hero, quick-action board, footer: PASS
+- mobile menu Login/Register: PASS
+- contact modal open/close: PASS
+
+Controlled API mocks were used to isolate visual proof from live network/data variance.
+
+### Screenshot Proof
+
+Before screenshots already captured by EXEC-77C.3 deployment proof:
+
+- `homepage-desktop.png`
+- `homepage-mobile.png`
+- `footer-desktop.png`
+- `contact-modal.png`
+- `projects-page.png`
+- `professionals-page.png`
+
+After screenshots saved under `docs/proof/exec77c/screenshots/`:
+
+- `visual-homepage-desktop.png`
+- `visual-homepage-mobile.png`
+- `visual-footer-desktop.png`
+- `visual-contact-modal.png`
+- `visual-projects-page.png`
+- `visual-professionals-page.png`
+- `visual-profile-page.png`
+- `visual-publish-page.png`
+
+### Raw Data Exposure Proof
+
+Rendered UI was scanned for:
+
+- raw JSON
+- run IDs
+- actor IDs
+- entity IDs
+- stack traces
+- API keys
+- Gemini internals
+
+Result: PASS for audited existing routes. `rawExposure=[]`.
+
+### Files Added Or Updated
+
+- `apps/admin/web/app/page.tsx`
+- `apps/admin/web/components/Navbar.tsx`
+- `apps/admin/web/components/layout/Footer.tsx`
+- `apps/admin/web/components/relu/ReluSmartInput.tsx`
+- `apps/admin/web/components/relu/ReluStatusBadge.tsx`
+- `apps/admin/web/components/relu/TaxonomySuggestionPanel.tsx`
+- `docs/proof/exec77c/README.md`
+- `docs/proof/exec77c/exec77c-visual-browser-proof.cjs`
+- `docs/proof/exec77c/exec77c-visual-browser-proof.json`
+- `docs/proof/exec77c/screenshots/visual-homepage-desktop.png`
+- `docs/proof/exec77c/screenshots/visual-homepage-mobile.png`
+- `docs/proof/exec77c/screenshots/visual-footer-desktop.png`
+- `docs/proof/exec77c/screenshots/visual-contact-modal.png`
+- `docs/proof/exec77c/screenshots/visual-projects-page.png`
+- `docs/proof/exec77c/screenshots/visual-professionals-page.png`
+- `docs/proof/exec77c/screenshots/visual-profile-page.png`
+- `docs/proof/exec77c/screenshots/visual-publish-page.png`
+- `STATUS.md`
+
+### Remaining Risks
+
+1. `/companies` remains a missing static listing page; this pass did not add it because routing changes were out of scope.
+2. Browser proof used local build plus controlled API mocks, not a fresh production deployment.
+3. Live marketplace data density may still expose card-height edge cases after the next public web deployment.

@@ -29,7 +29,7 @@ export function Footer() {
   const { config } = useUiConfig();
 
   return (
-    <footer className="bg-[#0F172A] text-[#F8FAFC]">
+    <footer className="bg-[#1E3A8A] text-[#F8FAFC]">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.05fr_1fr_1fr_1.2fr] lg:px-8">
         <section>
           <Logo
@@ -47,7 +47,7 @@ export function Footer() {
             {socialLabels.map((label) => (
               <span
                 key={label}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-xs font-bold text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-[#1D4ED8]/55 text-xs font-bold text-white transition hover:bg-[#14B8A6]"
               >
                 {label}
               </span>
@@ -87,7 +87,7 @@ export function Footer() {
               <FooterIcon name="message" />
               <div>
                 <p className="font-semibold text-white">WhatsApp placeholder</p>
-                <a href="tel:+40770123456" className="hover:text-[#22C55E]">
+                <a href="tel:+40770123456" className="hover:text-[#14B8A6]">
                   +40 770 123 456
                 </a>
               </div>
@@ -96,16 +96,16 @@ export function Footer() {
               <FooterIcon name="mail" />
               <div>
                 <p className="font-semibold text-white">Email</p>
-                <a href="mailto:info@openstaff.eu" className="hover:text-[#22C55E]">
+                <a href="mailto:info@openstaff.eu" className="hover:text-[#14B8A6]">
                   info@openstaff.eu
                 </a>
               </div>
             </div>
             <div className="grid max-w-xs grid-cols-2 gap-3 pt-2">
-              <span className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-center text-xs font-bold text-white">
+              <span className="rounded-xl border border-white/25 bg-[#1D4ED8]/55 px-3 py-2 text-center text-xs font-bold text-white">
                 App Store
               </span>
-              <span className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-center text-xs font-bold text-white">
+              <span className="rounded-xl border border-white/25 bg-[#1D4ED8]/55 px-3 py-2 text-center text-xs font-bold text-white">
                 Google Play
               </span>
             </div>
@@ -113,22 +113,22 @@ export function Footer() {
         </section>
       </div>
 
-      <div className="border-t border-white/10 bg-[#0B1329]">
+      <div className="border-t border-white/10 bg-[#172554]">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div>
             <p className="text-sm font-bold text-white">Global coverage</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {coverageFlags.map((flag) => (
-                <span key={flag} className="rounded-md bg-white/10 px-3 py-1 text-xs font-bold text-[#E2E8F0]">
+                <span key={flag} className="rounded-md bg-[#1D4ED8]/55 px-3 py-1 text-xs font-bold text-[#E2E8F0]">
                   {flag}
                 </span>
               ))}
             </div>
           </div>
           <div className="flex flex-wrap gap-3 text-xs font-bold text-[#E2E8F0]">
-            <span className="rounded-full border border-white/15 px-3 py-2">ISO 27001</span>
-            <span className="rounded-full border border-white/15 px-3 py-2">GDPR Compliant</span>
-            <span className="rounded-full border border-white/15 px-3 py-2">SOC 2 Type II</span>
+            <span className="rounded-full border border-white/20 px-3 py-2">ISO 27001</span>
+            <span className="rounded-full border border-white/20 px-3 py-2">GDPR Compliant</span>
+            <span className="rounded-full border border-white/20 px-3 py-2">SOC 2 Type II</span>
           </div>
         </div>
         <div className="border-t border-white/10 px-4 py-4 text-center text-xs leading-6 text-[#94A3B8]">
@@ -160,7 +160,7 @@ function FooterItem({
 
   if (isExternal) {
     return (
-      <a href={link.href} className="flex items-center gap-3 text-sm text-[#CBD5E1] transition hover:text-[#22C55E]">
+      <a href={link.href} className="flex items-center gap-3 text-sm text-[#CBD5E1] transition hover:text-[#14B8A6]">
         {content}
       </a>
     );
@@ -170,7 +170,7 @@ function FooterItem({
     <Link
       href={link.href}
       prefetch={false}
-      className="flex items-center gap-3 text-sm text-[#CBD5E1] transition hover:text-[#22C55E]"
+      className="flex items-center gap-3 text-sm text-[#CBD5E1] transition hover:text-[#14B8A6]"
     >
       {content}
     </Link>
@@ -179,7 +179,7 @@ function FooterItem({
 
 function FooterIcon({ name }: { name: string }) {
   const common = {
-    className: "h-5 w-5 shrink-0 text-[#60A5FA]",
+    className: "h-5 w-5 shrink-0 text-[#93C5FD]",
     fill: "none",
     stroke: "currentColor",
     strokeLinecap: "round" as const,

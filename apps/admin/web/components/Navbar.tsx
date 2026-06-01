@@ -42,15 +42,15 @@ export function Navbar() {
   }
 
   return (
-    <div className="border-b border-white/10 bg-[#0F172A] text-white shadow-[0_10px_30px_rgba(15,23,42,0.18)]">
+    <div className="border-b border-[#1D4ED8]/40 bg-[#1E3A8A] text-white shadow-[0_10px_30px_rgba(30,58,138,0.18)]">
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 lg:px-6">
         <Link href="/" prefetch={false} className="shrink-0" onClick={() => setOpen(false)}>
           <OpenStaffLogo size="sm" variant="full" showTagline dark />
         </Link>
 
         <div className="hidden min-w-[230px] max-w-[380px] flex-1 md:block">
-          <label className="flex items-center rounded-xl border border-white/15 bg-white px-4 py-2.5 text-[#1E293B] shadow-sm">
-            <Icon name="search" className="h-5 w-5 text-[#0F172A]" />
+          <label className="flex items-center rounded-xl border border-white/25 bg-white px-4 py-2.5 text-[#1E293B] shadow-sm transition focus-within:border-[#14B8A6] focus-within:ring-2 focus-within:ring-[#14B8A6]/30">
+            <Icon name="search" className="h-5 w-5 text-[#1D4ED8]" />
             <input
               placeholder="Caută joburi, NACE, ESCO..."
               className="ml-3 w-full border-0 bg-transparent text-sm font-medium text-[#1E293B] placeholder:text-[#64748B] focus:outline-none"
@@ -64,7 +64,7 @@ export function Navbar() {
               key={item.href}
               href={item.href}
               prefetch={false}
-              className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
+              className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-white/90 transition hover:bg-[#1D4ED8] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#14B8A6]"
             >
               <Icon name={item.icon} className="h-4 w-4" />
               {item.label}
@@ -73,7 +73,7 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => setContactOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
+            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-white/90 transition hover:bg-[#1D4ED8] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#14B8A6]"
           >
             <Icon name="mail" className="h-4 w-4" />
             Contact
@@ -87,10 +87,10 @@ export function Navbar() {
               className="bg-transparent text-sm font-semibold text-white focus:outline-none"
               aria-label="Limba"
             >
-              <option className="text-[#0F172A]" value="RO">
+              <option className="text-[#1E3A8A]" value="RO">
                 RO
               </option>
-              <option className="text-[#0F172A]" value="EN">
+              <option className="text-[#1E3A8A]" value="EN">
                 EN
               </option>
             </select>
@@ -103,7 +103,7 @@ export function Navbar() {
               <Link
                 href="/profile"
                 prefetch={false}
-                className="max-w-40 truncate rounded-xl border border-white/25 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
+                className="max-w-40 truncate rounded-xl border border-white/35 px-4 py-2 text-sm font-bold text-white transition hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#14B8A6]"
                 title={user?.email ?? "Profile"}
               >
                 Profile
@@ -111,7 +111,7 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => void handleLogout()}
-                className="rounded-xl bg-[#22C55E] px-4 py-2 text-sm font-black text-white transition hover:bg-[#16A34A] focus:outline-none focus:ring-2 focus:ring-white"
+                className="rounded-xl bg-[#10B981] px-4 py-2 text-sm font-black text-white transition hover:bg-[#059669] focus:outline-none focus:ring-2 focus:ring-white"
               >
                 Logout
               </button>
@@ -121,14 +121,14 @@ export function Navbar() {
               <Link
                 href="/login"
                 prefetch={false}
-                className="rounded-xl border border-white/35 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
+                className="rounded-xl border border-white/40 px-4 py-2 text-sm font-bold text-white transition hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#14B8A6]"
               >
                 Login
               </Link>
               <Link
                 href="/register"
                 prefetch={false}
-                className="rounded-xl bg-[#22C55E] px-4 py-2 text-sm font-black text-white shadow-[0_12px_22px_rgba(34,197,94,0.22)] transition hover:bg-[#16A34A] focus:outline-none focus:ring-2 focus:ring-white"
+                className="rounded-xl bg-[#10B981] px-4 py-2 text-sm font-black text-white shadow-[0_12px_22px_rgba(16,185,129,0.24)] transition hover:bg-[#059669] focus:outline-none focus:ring-2 focus:ring-white"
               >
                 Register
               </Link>
@@ -138,7 +138,7 @@ export function Navbar() {
 
         <button
           type="button"
-          className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 text-white md:hidden"
+          className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/25 text-white transition hover:bg-[#1D4ED8] md:hidden"
           onClick={() => setOpen((current) => !current)}
           aria-label="Toggle navigation"
         >
@@ -153,8 +153,8 @@ export function Navbar() {
       {open ? (
         <div className="border-t border-white/10 px-4 pb-4 md:hidden">
           <div className="mt-3">
-            <label className="flex items-center rounded-xl border border-white/15 bg-white px-4 py-2.5 text-[#1E293B]">
-              <Icon name="search" className="h-5 w-5 text-[#0F172A]" />
+            <label className="flex items-center rounded-xl border border-white/25 bg-white px-4 py-2.5 text-[#1E293B] focus-within:border-[#14B8A6] focus-within:ring-2 focus-within:ring-[#14B8A6]/30">
+              <Icon name="search" className="h-5 w-5 text-[#1D4ED8]" />
               <input
                 placeholder="Caută joburi, NACE, ESCO..."
                 className="ml-3 w-full border-0 bg-transparent text-sm font-medium text-[#1E293B] placeholder:text-[#64748B] focus:outline-none"
@@ -167,7 +167,7 @@ export function Navbar() {
                 key={item.href}
                 href={item.href}
                 prefetch={false}
-                className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#1D4ED8]/55 px-4 py-3 text-sm font-semibold text-white"
                 onClick={() => setOpen(false)}
               >
                 <Icon name={item.icon} className="h-4 w-4" />
@@ -180,12 +180,12 @@ export function Navbar() {
                 setOpen(false);
                 setContactOpen(true);
               }}
-              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-left text-sm font-semibold text-white"
+              className="inline-flex items-center gap-2 rounded-2xl bg-[#1D4ED8]/55 px-4 py-3 text-left text-sm font-semibold text-white"
             >
               <Icon name="mail" className="h-4 w-4" />
               Contact
             </button>
-            <label className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white">
+            <label className="inline-flex items-center gap-2 rounded-2xl bg-[#1D4ED8]/55 px-4 py-3 text-sm font-semibold text-white">
               <Icon name="globe" className="h-4 w-4" />
               Limba
               <select
@@ -194,10 +194,10 @@ export function Navbar() {
                 className="ml-auto bg-transparent text-sm font-semibold text-white focus:outline-none"
                 aria-label="Limba"
               >
-                <option className="text-[#0F172A]" value="RO">
+                <option className="text-[#1E3A8A]" value="RO">
                   RO
                 </option>
-                <option className="text-[#0F172A]" value="EN">
+                <option className="text-[#1E3A8A]" value="EN">
                   EN
                 </option>
               </select>
@@ -215,7 +215,7 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => void handleLogout()}
-                  className="rounded-2xl bg-[#22C55E] px-4 py-3 text-left text-sm font-black text-white"
+                  className="rounded-2xl bg-[#10B981] px-4 py-3 text-left text-sm font-black text-white"
                 >
                   Logout
                 </button>
@@ -233,7 +233,7 @@ export function Navbar() {
                 <Link
                   href="/register"
                   prefetch={false}
-                  className="rounded-2xl bg-[#22C55E] px-4 py-3 text-sm font-black text-white"
+                  className="rounded-2xl bg-[#10B981] px-4 py-3 text-sm font-black text-white"
                   onClick={() => setOpen(false)}
                 >
                   Register
@@ -245,12 +245,12 @@ export function Navbar() {
       ) : null}
 
       {contactOpen ? (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-[#020617]/70 px-4 py-6">
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-[#172554]/75 px-4 py-6">
           <div className="w-full max-w-2xl rounded-3xl border border-white/20 bg-white p-6 text-[#1E293B] shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-sm font-bold uppercase text-[#2563EB]">Contact OpenStaff</div>
-                <h2 className="mt-2 text-2xl font-black text-[#0F172A]">Tell us what you need</h2>
+                <div className="text-sm font-bold uppercase text-[#1D4ED8]">Contact OpenStaff</div>
+                <h2 className="mt-2 text-2xl font-black text-[#172554]">Tell us what you need</h2>
                 <p className="mt-2 text-sm leading-6 text-[#64748B]">
                   Share hiring, talent, logistics, pricing, or support context. For urgent
                   requests, email info@openstaff.eu.
@@ -262,7 +262,7 @@ export function Navbar() {
                   setContactOpen(false);
                   setSubmitted(false);
                 }}
-                className="rounded-full border border-slate-200 px-3 py-1 text-sm font-bold text-[#0F172A]"
+                className="rounded-full border border-[#BFDBFE] px-3 py-1 text-sm font-bold text-[#1E3A8A] transition hover:bg-[#EFF6FF]"
                 aria-label="Close contact modal"
               >
                 Close
@@ -282,7 +282,7 @@ export function Navbar() {
                 <ContactField label="Company" name="company" />
                 <label className="grid gap-1 text-sm font-semibold text-[#334155]">
                   Topic
-                  <select className="rounded-xl border border-slate-200 px-3 py-2.5 text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#22C55E]">
+                  <select className="rounded-xl border border-[#CBD5E1] px-3 py-2.5 text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#14B8A6]">
                     {topicOptions.map((topic) => (
                       <option key={topic}>{topic}</option>
                     ))}
@@ -293,7 +293,7 @@ export function Navbar() {
                 Message
                 <textarea
                   rows={4}
-                  className="resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
+                  className="resize-none rounded-xl border border-[#CBD5E1] px-3 py-2.5 text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#14B8A6]"
                 />
               </label>
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -302,7 +302,7 @@ export function Navbar() {
                 </a>
                 <button
                   type="submit"
-                  className="rounded-xl bg-[#22C55E] px-5 py-2.5 text-sm font-black text-white"
+                  className="rounded-xl bg-[#2563EB] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#14B8A6]"
                 >
                   Prepare message
                 </button>
@@ -322,7 +322,7 @@ function ContactField({ label, name, type = "text" }: { label: string; name: str
       <input
         name={name}
         type={type}
-        className="rounded-xl border border-slate-200 px-3 py-2.5 text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
+        className="rounded-xl border border-[#CBD5E1] px-3 py-2.5 text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#14B8A6]"
       />
     </label>
   );

@@ -18,9 +18,9 @@ export default function TaxonomySuggestionPanel({
 }: TaxonomySuggestionPanelProps) {
   if (!result) {
     return (
-      <section className="rounded-lg border border-dashed border-slate-300 bg-white p-5">
+      <section className="rounded-xl border border-dashed border-[#BFDBFE] bg-white p-5">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-brand-charcoal">{title}</h2>
+          <h2 className="text-base font-semibold text-[#172554]">{title}</h2>
           <ReluStatusBadge status="idle" />
         </div>
         <p className="mt-3 text-sm leading-6 text-slate-600">
@@ -44,10 +44,10 @@ export default function TaxonomySuggestionPanel({
         ];
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-xl border border-[#DBEAFE] bg-white p-5 shadow-sm shadow-blue-100/40">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-base font-semibold text-brand-charcoal">{title}</h2>
+          <h2 className="text-base font-semibold text-[#172554]">{title}</h2>
           <p className="mt-1 text-sm text-slate-600">{result.advisoryMessage}</p>
         </div>
         <ReluStatusBadge status={result.status} />
@@ -57,14 +57,14 @@ export default function TaxonomySuggestionPanel({
         {suggestions.map((suggestion) => (
           <article
             key={suggestion.key}
-            className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+            className="rounded-xl border border-[#DBEAFE] bg-[#F8FAFC] p-4"
           >
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div className="min-w-0">
-                <div className="text-xs font-semibold uppercase text-slate-500">
+                <div className="text-xs font-semibold uppercase text-[#1E3A8A]">
                   {suggestion.category ?? "Suggestion"} - {suggestion.source}
                 </div>
-                <div className="mt-2 text-sm font-semibold leading-6 text-brand-charcoal">
+                <div className="mt-2 text-sm font-semibold leading-6 text-[#172554]">
                   {suggestion.label}
                 </div>
                 {suggestion.description ? (
@@ -84,7 +84,7 @@ export default function TaxonomySuggestionPanel({
                   <button
                     type="button"
                     onClick={() => onApplySuggestion(suggestion)}
-                    className="rounded-lg bg-brand-navy px-3 py-2 text-sm font-semibold text-white"
+                    className="rounded-lg bg-[#2563EB] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#14B8A6]"
                   >
                     Apply suggestion
                   </button>
@@ -93,7 +93,7 @@ export default function TaxonomySuggestionPanel({
                   <button
                     type="button"
                     onClick={() => onIgnoreSuggestion(suggestion)}
-                    className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+                    className="rounded-lg border border-[#BFDBFE] bg-white px-3 py-2 text-sm font-semibold text-[#1E3A8A] transition hover:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-[#14B8A6]"
                   >
                     Ignore
                   </button>

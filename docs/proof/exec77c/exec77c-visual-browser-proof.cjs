@@ -1,0 +1,334 @@
+const fs = require("fs");
+const path = require("path");
+
+function loadPlaywright() {
+  const candidates = [
+    "playwright",
+    path.join(
+      process.env.LOCALAPPDATA || "",
+      "npm-cache",
+      "_npx",
+      "e41f203b7505f1fb",
+      "node_modules",
+      "playwright",
+    ),
+    path.join(
+      process.env.LOCALAPPDATA || "",
+      "npm-cache",
+      "_npx",
+      "420ff84f11983ee5",
+      "node_modules",
+      "playwright",
+    ),
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      return require(candidate);
+    } catch {
+      // Try the next known local Playwright location.
+    }
+  }
+
+  throw new Error("Playwright runtime was not found");
+}
+
+const { chromium } = loadPlaywright();
+
+const baseUrl = process.env.EXEC77C_VISUAL_BASE_URL || "http://127.0.0.1:3007";
+const screenshotDir = path.resolve(__dirname, "screenshots");
+const outputPath = path.resolve(__dirname, "exec77c-visual-browser-proof.json");
+
+const routes = [
+  { path: "/", name: "home", expected: "existing" },
+  { path: "/projects", name: "projects", expected: "existing" },
+  { path: "/professionals", name: "professionals", expected: "existing" },
+  { path: "/companies", name: "companies", expected: "known-missing-route" },
+  { path: "/pricing", name: "pricing", expected: "existing" },
+  { path: "/profile", name: "profile", expected: "existing" },
+  { path: "/publish", name: "publish", expected: "existing" },
+  { path: "/onboarding/company", name: "onboarding-company", expected: "existing" },
+];
+
+const forbiddenPatterns = [
+  { name: "rawJson", pattern: /{\s*"(?:id|status|data|error|message)"\s*:/i },
+  { name: "runId", pattern: /\brunId\b|ReluProcessingRun/i },
+  { name: "actorId", pattern: /\bactorId\b/i },
+  { name: "entityId", pattern: /\bentityId\b/i },
+  { name: "stackTrace", pattern: /\b(stack trace|at\s+\w+\s*\(|TypeError:|ReferenceError:|Unhandled Runtime Error)\b/i },
+  { name: "apiKey", pattern: /\bAIza[0-9A-Za-z_-]{20,}\b|api[_-]?key/i },
+  { name: "geminiInternals", pattern: /\bgemini\b|generativelanguage\.googleapis\.com/i },
+];
+
+function mockApiPayload(url) {
+  if (url.includes("/ui-config")) {
+    return {
+      header: {
+        logoDataUrl: "",
+        logoAlt: "OpenStaff logo",
+        menu: [],
+      },
+      footer: {
+        logoDataUrl: "",
+        logoAlt: "OpenStaff footer logo",
+        columns: [],
+        bottomText:
+          "ACA STRATEGIC SOLUTIONS S.R.L. | CUI: 52313191 | Reg. Com: J2025060195004 | Address: Calea Moinesti 24, Bacau, Romania | Copyright 2026 OpenStaff.eu. All rights reserved.",
+      },
+      branding: {
+        primaryColor: "#1E3A8A",
+        accentColor: "#14B8A6",
+        backgroundColor: "#F8FAFC",
+        textColor: "#1E293B",
+      },
+    };
+  }
+
+  if (url.includes("/health")) {
+    return { status: "ok" };
+  }
+
+  if (url.includes("/status")) {
+    return { status: "ok", db: "healthy", readiness: { errors: [], warnings: [] } };
+  }
+
+  if (url.includes("/public-posts")) {
+    return [];
+  }
+
+  if (url.includes("/marketplace") || url.includes("/professionals")) {
+    return [];
+  }
+
+  if (url.includes("/auth/me")) {
+    return { user: null };
+  }
+
+  if (url.includes("/profile")) {
+    return { profile: null, data: null };
+  }
+
+  return { data: [], status: "ok" };
+}
+
+function isExpectedResponse(response, route) {
+  const status = response.status();
+  const url = response.url();
+
+  if (route.expected === "known-missing-route" && status === 404 && url.startsWith(`${baseUrl}${route.path}`)) {
+    return true;
+  }
+
+  return false;
+}
+
+async function runRoute(page, route, viewportName) {
+  const consoleErrors = [];
+  const pageErrors = [];
+  const badResponses = [];
+  const expectedResponses = [];
+
+  await page.route("**/*", async (requestRoute) => {
+    const url = requestRoute.request().url();
+    const isApiRequest =
+      url.includes("api.openstaff.eu") ||
+      url.includes("localhost:3001") ||
+      url.includes("127.0.0.1:3001");
+
+    if (!isApiRequest) {
+      await requestRoute.continue();
+      return;
+    }
+
+    await requestRoute.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(mockApiPayload(url)),
+    });
+  });
+
+  page.on("console", (message) => {
+    if (message.type() === "error") {
+      if (route.expected === "known-missing-route" && message.text().includes("404")) {
+        return;
+      }
+      consoleErrors.push(message.text());
+    }
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("response", (response) => {
+    const status = response.status();
+    if (status >= 400) {
+      const item = { status, url: response.url() };
+      if (isExpectedResponse(response, route)) {
+        expectedResponses.push(item);
+      } else {
+        badResponses.push(item);
+      }
+    }
+  });
+
+  const response = await page.goto(`${baseUrl}${route.path}`, {
+    waitUntil: "networkidle",
+    timeout: 45_000,
+  });
+
+  const pageStatus = response ? response.status() : null;
+  const text = await page.locator("body").innerText({ timeout: 10_000 }).catch(() => "");
+  const title = await page.title().catch(() => "");
+  const overflow = await page.evaluate(() => ({
+    innerWidth: window.innerWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+    bodyScrollWidth: document.body.scrollWidth,
+    hasHorizontalOverflow:
+      document.documentElement.scrollWidth > window.innerWidth ||
+      document.body.scrollWidth > window.innerWidth,
+  }));
+
+  const rawExposure = forbiddenPatterns
+    .filter((item) => item.pattern.test(text))
+    .map((item) => item.name);
+
+  const checks = {};
+  if (route.path === "/") {
+    checks.enterpriseBlueHero = await page
+      .locator("section.bg-\\[\\#1E3A8A\\]")
+      .first()
+      .isVisible()
+      .catch(() => false);
+    checks.header = await page.getByRole("link", { name: /OpenStaff/i }).first().isVisible().catch(() => false);
+    checks.hero = text.includes("Your place where projects find the right professionals.");
+    checks.quickActionBoard = text.includes("Business & Operations") && text.includes("Quick Contact");
+    checks.footer = text.includes("Global coverage") && text.includes("Business & Operations");
+    checks.explorePrimary = await page
+      .getByRole("link", { name: "Explore" })
+      .evaluate((node) => getComputedStyle(node).backgroundColor)
+      .then((color) => color.includes("37, 99, 235"))
+      .catch(() => false);
+    if (viewportName === "desktop") {
+      await page.screenshot({ path: path.join(screenshotDir, "visual-homepage-desktop.png"), fullPage: true });
+      if (await page.locator("footer").first().isVisible().catch(() => false)) {
+        await page.locator("footer").first().scrollIntoViewIfNeeded({ timeout: 5_000 });
+        await page.screenshot({ path: path.join(screenshotDir, "visual-footer-desktop.png"), fullPage: false });
+      }
+      const contactButtons = await page.locator('button:has-text("Contact")').all();
+      for (const button of contactButtons) {
+        if (await button.isVisible().catch(() => false)) {
+          await button.click();
+          await page.waitForTimeout(500);
+          if (await page.getByRole("heading", { name: "Tell us what you need" }).isVisible().catch(() => false)) {
+            break;
+          }
+        }
+      }
+      checks.contactModalOpen = await page.getByRole("heading", { name: "Tell us what you need" }).isVisible();
+      await page.screenshot({ path: path.join(screenshotDir, "visual-contact-modal.png"), fullPage: false });
+      if (checks.contactModalOpen) {
+        await page.locator('button[aria-label="Close contact modal"]').click({ timeout: 5_000 });
+      }
+      checks.contactModalClosed = !(await page.getByRole("heading", { name: "Tell us what you need" }).isVisible().catch(() => false));
+    } else {
+      await page.screenshot({ path: path.join(screenshotDir, "visual-homepage-mobile.png"), fullPage: true });
+      checks.mobileMenuButton = await page.getByLabel("Toggle navigation").isVisible().catch(() => false);
+      if (checks.mobileMenuButton) {
+        await page.getByLabel("Toggle navigation").click({ timeout: 5_000 });
+        checks.mobileMenuLogin = await page.getByRole("link", { name: "Login" }).isVisible().catch(() => false);
+        checks.mobileMenuRegister = await page.getByRole("link", { name: "Register" }).isVisible().catch(() => false);
+      } else {
+        checks.mobileMenuLogin = false;
+        checks.mobileMenuRegister = false;
+      }
+    }
+  }
+
+  if (route.path === "/projects" && viewportName === "desktop") {
+    await page.screenshot({ path: path.join(screenshotDir, "visual-projects-page.png"), fullPage: true });
+  }
+
+  if (route.path === "/professionals" && viewportName === "desktop") {
+    await page.screenshot({ path: path.join(screenshotDir, "visual-professionals-page.png"), fullPage: true });
+  }
+
+  if (route.path === "/profile" && viewportName === "desktop") {
+    await page.screenshot({ path: path.join(screenshotDir, "visual-profile-page.png"), fullPage: true });
+  }
+
+  if (route.path === "/publish" && viewportName === "desktop") {
+    await page.screenshot({ path: path.join(screenshotDir, "visual-publish-page.png"), fullPage: true });
+  }
+
+  return {
+    route: route.path,
+    expected: route.expected,
+    viewport: viewportName,
+    pageStatus,
+    title,
+    consoleErrors,
+    pageErrors,
+    badResponses,
+    expectedResponses,
+    overflow,
+    rawExposure,
+    checks,
+  };
+}
+
+(async () => {
+  fs.mkdirSync(screenshotDir, { recursive: true });
+
+  const browser = await chromium.launch({ headless: true });
+  const results = [];
+
+  for (const viewport of [
+    { name: "desktop", size: { width: 1440, height: 1100 } },
+    { name: "mobile", size: { width: 390, height: 900 } },
+  ]) {
+    for (const route of routes) {
+      const context = await browser.newContext({ viewport: viewport.size });
+      const page = await context.newPage();
+      try {
+        results.push(await runRoute(page, route, viewport.name));
+      } finally {
+        await context.close();
+      }
+    }
+  }
+
+  await browser.close();
+
+  const failures = results.filter((result) => {
+    if (result.expected === "known-missing-route") {
+      return false;
+    }
+
+    const badStatus =
+      result.pageStatus >= 400;
+
+    return (
+      badStatus ||
+      result.consoleErrors.length ||
+      result.pageErrors.length ||
+      result.badResponses.length ||
+      result.overflow.hasHorizontalOverflow ||
+      result.rawExposure.length ||
+      Object.values(result.checks).some((value) => value === false)
+    );
+  });
+
+  const summary = {
+    generatedAt: new Date().toISOString(),
+    baseUrl,
+    routes: routes.map((route) => ({ path: route.path, expected: route.expected })),
+    screenshots: fs.readdirSync(screenshotDir).filter((name) => name.startsWith("visual-")).sort(),
+    knownRouteGaps: results.filter((result) => result.expected === "known-missing-route"),
+    failures,
+    results,
+  };
+
+  fs.writeFileSync(outputPath, `${JSON.stringify(summary, null, 2)}\n`);
+  console.log(JSON.stringify(summary, null, 2));
+
+  if (failures.length > 0) {
+    process.exitCode = 1;
+  }
+})();
