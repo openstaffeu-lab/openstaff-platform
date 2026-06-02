@@ -121,16 +121,16 @@ export default function HomePage() {
               AI-POWERED PROCUREMENT & STAFFING
             </div>
             <h1 className="max-w-3xl text-4xl font-bold leading-tight text-white md:text-5xl lg:text-6xl">
-              Your place where projects find the right professionals.
+              Professional Networks Connected
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-[#DBEAFE] md:text-lg">
-              Simplify how you manage your workforce and contracts under NACE codes. Whether you are a government entity, an enterprise developer, or an independent specialist, RELU AI does the heavy lifting: scoring compatibility, automatically assessing skills through custom tests, and centralizing all your operations inside your digital workspace.
+              Connect companies and professionals through one intelligent workspace.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/publish"
-                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/35 bg-white/10 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-950/10 transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-[#14B8A6] focus:ring-offset-2 focus:ring-offset-[#1E3A8A]"
+                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#10B981] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-[#059669] focus:outline-none focus:ring-2 focus:ring-[#14B8A6] focus:ring-offset-2 focus:ring-offset-[#1E3A8A]"
               >
                 Publish now
               </Link>

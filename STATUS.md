@@ -1,6 +1,6 @@
 ﻿# OpenStaff Platform Status
 
-Last updated: 2026-06-01
+Last updated: 2026-06-02
 
 ## EXEC-77A.2 Real DB / Production Verification
 
@@ -363,6 +363,109 @@ Verdict: `PASS - the public web visual system is harmonized around the restored 
 1. `/companies` intentionally redirects to `/professionals` instead of introducing a duplicate company-listing page, because the current public discovery architecture aggregates company/subcontractor pool discovery there.
 2. Browser validation used local built app proof with controlled API mocks to isolate route integrity from live data/network variance; it did not deploy a new public web revision.
 3. Broader marketplace card data variability can still produce edge-case visual density that should be watched after the next live deploy.
+
+## EXEC-78A OpenStaff Core Product Architecture & Network Operating Model
+
+Verdict: `REQUIRE PRODUCT DECISION - OpenStaff is now formally defined as a professional network, opportunity feed, contractor ecosystem, procurement platform, compliance layer, and RELU AI workspace before any future pricing redesign, feed ranking implementation, subscription enforcement, visibility restriction, homepage restructuring, or enterprise rollout. This was documentation-only: no UI, backend, schema, route, permission, pricing implementation, or RELU code changed. EXEC-78B was not started.`
+
+### EXEC-78A Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| scope boundary | PASS | architecture, strategy, audit, and documentation only; no product implementation files changed |
+| product definition | PASS | `EXEC78A_PRODUCT_ARCHITECTURE.md` defines OpenStaff as professional network, opportunity feed, contractor ecosystem, procurement platform, compliance layer, and RELU AI workspace |
+| current pricing audit | PASS | audit found active implementation uses BASIC/BRONZE/GOLD/ENTERPRISE, pricing constants also reference FREE/PRO/BUSINESS/ENTERPRISE, and future strategy asks for Starter/Professional/Business/Enterprise |
+| pricing decision | REQUIRE PRODUCT DECISION | future plan mapping and numeric limits must be approved before schema/API/UI/entitlement enforcement |
+| homepage messaging review | MODIFY COPY | `Professional Networks Connected` is directionally useful but under-represents procurement, opportunity discovery, compliance, enterprise buyer value, and explicit RELU AI positioning |
+| feed architecture | REQUIRE PRODUCT DECISION | anonymous, registered, paid, and enterprise feed models are defined, but ranking weights, paid promotion labels, RELU influence, and visibility rules need approval before implementation |
+| actor model | PASS | Professional, Company, Contractor, Supplier, Recruiter, and Consultant onboarding, profile, publishing, visibility, messaging, promotion, and RELU access models are documented |
+| How OpenStaff Works | PASS | future homepage content baseline now covers Join the Network, Publish Opportunities, RELU AI Assists, Connect and Deliver, and Grow with the Right Plan |
+| compliance layer | REQUIRE PRODUCT DECISION | A1, PPS, ID06, CSCS, CIS, UTR, and country-specific requirements are documented as compliance-readiness support, not automatic legal certification |
+| RELU AI workspace | PASS | RELU may analyze, classify, summarize, draft, recommend, score compatibility, support compliance, and maintain history, but all outputs require explicit human approval |
+| monetization hierarchy | REQUIRE PRODUCT DECISION | recommended order is publishing capacity, visibility/reach, messaging/contact access, RELU usage depth, promotion tools, verification/trust workflows, team/procurement/compliance workflows, and enterprise services |
+| proof trail | PASS | `docs/proof/exec78/README.md` captures audit inputs, hard-constraint proof, decisions, and validation rationale |
+
+### EXEC-78A Open Decisions
+
+1. Approve final plan names and mapping: Starter/Professional/Business/Enterprise versus current BASIC/BRONZE/GOLD/ENTERPRISE and FREE/PRO/BUSINESS/ENTERPRISE concepts.
+2. Approve numeric publishing limits, messaging/contact limits, promotion eligibility, RELU quotas, overage rules, and plan-specific visibility behavior.
+3. Approve feed ranking weights, explainability requirements, paid-promotion labeling, verification gating, and RELU AI ranking authority.
+4. Approve compliance wording, legal responsibility boundaries, supported country requirements, and verification workflow expectations.
+5. Replace or clarify Enterprise "auto-approve policy controls" language before expanding public pricing copy, because final authority must remain human-owned.
+
+### EXEC-78A Artifacts
+
+- Product architecture: `EXEC78A_PRODUCT_ARCHITECTURE.md`
+- Proof index: `docs/proof/exec78/README.md`
+
+## EXEC-78A.1 Product Decision Matrix for Feed, Pricing, Visibility & RELU Limits
+
+Verdict: `REQUIRE OWNER APPROVAL - the EXEC-78A open decisions are now converted into an approval-ready product decision matrix covering homepage messaging, homepage feed ranking, plan names and limits, public visibility fields, RELU AI usage caps, messaging/contact rules, compliance wording, and Enterprise routing. This remains documentation-only: no UI, backend, schema, route, permission, pricing implementation, or RELU code changed. EXEC-78B was not started.`
+
+### EXEC-78A.1 Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| scope boundary | PASS | documentation-only decision matrix; no product implementation files changed |
+| homepage messaging | MODIFY COPY | recommended future headline `The Professional Network for Procurement and Workforce Delivery`; `Professional Networks Connected` remains optional secondary/campaign copy |
+| homepage feed ranking | REQUIRE OWNER APPROVAL | recommended order: geographic relevance, language relevance, user interest, RELU AI relevance, verification/completeness, newest opportunities, capped/labeled promotion |
+| promoted feed cap | REQUIRE OWNER APPROVAL | recommended maximum 1 promoted item in first 4 feed items and maximum 25 percent promoted content per standard feed page |
+| pricing plan names | REQUIRE OWNER APPROVAL | recommended future public plans: Starter, Professional, Business, Enterprise |
+| active post limits | REQUIRE OWNER APPROVAL | recommended limits: Starter 1, Professional 5, Business 25, Enterprise custom/unlimited by contract |
+| contact limits | REQUIRE OWNER APPROVAL | recommended limits: Starter 5/month, Professional 25/month, Business 100/month, Enterprise custom/unlimited fair-use |
+| promoted content allowance | REQUIRE OWNER APPROVAL | recommended allowance: Starter 0/month, Professional 1/month, Business 5/month, Enterprise managed campaigns |
+| RELU AI limits | REQUIRE OWNER APPROVAL | recommended credits: Starter 20/month, Professional 150/month, Business 1000/month, Enterprise contract-defined; all outputs remain user-approved |
+| visibility matrix | REQUIRE OWNER APPROVAL | public exposure rules now defined for company name, logo, website, email, phone, contact person, portfolio, budget, documents, direct message button, promoted badge, and verified badge |
+| messaging/contact rules | REQUIRE OWNER APPROVAL | contact reveal is deliberate, anonymous visitors do not see private contact data, RELU may suggest contacts but may not message automatically |
+| compliance wording | REQUIRE OWNER APPROVAL | A1, PPS, ID06, CSCS, CIS, UTR, and country-specific requirements are framed as assistance/readiness support, not legal certification |
+| Enterprise boundary | REQUIRE OWNER APPROVAL | Enterprise routing now defined for multi-company, multi-country, procurement teams, ERP/API access, high-volume publishing/contact, compliance workflows, custom RELU, and managed onboarding |
+| proof trail | PASS | `docs/proof/exec78/README.md` now includes EXEC-78A.1 decisions, hard-constraint proof, and validation rationale |
+
+### EXEC-78A.1 Remaining Owner Approvals
+
+1. Approve final plan names and direct mapping to current BASIC/BRONZE/GOLD/ENTERPRISE in a later implementation pass.
+2. Approve active post limits `1 / 5 / 25 / custom` and contact limits `5 / 25 / 100 / custom`.
+3. Approve RELU credits `20 / 150 / 1000 / contract-defined`, document-page credit rules, rerun rules, and provider-cost handling.
+4. Approve promoted content caps, labeling, and verified-status eligibility requirements.
+5. Approve compliance assistance wording with the legal/compliance owner before public use.
+6. Approve Enterprise routing triggers before any sales, pricing, feed, or permission implementation.
+
+### EXEC-78A.1 Artifacts
+
+- Decision matrix: `EXEC78A1_PRODUCT_DECISION_MATRIX.md`
+- Updated proof index: `docs/proof/exec78/README.md`
+
+## EXEC-78B.1 Production Homepage Copy, Palette & Public Feed Cleanup
+
+Verdict: `PASS - production https://openstaff.eu now renders the required OpenStaff homepage messaging, enterprise-blue header/hero/footer palette, required blue/green CTA colors, and public frontend feed suppression for obvious proof/internal records. The public web was rebuilt, linted with 0 errors, deployed through the normal web Cloud Build path to openstaff-web-00031-wq4 with 100% traffic, and production desktop/mobile browser audit passed. No backend API, Prisma schema, migration, guard, permission, RELU Builder, API Cloud Run, payment, pricing-enforcement, route-architecture, or workflow behavior changed. EXEC-78B.2 was not started.`
+
+### EXEC-78B.1 Summary
+
+| Area | Status | Confirmed by |
+|---|---|---|
+| scope boundary | PASS | public web copy/color/filter/docs only; no backend, schema, migration, guard, permission, RELU Builder, API service, payment, pricing enforcement, route architecture, or workflow behavior changed |
+| component trace | PASS | actual rendered path is `app/layout.tsx` -> `components/layout/AppShell.tsx` -> `components/layout/Header.tsx` -> `components/Navbar.tsx`; homepage `app/page.tsx`; footer `components/layout/Footer.tsx`; feed/cards through `lib/api.ts`, `JobsPageClient`, `JobCard`, `ActorCard`, and `/professionals` |
+| homepage copy | PASS | production renders badge `AI-POWERED PROCUREMENT & STAFFING`, headline `Professional Networks Connected`, subtitle `Connect companies and professionals through one intelligent workspace.` |
+| palette | PASS | production computed styles return header `#1E3A8A`, hero `#1E3A8A`, footer `#1E3A8A`, footer bottom `#172554`, Explore `#2563EB`, Publish `#10B981` |
+| public feed cleanup | PASS | frontend public-list filter suppresses marketplace records containing obvious internal labels: Exec, EXEC, proof, test, demo, mock, sandbox |
+| local build | PASS | `apps/admin/web -> npm.cmd run build` exited `0` |
+| local lint | PASS with warnings | `apps/admin/web -> npm.cmd run lint` exited `0`; 21 existing warnings and 0 errors |
+| Cloud Build | PASS | final public web Cloud Build `8fc05dd6-130b-44ac-99b9-76f7767e969e` succeeded using `apps/admin/web/cloudbuild.web.yaml` |
+| Cloud Run revision | PASS | `openstaff-web-00031-wq4` is latest ready revision with 100% traffic |
+| production browser audit | PASS | desktop/mobile checks covered `/`, `/projects`, `/professionals`, `/pricing`, `/companies`, `/login`, `/register`, and `/jobs`; no console errors, page errors, unexpected 4xx/5xx, flagged proof/test cards, or mobile overflow |
+| docs/proof | PASS | `docs/proof/exec78/EXEC78B1_PRODUCTION_HOMEPAGE_ALIGNMENT.md` captures source files, text proof, color proof, feed cleanup proof, build/deploy IDs, browser audit, and remaining risks |
+
+### EXEC-78B.1 Remaining Risks
+
+1. Proof/internal records still exist in production data; EXEC-78B.1 hides them from public frontend list surfaces only.
+2. Direct detail URLs for known proof/internal records may still resolve if users already know the ID or slug, because backend detail access and data deletion were out of scope.
+3. `/projects` remains an authenticated workspace route and redirects anonymous users to `/login?next=%2Fprojects`; `/jobs` remains the actual public opportunity list.
+4. Lint still reports 21 existing warnings and 0 errors.
+
+### EXEC-78B.1 Artifacts
+
+- Proof: `docs/proof/exec78/EXEC78B1_PRODUCTION_HOMEPAGE_ALIGNMENT.md`
+- Updated proof index: `docs/proof/exec78/README.md`
 
 ## EXEC-76 Production Rollout & Live Verification for EXEC-75
 

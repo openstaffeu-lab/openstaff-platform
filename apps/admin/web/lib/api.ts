@@ -1838,11 +1838,37 @@ export async function getPublicPosts(params?: PublicPostQueryParams) {
     visibility: params?.visibility,
     q: params?.q,
   });
-  return apiRequest<MarketplacePost[]>(`/public-posts${query ? `?${query}` : ""}`);
+  const posts = await apiRequest<MarketplacePost[]>(`/public-posts${query ? `?${query}` : ""}`);
+  return posts.filter((post) => !isProofOrInternalMarketplacePost(post));
 }
 
 export async function getPublicPost(id: string) {
   return apiRequest<MarketplacePost>(`/public-posts/${id}`);
+}
+
+const INTERNAL_MARKETPLACE_LABEL_PATTERN =
+  /(^|[^a-z0-9])(exec\d*|exec|proof|test|demo|mock|sandbox)([^a-z0-9]|$)/i;
+
+function isProofOrInternalMarketplacePost(post: Partial<MarketplacePost>) {
+  const searchable = [
+    post.id,
+    post.slug,
+    post.title,
+    post.description,
+    post.summary,
+    post.domain,
+    post.location,
+    post.ownerName,
+    post.ownerType,
+    post.value,
+    ...(post.escoCodes ?? []),
+    ...(post.naceCodes ?? []),
+    ...(post.uniclassCodes ?? []),
+  ]
+    .filter((value): value is string => typeof value === "string")
+    .join(" ");
+
+  return INTERNAL_MARKETPLACE_LABEL_PATTERN.test(searchable);
 }
 
 function normalizeMarketplacePost(item: Record<string, unknown>): MarketplacePost {
