@@ -3,10 +3,12 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import EscoMultiSelect from "@/components/EscoMultiSelect";
+import { LocationAutocomplete } from "@/components/location/LocationAutocomplete";
 import NaceSearchInput from "@/components/NaceSearchInput";
 import ReluSmartInput from "@/components/relu/ReluSmartInput";
 import UniclassMultiSelect from "@/components/UniclassMultiSelect";
 import { useAuth } from "@/context/AuthContext";
+import type { OpenStaffLocationSuggestion } from "@/lib/location/location-types";
 import type { ReluBuilderSuggestion } from "@/lib/relu-builder-api";
 import {
   apiRequest,
@@ -130,6 +132,8 @@ export default function PublishMarketplacePage() {
   const [reluEscoQuery, setReluEscoQuery] = useState("");
   const [reluNaceQuery, setReluNaceQuery] = useState("");
   const [reluGeographyQuery, setReluGeographyQuery] = useState("");
+  const [selectedLocation, setSelectedLocation] =
+    useState<OpenStaffLocationSuggestion | null>(null);
 
   const selectedPost = useMemo(
     () => posts.find((post) => post.id === selectedId) ?? null,
@@ -646,6 +650,23 @@ export default function PublishMarketplacePage() {
                   className={inputClass}
                 />
               </Field>
+              <div className="md:col-span-2">
+                <LocationAutocomplete
+                  label="Location autocomplete"
+                  placeholder="Search project city, locality, or address"
+                  value={selectedLocation}
+                  onChange={(location) => {
+                    setSelectedLocation(location);
+                    if (location) {
+                      updateField("location", location.formattedAddress);
+                    }
+                  }}
+                  countryBias={selectedCountry?.code ? [selectedCountry.code] : undefined}
+                  defaultCountry={selectedCountry?.code}
+                  helperText="Optional Places lookup. Manual location labels and the selectors below remain available."
+                  tone="dark"
+                />
+              </div>
               <Field label="Owner name">
                 <input
                   value={form.ownerName}

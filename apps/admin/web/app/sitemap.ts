@@ -4,6 +4,7 @@ const PUBLIC_ROUTES = [
   "",
   "/jobs",
   "/professionals",
+  "/companies",
   "/projects",
   "/pricing",
   "/publish",

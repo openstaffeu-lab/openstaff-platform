@@ -24,6 +24,109 @@ const BASELINE_COUNTRY_SEED = [
       },
     ],
   },
+  {
+    code: 'IE',
+    name: 'Ireland',
+    currency: 'EUR',
+    vatRate: 23,
+    regions: [{ name: 'Leinster', cities: ['Dublin'] }],
+  },
+  {
+    code: 'GB',
+    name: 'United Kingdom',
+    currency: 'GBP',
+    vatRate: 20,
+    regions: [
+      { name: 'England', cities: ['London', 'Manchester'] },
+      { name: 'Scotland', cities: ['Edinburgh'] },
+    ],
+  },
+  {
+    code: 'DE',
+    name: 'Germany',
+    currency: 'EUR',
+    vatRate: 19,
+    regions: [
+      { name: 'Berlin', cities: ['Berlin'] },
+      { name: 'Hesse', cities: ['Frankfurt am Main'] },
+    ],
+  },
+  {
+    code: 'FR',
+    name: 'France',
+    currency: 'EUR',
+    vatRate: 20,
+    regions: [{ name: 'Ile-de-France', cities: ['Paris'] }],
+  },
+  {
+    code: 'IT',
+    name: 'Italy',
+    currency: 'EUR',
+    vatRate: 22,
+    regions: [
+      { name: 'Lazio', cities: ['Rome'] },
+      { name: 'Lombardy', cities: ['Milan'] },
+    ],
+  },
+  {
+    code: 'ES',
+    name: 'Spain',
+    currency: 'EUR',
+    vatRate: 21,
+    regions: [
+      { name: 'Community of Madrid', cities: ['Madrid'] },
+      { name: 'Catalonia', cities: ['Barcelona'] },
+    ],
+  },
+  {
+    code: 'NL',
+    name: 'Netherlands',
+    currency: 'EUR',
+    vatRate: 21,
+    regions: [{ name: 'North Holland', cities: ['Amsterdam'] }],
+  },
+  {
+    code: 'BE',
+    name: 'Belgium',
+    currency: 'EUR',
+    vatRate: 21,
+    regions: [{ name: 'Brussels-Capital', cities: ['Brussels'] }],
+  },
+  {
+    code: 'DK',
+    name: 'Denmark',
+    currency: 'DKK',
+    vatRate: 25,
+    regions: [{ name: 'Capital Region', cities: ['Copenhagen'] }],
+  },
+  {
+    code: 'SE',
+    name: 'Sweden',
+    currency: 'SEK',
+    vatRate: 25,
+    regions: [{ name: 'Stockholm County', cities: ['Stockholm'] }],
+  },
+  {
+    code: 'NO',
+    name: 'Norway',
+    currency: 'NOK',
+    vatRate: 25,
+    regions: [{ name: 'Oslo', cities: ['Oslo'] }],
+  },
+  {
+    code: 'FI',
+    name: 'Finland',
+    currency: 'EUR',
+    vatRate: 24,
+    regions: [{ name: 'Uusimaa', cities: ['Helsinki'] }],
+  },
+  {
+    code: 'GR',
+    name: 'Greece',
+    currency: 'EUR',
+    vatRate: 24,
+    regions: [{ name: 'Attica', cities: ['Athens'] }],
+  },
 ];
 
 @Injectable()
@@ -32,12 +135,8 @@ export class CountriesService {
 
   async findAll() {
     try {
-      let countries = await this.loadCountries();
-
-      if (countries.length === 0) {
-        await this.ensureBaselineCountries();
-        countries = await this.loadCountries();
-      }
+      await this.ensureBaselineCountries();
+      const countries = await this.loadCountries();
 
       return buildSuccessResponse(Array.isArray(countries) ? countries : []);
     } catch (error) {

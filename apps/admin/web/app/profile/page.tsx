@@ -2,10 +2,12 @@
 /* eslint-disable @next/next/no-img-element */
 
 import EscoMultiSelect from "@/components/EscoMultiSelect";
+import { LocationAutocomplete } from "@/components/location/LocationAutocomplete";
 import NaceSearchInput from "@/components/NaceSearchInput";
 import ReluSmartInput from "@/components/relu/ReluSmartInput";
 import UniclassMultiSelect from "@/components/UniclassMultiSelect";
 import type { ReluBuilderSuggestion } from "@/lib/relu-builder-api";
+import type { OpenStaffLocationSuggestion } from "@/lib/location/location-types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
@@ -314,6 +316,8 @@ export default function ProfilePage() {
   const [reluEscoQuery, setReluEscoQuery] = useState("");
   const [reluNaceQuery, setReluNaceQuery] = useState("");
   const [reluGeographyQuery, setReluGeographyQuery] = useState("");
+  const [selectedLocation, setSelectedLocation] =
+    useState<OpenStaffLocationSuggestion | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<ProfileAssetKind>("LOGO");
   const [isLoading, setIsLoading] = useState(true);
@@ -837,6 +841,29 @@ export default function ProfilePage() {
                     ))}
                   </select>
                 </Field>
+              </div>
+
+              <div className="mt-6">
+                <LocationAutocomplete
+                  label="Service locality"
+                  placeholder="Search city, locality, or service area"
+                  value={selectedLocation}
+                  onChange={(location) => {
+                    setSelectedLocation(location);
+                    if (location) {
+                      setForm((current) => ({
+                        ...current,
+                        contractorProfile: {
+                          ...current.contractorProfile,
+                          serviceArea: location.formattedAddress,
+                        },
+                      }));
+                    }
+                  }}
+                  countryBias={selectedCountry?.code ? [selectedCountry.code] : undefined}
+                  defaultCountry={selectedCountry?.code}
+                  helperText="Optional Places lookup for discovery and future matching. The country, region, and city selectors above remain the source of saved structured geography."
+                />
               </div>
 
               <div className="mt-6">

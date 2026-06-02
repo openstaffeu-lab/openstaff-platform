@@ -10,7 +10,9 @@ import {
   useMemo,
   useState,
 } from "react";
+import { LocationAutocomplete } from "@/components/location/LocationAutocomplete";
 import ReluSmartInput from "@/components/relu/ReluSmartInput";
+import type { OpenStaffLocationSuggestion } from "@/lib/location/location-types";
 import type { ReluBuilderSuggestion } from "@/lib/relu-builder-api";
 import { useAuth } from "../../context/AuthContext";
 import { loginPathForCurrentLocation } from "../../lib/auth-redirect";
@@ -289,6 +291,8 @@ export default function ProjectWorkspaceForm({
   const [name, setName] = useState("");
   const [summary, setSummary] = useState("");
   const [location, setLocation] = useState("");
+  const [selectedLocation, setSelectedLocation] =
+    useState<OpenStaffLocationSuggestion | null>(null);
   const [engagementModel, setEngagementModel] = useState<EngagementModel>("MIXED");
   const [status, setStatus] = useState<ProjectStatus>("DRAFT");
   const [selectedEscoIds, setSelectedEscoIds] = useState<string[]>([]);
@@ -957,6 +961,22 @@ export default function ProjectWorkspaceForm({
                     placeholder="Bucharest, Berlin, on-site address..."
                   />
                 </label>
+
+                <div className="md:col-span-2">
+                  <LocationAutocomplete
+                    label="Location autocomplete"
+                    placeholder="Search project city, locality, or address"
+                    value={selectedLocation}
+                    onChange={(nextLocation) => {
+                      setSelectedLocation(nextLocation);
+                      if (nextLocation) {
+                        setLocation(nextLocation.formattedAddress);
+                      }
+                    }}
+                    helperText="Optional Places lookup. Manual location text remains editable if Google is unavailable."
+                    tone="dark"
+                  />
+                </div>
 
                 <label className="block">
                   <span className="mb-2 block text-sm text-slate-300">

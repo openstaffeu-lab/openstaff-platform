@@ -2,6 +2,30 @@
 
 Last updated: 2026-06-02
 
+## EXEC-78C.1B Location Intelligence Autocomplete
+
+Verdict: `PASS - reusable Google Places location autocomplete foundation is implemented for OpenStaff public web workflows. API key configuration is environment-based through NEXT_PUBLIC_GOOGLE_MAPS_API_KEY, no secret value is committed, parser output is normalized to OpenStaff-safe city/region/country/lat/lng data, existing manual selectors and inputs remain available, and integrations are intentionally incremental where current form structure allows safe adoption. Owner/superadmin real-data testing was not started.`
+
+### EXEC-78C.1B Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| package | PASS | `@googlemaps/js-api-loader` added to `apps/admin/web` with lockfile update |
+| env | PASS | `apps/admin/web/.env.example` documents empty `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`; no real key committed |
+| parser/types | PASS | `OpenStaffLocationSuggestion` and `parseGooglePlace` normalize place ID, formatted address, locality, region, country, country code, lat/lng, sanitized types, and confidence |
+| loader/hook | PASS | cached Places loader, missing-key fallback, debounced autocomplete, session tokens, European-first global bias, country/default-country options, details-on-selection only |
+| component | PASS | `LocationAutocomplete` provides accessible combobox UI with loading, empty, error, selected summary, keyboard support, and manual fallback text |
+| integrations | PASS | low-risk enhancements added to register, company onboarding, profile service area, publish location label, and project create/edit location |
+| docs | PASS | `docs/proof/exec78/EXEC78C1B_LOCATION_AUTOCOMPLETE.md` plus EXEC-78 README updated with API, key restriction, cost-control, fallback, and risk notes |
+| validation | PASS | `apps/admin/web -> npm.cmd run build` exited `0`; `npm.cmd run lint` exited `0` with 0 errors and existing warnings only |
+
+### EXEC-78C.1B Remaining Risks
+
+1. Production runtime autocomplete requires a correctly restricted public Google Maps browser key.
+2. Browser runtime with a real key was not exercised in this task.
+3. Selected latitude/longitude is normalized client-side but not yet persisted as first-class structured data in all existing flows.
+4. Internal country/region/city ID matching from selected Google places should be added incrementally only where current form structure supports it safely.
+
 ## EXEC-77A.2 Real DB / Production Verification
 
 Verdict: `PASS - RELU Builder backend hardening is verified against the real Cloud SQL PostgreSQL environment, migration status is clean after applying 20260529110000_exec77a1_relu_builder_domains, and local backend build/test/lint gates pass with lint warnings only. No frontend or UI files were changed.`

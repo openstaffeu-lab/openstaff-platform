@@ -38,6 +38,12 @@ type RegisterPayload = {
   displayName: string;
   actorType: ActorType;
   profileType?: ProfileType;
+  companyName?: string;
+  vatNumber?: string;
+  countryCode?: string;
+  languageCode?: string;
+  timezone?: string;
+  phone?: string;
 };
 
 type LoginPayload = {
@@ -133,7 +139,17 @@ export class AuthService {
       data.profileType ?? this.mapActorTypeToProfileType(data.actorType);
     const role = this.mapProfileTypeToRole(profileType);
     const displayName = data.displayName.trim();
-    const slug = await this.generateUniqueProfileSlug(displayName);
+    const companyName = this.normalizeOptionalString(data.companyName);
+    const vatNumber = this.normalizeOptionalString(data.vatNumber)?.toUpperCase();
+    const countryCode = this.normalizeOptionalString(data.countryCode)?.toUpperCase();
+    const languageCode = this.normalizeOptionalString(data.languageCode)?.toLowerCase();
+    const timezone = this.normalizeOptionalString(data.timezone);
+    const phone = this.normalizeOptionalString(data.phone);
+    const resolvedCompanyName =
+      companyName ?? (data.actorType === ActorType.COMPANY ? displayName : null);
+    const slug = await this.generateUniqueProfileSlug(
+      resolvedCompanyName ?? displayName,
+    );
 
     const user = await this.prisma.$transaction(async (tx) => {
       const createdUser = await tx.user.create({
@@ -152,6 +168,7 @@ export class AuthService {
           slug,
           profileType,
           displayName,
+          companyName: resolvedCompanyName,
           visibility: ProfileVisibility.PRIVATE,
           moderationStatus: ProfileModerationStatus.PENDING,
           status: ProfileLifecycleStatus.OFFLINE,
@@ -163,10 +180,27 @@ export class AuthService {
           userId: createdUser.id,
           publicSlug: slug,
           displayName,
+          language: languageCode,
+          timezone,
+          country: countryCode,
+          phone,
           verificationStatus: VerificationStatus.UNVERIFIED,
-          profileCompletionPercent: 10,
+          profileCompletionPercent:
+            languageCode || timezone || countryCode || phone ? 20 : 10,
         },
       });
+
+      if (resolvedCompanyName) {
+        await tx.identityCompanyProfile.create({
+          data: {
+            ownerUserId: createdUser.id,
+            companyName: resolvedCompanyName,
+            legalName: resolvedCompanyName,
+            vatId: vatNumber,
+            country: countryCode,
+          },
+        });
+      }
 
       await tx.onboardingSession.create({
         data: {
@@ -197,6 +231,9 @@ export class AuthService {
       metadata: {
         email: normalizedEmail,
         role,
+        companyName: resolvedCompanyName,
+        countryCode,
+        languageCode,
       },
     });
 
@@ -215,6 +252,8 @@ export class AuthService {
       metadata: {
         actorType: data.actorType,
         role,
+        companyName: resolvedCompanyName,
+        countryCode,
       },
       relatedEntityType: 'User',
       relatedEntityId: user.id,
@@ -1947,6 +1986,11 @@ export class AuthService {
       default:
         return ProfileType.PROFESSIONAL;
     }
+  }
+
+  private normalizeOptionalString(value?: string | null) {
+    const normalized = value?.trim();
+    return normalized ? normalized : null;
   }
 
   private mapProfileTypeToRole(profileType: ProfileType) {

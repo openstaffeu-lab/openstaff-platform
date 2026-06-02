@@ -434,7 +434,7 @@ export class OnboardingService {
       country: this.countryNameFromCode(countryCode),
       countryCode,
       language,
-      currency: countryCode === 'RO' ? 'RON' : 'EUR',
+      currency: this.currencyFromCountryCode(countryCode),
       vatMode:
         countryCode === 'RO'
           ? 'domestic'
@@ -1268,12 +1268,19 @@ export class OnboardingService {
   private countryNameFromCode(code: string) {
     const names: Record<string, string> = {
       RO: 'Romania',
+      IE: 'Ireland',
+      GB: 'United Kingdom',
       DE: 'Germany',
       NL: 'Netherlands',
       BE: 'Belgium',
       FR: 'France',
       ES: 'Spain',
       IT: 'Italy',
+      DK: 'Denmark',
+      SE: 'Sweden',
+      NO: 'Norway',
+      FI: 'Finland',
+      GR: 'Greece',
       AT: 'Austria',
       PL: 'Poland',
       CZ: 'Czech Republic',
@@ -1283,6 +1290,18 @@ export class OnboardingService {
     };
 
     return names[code] ?? code;
+  }
+
+  private currencyFromCountryCode(code: string) {
+    const currencies: Record<string, string> = {
+      RO: 'RON',
+      GB: 'GBP',
+      DK: 'DKK',
+      SE: 'SEK',
+      NO: 'NOK',
+    };
+
+    return currencies[code] ?? 'EUR';
   }
 
   private isEuropeanUnionCountry(code: string) {
@@ -1675,21 +1694,23 @@ export class OnboardingService {
     const prefixes: Record<string, string> = {
       RO: '+40',
       DE: '+49',
+      IE: '+353',
+      GB: '+44',
       FR: '+33',
       IT: '+39',
       ES: '+34',
       NL: '+31',
       BE: '+32',
+      DK: '+45',
+      SE: '+46',
+      NO: '+47',
+      FI: '+358',
+      GR: '+30',
       AT: '+43',
       PL: '+48',
       PT: '+351',
       CZ: '+420',
-      IE: '+353',
       EL: '+30',
-      GR: '+30',
-      SE: '+46',
-      DK: '+45',
-      FI: '+358',
       LU: '+352',
       HU: '+36',
       BG: '+359',

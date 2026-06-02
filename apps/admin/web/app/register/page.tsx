@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { PasswordField } from "@/components/PasswordField";
+import { LocationAutocomplete } from "@/components/location/LocationAutocomplete";
 import { getRegistrationDefaults, trackRolloutFunnelEvent } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useOnboardingState } from "@/lib/onboarding";
+import type { OpenStaffLocationSuggestion } from "@/lib/location/location-types";
 
 type AccountChoice = "COMPANY" | "PROFESSIONAL";
 
@@ -30,6 +32,28 @@ const ACCOUNT_TYPES: Array<{
   },
 ];
 
+const COUNTRY_OPTIONS = [
+  { code: "RO", label: "Romania" },
+  { code: "IE", label: "Ireland" },
+  { code: "GB", label: "United Kingdom" },
+  { code: "DE", label: "Germany" },
+  { code: "FR", label: "France" },
+  { code: "IT", label: "Italy" },
+  { code: "ES", label: "Spain" },
+  { code: "NL", label: "Netherlands" },
+  { code: "BE", label: "Belgium" },
+  { code: "DK", label: "Denmark" },
+  { code: "SE", label: "Sweden" },
+  { code: "NO", label: "Norway" },
+  { code: "FI", label: "Finland" },
+  { code: "GR", label: "Greece" },
+] as const;
+
+const LANGUAGE_OPTIONS = [
+  { code: "ro", label: "Română" },
+  { code: "en", label: "English" },
+] as const;
+
 export default function RegisterPage() {
   const router = useRouter();
   const { register } = useAuth();
@@ -44,6 +68,8 @@ export default function RegisterPage() {
   const [countryCode, setCountryCode] = useState("RO");
   const [languageCode, setLanguageCode] = useState("ro");
   const [timezone, setTimezone] = useState("Europe/Bucharest");
+  const [selectedLocation, setSelectedLocation] =
+    useState<OpenStaffLocationSuggestion | null>(null);
   const [defaultsMessage, setDefaultsMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -63,8 +89,12 @@ export default function RegisterPage() {
 
     void getRegistrationDefaults()
       .then((defaults) => {
-        setCountryCode(defaults.countryCode);
-        setLanguageCode(defaults.language);
+        setCountryCode(
+          COUNTRY_OPTIONS.some((country) => country.code === defaults.countryCode)
+            ? defaults.countryCode
+            : "RO",
+        );
+        setLanguageCode(defaults.language === "en" ? "en" : "ro");
         setTimezone(defaults.timezone);
         setPhone((current) => current.trim() || defaults.phonePrefix);
         setDefaultsMessage(defaults.explanation);
@@ -92,6 +122,12 @@ export default function RegisterPage() {
         password,
         displayName,
         actorType: selectedAccountType.actorType,
+        companyName: companyName.trim() || undefined,
+        vatNumber: vatNumber.trim() || undefined,
+        countryCode,
+        languageCode,
+        timezone,
+        phone: phone.trim() || undefined,
       });
 
       setPartial({
@@ -105,6 +141,7 @@ export default function RegisterPage() {
         companyName,
         companyCui: vatNumber,
         displayName,
+        regionCode: selectedLocation?.locality ?? countryCode,
         currentStep: "welcome",
       });
       router.push("/onboarding/welcome");
@@ -200,23 +237,53 @@ export default function RegisterPage() {
             </div>
           ) : (
             <div className="space-y-5">
+              <LocationAutocomplete
+                label="City or operating locality"
+                placeholder="Search Bucharest, Dublin, Berlin..."
+                value={selectedLocation}
+                onChange={(location) => {
+                  setSelectedLocation(location);
+                  if (location?.countryCode) {
+                    setCountryCode(
+                      COUNTRY_OPTIONS.some((country) => country.code === location.countryCode)
+                        ? location.countryCode
+                        : countryCode,
+                    );
+                  }
+                }}
+                defaultCountry={countryCode}
+                helperText="Optional. Google Places improves localization context; the manual country selector below remains available."
+              />
+
               <div className="grid gap-5 md:grid-cols-2">
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium text-slate-600">Country</span>
-                  <input
+                  <select
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none"
                     value={countryCode}
-                    onChange={(event) => setCountryCode(event.target.value.toUpperCase())}
-                  />
+                    onChange={(event) => setCountryCode(event.target.value)}
+                  >
+                    {COUNTRY_OPTIONS.map((country) => (
+                      <option key={country.code} value={country.code}>
+                        {country.label}
+                      </option>
+                    ))}
+                  </select>
                 </label>
 
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium text-slate-600">Language</span>
-                  <input
+                  <select
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none"
                     value={languageCode}
-                    onChange={(event) => setLanguageCode(event.target.value.toLowerCase())}
-                  />
+                    onChange={(event) => setLanguageCode(event.target.value)}
+                  >
+                    {LANGUAGE_OPTIONS.map((language) => (
+                      <option key={language.code} value={language.code}>
+                        {language.label}
+                      </option>
+                    ))}
+                  </select>
                 </label>
 
                 <label className="block md:col-span-2">

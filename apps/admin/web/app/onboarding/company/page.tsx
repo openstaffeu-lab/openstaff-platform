@@ -3,6 +3,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { LocationAutocomplete } from "@/components/location/LocationAutocomplete";
 import { useAuth } from "@/context/AuthContext";
 import {
   getOnboardingMe,
@@ -11,6 +12,7 @@ import {
   upsertCompanyProfile,
   type CompanyLookupResult,
 } from "@/lib/api";
+import type { OpenStaffLocationSuggestion } from "@/lib/location/location-types";
 import { useOnboardingState } from "@/lib/onboarding";
 
 export default function OnboardingCompanyPage() {
@@ -33,6 +35,8 @@ export default function OnboardingCompanyPage() {
   const [lookingUp, setLookingUp] = useState(false);
   const [error, setError] = useState("");
   const [lookup, setLookup] = useState<CompanyLookupResult | null>(null);
+  const [selectedLocation, setSelectedLocation] =
+    useState<OpenStaffLocationSuggestion | null>(null);
 
   useEffect(() => {
     if (!ready || !token) {
@@ -107,6 +111,28 @@ export default function OnboardingCompanyPage() {
           <CompanyField label="Fiscal or VAT code" helper="Use this to request autofill when available; it is not required for manual setup.">
             <input value={form.vatId} onChange={(event) => updateField("vatId", event.target.value)} placeholder="Example: RO12345678" style={inputStyle} />
           </CompanyField>
+          <div style={{ minWidth: 0 }}>
+            <LocationAutocomplete
+              label="Company locality"
+              placeholder="Search city, locality, or registered address"
+              value={selectedLocation}
+              onChange={(location) => {
+                setSelectedLocation(location);
+                if (!location) {
+                  return;
+                }
+
+                setForm((current) => ({
+                  ...current,
+                  country: location.country || current.country,
+                  city: location.locality || current.city,
+                  addressLine1: location.formattedAddress || current.addressLine1,
+                }));
+              }}
+              defaultCountry={deriveCountryCode(form.country, form.vatId)}
+              helperText="Optional Places lookup. Manual country, city, and address fields remain editable."
+            />
+          </div>
           <CompanyField label="Country" helper="Used for lookup routing and marketplace context.">
             <input value={form.country} onChange={(event) => updateField("country", event.target.value)} placeholder="Country" style={inputStyle} />
           </CompanyField>

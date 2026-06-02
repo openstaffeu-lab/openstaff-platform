@@ -1047,6 +1047,12 @@ export async function registerAccount(payload: {
   password: string;
   displayName: string;
   actorType: string;
+  companyName?: string;
+  vatNumber?: string;
+  countryCode?: string;
+  languageCode?: string;
+  timezone?: string;
+  phone?: string;
 }) {
   return apiRequest<AuthResponse>("/auth/register", {
     method: "POST",

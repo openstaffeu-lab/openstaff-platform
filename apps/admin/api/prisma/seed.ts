@@ -83,6 +83,9 @@ async function main() {
       { code: 'USD', symbol: '$', name: 'US Dollar' },
       { code: 'GBP', symbol: 'GBP', name: 'Pound Sterling' },
       { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
+      { code: 'DKK', symbol: 'kr', name: 'Danish Krone' },
+      { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
+      { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone' },
     ],
   });
 

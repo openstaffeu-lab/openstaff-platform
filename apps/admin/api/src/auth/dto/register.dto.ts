@@ -13,7 +13,7 @@ export class RegisterDto {
   email!: string;
 
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
   password!: string;
 
   @IsEnum(ActorType)
@@ -36,4 +36,29 @@ export class RegisterDto {
   @IsString()
   @MaxLength(160)
   companyName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  vatNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(8)
+  countryCode?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(16)
+  languageCode?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  timezone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  phone?: string;
 }

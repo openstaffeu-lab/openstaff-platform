@@ -41,6 +41,12 @@ type AuthContextType = {
     password: string;
     displayName: string;
     actorType: string;
+    companyName?: string;
+    vatNumber?: string;
+    countryCode?: string;
+    languageCode?: string;
+    timezone?: string;
+    phone?: string;
   }) => Promise<void>;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;

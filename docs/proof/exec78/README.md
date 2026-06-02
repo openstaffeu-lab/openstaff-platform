@@ -2,7 +2,65 @@
 
 Last updated: 2026-06-02
 
-Verdict: `PASS FOR EXEC-78B.1; broader EXEC-78 decisions remain owner-approval gated`
+Verdict: `PASS FOR EXEC-78C.1B; broader owner/superadmin real-data testing not started`
+
+## EXEC-78C.1B Scope
+
+EXEC-78C.1B added a reusable Google Places-based location autocomplete foundation for the public web app.
+
+OpenStaff location autocomplete is an enhancement layer only. Existing manual country, region, city, locality, VAT, currency, and location fields remain usable if Google is unavailable or if a form is not ready for deeper integration.
+
+Integration into existing flows must remain incremental and only happen where the current form structure allows it safely, without introducing risk.
+
+## EXEC-78C.1B Files Created
+
+- `apps/admin/web/lib/location/location-types.ts`
+- `apps/admin/web/lib/location/parseGooglePlace.ts`
+- `apps/admin/web/lib/location/googleMapsLoader.ts`
+- `apps/admin/web/hooks/useLocationAutocomplete.ts`
+- `apps/admin/web/components/location/LocationAutocomplete.tsx`
+- `docs/proof/exec78/EXEC78C1B_LOCATION_AUTOCOMPLETE.md`
+
+## EXEC-78C.1B Files Updated
+
+- `apps/admin/web/package.json`
+- `apps/admin/web/package-lock.json`
+- `apps/admin/web/.env.example`
+- `apps/admin/web/app/register/page.tsx`
+- `apps/admin/web/app/onboarding/company/page.tsx`
+- `apps/admin/web/app/profile/page.tsx`
+- `apps/admin/web/app/publish/page.tsx`
+- `apps/admin/web/components/projects/ProjectWorkspaceForm.tsx`
+- `docs/proof/exec78/README.md`
+- `STATUS.md`
+
+## EXEC-78C.1B Google Cloud Requirements
+
+Required APIs:
+
+- Maps JavaScript API
+- Places API New
+
+Geocoding API is not required by this implementation and should only be enabled if a future flow needs it.
+
+The browser key is configured through `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`. The key must be HTTP-referrer restricted to `https://openstaff.eu/*`, `https://www.openstaff.eu/*`, and approved localhost development origins only when needed. API restrictions should allow only Maps JavaScript API and Places API.
+
+No key value is committed or documented.
+
+## EXEC-78C.1B Validation
+
+| Gate | Status | Evidence |
+|---|---|---|
+| package | PASS | `@googlemaps/js-api-loader` added in `apps/admin/web` with lockfile update |
+| parser | PASS | normalizes place ID, formatted address, locality, region, country, country code, lat/lng, sanitized types, and confidence |
+| loader | PASS | uses `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, caches Places library loading, and returns UI-safe missing-key/load errors |
+| hook | PASS | debounced autocomplete, session tokens, European-first global bias, country/default-country options, details-on-selection only |
+| component | PASS | accessible combobox/listbox UI with loading, empty, error, selected summary, keyboard support, and manual fallback text |
+| integrations | PASS | low-risk wiring in register, company onboarding, profile service area, publish location label, and project create/edit location |
+| build | PASS | `apps/admin/web -> npm.cmd run build` exited `0` |
+| lint | PASS | `apps/admin/web -> npm.cmd run lint` exited `0`; 0 errors, existing warnings only |
+
+See `docs/proof/exec78/EXEC78C1B_LOCATION_AUTOCOMPLETE.md` for the full proof.
 
 ## EXEC-78A Scope
 

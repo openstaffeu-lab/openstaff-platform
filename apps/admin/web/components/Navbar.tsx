@@ -25,7 +25,7 @@ const topicOptions = [
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
-  const [language, setLanguage] = useState("RO");
+  const [language, setLanguage] = useState("ro");
   const [submitted, setSubmitted] = useState(false);
   const router = useRouter();
   const { isAuthenticated, logout, user } = useAuth();
@@ -85,13 +85,13 @@ export function Navbar() {
               value={language}
               onChange={(event) => setLanguage(event.target.value)}
               className="bg-transparent text-sm font-semibold text-white focus:outline-none"
-              aria-label="Limba"
+              aria-label="Language / Limba"
             >
-              <option className="text-[#1E3A8A]" value="RO">
-                RO
+              <option className="text-[#1E3A8A]" value="ro">
+                Română
               </option>
-              <option className="text-[#1E3A8A]" value="EN">
-                EN
+              <option className="text-[#1E3A8A]" value="en">
+                English
               </option>
             </select>
           </label>
@@ -192,13 +192,13 @@ export function Navbar() {
                 value={language}
                 onChange={(event) => setLanguage(event.target.value)}
                 className="ml-auto bg-transparent text-sm font-semibold text-white focus:outline-none"
-                aria-label="Limba"
+                aria-label="Language / Limba"
               >
-                <option className="text-[#1E3A8A]" value="RO">
-                  RO
+                <option className="text-[#1E3A8A]" value="ro">
+                  Română
                 </option>
-                <option className="text-[#1E3A8A]" value="EN">
-                  EN
+                <option className="text-[#1E3A8A]" value="en">
+                  English
                 </option>
               </select>
             </label>
