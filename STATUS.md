@@ -1,6 +1,31 @@
 ﻿# OpenStaff Platform Status
 
-Last updated: 2026-06-02
+Last updated: 2026-06-03
+
+## EXEC-78C.2 Owner Flow Remediation
+
+Verdict: `PARTIAL PASS - owner/superadmin account, dashboard, public profile, location, taxonomy, and publishing UX remediation is implemented and local validation gates pass. Final PASS is not claimed because local browser automation could not complete in this environment and real owner/Google-key production proof remains pending.`
+
+### EXEC-78C.2 Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| post-login journey | PASS | completed authenticated users now route to `/dashboard`; onboarding users still route to `/onboarding/welcome` |
+| dashboard pipeline | PASS | `/dashboard` shows account approval, profile moderation, public visibility, latest listing, required next action, and superadmin backoffice CTA |
+| public profile reason | PASS | `/profiles/[slug]` now renders API-provided unavailable reasons such as account approval, moderation, private visibility, offline status, or missing identity |
+| password copy | PASS | `/login` password placeholder now says `Minimum 8 characters` |
+| location normalization | PASS | `matchOpenStaffLocation` matches Google Places selections to internal country/region/city where safe and shows review messaging when partial |
+| taxonomy UX | PASS | NACE search text is cleaned; ESCO/Uniclass chips preserve labels where available; public profile taxonomy renders code plus title |
+| publish lifecycle | PASS | `/publish` now distinguishes Save draft, Submit for review, Cancel, Delete, and public preview; lifecycle copy covers Draft, Pending review, Approved, Live, Rejected, and Archived |
+| validation | PASS | web build PASS, web lint 0 errors, API build PASS, API lint 0 errors, API tests 19 suites / 38 tests PASS |
+| browser proof | BLOCKED | local standalone server reached foreground Ready, but detached route/browser proof could not complete; real owner account and real Google key proof still pending |
+
+### EXEC-78C.2 Remaining Risks
+
+1. Production owner/superadmin browser proof with real credentials is still required before real data population.
+2. Runtime Google Places behavior with the restricted production browser key is still unproven in this pass.
+3. Draft saving uses existing `visibility: PRIVATE`; backend moderation status remains intact and no auto-publish path was added.
+4. Existing posts/profiles that only persisted taxonomy codes may still need later taxonomy enrichment for labels outside current loaded references.
 
 ## EXEC-78C.1B Location Intelligence Autocomplete
 

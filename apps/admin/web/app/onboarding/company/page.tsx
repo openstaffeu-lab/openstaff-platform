@@ -37,6 +37,7 @@ export default function OnboardingCompanyPage() {
   const [lookup, setLookup] = useState<CompanyLookupResult | null>(null);
   const [selectedLocation, setSelectedLocation] =
     useState<OpenStaffLocationSuggestion | null>(null);
+  const [locationReviewMessage, setLocationReviewMessage] = useState("");
 
   useEffect(() => {
     if (!ready || !token) {
@@ -119,6 +120,7 @@ export default function OnboardingCompanyPage() {
               onChange={(location) => {
                 setSelectedLocation(location);
                 if (!location) {
+                  setLocationReviewMessage("");
                   return;
                 }
 
@@ -128,10 +130,18 @@ export default function OnboardingCompanyPage() {
                   city: location.locality || current.city,
                   addressLine1: location.formattedAddress || current.addressLine1,
                 }));
+                setLocationReviewMessage(
+                  "Location selected, but structured region/city matching needs review.",
+                );
               }}
               defaultCountry={deriveCountryCode(form.country, form.vatId)}
               helperText="Optional Places lookup. Manual country, city, and address fields remain editable."
             />
+            {locationReviewMessage ? (
+              <div style={{ marginTop: 8, ...releaseNoteStyle }}>
+                {locationReviewMessage}
+              </div>
+            ) : null}
           </div>
           <CompanyField label="Country" helper="Used for lookup routing and marketplace context.">
             <input value={form.country} onChange={(event) => updateField("country", event.target.value)} placeholder="Country" style={inputStyle} />

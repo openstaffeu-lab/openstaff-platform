@@ -105,7 +105,7 @@ function LoginForm() {
 
             <PasswordField
               label="Password"
-              placeholder="Minimum 6 characters"
+              placeholder="Minimum 8 characters"
               value={password}
               onChange={setPassword}
               autoComplete="current-password"

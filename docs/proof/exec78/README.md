@@ -1,8 +1,16 @@
 # EXEC-78 Proof
 
-Last updated: 2026-06-02
+Last updated: 2026-06-03
 
-Verdict: `PASS FOR EXEC-78C.1B; broader owner/superadmin real-data testing not started`
+Verdict: `PARTIAL PASS FOR EXEC-78C.2; owner-flow code remediation and build/lint/test gates pass, browser/real-key owner proof still pending`
+
+## EXEC-78C.2 Scope
+
+EXEC-78C.2 remediated the owner/superadmin flow across login copy, post-login routing, dashboard state logic, public profile unavailable reasons, structured location matching, taxonomy selector readability, and publish lifecycle actions.
+
+Validation passes for web build/lint and API build/lint/tests. Final PASS is not claimed because local browser automation could not be completed in this environment and real owner/Google-key production proof remains pending.
+
+See `docs/proof/exec78/EXEC78C2_OWNER_FLOW_REMEDIATION.md` for the full discovery matrix, changed files, validation results, and remaining risks.
 
 ## EXEC-78C.1B Scope
 

@@ -9,7 +9,7 @@ type PageProps = {
 
 type PublicProfilePageState =
   | { kind: "available"; profile: PublicProfile }
-  | { kind: "unavailable" };
+  | { kind: "unavailable"; reason: string };
 
 async function loadPublicProfileState(slug: string): Promise<PublicProfilePageState> {
   try {
@@ -17,7 +17,13 @@ async function loadPublicProfileState(slug: string): Promise<PublicProfilePageSt
     return { kind: "available", profile };
   } catch (error) {
     if (error instanceof ApiError && (error.status === 403 || error.status === 404)) {
-      return { kind: "unavailable" };
+      return {
+        kind: "unavailable",
+        reason:
+          error.status === 404
+            ? "The profile link does not match an active OpenStaff public profile."
+            : error.message,
+      };
     }
 
     throw error;
@@ -55,8 +61,11 @@ export default async function PublicIdentityProfilePage({ params }: PageProps) {
             This profile is not publicly available yet.
           </h1>
           <p style={{ maxWidth: 640, color: "#475569", lineHeight: 1.8 }}>
-            The account may still be pending approval, under moderation, private, or offline.
-            Ask the owner to complete approval in backoffice before sharing this public link.
+            {state.reason}
+          </p>
+          <p style={{ maxWidth: 640, color: "#64748B", lineHeight: 1.8, marginTop: 14 }}>
+            Public visibility requires account approval, approved profile moderation, PUBLIC
+            visibility, and LIVE profile status.
           </p>
         </section>
       </main>
@@ -209,19 +218,19 @@ export default async function PublicIdentityProfilePage({ params }: PageProps) {
           <div>
             ESCO:{" "}
             {profile.escoSkills.length
-              ? profile.escoSkills.map((item) => item.code).join(", ")
+              ? profile.escoSkills.map((item) => `${item.code} ${item.title}`).join(", ")
               : "-"}
           </div>
           <div>
             NACE:{" "}
             {profile.naceCodes.length
-              ? profile.naceCodes.map((item) => item.code).join(", ")
+              ? profile.naceCodes.map((item) => `${item.code} ${item.title}`).join(", ")
               : "-"}
           </div>
           <div>
             Uniclass:{" "}
             {profile.uniclassCodes.length
-              ? profile.uniclassCodes.map((item) => item.code).join(", ")
+              ? profile.uniclassCodes.map((item) => `${item.code} ${item.title}`).join(", ")
               : "-"}
           </div>
           <div>

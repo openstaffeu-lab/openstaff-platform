@@ -44,11 +44,7 @@ export function defaultAuthenticatedRoute(user: AuthUser) {
     return "/onboarding/welcome";
   }
 
-  if (user.actorType === "COMPANY") {
-    return "/dashboard";
-  }
-
-  return "/profile";
+  return "/dashboard";
 }
 
 export function resolveAuthenticatedRoute(user: AuthUser, fallback?: string | null) {

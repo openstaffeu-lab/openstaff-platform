@@ -8,6 +8,7 @@ import ReluSmartInput from "@/components/relu/ReluSmartInput";
 import UniclassMultiSelect from "@/components/UniclassMultiSelect";
 import type { ReluBuilderSuggestion } from "@/lib/relu-builder-api";
 import type { OpenStaffLocationSuggestion } from "@/lib/location/location-types";
+import { matchOpenStaffLocation } from "@/lib/location/matchOpenStaffLocation";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
@@ -318,6 +319,7 @@ export default function ProfilePage() {
   const [reluGeographyQuery, setReluGeographyQuery] = useState("");
   const [selectedLocation, setSelectedLocation] =
     useState<OpenStaffLocationSuggestion | null>(null);
+  const [locationMatchMessage, setLocationMatchMessage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<ProfileAssetKind>("LOGO");
   const [isLoading, setIsLoading] = useState(true);
@@ -333,6 +335,18 @@ export default function ProfilePage() {
   const selectedRegion = useMemo(
     () => selectedCountry?.regions.find((region) => region.id === form.regionId) ?? null,
     [selectedCountry, form.regionId],
+  );
+  const selectedCity = useMemo(
+    () => selectedRegion?.cities.find((city) => city.id === form.cityId) ?? null,
+    [selectedRegion, form.cityId],
+  );
+  const escoLabels = useMemo(
+    () => Object.fromEntries(escoSkills.map((item) => [item.code, item.title])),
+    [escoSkills],
+  );
+  const uniclassLabels = useMemo(
+    () => Object.fromEntries(uniclassCodes.map((item) => [item.code, item.title])),
+    [uniclassCodes],
   );
 
   async function loadProfileWorkspace(authToken: string) {
@@ -451,6 +465,44 @@ export default function ProfilePage() {
     });
   }
 
+  function applyLocationSelection(location: OpenStaffLocationSuggestion | null) {
+    setSelectedLocation(location);
+    if (!location) {
+      setLocationMatchMessage(null);
+      return;
+    }
+
+    const match = matchOpenStaffLocation(location, countries);
+    setLocationMatchMessage(match.message);
+
+    setForm((current) => {
+      const next = {
+        ...current,
+        countryId: match.countryId || current.countryId,
+        regionId: match.regionId || current.regionId,
+        cityId: match.cityId || current.cityId,
+      };
+
+      if (usesProfessionalFields(current.profileType)) {
+        return {
+          ...next,
+          professionalProfile: {
+            ...current.professionalProfile,
+            portfolioFocus: current.professionalProfile.portfolioFocus || location.formattedAddress,
+          },
+        };
+      }
+
+      return {
+        ...next,
+        contractorProfile: {
+          ...current.contractorProfile,
+          serviceArea: location.formattedAddress,
+        },
+      };
+    });
+  }
+
   async function handleSave() {
     if (!token) {
       return;
@@ -481,11 +533,10 @@ export default function ProfilePage() {
         countryId: form.countryId || null,
         regionId: form.regionId || null,
         cityId: form.cityId || null,
-        countryName: selectedCountry?.name ?? null,
-        countryCode: selectedCountry?.code ?? null,
-        regionName: selectedRegion?.name ?? null,
-        cityName:
-          selectedRegion?.cities.find((city) => city.id === form.cityId)?.name ?? null,
+        countryName: selectedCountry?.name ?? selectedLocation?.country ?? null,
+        countryCode: selectedCountry?.code ?? selectedLocation?.countryCode ?? null,
+        regionName: selectedRegion?.name ?? selectedLocation?.region ?? null,
+        cityName: selectedCity?.name ?? selectedLocation?.locality ?? null,
         supportedEngagementModels: form.supportedEngagementModels,
         certificationsText: form.certificationsText || null,
         availabilityStatus: form.availabilityStatus,
@@ -848,22 +899,16 @@ export default function ProfilePage() {
                   label="Service locality"
                   placeholder="Search city, locality, or service area"
                   value={selectedLocation}
-                  onChange={(location) => {
-                    setSelectedLocation(location);
-                    if (location) {
-                      setForm((current) => ({
-                        ...current,
-                        contractorProfile: {
-                          ...current.contractorProfile,
-                          serviceArea: location.formattedAddress,
-                        },
-                      }));
-                    }
-                  }}
+                  onChange={applyLocationSelection}
                   countryBias={selectedCountry?.code ? [selectedCountry.code] : undefined}
                   defaultCountry={selectedCountry?.code}
-                  helperText="Optional Places lookup for discovery and future matching. The country, region, and city selectors above remain the source of saved structured geography."
+                  helperText="Optional Places lookup. When possible, the country, region, and city selectors above are filled automatically; manual edits remain available."
                 />
+                {locationMatchMessage ? (
+                  <div className="mt-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-900">
+                    {locationMatchMessage}
+                  </div>
+                ) : null}
               </div>
 
               <div className="mt-6">
@@ -997,11 +1042,19 @@ export default function ProfilePage() {
                 </Field>
 
                 <Field label="ESCO">
-                  <EscoMultiSelect value={form.escoCodes} onChange={(escoCodes) => updateField("escoCodes", escoCodes)} />
+                  <EscoMultiSelect
+                    value={form.escoCodes}
+                    selectedLabels={escoLabels}
+                    onChange={(escoCodes) => updateField("escoCodes", escoCodes)}
+                  />
                 </Field>
 
                 <Field label="Uniclass">
-                  <UniclassMultiSelect value={form.uniclassCodes} onChange={(uniclassCodes) => updateField("uniclassCodes", uniclassCodes)} />
+                  <UniclassMultiSelect
+                    value={form.uniclassCodes}
+                    selectedLabels={uniclassLabels}
+                    onChange={(uniclassCodes) => updateField("uniclassCodes", uniclassCodes)}
+                  />
                 </Field>
               </div>
             </Panel>
@@ -1086,7 +1139,7 @@ export default function ProfilePage() {
                         <div>
                           <div className="text-base font-semibold text-brand-charcoal">{document.title}</div>
                           <div className="mt-1 text-sm text-slate-500">
-                            {document.assetKind ?? document.type} · {document.fileName} · {document.extractionStatus}
+                            {document.assetKind ?? document.type} - {document.fileName} - {document.extractionStatus}
                           </div>
                           {document.extractionError ? (
                             <div className="mt-2 text-sm text-rose-600">{document.extractionError}</div>

@@ -92,12 +92,9 @@ export class ProfilesService {
       throw new NotFoundException('Profile not found');
     }
 
-    if (
-      profile.visibility !== ProfileVisibility.PUBLIC ||
-      profile.moderationStatus !== ProfileModerationStatus.APPROVED ||
-      profile.status !== ProfileLifecycleStatus.LIVE
-    ) {
-      throw new ForbiddenException('This profile is not publicly available');
+    const unavailableReason = this.getPublicUnavailableReason(profile);
+    if (unavailableReason) {
+      throw new ForbiddenException(unavailableReason);
     }
 
     return this.toPublicProfileResponse(profile);
@@ -1041,6 +1038,32 @@ export class ProfilesService {
       profileType === ProfileType.CLINIC_DOCTOR ||
       profileType === ProfileType.TRAINER_EVALUATOR
     );
+  }
+
+  private getPublicUnavailableReason(profile: any) {
+    if (profile.user?.approvalStatus !== 'APPROVED') {
+      return 'The profile is approved, but public visibility is blocked until account approval is complete.';
+    }
+
+    if (profile.moderationStatus !== ProfileModerationStatus.APPROVED) {
+      return profile.moderationStatus === ProfileModerationStatus.REJECTED
+        ? 'The profile is not public because moderation rejected it.'
+        : 'The profile is pending moderation before it can appear publicly.';
+    }
+
+    if (profile.visibility !== ProfileVisibility.PUBLIC) {
+      return 'The profile is private or limited to approved viewers.';
+    }
+
+    if (profile.status !== ProfileLifecycleStatus.LIVE) {
+      return 'The profile is approved but currently offline.';
+    }
+
+    if (!profile.displayName?.trim()) {
+      return 'The profile is missing required public identity data.';
+    }
+
+    return null;
   }
 
   private async resolveUniqueSlug(value: string, profileId: string | null) {

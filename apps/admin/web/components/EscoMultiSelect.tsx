@@ -7,17 +7,28 @@ type EscoResult = {
   id?: string;
   code: string;
   label?: string;
+  title?: string;
+  description?: string | null;
 };
 
 export default function EscoMultiSelect({
   value,
   onChange,
+  selectedLabels,
 }: {
   value: string[];
   onChange: (next: string[]) => void;
+  selectedLabels?: Record<string, string>;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<EscoResult[]>([]);
+  const [labelsByCode, setLabelsByCode] = useState<Record<string, string>>(
+    selectedLabels ?? {},
+  );
+
+  useEffect(() => {
+    setLabelsByCode((current) => ({ ...current, ...(selectedLabels ?? {}) }));
+  }, [selectedLabels]);
 
   useEffect(() => {
     if (query.trim().length < 2) {
@@ -27,7 +38,14 @@ export default function EscoMultiSelect({
 
     const timeoutId = setTimeout(async () => {
       const data = await searchEsco(query);
-      setResults(data.results || []);
+      const nextResults: EscoResult[] = data.results || [];
+      setResults(nextResults);
+      setLabelsByCode((current) => ({
+        ...current,
+        ...Object.fromEntries(
+          nextResults.map((item) => [item.code, item.label ?? item.title ?? item.code]),
+        ),
+      }));
     }, 300);
 
     return () => clearTimeout(timeoutId);
@@ -38,7 +56,7 @@ export default function EscoMultiSelect({
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Cauta ocupatii ESCO"
+        placeholder="Search ESCO occupations"
         style={{
           width: "100%",
           padding: "10px 12px",
@@ -68,7 +86,11 @@ export default function EscoMultiSelect({
                 fontWeight: 700,
               }}
             >
-              {item} x
+              {item}
+              {labelsByCode[item] && labelsByCode[item] !== item
+                ? ` ${labelsByCode[item]}`
+                : ""}{" "}
+              x
             </button>
           ))}
         </div>
@@ -77,7 +99,7 @@ export default function EscoMultiSelect({
       {results.length > 0 ? (
         <div style={{ border: "1px solid #E8EBF5", borderRadius: 10, overflow: "hidden" }}>
           {results.map((result) => {
-            const label = result.label || result.code;
+            const label = result.label || result.title || result.code;
             const selected = value.includes(result.code);
 
             return (
@@ -86,6 +108,7 @@ export default function EscoMultiSelect({
                 type="button"
                 onClick={() => {
                   if (!selected) {
+                    setLabelsByCode((current) => ({ ...current, [result.code]: label }));
                     onChange([...value, result.code]);
                   }
                 }}

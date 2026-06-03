@@ -140,13 +140,20 @@ export class AuthService {
     const role = this.mapProfileTypeToRole(profileType);
     const displayName = data.displayName.trim();
     const companyName = this.normalizeOptionalString(data.companyName);
-    const vatNumber = this.normalizeOptionalString(data.vatNumber)?.toUpperCase();
-    const countryCode = this.normalizeOptionalString(data.countryCode)?.toUpperCase();
-    const languageCode = this.normalizeOptionalString(data.languageCode)?.toLowerCase();
+    const vatNumber = this.normalizeOptionalString(
+      data.vatNumber,
+    )?.toUpperCase();
+    const countryCode = this.normalizeOptionalString(
+      data.countryCode,
+    )?.toUpperCase();
+    const languageCode = this.normalizeOptionalString(
+      data.languageCode,
+    )?.toLowerCase();
     const timezone = this.normalizeOptionalString(data.timezone);
     const phone = this.normalizeOptionalString(data.phone);
     const resolvedCompanyName =
-      companyName ?? (data.actorType === ActorType.COMPANY ? displayName : null);
+      companyName ??
+      (data.actorType === ActorType.COMPANY ? displayName : null);
     const slug = await this.generateUniqueProfileSlug(
       resolvedCompanyName ?? displayName,
     );

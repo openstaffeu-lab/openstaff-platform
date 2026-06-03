@@ -9,6 +9,7 @@ import ReluSmartInput from "@/components/relu/ReluSmartInput";
 import UniclassMultiSelect from "@/components/UniclassMultiSelect";
 import { useAuth } from "@/context/AuthContext";
 import type { OpenStaffLocationSuggestion } from "@/lib/location/location-types";
+import { matchOpenStaffLocation } from "@/lib/location/matchOpenStaffLocation";
 import type { ReluBuilderSuggestion } from "@/lib/relu-builder-api";
 import {
   apiRequest,
@@ -134,6 +135,7 @@ export default function PublishMarketplacePage() {
   const [reluGeographyQuery, setReluGeographyQuery] = useState("");
   const [selectedLocation, setSelectedLocation] =
     useState<OpenStaffLocationSuggestion | null>(null);
+  const [locationMatchMessage, setLocationMatchMessage] = useState<string | null>(null);
 
   const selectedPost = useMemo(
     () => posts.find((post) => post.id === selectedId) ?? null,
@@ -148,6 +150,10 @@ export default function PublishMarketplacePage() {
   const selectedRegion = useMemo(
     () => selectedCountry?.regions.find((region) => region.id === form.regionId) ?? null,
     [selectedCountry, form.regionId],
+  );
+  const selectedCity = useMemo(
+    () => selectedRegion?.cities.find((city) => city.id === form.cityId) ?? null,
+    [selectedRegion, form.cityId],
   );
 
   useEffect(() => {
@@ -210,6 +216,8 @@ export default function PublishMarketplacePage() {
       naceCodes: selectedPost.naceCodes ?? [],
       uniclassCodes: selectedPost.uniclassCodes ?? [],
     });
+    setSelectedLocation(null);
+    setLocationMatchMessage(null);
   }, [selectedPost]);
 
   async function loadReferences(activeToken: string) {
@@ -282,10 +290,16 @@ export default function PublishMarketplacePage() {
     setExternalLink("");
     setMediaFile(null);
     setDocumentFile(null);
+    setSelectedLocation(null);
+    setLocationMatchMessage(null);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    await savePost("PUBLIC");
+  }
+
+  async function savePost(visibilityOverride: PublishFormState["visibility"]) {
     if (!token) {
       return;
     }
@@ -295,8 +309,9 @@ export default function PublishMarketplacePage() {
       setError(null);
       setMessage(null);
 
+      const nextForm = { ...form, visibility: visibilityOverride };
       const payload = {
-        ...form,
+        ...nextForm,
         ownerName: form.ownerName || user?.displayName || "OpenStaff member",
         ownerType: form.ownerType || user?.actorType || "Marketplace user",
         value:
@@ -333,11 +348,10 @@ export default function PublishMarketplacePage() {
         fiscalMetadataJson: {
           currencyCode: form.currencyCode || null,
           vatRate: form.vatRate ? Number(form.vatRate) : null,
-          countryCode: selectedCountry?.code ?? null,
-          countryName: selectedCountry?.name ?? null,
-          regionName: selectedRegion?.name ?? null,
-          cityName:
-            selectedRegion?.cities.find((city) => city.id === form.cityId)?.name ?? null,
+          countryCode: selectedCountry?.code ?? selectedLocation?.countryCode ?? null,
+          countryName: selectedCountry?.name ?? selectedLocation?.country ?? null,
+          regionName: selectedRegion?.name ?? selectedLocation?.region ?? null,
+          cityName: selectedCity?.name ?? selectedLocation?.locality ?? null,
         },
       };
 
@@ -346,9 +360,11 @@ export default function PublishMarketplacePage() {
         : await createPublicPost(payload, token);
 
       setMessage(
-        selectedId
-          ? "Post updated. It was moved back to moderation review."
-          : "Post created and sent to moderation.",
+        visibilityOverride === "PRIVATE"
+          ? "Draft saved privately. It remains out of the public feed until you submit it for review."
+          : selectedId
+            ? "Post updated and submitted for moderation review."
+            : "Post created and submitted for moderation review.",
       );
       await loadPosts();
       setSelectedId(result.id);
@@ -357,6 +373,29 @@ export default function PublishMarketplacePage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function applyLocationSelection(location: OpenStaffLocationSuggestion | null) {
+    setSelectedLocation(location);
+    if (!location) {
+      setLocationMatchMessage(null);
+      return;
+    }
+
+    const match = matchOpenStaffLocation(location, countries);
+    setLocationMatchMessage(match.message);
+    setForm((current) => ({
+      ...current,
+      location: location.formattedAddress,
+      countryId: match.countryId || current.countryId,
+      regionId: match.regionId || current.regionId,
+      cityId: match.cityId || current.cityId,
+      currencyCode: match.currencyCode || current.currencyCode,
+      vatRate:
+        typeof match.vatRate === "number" && match.vatRate >= 0
+          ? String(match.vatRate)
+          : current.vatRate,
+    }));
   }
 
   async function handleDelete() {
@@ -541,23 +580,16 @@ export default function PublishMarketplacePage() {
                 <div className="flex flex-wrap gap-2">
                   <StatusPill label={post.type} tone="neutral" />
                   <StatusPill
-                    label={post.status}
-                    tone={post.status === "LIVE" ? "success" : "warning"}
-                  />
-                  <StatusPill
-                    label={post.moderationStatus ?? "PENDING"}
-                    tone={
-                      post.moderationStatus === "APPROVED"
-                        ? "success"
-                        : post.moderationStatus === "REJECTED"
-                          ? "danger"
-                          : "warning"
-                    }
+                    label={lifecycleLabel(post)}
+                    tone={postTone(post)}
                   />
                 </div>
                 <div className="mt-3 font-semibold text-white">{post.title}</div>
                 <div className="mt-1 text-sm text-slate-400">
                   {post.location || "Unspecified"}
+                </div>
+                <div className="mt-2 text-xs leading-5 text-slate-500">
+                  {lifecycleHelp(post)}
                 </div>
               </button>
             ))}
@@ -584,8 +616,8 @@ export default function PublishMarketplacePage() {
                   {selectedId ? "Edit public post" : "Create public post"}
                 </h2>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                  Projects, professionals, and subcontractor pools are published into the
-                  moderated marketplace feed.
+                  Choose a post type, complete the main details, add location and taxonomy,
+                  then save privately or submit for moderation review.
                 </p>
               </div>
               {selectedId ? (
@@ -655,17 +687,17 @@ export default function PublishMarketplacePage() {
                   label="Location autocomplete"
                   placeholder="Search project city, locality, or address"
                   value={selectedLocation}
-                  onChange={(location) => {
-                    setSelectedLocation(location);
-                    if (location) {
-                      updateField("location", location.formattedAddress);
-                    }
-                  }}
+                  onChange={applyLocationSelection}
                   countryBias={selectedCountry?.code ? [selectedCountry.code] : undefined}
                   defaultCountry={selectedCountry?.code}
-                  helperText="Optional Places lookup. Manual location labels and the selectors below remain available."
+                  helperText="Optional Places lookup. When possible, structured country, region, city, currency, and VAT fields are filled automatically; manual edits remain available."
                   tone="dark"
                 />
+                {locationMatchMessage ? (
+                  <div className="mt-3 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm leading-6 text-cyan-100">
+                    {locationMatchMessage}
+                  </div>
+                ) : null}
               </div>
               <Field label="Owner name">
                 <input
@@ -972,20 +1004,53 @@ export default function PublishMarketplacePage() {
               </Field>
             </div>
 
-            <div className="mt-6 flex gap-3">
-              <button
-                type="submit"
-                disabled={saving}
-                className="rounded-2xl bg-emerald-400 px-5 py-3 font-semibold text-slate-950 disabled:opacity-50"
-              >
-                {saving ? "Saving..." : selectedId ? "Save changes" : "Create post"}
-              </button>
-              <Link
-                href="/jobs"
-                className="rounded-2xl border border-slate-700 px-5 py-3 font-semibold text-slate-200"
-              >
-                View feed
-              </Link>
+            <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <div className="text-sm font-semibold text-white">Review and submit</div>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Drafts stay private. Submitted posts enter moderation and appear publicly only
+                after admin approval.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => void savePost("PRIVATE")}
+                  disabled={saving}
+                  className="rounded-2xl border border-slate-700 px-5 py-3 font-semibold text-slate-200 disabled:opacity-50"
+                >
+                  {saving ? "Saving..." : "Save draft"}
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="rounded-2xl bg-emerald-400 px-5 py-3 font-semibold text-slate-950 disabled:opacity-50"
+                >
+                  {saving ? "Submitting..." : "Submit for review"}
+                </button>
+                <button
+                  type="button"
+                  onClick={resetComposer}
+                  disabled={saving}
+                  className="rounded-2xl border border-slate-700 px-5 py-3 font-semibold text-slate-200 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                {selectedId ? (
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={saving}
+                    className="rounded-2xl border border-rose-400/30 px-5 py-3 font-semibold text-rose-200 disabled:opacity-50"
+                  >
+                    Delete
+                  </button>
+                ) : null}
+                <Link
+                  href="/jobs"
+                  className="rounded-2xl border border-slate-700 px-5 py-3 font-semibold text-slate-200"
+                >
+                  View public preview
+                </Link>
+              </div>
             </div>
           </form>
 
@@ -1159,6 +1224,62 @@ function SelectedTagList({
       ))}
     </div>
   );
+}
+
+function lifecycleLabel(post: MarketplacePost) {
+  if (post.visibility === "PRIVATE") {
+    return "Draft";
+  }
+
+  if (post.moderationStatus === "REJECTED") {
+    return "Rejected";
+  }
+
+  if (post.status === "LIVE" && post.moderationStatus === "APPROVED") {
+    return "Live";
+  }
+
+  if (post.moderationStatus === "APPROVED") {
+    return "Approved";
+  }
+
+  if (post.status === "ARCHIVED") {
+    return "Archived";
+  }
+
+  return "Pending review";
+}
+
+function lifecycleHelp(post: MarketplacePost) {
+  if (post.visibility === "PRIVATE") {
+    return "Draft - visible only in your workspace until submitted.";
+  }
+
+  if (post.moderationStatus === "REJECTED") {
+    return "Rejected - edit the post and submit it again when ready.";
+  }
+
+  if (post.status === "LIVE" && post.moderationStatus === "APPROVED") {
+    return "Live - approved and eligible for public feed visibility.";
+  }
+
+  if (post.moderationStatus === "APPROVED") {
+    return "Approved - awaiting final lifecycle state before public live display.";
+  }
+
+  return "Pending review - the post appears publicly only after admin approval.";
+}
+
+function postTone(post: MarketplacePost): "success" | "warning" | "danger" | "neutral" {
+  if (post.moderationStatus === "REJECTED") {
+    return "danger";
+  }
+
+  if (post.status === "LIVE" && post.moderationStatus === "APPROVED") {
+    return "success";
+  }
+
+  return post.visibility === "PRIVATE" ? "neutral" : "warning";
 }
 
 function StatusPill({
