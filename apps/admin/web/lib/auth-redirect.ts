@@ -40,8 +40,32 @@ export function consumeAuthRedirect(fallback?: string | null) {
 }
 
 export function defaultAuthenticatedRoute(user: AuthUser) {
+  if (user.accountStatus !== "LIVE") {
+    return "/security";
+  }
+
+  const identity = user.identityState;
+  if (!identity?.selectedIdentityType) {
+    return "/onboarding/identity-type";
+  }
+
+  if (identity.selectedIdentityType === "COMPANY" && !identity.hasCompanyIdentity) {
+    return "/onboarding/company";
+  }
+
+  if (
+    (identity.selectedIdentityType === "PROFESSIONAL" || identity.selectedIdentityType === "BOTH") &&
+    !identity.hasProfessionalIdentity
+  ) {
+    return "/onboarding/identity";
+  }
+
+  if (identity.selectedIdentityType === "BOTH" && !identity.hasCompanyIdentity) {
+    return "/onboarding/company";
+  }
+
   if (!user.onboardingDone) {
-    return "/onboarding/welcome";
+    return user.onboardingCurrentStep === "company" ? "/onboarding/company" : "/onboarding/welcome";
   }
 
   return "/dashboard";

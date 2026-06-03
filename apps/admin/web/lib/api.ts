@@ -30,6 +30,15 @@ export type AuthUser = {
   actorType: string;
   onboardingStep: number;
   onboardingDone: boolean;
+  onboardingCurrentStep: string | null;
+  onboardingCompletedSteps: string[];
+  identityState: {
+    hasProfessionalIdentity: boolean;
+    hasCompanyIdentity: boolean;
+    selectedIdentityType: "PROFESSIONAL" | "COMPANY" | "BOTH" | null;
+    identityProfileStatus: string | null;
+    companyProfileStatus: string | null;
+  };
   profile: {
     id: string;
     slug: string;
@@ -1045,8 +1054,8 @@ export async function apiRequestBlob(
 export async function registerAccount(payload: {
   email: string;
   password: string;
-  displayName: string;
-  actorType: string;
+  displayName?: string;
+  actorType?: string;
   companyName?: string;
   vatNumber?: string;
   countryCode?: string;

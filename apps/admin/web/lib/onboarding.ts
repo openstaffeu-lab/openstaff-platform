@@ -6,6 +6,7 @@ export const ONBOARDING_STORAGE_KEY = "openstaff-onboarding-state";
 
 export type OnboardingState = {
   actorType: "INDIVIDUAL" | "COMPANY" | "PUBLIC_INSTITUTION";
+  identityType: "PROFESSIONAL" | "COMPANY" | "BOTH" | "";
   firstName: string;
   lastName: string;
   displayName: string;
@@ -43,6 +44,7 @@ export type OnboardingState = {
 
 export const defaultOnboardingState: OnboardingState = {
   actorType: "INDIVIDUAL",
+  identityType: "",
   firstName: "",
   lastName: "",
   displayName: "",
@@ -79,6 +81,7 @@ export const defaultOnboardingState: OnboardingState = {
 };
 
 export const ONBOARDING_STEPS = [
+  { path: "/onboarding/identity-type", label: "Identity type" },
   { path: "/onboarding/welcome", label: "Welcome" },
   { path: "/onboarding/identity", label: "Identity" },
   { path: "/onboarding/company", label: "Company" },

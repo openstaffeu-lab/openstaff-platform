@@ -2,6 +2,33 @@
 
 Last updated: 2026-06-03
 
+## EXEC-78D.1 Account & Identity Separation Implementation
+
+Verdict: `PASS - account registration now creates the authentication account/session baseline only; identity/profile/company onboarding starts after account creation through Professional, Company, or Both selection; public visibility remains approval-gated; required API/web validation gates pass.`
+
+### EXEC-78D.1 Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| account registration | PASS | `/auth/register` no longer creates `Profile`, `IdentityProfile`, `IdentityCompanyProfile`, or `OnboardingSession` during account creation |
+| account activation | PASS | new account rows are `APPROVED` and `LIVE`; activation does not create public profile/company visibility |
+| identity selection | PASS | `/onboarding/identity-type` supports Professional Identity, Company Identity, and Both |
+| professional draft | PASS | professional onboarding creates a draft legacy profile only when identity data is saved; draft remains private, pending, and offline |
+| company draft | PASS | company onboarding creates a draft company identity/profile only when company data is saved; draft remains private, pending, and offline |
+| both path | PARTIAL PASS | Both routes through professional identity first, then company identity; current public presentation still uses one legacy `Profile` until a later multi-profile/page design |
+| dashboard/login routing | PASS | auth summaries now expose onboarding and identity state; web routing uses this state instead of assuming profile existence |
+| public visibility gates | PASS | account creation does not create a public-visible profile; draft profiles remain `PRIVATE`, `PENDING`, `OFFLINE` |
+| backoffice impact | PASS | account rows remain immediately reviewable; identity/company/onboarding records remain reviewable after onboarding starts |
+| focused validation | PASS | focused API tests, API build, and web build pass |
+| full validation | PASS | Prisma validate/generate, API build/test/lint, and web build/lint all exited `0`; lint reported 0 errors with existing warnings only |
+
+### EXEC-78D.1 Remaining Risks
+
+1. Email ownership verification is not newly enforced in this step; existing trust and 2FA behavior is preserved.
+2. Account-level country/language/phone do not have dedicated `User` columns without a future schema decision.
+3. Both identity path is supported at onboarding state level and can create professional/company records, but public presentation still uses one legacy profile model.
+4. Existing users with pre-EXEC-78D.1 eager-created profile records are not migrated in this pass.
+
 ## EXEC-78C.3 Identity, Profile, Compliance, Geography & Publishing Architecture Realignment
 
 Verdict: `OWNER APPROVED FOR IMPLEMENTATION - architecture, workflow, UX, and readiness blueprint is complete and owner approval has been recorded for account/identity separation, compliance wording, geography source-of-truth strategy, publishing lifecycle permissions, RELU extraction boundaries, and password/2FA policy.`

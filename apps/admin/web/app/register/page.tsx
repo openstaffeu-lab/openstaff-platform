@@ -2,35 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { PasswordField } from "@/components/PasswordField";
-import { LocationAutocomplete } from "@/components/location/LocationAutocomplete";
 import { getRegistrationDefaults, trackRolloutFunnelEvent } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useOnboardingState } from "@/lib/onboarding";
-import type { OpenStaffLocationSuggestion } from "@/lib/location/location-types";
-
-type AccountChoice = "COMPANY" | "PROFESSIONAL";
-
-const ACCOUNT_TYPES: Array<{
-  value: AccountChoice;
-  label: string;
-  description: string;
-  actorType: "COMPANY" | "INDIVIDUAL";
-}> = [
-  {
-    value: "COMPANY",
-    label: "Company",
-    description: "Register a company, contractor, subcontractor, or delivery team.",
-    actorType: "COMPANY",
-  },
-  {
-    value: "PROFESSIONAL",
-    label: "Professional",
-    description: "Register an individual specialist, supervisor, or skilled worker.",
-    actorType: "INDIVIDUAL",
-  },
-];
 
 const COUNTRY_OPTIONS = [
   { code: "RO", label: "Romania" },
@@ -59,25 +35,15 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const { setPartial } = useOnboardingState();
   const [step, setStep] = useState(1);
-  const [accountType, setAccountType] = useState<AccountChoice>("COMPANY");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [vatNumber, setVatNumber] = useState("");
   const [countryCode, setCountryCode] = useState("RO");
   const [languageCode, setLanguageCode] = useState("ro");
   const [timezone, setTimezone] = useState("Europe/Bucharest");
-  const [selectedLocation, setSelectedLocation] =
-    useState<OpenStaffLocationSuggestion | null>(null);
   const [defaultsMessage, setDefaultsMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const selectedAccountType = useMemo(
-    () => ACCOUNT_TYPES.find((option) => option.value === accountType) ?? ACCOUNT_TYPES[0],
-    [accountType],
-  );
 
   useEffect(() => {
     void trackRolloutFunnelEvent({
@@ -111,19 +77,9 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      const emailLocalPart = email.trim().split("@")[0] || "OpenStaff User";
-      const displayName =
-        accountType === "COMPANY"
-          ? companyName.trim() || emailLocalPart
-          : emailLocalPart;
-
       await register({
         email,
         password,
-        displayName,
-        actorType: selectedAccountType.actorType,
-        companyName: companyName.trim() || undefined,
-        vatNumber: vatNumber.trim() || undefined,
         countryCode,
         languageCode,
         timezone,
@@ -131,20 +87,14 @@ export default function RegisterPage() {
       });
 
       setPartial({
-        actorType: selectedAccountType.actorType,
         email,
         phone,
         countryCode,
         languageCode,
         timezone,
-        vatNumber,
-        companyName,
-        companyCui: vatNumber,
-        displayName,
-        regionCode: selectedLocation?.locality ?? countryCode,
-        currentStep: "welcome",
+        currentStep: "identity-type",
       });
-      router.push("/onboarding/welcome");
+      router.push("/onboarding/identity-type");
     } catch (registrationError) {
       setError(
         registrationError instanceof Error
@@ -167,11 +117,12 @@ export default function RegisterPage() {
             Creeaza-ti contul
           </h1>
           <p className="mt-4 text-slate-600">
-            Incepi cu minimul necesar acum, apoi completam profilul in pasi clari dupa inregistrare.
+            Creezi doar contul de autentificare acum. Alegi identitatea profesionala,
+            compania sau ambele in pasul urmator.
           </p>
           <div className="mt-8 rounded-[1.7rem] border border-amber-100 bg-amber-50 p-5 text-sm leading-7 text-slate-700">
-            Vizibilitatea publica ramane moderata. Inregistrarea creeaza contul mai intai, iar profilul
-            poate fi completat treptat dupa aceea.
+            Vizibilitatea publica ramane moderata. Inregistrarea nu creeaza automat
+            un profil public si nu publica date fara aprobare.
           </div>
           <div className="mt-8 text-sm text-slate-500">
             Ai deja cont?{" "}
@@ -183,30 +134,12 @@ export default function RegisterPage() {
 
         <section className="openstaff-card rounded-[2.2rem] p-8 md:p-10">
           <div className="mb-6 flex items-center gap-3">
-            <ProgressPill active={step === 1} index={1} label="Cont" />
-            <ProgressPill active={step === 2} index={2} label="Implicit" />
+            <ProgressPill active={step === 1} index={1} label="Securitate" />
+            <ProgressPill active={step === 2} index={2} label="Preferinte" />
           </div>
 
           {step === 1 ? (
             <div className="space-y-5">
-              <div className="grid gap-3">
-                {ACCOUNT_TYPES.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setAccountType(option.value)}
-                    className={`rounded-[1.4rem] border px-5 py-4 text-left transition ${
-                      accountType === option.value
-                        ? "border-brand-mint bg-emerald-50"
-                        : "border-slate-200 bg-white"
-                    }`}
-                  >
-                    <div className="font-semibold text-brand-charcoal">{option.label}</div>
-                    <div className="mt-1 text-sm text-slate-600">{option.description}</div>
-                  </button>
-                ))}
-              </div>
-
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-slate-600">Email</span>
                 <input
@@ -237,24 +170,6 @@ export default function RegisterPage() {
             </div>
           ) : (
             <div className="space-y-5">
-              <LocationAutocomplete
-                label="City or operating locality"
-                placeholder="Search Bucharest, Dublin, Berlin..."
-                value={selectedLocation}
-                onChange={(location) => {
-                  setSelectedLocation(location);
-                  if (location?.countryCode) {
-                    setCountryCode(
-                      COUNTRY_OPTIONS.some((country) => country.code === location.countryCode)
-                        ? location.countryCode
-                        : countryCode,
-                    );
-                  }
-                }}
-                defaultCountry={countryCode}
-                helperText="Optional. Google Places improves localization context; the manual country selector below remains available."
-              />
-
               <div className="grid gap-5 md:grid-cols-2">
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium text-slate-600">Country</span>
@@ -307,33 +222,10 @@ export default function RegisterPage() {
                   />
                 </label>
 
-                {accountType === "COMPANY" ? (
-                  <>
-                    <label className="block md:col-span-2">
-                      <span className="mb-2 block text-sm font-medium text-slate-600">
-                        Company name
-                      </span>
-                      <input
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none"
-                        placeholder="Optional acum, il poti completa si dupa lookup-ul fiscal"
-                        value={companyName}
-                        onChange={(event) => setCompanyName(event.target.value)}
-                      />
-                    </label>
-
-                    <label className="block md:col-span-2">
-                      <span className="mb-2 block text-sm font-medium text-slate-600">
-                        Fiscal / VAT code
-                      </span>
-                      <input
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none"
-                        placeholder="RO12345678"
-                        value={vatNumber}
-                        onChange={(event) => setVatNumber(event.target.value.toUpperCase())}
-                      />
-                    </label>
-                  </>
-                ) : null}
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600 md:col-span-2">
+                  Professional, company, and both identity paths are selected after account creation.
+                  Company name, VAT, taxonomy, profile data, and public visibility stay out of the account registration step.
+                </div>
               </div>
 
               {defaultsMessage ? (

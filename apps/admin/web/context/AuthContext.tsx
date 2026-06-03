@@ -39,8 +39,8 @@ type AuthContextType = {
   register: (payload: {
     email: string;
     password: string;
-    displayName: string;
-    actorType: string;
+    displayName?: string;
+    actorType?: string;
     companyName?: string;
     vatNumber?: string;
     countryCode?: string;

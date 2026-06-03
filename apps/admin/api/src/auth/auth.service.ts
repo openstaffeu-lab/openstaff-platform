@@ -5,14 +5,9 @@ import {
   ActorType,
   NotificationChannel,
   Prisma,
-  ProfileLifecycleStatus,
-  ProfileModerationStatus,
   ProfileType,
-  ProfileVisibility,
   Role,
   SubscriptionPlanCode,
-  VerificationStatus,
-  OnboardingStatus,
 } from '@prisma/client';
 import {
   ConflictException,
@@ -35,8 +30,8 @@ import { getFirebaseAdminAuth } from './firebase-admin';
 type RegisterPayload = {
   email: string;
   password: string;
-  displayName: string;
-  actorType: ActorType;
+  displayName?: string;
+  actorType?: ActorType;
   profileType?: ProfileType;
   companyName?: string;
   vatNumber?: string;
@@ -85,6 +80,15 @@ type AuthenticatedUserSummary = {
   actorType: ActorType;
   onboardingStep: number;
   onboardingDone: boolean;
+  onboardingCurrentStep: string | null;
+  onboardingCompletedSteps: string[];
+  identityState: {
+    hasProfessionalIdentity: boolean;
+    hasCompanyIdentity: boolean;
+    selectedIdentityType: 'PROFESSIONAL' | 'COMPANY' | 'BOTH' | null;
+    identityProfileStatus: string | null;
+    companyProfileStatus: string | null;
+  };
   profile: {
     id: string;
     slug: string;
@@ -135,10 +139,11 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
-    const profileType =
-      data.profileType ?? this.mapActorTypeToProfileType(data.actorType);
-    const role = this.mapProfileTypeToRole(profileType);
-    const displayName = data.displayName.trim();
+    const role = Role.PROFESSIONAL;
+    const displayName =
+      this.normalizeOptionalString(data.displayName) ??
+      normalizedEmail.split('@')[0] ??
+      'OpenStaff User';
     const companyName = this.normalizeOptionalString(data.companyName);
     const vatNumber = this.normalizeOptionalString(
       data.vatNumber,
@@ -151,75 +156,16 @@ export class AuthService {
     )?.toLowerCase();
     const timezone = this.normalizeOptionalString(data.timezone);
     const phone = this.normalizeOptionalString(data.phone);
-    const resolvedCompanyName =
-      companyName ??
-      (data.actorType === ActorType.COMPANY ? displayName : null);
-    const slug = await this.generateUniqueProfileSlug(
-      resolvedCompanyName ?? displayName,
-    );
 
-    const user = await this.prisma.$transaction(async (tx) => {
-      const createdUser = await tx.user.create({
-        data: {
-          email: normalizedEmail,
-          password: hashedPassword,
-          role,
-          approvalStatus: AccountApprovalStatus.PENDING,
-          accountStatus: AccountLifecycleStatus.OFFLINE,
-        },
-      });
-
-      await tx.profile.create({
-        data: {
-          userId: createdUser.id,
-          slug,
-          profileType,
-          displayName,
-          companyName: resolvedCompanyName,
-          visibility: ProfileVisibility.PRIVATE,
-          moderationStatus: ProfileModerationStatus.PENDING,
-          status: ProfileLifecycleStatus.OFFLINE,
-        },
-      });
-
-      await tx.identityProfile.create({
-        data: {
-          userId: createdUser.id,
-          publicSlug: slug,
-          displayName,
-          language: languageCode,
-          timezone,
-          country: countryCode,
-          phone,
-          verificationStatus: VerificationStatus.UNVERIFIED,
-          profileCompletionPercent:
-            languageCode || timezone || countryCode || phone ? 20 : 10,
-        },
-      });
-
-      if (resolvedCompanyName) {
-        await tx.identityCompanyProfile.create({
-          data: {
-            ownerUserId: createdUser.id,
-            companyName: resolvedCompanyName,
-            legalName: resolvedCompanyName,
-            vatId: vatNumber,
-            country: countryCode,
-          },
-        });
-      }
-
-      await tx.onboardingSession.create({
-        data: {
-          userId: createdUser.id,
-          currentStep: 'welcome',
-          completedSteps: [],
-          completionPercent: 10,
-          status: OnboardingStatus.NOT_STARTED,
-        },
-      });
-
-      return createdUser;
+    const user = await this.prisma.user.create({
+      data: {
+        email: normalizedEmail,
+        password: hashedPassword,
+        role,
+        approvalStatus: AccountApprovalStatus.APPROVED,
+        accountStatus: AccountLifecycleStatus.LIVE,
+        approvedAt: new Date(),
+      },
     });
 
     await this.ensureDefaultSubscriptionForUser(user.id);
@@ -232,15 +178,19 @@ export class AuthService {
       category: NotificationCategory.ACCOUNT,
       title: 'Account registered',
       message:
-        'Your OpenStaff account was created successfully. Complete onboarding to unlock the platform.',
+        'Your OpenStaff account was created successfully. Choose an identity path to continue onboarding.',
       relatedEntityType: 'User',
       relatedEntityId: user.id,
       metadata: {
         email: normalizedEmail,
         role,
-        companyName: resolvedCompanyName,
+        displayName,
+        companyName,
+        vatNumber,
         countryCode,
         languageCode,
+        timezone,
+        phone,
       },
     });
 
@@ -257,9 +207,9 @@ export class AuthService {
       title: 'Registration completed',
       message: 'A user completed account registration.',
       metadata: {
-        actorType: data.actorType,
+        actorType: data.actorType ?? null,
         role,
-        companyName: resolvedCompanyName,
+        companyName,
         countryCode,
       },
       relatedEntityType: 'User',
@@ -877,59 +827,22 @@ export class AuthService {
     });
 
     if (!user) {
-      const displayName = decoded.name?.trim() || normalizedEmail.split('@')[0];
-      const slug = await this.generateUniqueProfileSlug(displayName);
       const generatedPassword = await bcrypt.hash(
         `firebase-${decoded.uid}-${Date.now()}`,
         10,
       );
 
-      user = await this.prisma.$transaction(async (tx) => {
-        const createdUser = await tx.user.create({
-          data: {
-            email: normalizedEmail,
-            firebaseUid: decoded.uid,
-            password: generatedPassword,
-            role: claimedRole ?? Role.PROFESSIONAL,
-            approvalStatus: AccountApprovalStatus.PENDING,
-            accountStatus: AccountLifecycleStatus.OFFLINE,
-          },
-          select: { id: true },
-        });
-
-        await tx.profile.create({
-          data: {
-            userId: createdUser.id,
-            slug,
-            displayName,
-            profileType: ProfileType.PROFESSIONAL,
-            visibility: ProfileVisibility.PRIVATE,
-            moderationStatus: ProfileModerationStatus.PENDING,
-            status: ProfileLifecycleStatus.OFFLINE,
-          },
-        });
-
-        await tx.identityProfile.create({
-          data: {
-            userId: createdUser.id,
-            publicSlug: slug,
-            displayName,
-            verificationStatus: VerificationStatus.UNVERIFIED,
-            profileCompletionPercent: 10,
-          },
-        });
-
-        await tx.onboardingSession.create({
-          data: {
-            userId: createdUser.id,
-            currentStep: 'welcome',
-            completedSteps: [],
-            completionPercent: 10,
-            status: OnboardingStatus.NOT_STARTED,
-          },
-        });
-
-        return createdUser;
+      user = await this.prisma.user.create({
+        data: {
+          email: normalizedEmail,
+          firebaseUid: decoded.uid,
+          password: generatedPassword,
+          role: claimedRole ?? Role.PROFESSIONAL,
+          approvalStatus: AccountApprovalStatus.APPROVED,
+          accountStatus: AccountLifecycleStatus.LIVE,
+          approvedAt: new Date(),
+        },
+        select: { id: true },
       });
     } else {
       await this.prisma.user.update({
@@ -1002,6 +915,11 @@ export class AuthService {
       where: { id: userId },
       include: {
         profile: true,
+        identityProfile: true,
+        identityCompanyProfiles: {
+          orderBy: { createdAt: 'asc' },
+        },
+        onboardingSession: true,
       },
     });
 
@@ -1011,10 +929,24 @@ export class AuthService {
 
     const displayName =
       user.profile?.displayName?.trim() ||
+      user.identityProfile?.displayName?.trim() ||
       user.email.split('@')[0] ||
       'OpenStaff User';
-    const actorType = this.mapProfileTypeToActorType(user.profile?.profileType);
-    const onboardingDone = Boolean(user.profile);
+    const completedSteps = this.parseCompletedSteps(
+      user.onboardingSession?.completedSteps,
+    );
+    const hasCompanyProfile = user.identityCompanyProfiles.length > 0;
+    const selectedIdentityType = this.resolveSelectedIdentityType(
+      completedSteps,
+      Boolean(user.identityProfile),
+      hasCompanyProfile,
+    );
+    const actorType = hasCompanyProfile
+      ? ActorType.COMPANY
+      : this.mapProfileTypeToActorType(user.profile?.profileType);
+    const onboardingDone =
+      user.onboardingSession?.status === 'COMPLETED' ||
+      Boolean(user.identityProfile?.onboardingCompletedAt);
     const subscription = await this.buildCurrentSubscriptionSummary(user.id);
 
     return {
@@ -1025,8 +957,21 @@ export class AuthService {
       approvalStatus: user.approvalStatus,
       accountStatus: user.accountStatus,
       actorType,
-      onboardingStep: onboardingDone ? 1 : 0,
+      onboardingStep: this.resolveOnboardingStep(
+        user.onboardingSession?.currentStep,
+        onboardingDone,
+      ),
       onboardingDone,
+      onboardingCurrentStep: user.onboardingSession?.currentStep ?? null,
+      onboardingCompletedSteps: completedSteps,
+      identityState: {
+        hasProfessionalIdentity: Boolean(user.identityProfile),
+        hasCompanyIdentity: hasCompanyProfile,
+        selectedIdentityType,
+        identityProfileStatus: user.identityProfile?.verificationStatus ?? null,
+        companyProfileStatus:
+          user.identityCompanyProfiles[0]?.verificationStatus ?? null,
+      },
       profile: user.profile
         ? {
             id: user.profile.id,
@@ -1789,36 +1734,6 @@ export class AuthService {
     return this.getJwtSecret();
   }
 
-  private async generateUniqueProfileSlug(value: string) {
-    const normalized = this.slugify(value);
-    let slug = normalized;
-    let index = 2;
-
-    while (
-      await this.prisma.profile.findUnique({
-        where: { slug },
-        select: { id: true },
-      })
-    ) {
-      slug = `${normalized}-${index}`;
-      index += 1;
-    }
-
-    return slug;
-  }
-
-  private slugify(value: string) {
-    return (
-      value
-        .normalize('NFKD')
-        .replace(/[^\w\s-]/g, '')
-        .trim()
-        .toLowerCase()
-        .replace(/[\s_-]+/g, '-')
-        .replace(/^-+|-+$/g, '') || `profile-${Date.now()}`
-    );
-  }
-
   private buildPasswordResetRequestResponse() {
     return {
       success: true,
@@ -1983,38 +1898,9 @@ export class AuthService {
     };
   }
 
-  private mapActorTypeToProfileType(actorType: ActorType) {
-    switch (actorType) {
-      case ActorType.COMPANY:
-        return ProfileType.CONTRACTOR;
-      case ActorType.PUBLIC_INSTITUTION:
-        return ProfileType.INVESTOR;
-      case ActorType.INDIVIDUAL:
-      default:
-        return ProfileType.PROFESSIONAL;
-    }
-  }
-
   private normalizeOptionalString(value?: string | null) {
     const normalized = value?.trim();
     return normalized ? normalized : null;
-  }
-
-  private mapProfileTypeToRole(profileType: ProfileType) {
-    if (
-      profileType === ProfileType.CONTRACTOR ||
-      profileType === ProfileType.SUBCONTRACTOR ||
-      profileType === ProfileType.SUPPLIER ||
-      profileType === ProfileType.GENERAL_CONTRACTOR
-    ) {
-      return Role.CONTRACTOR;
-    }
-
-    if (profileType === ProfileType.INVESTOR) {
-      return Role.EMPLOYER;
-    }
-
-    return Role.PROFESSIONAL;
   }
 
   private mapProfileTypeToActorType(profileType?: ProfileType | null) {
@@ -2037,6 +1923,64 @@ export class AuthService {
     }
 
     return ActorType.INDIVIDUAL;
+  }
+
+  private parseCompletedSteps(value: unknown) {
+    if (!Array.isArray(value)) {
+      return [] as string[];
+    }
+
+    return value.filter(
+      (item): item is string =>
+        typeof item === 'string' && item.trim().length > 0,
+    );
+  }
+
+  private resolveSelectedIdentityType(
+    completedSteps: string[],
+    hasProfessionalIdentity: boolean,
+    hasCompanyIdentity: boolean,
+  ): 'PROFESSIONAL' | 'COMPANY' | 'BOTH' | null {
+    if (completedSteps.includes('identity-type:both')) {
+      return 'BOTH';
+    }
+
+    if (completedSteps.includes('identity-type:company')) {
+      return 'COMPANY';
+    }
+
+    if (completedSteps.includes('identity-type:professional')) {
+      return 'PROFESSIONAL';
+    }
+
+    if (hasProfessionalIdentity && hasCompanyIdentity) {
+      return 'BOTH';
+    }
+
+    if (hasCompanyIdentity) {
+      return 'COMPANY';
+    }
+
+    return null;
+  }
+
+  private resolveOnboardingStep(currentStep?: string | null, done?: boolean) {
+    if (done) {
+      return 5;
+    }
+
+    switch (currentStep) {
+      case 'identity-type':
+        return 1;
+      case 'identity':
+        return 2;
+      case 'company':
+        return 3;
+      case 'completion':
+        return 4;
+      default:
+        return 0;
+    }
   }
 
   private resolveFirebaseRole(decoded: { [key: string]: unknown }) {

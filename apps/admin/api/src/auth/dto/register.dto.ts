@@ -16,8 +16,9 @@ export class RegisterDto {
   @MinLength(8)
   password!: string;
 
+  @IsOptional()
   @IsEnum(ActorType)
-  actorType!: ActorType;
+  actorType?: ActorType;
 
   @IsOptional()
   @IsEnum(ProfileType)
@@ -27,10 +28,11 @@ export class RegisterDto {
   @IsEnum(Role)
   role?: Role;
 
+  @IsOptional()
   @IsString()
   @MinLength(2)
   @MaxLength(160)
-  displayName!: string;
+  displayName?: string;
 
   @IsOptional()
   @IsString()

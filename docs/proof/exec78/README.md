@@ -2,7 +2,56 @@
 
 Last updated: 2026-06-03
 
-Verdict: `OWNER APPROVED FOR EXEC-78C.3 IMPLEMENTATION; architecture, workflow, UX, and readiness blueprint is complete and owner approval has been recorded for account/identity separation, compliance wording, geography source of truth, publishing rights, RELU extraction boundaries, and password/2FA policy`
+Verdict: `EXEC-78D.1 PASS; account registration is separated from identity/profile/company onboarding, identity-type selection exists, public visibility remains approval-gated, and required API/web validation gates pass`
+
+## EXEC-78D.1 Scope
+
+EXEC-78D.1 implements the first technical step of the owner-approved EXEC-78C.3A architecture: account registration is authentication-only, and Professional Identity, Company Identity, or Both selection begins after account creation.
+
+No RELU Builder logic, pricing/payment logic, compliance evidence model, geography schema, permission/guard model, publishing lifecycle implementation, auto-approval, auto-publish path, or moderation bypass was changed.
+
+See `docs/proof/exec78/EXEC78D1_ACCOUNT_IDENTITY_SEPARATION.md` for discovery results, before/after model, routing behavior, approval gates, tests, and remaining risks.
+
+## EXEC-78D.1 Files Created
+
+- `apps/admin/web/app/onboarding/identity-type/page.tsx`
+- `apps/admin/api/src/auth/auth.service.spec.ts`
+- `apps/admin/api/src/onboarding/onboarding.service.spec.ts`
+- `docs/proof/exec78/EXEC78D1_ACCOUNT_IDENTITY_SEPARATION.md`
+
+## EXEC-78D.1 Files Updated
+
+- `apps/admin/api/src/auth/auth.service.ts`
+- `apps/admin/api/src/auth/dto/register.dto.ts`
+- `apps/admin/api/src/onboarding/onboarding.service.ts`
+- `apps/admin/web/app/register/page.tsx`
+- `apps/admin/web/app/onboarding/company/page.tsx`
+- `apps/admin/web/context/AuthContext.tsx`
+- `apps/admin/web/lib/api.ts`
+- `apps/admin/web/lib/auth-redirect.ts`
+- `apps/admin/web/lib/onboarding.ts`
+- `STATUS.md`
+- `docs/proof/exec78/README.md`
+
+## EXEC-78D.1 Validation
+
+| Gate | Status | Evidence |
+|---|---|---|
+| Prisma validate | PASS | `apps/admin/api -> npx.cmd prisma validate` exited `0` |
+| Prisma generate | PASS | `apps/admin/api -> npx.cmd prisma generate` exited `0` |
+| focused API tests | PASS | `apps/admin/api -> npm.cmd test -- --runInBand auth.service.spec.ts onboarding.service.spec.ts` exited `0` |
+| full API tests | PASS | `apps/admin/api -> npm.cmd test -- --runInBand` exited `0`; 21 suites, 42 tests |
+| API build | PASS | `apps/admin/api -> npm.cmd run build` exited `0` |
+| API lint | PASS | `apps/admin/api -> npm.cmd run lint` exited `0`; 0 errors, 415 existing warnings |
+| web build | PASS | `apps/admin/web -> npm.cmd run build` exited `0`; route list includes `/onboarding/identity-type` |
+| web lint | PASS | `apps/admin/web -> npm.cmd run lint` exited `0`; 0 errors, 21 existing warnings |
+
+## EXEC-78D.1 Remaining Risks
+
+1. Email ownership verification is not newly enforced in this step; existing trust and 2FA behavior is preserved.
+2. Account-level country/language/phone do not have dedicated `User` columns without a future schema decision.
+3. Both identity path is supported at onboarding state level and creates professional/company identity records, but public presentation still uses the existing single legacy `Profile` model.
+4. Existing users with pre-EXEC-78D.1 eager profile records are not migrated in this pass.
 
 ## EXEC-78C.3A Owner Approval
 

@@ -77,7 +77,10 @@ export default function OnboardingCompanyPage() {
     return null;
   }
 
-  const companyRequired = user?.actorType !== "INDIVIDUAL";
+  const companyRequired =
+    state.identityType === "COMPANY" ||
+    state.identityType === "BOTH" ||
+    user?.actorType !== "INDIVIDUAL";
   const canContinue = !companyRequired || form.companyName.trim().length > 0;
 
   function updateField<Key extends keyof typeof form>(key: Key, value: (typeof form)[Key]) {
@@ -246,7 +249,16 @@ export default function OnboardingCompanyPage() {
         {error ? <div style={errorStyle}>{error} Manual company setup remains available.</div> : null}
 
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <button onClick={() => router.push("/onboarding/identity")} style={secondaryButton}>
+          <button
+            onClick={() =>
+              router.push(
+                state.identityType === "COMPANY"
+                  ? "/onboarding/identity-type"
+                  : "/onboarding/identity",
+              )
+            }
+            style={secondaryButton}
+          >
             Inapoi
           </button>
 

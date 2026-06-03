@@ -6,7 +6,10 @@ import {
 import {
   OnboardingStatus,
   NotificationCategory,
+  ProfileLifecycleStatus,
+  ProfileModerationStatus,
   ProfileType,
+  ProfileVisibility,
   VerificationCaseStatus,
   VerificationCaseSubjectType,
   VerificationStatus,
@@ -119,6 +122,10 @@ export class OnboardingService {
       },
     });
 
+    await this.ensureLegacyProfileDraft(userId, {
+      displayName,
+      profileType: ProfileType.PROFESSIONAL,
+    });
     await this.syncLegacyProfileFromIdentity(userId, {
       displayName,
       bio: body.bio,
@@ -191,6 +198,11 @@ export class OnboardingService {
       });
     }
 
+    await this.ensureLegacyProfileDraft(userId, {
+      displayName: body.companyName.trim(),
+      companyName: body.companyName.trim(),
+      profileType: ProfileType.CONTRACTOR,
+    });
     await this.prisma.profile.updateMany({
       where: { userId },
       data: {
@@ -842,6 +854,57 @@ export class OnboardingService {
         websiteUrl: this.normalizeNullableString(input.website),
       },
     });
+  }
+
+  private async ensureLegacyProfileDraft(
+    userId: string,
+    input: {
+      displayName: string;
+      profileType: ProfileType;
+      companyName?: string;
+    },
+  ) {
+    const existing = await this.prisma.profile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (existing) {
+      return existing;
+    }
+
+    const slug = await this.resolveUniqueLegacyProfileSlug(input.displayName);
+    return this.prisma.profile.create({
+      data: {
+        userId,
+        slug,
+        profileType: input.profileType,
+        displayName: input.displayName,
+        companyName: input.companyName ?? null,
+        visibility: ProfileVisibility.PRIVATE,
+        moderationStatus: ProfileModerationStatus.PENDING,
+        status: ProfileLifecycleStatus.OFFLINE,
+      },
+      select: { id: true },
+    });
+  }
+
+  private async resolveUniqueLegacyProfileSlug(value: string) {
+    const baseSlug = this.slugify(value);
+    let slug = baseSlug;
+    let index = 2;
+
+    while (
+      await this.prisma.profile.findUnique({
+        where: { slug },
+        select: { id: true },
+      })
+    ) {
+      slug = `${baseSlug}-${index}`;
+      index += 1;
+    }
+
+    return slug;
   }
 
   private resolveDisplayName(
