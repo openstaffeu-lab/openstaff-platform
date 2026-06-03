@@ -2,6 +2,47 @@
 
 Last updated: 2026-06-03
 
+## EXEC-78C.3 Identity, Profile, Compliance, Geography & Publishing Architecture Realignment
+
+Verdict: `OWNER APPROVED FOR IMPLEMENTATION - architecture, workflow, UX, and readiness blueprint is complete and owner approval has been recorded for account/identity separation, compliance wording, geography source-of-truth strategy, publishing lifecycle permissions, RELU extraction boundaries, and password/2FA policy.`
+
+### EXEC-78C.3A Owner Approval
+
+Owner approval was recorded on 2026-06-03 with the following implementation direction:
+
+1. Account creation must be authentication-only.
+2. Account should activate after email verification.
+3. Professional Identity, Company Identity, and Both must be supported.
+4. Profile, company, and public visibility require approval.
+5. RELU AI assists extraction, drafting, taxonomy mapping, compliance analysis, and recommendations.
+6. RELU AI never approves, certifies, publishes, or bypasses human review.
+7. Manual fallback remains available but should not be the primary profile creation experience.
+8. Publishing lifecycle must support Draft, Ready For Review, Submitted, Approved, Published, Live, Paused, Archived, and Deleted.
+9. Geography must use OpenStaff canonical IDs enhanced by Google Places, not replaced by Google Places.
+10. Compliance wording must remain assistance/readiness only, not legal certification.
+11. Password policy should move toward minimum 8 characters plus uppercase, lowercase, and number for new passwords.
+12. Email OTP remains default 2FA now; authenticator app is future; SMS OTP requires later cost/privacy approval.
+
+### EXEC-78C.3 Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| account architecture | OWNER APPROVED | target model separates authentication-only account creation from identity/profile/company approval; account should activate after email verification |
+| identity architecture | OWNER APPROVED | blueprint defines Professional Identity, Company Identity, and Both, with separate required fields and approval gates |
+| RELU profile extraction | OWNER APPROVED | RELU should extract and map occupations, skills, certifications, experience, compliance evidence, and taxonomy suggestions, with user and moderator approval boundaries |
+| compliance architecture | OWNER APPROVED | blueprint defines evidence storage, validation, expiration tracking, EU/UK/Ireland/Nordics scope, and human approval boundaries |
+| geography architecture | OWNER APPROVED | current baseline countries are documented as readiness coverage only; canonical country/region/county/city/locality/postal-code structure is recommended |
+| publishing lifecycle | OWNER APPROVED | target lifecycle defines Draft, Ready For Review, Submitted, Approved, Published, Live, Paused, Archived, and Deleted with owner/moderator control boundaries |
+| dashboard/public visibility | OWNER APPROVED | dashboard target is an operating console; public visibility should be computed from account, identity, profile/company, moderation, lifecycle, and compliance gates |
+| password/security | OWNER APPROVED | visible copy and new password flows are 8-character aligned; recommended future baseline adds uppercase, lowercase, and number requirements |
+| validation | NOT RUN | documentation-only audit and blueprint; no executable code, UI, backend, schema, route, permission, payment, or RELU logic changed |
+
+### EXEC-78C.3 Deliverables
+
+- `EXEC78C3_IDENTITY_PROFILE_COMPLIANCE_ARCHITECTURE.md`
+- `docs/proof/exec78/README.md`
+- `STATUS.md`
+
 ## EXEC-78C.2 Owner Flow Remediation
 
 Verdict: `PARTIAL PASS - owner/superadmin account, dashboard, public profile, location, taxonomy, and publishing UX remediation is implemented and local validation gates pass. Final PASS is not claimed because local browser automation could not complete in this environment and real owner/Google-key production proof remains pending.`

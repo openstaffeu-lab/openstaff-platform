@@ -2,7 +2,78 @@
 
 Last updated: 2026-06-03
 
-Verdict: `PARTIAL PASS FOR EXEC-78C.2; owner-flow code remediation and build/lint/test gates pass, browser/real-key owner proof still pending`
+Verdict: `OWNER APPROVED FOR EXEC-78C.3 IMPLEMENTATION; architecture, workflow, UX, and readiness blueprint is complete and owner approval has been recorded for account/identity separation, compliance wording, geography source of truth, publishing rights, RELU extraction boundaries, and password/2FA policy`
+
+## EXEC-78C.3A Owner Approval
+
+Owner approval was recorded on 2026-06-03 with the following direction:
+
+1. Account creation must be authentication-only.
+2. Account should activate after email verification.
+3. Professional Identity, Company Identity, and Both must be supported.
+4. Profile, company, and public visibility require approval.
+5. RELU AI assists extraction, drafting, taxonomy mapping, compliance analysis, and recommendations.
+6. RELU AI never approves, certifies, publishes, or bypasses human review.
+7. Manual fallback remains available but should not be the primary profile creation experience.
+8. Publishing lifecycle must support Draft, Ready For Review, Submitted, Approved, Published, Live, Paused, Archived, and Deleted.
+9. Geography must use OpenStaff canonical IDs enhanced by Google Places, not replaced by Google Places.
+10. Compliance wording must remain assistance/readiness only, not legal certification.
+11. Password policy should move toward minimum 8 characters plus uppercase, lowercase, and number for new passwords.
+12. Email OTP remains default 2FA now; authenticator app is future; SMS OTP requires later cost/privacy approval.
+
+EXEC-78D planning may proceed from this approved blueprint. No implementation was started in EXEC-78C.3A.
+
+## EXEC-78C.3 Scope
+
+EXEC-78C.3 is an architecture, workflow, UX, and readiness audit only. No redesign work, deployment, backend business logic, permissions, payment logic, or RELU core logic changed.
+
+The pass realigns OpenStaff around the approved product model:
+
+- Professional Network
+- Opportunity Feed
+- Contractor Ecosystem
+- Procurement Platform
+- Compliance Layer
+- RELU AI Workspace
+
+The blueprint separates account authentication from professional/company identity, public profile visibility, compliance evidence, publishing lifecycle, moderation, geography, and RELU-assisted drafting.
+
+See `EXEC78C3_IDENTITY_PROFILE_COMPLIANCE_ARCHITECTURE.md` for the complete blueprint.
+
+## EXEC-78C.3 Files Created
+
+- `EXEC78C3_IDENTITY_PROFILE_COMPLIANCE_ARCHITECTURE.md`
+
+## EXEC-78C.3 Files Updated
+
+- `STATUS.md`
+- `docs/proof/exec78/README.md`
+
+## EXEC-78C.3 Architecture Findings
+
+| Area | Finding |
+|---|---|
+| account | current registration creates account, profile, identity, company identity, onboarding, and subscription records together; target account model should be authentication-only |
+| account approval | current account approval overlaps with identity/profile approval; target account should activate after email verification and not require admin approval |
+| 2FA | current implementation supports email OTP and recovery-code behavior; SMS OTP and authenticator app remain future decisions |
+| identity | target model should let users choose Professional Identity, Company Identity, or Both after account activation |
+| RELU profile extraction | RELU should extract profile/company data from documents and links, map to NACE/ESCO/Uniclass, and produce reviewable drafts only |
+| compliance | current generic compliance evidence model is a foundation, but EU/UK/Ireland/Nordics evidence types and reviewer boundaries need owner-approved product policy |
+| geography | current country/region/city coverage is readiness-level only; production needs canonical country, region, county/admin2, city, locality, postal code, alias, and external mapping layers |
+| publishing | current public post visibility uses public/private, moderation status, and free-form status; target lifecycle needs Draft through Deleted with explicit owner/moderator control |
+| dashboard | target dashboard should become an operating console for account, identity, profile, company, compliance, publishing, and RELU queues |
+| visibility | public availability should be computed from account, identity, profile/company, moderation, lifecycle, compliance policy, and visibility settings |
+| password | visible copy and new password flows are aligned to 8 characters; recommended future policy adds uppercase, lowercase, and number requirements |
+
+## EXEC-78C.3 Validation
+
+This was a documentation-only pass. Build, lint, tests, browser automation, Cloud Run, database, schema, and migration validation were not run because no executable code, UI, backend, schema, route, permission, payment, or RELU implementation changed.
+
+## EXEC-78C.3 Final Recommendation
+
+Verdict: `OWNER APPROVED FOR IMPLEMENTATION`.
+
+EXEC-78D planning may proceed from the owner-approved account/identity split, identity approval boundaries, compliance wording, geography source-of-truth strategy, publishing lifecycle permissions, RELU extraction boundaries, and password/2FA policy.
 
 ## EXEC-78C.2 Scope
 
