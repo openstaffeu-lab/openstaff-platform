@@ -43,9 +43,9 @@ export function Navbar() {
 
   return (
     <div className="border-b border-[#1D4ED8]/40 bg-[#1E3A8A] text-white shadow-[0_10px_30px_rgba(30,58,138,0.18)]">
-      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 lg:px-6">
+      <div className="mx-auto flex max-w-[1600px] items-center gap-4 px-4 py-3 lg:px-6">
         <Link href="/" prefetch={false} className="shrink-0" onClick={() => setOpen(false)}>
-          <OpenStaffLogo size="sm" variant="full" showTagline dark />
+          <OpenStaffLogo size="sm" variant="full" dark />
         </Link>
 
         <div className="hidden min-w-[230px] max-w-[380px] flex-1 md:block">
@@ -58,7 +58,7 @@ export function Navbar() {
           </label>
         </div>
 
-        <nav className="hidden items-center gap-2 lg:flex">
+        <nav className="hidden items-center gap-2 xl:flex">
           {navLinks.map((item) => (
             <Link
               key={item.href}
@@ -138,7 +138,7 @@ export function Navbar() {
 
         <button
           type="button"
-          className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/25 text-white transition hover:bg-[#1D4ED8] md:hidden"
+          className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/25 text-white transition hover:bg-[#1D4ED8] md:flex xl:hidden"
           onClick={() => setOpen((current) => !current)}
           aria-label="Toggle navigation"
         >
@@ -151,7 +151,7 @@ export function Navbar() {
       </div>
 
       {open ? (
-        <div className="border-t border-white/10 px-4 pb-4 md:hidden">
+        <div className="border-t border-white/10 px-4 pb-4 xl:hidden">
           <div className="mt-3">
             <label className="flex items-center rounded-xl border border-white/25 bg-white px-4 py-2.5 text-[#1E293B] focus-within:border-[#14B8A6] focus-within:ring-2 focus-within:ring-[#14B8A6]/30">
               <Icon name="search" className="h-5 w-5 text-[#1D4ED8]" />

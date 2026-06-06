@@ -177,7 +177,7 @@ export default function JobsPageClient() {
           </div>
         </aside>
 
-        <section>
+        <section style={{ minWidth: 0 }}>
           <div
             style={{
               display: "flex",
@@ -221,7 +221,8 @@ export default function JobsPageClient() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                gridTemplateColumns:
+                  "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
                 gap: 20,
               }}
             >
