@@ -1,6 +1,574 @@
 ﻿# OpenStaff Platform Status
 
-Last updated: 2026-06-03
+Last updated: 2026-06-06
+
+## EXEC-78F.1D Responsive Device Certification & Shell Hardening
+
+Verdict: `PASS WITH RISKS - the authenticated Shell is certified across desktop, all six required tablet viewports, mobile portrait, mobile narrow, and exact 767/768/1199/1200 breakpoint boundaries. Header, overflow, active state, More contents, badge/avatar alignment, keyboard order, Escape dismissal, focus restoration, focus trapping, sticky positioning, safe-area rules, MessagingDock coexistence, and shell-mode separation passed. Desktop More and account Escape focus restoration were hardened. Notification real-time invalidation remains future work.`
+
+### EXEC-78F.1D Certification Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| tablet portrait | PASS | 768x1024, 820x1180, and 834x1194 passed all geometry, interaction, and sticky checks |
+| tablet landscape | PASS | 1024x768, 1180x820, and 1194x834 passed all geometry, interaction, and sticky checks |
+| mobile | PASS | 390x844 and 320x720 passed fixed navigation, focus trap, safe-area, and MessagingDock coexistence checks |
+| breakpoints | PASS | 767 mobile, 768 compact, 1199 compact, and 1200 full with no leakage |
+| accessibility | PASS | forward/reverse tab order, labels, focus visibility, `aria-expanded`, `aria-current`, Escape, focus trap, and restoration validated |
+| sticky behavior | PASS | header and mobile bottom navigation remained fixed after scroll |
+| visual regression | PASS | 12 desktop/tablet/mobile screenshots captured |
+| focus hardening | PASS | desktop More and account menus now restore focus after Escape |
+| original F.1 regression | PASS | original 10-route browser proof reran successfully |
+| typecheck/build | PASS | TypeScript and two consecutive Turbopack builds passed |
+| lint | PASS WITH WARNINGS | 0 errors and 21 existing warnings |
+| Notification freshness | FUTURE WORK | single unread truth preserved; domain-driven invalidation remains deferred |
+
+### EXEC-78F.1D Files
+
+- Created: `EXEC78F1D_RESPONSIVE_DEVICE_CERTIFICATION.md`
+- Created: responsive certification script, JSON evidence, and 12 screenshots
+- Hardened: `AuthenticatedNavbar.tsx`, `AuthenticatedAccountMenu.tsx`
+- Updated: reusable F.1 proof script, `STATUS.md`, and proof README
+
+### EXEC-78F.1D Rollback
+
+Rollback affects only Escape focus restoration in two Shell presentation components. Evidence files can be removed independently. No route or domain rollback is required.
+
+## EXEC-78F.1 Authenticated Shell Implementation
+
+Verdict: `PASS WITH RISKS - the constrained authenticated Shell is implemented with frozen desktop/mobile navigation, responsive More behavior, non-authoritative account presentation, Notification-domain unread truth, public/onboarding/authenticated separation, active states, accessibility, and no route or domain semantic changes. Typecheck, lint, standard and webpack builds, and the 10-route desktop/mobile browser matrix passed. Residual risks are Notification badge eventual consistency, the independent MessagingDock, 21 existing lint warnings, and one transient Turbopack worker timeout before a successful retry.`
+
+### EXEC-78F.1 Implementation Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| authenticated Shell | PASS | persistent 64px authenticated header with neutral loading and focused onboarding modes |
+| desktop navigation | PASS | frozen seven-destination order with active state and `aria-current` |
+| responsive collapse | PASS | 768-1199px More contains Companies and Professionals only |
+| mobile Shell | PASS | logo, Notifications, avatar plus Home, Explore, Projects, Messages, More |
+| account menu | PASS | descriptive identity, Profile, Security, Logout; no authority semantics |
+| Notifications | PASS WITH RISKS | existing unread endpoint only; failure hides badge; refresh is eventually consistent |
+| Messages | PASS | destination-only; no previews, snippets, participants, or synthesized counts |
+| shell separation | PASS | public, onboarding, loading, and authenticated presentation modes validated |
+| forbidden UX | PASS | Search, unfinished modules, aggregates, RELU destination/assistant, and placeholders absent |
+| typecheck | PASS | `npx.cmd tsc --noEmit` exited 0 |
+| lint | PASS WITH WARNINGS | 0 errors and 21 existing warnings |
+| build | PASS | standard Turbopack and webpack production builds completed 58 routes |
+| browser validation | PASS | 10/10 required screenshots plus 1024px, 320px, account, and mode checks |
+| route/domain preservation | PASS | no route page, guard, AuthContext, API, permission, Workspace, Message, or Notification logic changed |
+
+### EXEC-78F.1 Files
+
+- Created: `EXEC78F1_IMPLEMENTATION_REPORT.md`
+- Created: authenticated navigation, Navbar, account menu, and Shell icon presentation files
+- Created: `docs/proof/exec78/exec78f1-browser-proof.cjs`
+- Created: `docs/proof/exec78/exec78f1/browser-proof.json`
+- Created: 13 desktop/mobile evidence screenshots
+- Updated: `AppShell.tsx`, `Header.tsx`, `MobileNavigation.tsx`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78F.1 Rollback
+
+Rollback is limited to Shell composition and the new presentation-only files. No database, API, route, permission, authentication, authorization, or domain rollback is required.
+
+## EXEC-78F.1C Authenticated Shell UX Contract & Navigation Specification
+
+Verdict: `PASS WITH RISKS - the exact authenticated Shell regions, desktop navigation order, responsive collapse, mobile five-slot navigation, account menu, Notification and Message ownership, public/onboarding/authenticated separation, forbidden UX inventory, and screenshot/accessibility matrix are frozen. Opportunities maps truthfully to /jobs and Projects to /projects. No implementation or validation commands were run.`
+
+### EXEC-78F.1C Contract Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| Shell layout | PASS | persistent authenticated header/navigation/content boundaries and always/conditional/never rules are frozen |
+| desktop navigation | PASS | Dashboard, Opportunities, Companies, Professionals, Projects, Messages, Notifications order and active matching are defined |
+| responsive collapse | PASS | full navigation at 1200px+, compact desktop More at 768-1199px, and mobile below 768px are defined |
+| mobile navigation | PASS | Home, Explore, Projects, Messages, More use five stable slots; Notifications and account remain in the top header |
+| account menu | PASS | safe identity display, Profile, Security, and Logout are defined without authority or acting-entity claims |
+| Notifications | PASS WITH RISKS | Notification domain is the only unread truth; badge must be omitted if that source is not proven |
+| Messages | PASS WITH RISKS | destination-only behavior is frozen; no previews or unread synthesis; existing MessagingDock remains a separate risk |
+| shell separation | PASS WITH RISKS | public, onboarding, and authenticated modes are defined, including signed-in framing for public discovery routes |
+| forbidden UX | PASS | Search, unfinished modules, aggregates, RELU destination/assistant, disabled entries, and authority controls remain absent |
+| validation | PASS | desktop/mobile/public/onboarding screenshot, overflow, accessibility, DOM, privacy, and route checks are specified |
+| implementation readiness | PASS WITH RISKS | UX is frozen; auth-loading, Notification badge, route matching, and MessagingDock risks require validation |
+
+### EXEC-78F.1C Files
+
+- Created: `EXEC78F1C_AUTHENTICATED_SHELL_UX_CONTRACT_AND_NAVIGATION_SPECIFICATION.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78F.1C Implementation Constraint
+
+The authenticated Shell must remain destination-only. It must not expose Search or unfinished modules, imply acting-entity authority, synthesize unread truth, import public chatbot behavior, absorb Workspace execution, or alter existing route semantics.
+
+## EXEC-78F.1B Authenticated Shell Technical Baseline & Change Map
+
+Verdict: `PASS WITH RISKS - the exact shell/layout/navigation/auth/route technical baseline, current redirect behavior, authenticated destination allowlist, forbidden destination denylist, future changed-file perimeter, validation commands, browser matrix, rollback units, and technical risks are documented. The safest first labels are Opportunities for `/jobs` and Projects for `/projects`; route guards remain intentionally unchanged. No implementation or validation commands were run.`
+
+### EXEC-78F.1B Baseline Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| implementation owners | PASS | root layout, AppShell, Header, Navbar, Footer, MobileNavigation, AuthContext, redirects, routes, onboarding, and MessagingDock are mapped |
+| route baseline | PASS WITH RISKS | current public/auth behavior and redirects are documented, including inconsistent guard behavior that F.1 must preserve |
+| destination allowlist | PASS | Dashboard, Opportunities, Companies, Professionals, Projects, Messages, Notifications, Profile, Publish, and Security map only to existing routes |
+| destination denylist | PASS | Search, Institution, Procurement, Governance, aggregates, internal tools, RELU nav/assistant, and placeholders are forbidden |
+| change map | PASS | expected new/modified/read-only files, allowed scope, forbidden changes, acceptance, and rollback are defined |
+| validation | PASS | build, lint, diff/write checks, route/deep-link matrix, DOM inventory, screenshots, overflow, raw-data, and no-write checks are specified |
+| label accuracy | PASS WITH RISKS | `/jobs` and `/projects` do not yet implement the full Feed/Workspace architecture; Opportunities and Projects are safer labels |
+| implementation readiness | PASS WITH RISKS | edit perimeter is ready; auth/context/notification/domain gaps remain out of scope |
+
+### EXEC-78F.1B Files
+
+- Created: `EXEC78F1B_AUTHENTICATED_SHELL_TECHNICAL_BASELINE_AND_CHANGE_MAP.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78F.1B Implementation Constraint
+
+F.1 must normally modify only authenticated navigation metadata/presentation and AppShell/Header/MobileNavigation composition. AuthContext, auth redirects, onboarding state, route pages, APIs, guards, and domain write behavior remain no-change dependencies.
+
+## EXEC-78F.1A Authenticated Shell Implementation Readiness & Delivery Plan
+
+Verdict: `PASS WITH RISKS - EXEC-78F.1 is approved only as a constrained shell implementation: persistent authenticated frame, destination-only navigation over existing routes, non-authoritative identity presentation, Notifications/Messages entry, current Dashboard preservation, and `/projects` as the existing Workspace entry. Functional entity switching, new writes, global Search, unfinished modules, new Workspace aggregates, Institution, Procurement, authority enforcement, and Dashboard read-model expansion remain out of scope. WP0-WP7, dependency ownership, ten-rule acceptance, phased rollout, rollback, and validation strategies are defined. No implementation or validation commands were run.`
+
+### EXEC-78F.1A Readiness Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| Shell | READY WITH CONSTRAINTS | existing shell components support a persistent authenticated frame if route/auth semantics remain unchanged |
+| Navigation | READY WITH CONSTRAINTS | strict existing-route allowlist and hidden-module denylist are defined |
+| Acting Entity | PRESENTATION ONLY | identity may be displayed safely; switching, persistence, and new writes remain blocked |
+| Notifications | ENTRY READY, BADGE CONDITIONAL | shell entry is allowed; badge requires one proven recipient-authorized unread truth |
+| Dashboard | EMBEDDING READY | current Dashboard may remain inside shell; new aggregation is deferred |
+| Workspace | ENTRY READY | `/projects` is the honest initial Workspace execution destination |
+| RELU | PRESERVE ONLY | current contextual integrations remain; no shell RELU |
+| Routes/deep links | READY WITH HIGH VALIDATION | no route changes allowed; WP7 must prove redirects, history, and deep links |
+| work packages | PASS | WP0-WP7 define objectives, dependencies, risks, acceptance, and rollback units |
+| acceptance | PASS WITH RISKS | ten rules are binding; Rules 3, 4, 6, and 8 are critical stop conditions |
+
+### EXEC-78F.1A Files
+
+- Created: `EXEC78F1A_AUTHENTICATED_SHELL_IMPLEMENTATION_READINESS_AND_DELIVERY_PLAN.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78F.1A Implementation Constraint
+
+EXEC-78F.1 may add presentation and navigation around existing behavior only. It must not expose unfinished modules or Search, invent acting-entity authority, synthesize unread truth, absorb Workspace into Shell, alter route semantics, or add new entity-owned writes.
+
+## EXEC-78F.0E Authority Relationship, Delegation & Execution Scope Contract
+
+Verdict: `PASS WITH RISKS - Authority Relationships, representatives, narrowing delegation, Execution Scopes, Project participant roles, Contract signatory/reviewer authority, Compliance holder/reviewer/approver/auditor authority, cross-module interpretation, and audit chains are defined. Multi-level delegation is prohibited by default, high-risk scopes require explicit grants, and all writes remain subject to F.0C acting-entity resolution. The ten EXEC-78F.1 acceptance rules are binding, with unfinished modules, explicit acting entity, no global Search, and Shell/Workspace separation treated as critical stop conditions. No implementation or validation commands were run.`
+
+### EXEC-78F.0E Contract Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| Authority Relationships | PASS | Professional self-authority, Company representation, Institution role authority, and contractor ecosystem interpretation are defined |
+| delegation | PASS | direct, temporary, revocable, expiring, and tightly constrained multi-level delegation are specified |
+| Execution Scopes | PASS | View through Administer scopes, constraints, inheritance, conflicts, and high-risk grants are defined |
+| Project participants | PASS | Owner, Manager, Coordinator, Contributor, Reviewer, and Observer roles are separated from entity authority |
+| Contract authority | PASS WITH RISKS | owner, representative, reviewer, Signatory, observer, version, and delegation rules are defined; implementation is absent |
+| Compliance authority | PASS WITH RISKS | holder, reviewer, approver, auditor, observer, and separation-of-duties rules are defined; implementation is partial/absent |
+| cross-module consistency | PASS | Workspace, Projects, Contracts, Compliance, Messages, and Notifications share one authority vocabulary |
+| audit | PASS WITH RISKS | account, entity, relationship, delegation chain, scope, object, action, result, and retention ownership are defined |
+| F.1 acceptance checklist | PASS WITH RISKS | all ten rules are approved; acting-entity, notification, and shell enforcement remain unimplemented |
+| no implementation | PASS | no UI, routes, APIs, schema, permissions, guards, auth, deployment, or infrastructure changed; no build, lint, or tests ran |
+
+### EXEC-78F.0E Files
+
+- Created: `EXEC78F0E_AUTHORITY_RELATIONSHIP_DELEGATION_AND_EXECUTION_SCOPE_CONTRACT.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78F.0E Implementation Constraint
+
+EXEC-78F.1 must stop if unfinished modules are exposed, explicit acting-entity resolution is bypassed, global Search is surfaced, or the Shell absorbs Workspace. It must not introduce new entity-owned writes until relationship and Execution Scope resolution exists.
+
+## EXEC-78F.0D Workspace, Operational Object & Execution Boundary Contract
+
+Verdict: `PASS WITH RISKS - Workspace is defined as the execution environment and coordination owner, not a navigation construct, Dashboard, discovery surface, or universal data owner. Project, Contract, Case, Document, Compliance, Messaging, Notification, and Audit domains retain their records and lifecycles while Workspace owns execution context, participation, assignments, workspace-local tasks, and cross-object coordination. Dashboard remains summary-only, Feed remains discovery-only, and every execution follows the F.0C acting-entity resolution contract. No implementation or validation commands were run.`
+
+### EXEC-78F.0D Contract Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| Workspace definition | PASS | Workspace coordinates authorized execution and does not own every object displayed within it |
+| operational objects | PASS | Project, Contract, Case, Collaboration Thread, Compliance Artifact, Operational Document, Task, and Execution Context are defined |
+| ownership model | PASS | object, visibility, lifecycle, execution, audit-event, and audit-record ownership are separated |
+| execution ownership | PASS | Professional direct, Company delegated, Institution role-scoped, delegated, multi-party, Compliance, and Contract execution are defined |
+| Workspace boundary | PASS | Workspace-owned, Workspace-adjacent, and External capabilities are classified |
+| Dashboard boundary | PASS | Dashboard summarizes and deep-links; Workspace executes |
+| cross-module execution | PASS | Project, Contract, Message, Notification, Compliance, Document, Feed, Dashboard, Workspace, and Audit responsibilities are separated |
+| state model | PASS | Context, Object, Execution, Collaboration, and Compliance state ownership and synchronization are defined |
+| audit contract | PASS WITH RISKS | required attribution, event ownership, durable audit ownership, correlation, and retention responsibility are defined; implementation is absent |
+| readiness | PASS WITH RISKS | governance is complete; Workspace orchestration, Case, task/read models, detailed Contract/Compliance authority, and Audit implementation remain future work |
+
+### EXEC-78F.0D Files
+
+- Created: `EXEC78F0D_WORKSPACE_OPERATIONAL_OBJECT_AND_EXECUTION_BOUNDARY_CONTRACT.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78F.0D Implementation Constraint
+
+EXEC-78F.1 must not make Workspace a universal domain owner, turn Dashboard into execution, infer authority from navigation, duplicate domain lifecycle state, or expose unsupported Workspace, Institution, procurement, Contract, Compliance, or Audit capabilities.
+
+## EXEC-78F.0C Acting Entity Context, Persistence & Resolution Contract
+
+Verdict: `PASS WITH RISKS - the acting-entity lifecycle is defined through hybrid ownership: the Shell presents context while the Identity/Session domain owns authority truth, persistence, validation, recovery, and resolution. Browser state may retain only a per-tab, non-authoritative selection hint; every write must resolve account, acting entity, relationship, target, permission, visibility, module policy, and execution in order. Deep links, recovery, multi-tab invalidation, navigation separation, and cross-module consistency are specified. No implementation or validation commands were run.`
+
+### EXEC-78F.0C Contract Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| context ownership | PASS | Shell owns presentation and switch entry; Identity/Session owns authority truth, persistence, validation, recovery, and resolution |
+| persistence | PASS WITH RISKS | per-tab `sessionStorage` may store an untrusted entity hint; refresh/new-tab/logout/session-expiry behavior is defined, but not implemented |
+| resolution | PASS | every write must resolve account, entity, relationship, target, permission, visibility, module policy, then execution |
+| context switching | PASS | navigation and authority remain independent; pending actions cannot be silently reassigned |
+| recovery | PASS WITH RISKS | missing, invalid, revoked, expired, stale, mismatch, and expired-session recovery is defined; shared recovery is not implemented |
+| deep links | PASS | Auto-Switch is exceptional; Confirmation, Hard-Block, and Read-Only Fallback rules are defined by route family |
+| multi-tab | PASS WITH RISKS | tab selections remain independent; only invalidation signals synchronize; stale detection/versioning is not implemented |
+| cross-module consistency | PASS | Dashboard, Feed, Workspace, Messages, Notifications, and Compliance share one authority and recovery interpretation |
+| Combined context | PASS | Combined remains selection/aggregation only and cannot own actions, permissions, or records |
+| no implementation | PASS | no UI, routes, APIs, schema, permissions, guards, auth, deployment, or infrastructure changed; no build, lint, or tests ran |
+
+### EXEC-78F.0C Files
+
+- Created: `EXEC78F0C_ACTING_ENTITY_CONTEXT_AND_RESOLUTION_CONTRACT.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78F.0C Implementation Constraint
+
+EXEC-78F.1 must treat browser context as an untrusted per-tab hint, keep navigation independent from authority, keep Combined non-executable, fail closed for writes, and defer entity-owned actions that cannot use the canonical resolution contract.
+
+## EXEC-78F.0B Authenticated Shell Contract & Architectural Invariants
+
+Verdict: `PASS WITH RISKS - the authenticated shell is defined as the owner of navigation presentation, context-switch entry, acting-entity visibility, notification entry points, and minimal global status, while Feed, Workspace, Projects, Messages, Compliance workflows, authorization, and RELU decisions remain module-owned. No global search, hidden unfinished modules, explicit acting entity, contextual RELU only, and preserved route behavior are mandatory invariants. No implementation or validation commands were run.`
+
+### EXEC-78F.0B Contract Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| shell definition | PASS | shell owns persistent orientation, navigation, context switching entry, notification entry, and acting-entity visibility |
+| shell boundaries | PASS | shell does not own Feed, Workspace, Projects, Messages, compliance workflows, module authorization, or RELU decisions |
+| architectural invariants | PASS | no global search, hidden unfinished modules, explicit acting entity, contextual RELU only, and preserved route behavior are mandatory |
+| acting entity | PASS WITH RISKS | Professional is single-entity authority, Company delegated authority, Institution role-scoped authority, Combined selection-only; persistence is not implemented |
+| navigation | PASS | permanent, contextual, hidden, and future destinations are classified; visibility never implies ownership or permission |
+| notifications | PASS WITH RISKS | domain modules own Event Truth, notification service owns Delivery Truth and Unread Truth, shell owns entry/badge only; deduplication remains unimplemented |
+| RELU placement | PASS | public marketing, authenticated contextual, and internal tooling are separated; floating or shell-level authenticated RELU is forbidden |
+| Shell vs Workspace | PASS | shell provides orientation/context/entry/status; Workspace owns execution/documents/contracts/collaboration/compliance tasks |
+| readiness gates | PASS WITH RISKS | architecture is approved; implementation must preserve contracts and resolve acting-entity/dedup risks |
+
+### EXEC-78F.0B Files
+
+- Created: `EXEC78F0B_AUTHENTICATED_SHELL_CONTRACT.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78F.0B Implementation Constraint
+
+EXEC-78F.1 must not expose global search or unfinished modules, must preserve route semantics, must keep RELU contextual, must distinguish account identity from acting entity, and must not treat shell navigation as authorization.
+
+## EXEC-78F.0A Ownership, Entity Modes, Search Governance & Exposure Refinement
+
+Verdict: `PASS WITH RISKS - EXEC-78F.0 is hardened with canonical B2B/B2P/P2B/B2G/G2P terminology, entity ownership boundaries, route/module/navigation/entity ownership, public-versus-authenticated compliance separation, entity-mode state rules, a no-leak search contract, hidden-by-default unfinished navigation, public chatbot boundaries, Feed/Workspace separation, and notification ownership. No UI, routes, APIs, schema, permissions, guards, auth, RELU behavior, Cloud Run, deployment configuration, build, lint, tests, migrations, or infrastructure changed.`
+
+### EXEC-78F.0A Refinement Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| terminology governance | PASS WITH RISKS | legacy B2C, marketplace-centric, hiring/recruitment, employer/employee wording is catalogued; new architecture must use B2B, B2P, P2B, B2G, and G2P |
+| entity model | PASS | Companies, Professionals, and Institutions are entity-owned operational identities; marketplace/public-post data is only a current discovery implementation |
+| ownership matrix | PASS | Dashboard, Feed, Opportunities, Workspace, Projects, Messages, Notifications, Compliance, Company, Professional, Institution, Procurement, Settings, and RELU ownership is separated |
+| compliance boundary | PASS | public `/compliance`/legal/trust information is separated from authenticated evidence, verification, audit, and workspace governance |
+| entity modes | PASS | Professional, Company, Institution, and Combined are operational shell states; every action remains scoped to an explicit acting entity |
+| search governance | PASS WITH RISKS | canonical hidden-count, suggestion, placeholder, existence, metadata, and entity protections are defined; current local filters do not prove full compliance |
+| navigation exposure | PASS | production-ready capabilities may be visible; incomplete Institution, Procurement, Governance, Search, and advanced Workspace modules should remain hidden |
+| chatbot boundary | PASS | homepage chatbot may remain a public engagement utility but must not enter the authenticated shell or primary navigation |
+| Feed vs Workspace | PASS | Feed remains discovery; `/projects` is treated as the initial Workspace Projects implementation |
+| notifications | PASS WITH RISKS | producer, consumer, routing, and display ownership are defined; deduplication remains an implementation decision |
+
+### EXEC-78F.0A Files
+
+- Created: `EXEC78F0A_GOVERNANCE_AND_ENTITY_MODE_REFINEMENT.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78F.0A Readiness Constraint
+
+EXEC-78F.1 may proceed only with hidden-by-default unfinished modules, no global search exposure, no Institution/Procurement claims, contextual RELU, explicit acting-entity context, public/authenticated compliance separation, and preservation of existing route behavior.
+
+## EXEC-78F.0 Current Route Inventory, Shell Readiness & Implementation Mapping
+
+Verdict: `PASS - current web routes, shell/layout/auth components, dashboard, feed-like surfaces, project/workspace-like execution, search/filter behavior, RELU integrations, taxonomy selectors, implementation risks, and safe EXEC-78F.1 scope are mapped against EXEC-78E.3. No UI, routes, APIs, Prisma schema, permissions, guards, RELU logic, Cloud Run configuration, deployment, or EXEC-78F.1 implementation work were started.`
+
+### EXEC-78F.0 Audit Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| route inventory | PASS | public, auth/security, onboarding, dashboard, profile, company, publish, project, workspace-like, messaging, notifications, RELU, workforce/payroll, and legal/static routes are documented |
+| canonical route mapping | PASS | current `/jobs`, `/projects`, `/messages`, `/security`, `/companies`, `/professionals`, `/publish`, `/profile`, and `/dashboard` routes are mapped to EXEC-78E.3 route families and alias recommendations |
+| shell readiness | PASS | `AppShell`, `Header`, `Navbar`, `Footer`, `MobileNavigation`, `AuthContext`, `auth-redirect`, `UiConfig`, and `MessagingDock` are audited |
+| dashboard readiness | PASS | current dashboard supports account/profile/listing status and CTAs, but lacks full aggregation read models for compliance, workspace, messages, notifications, assets, procurement, and RELU |
+| Feed readiness | PASS | homepage, `/jobs`, `/companies`, `/professionals`, public post helpers, `JobCard`, and `ActorCard` are mapped as feed-like foundations |
+| Workspace readiness | PASS | `/projects` and `/projects/[id]` are identified as the strongest current Workspace foundation with documents, compliance, contracts, messages, notifications, audit logs, and AI suggestions |
+| Search readiness | PASS | current search/filter entry points are audited; global `/search` remains blocked until no-leak authorization/redaction is scoped |
+| RELU readiness | PASS | profile, publish, project, and internal builder RELU integrations are contextual/advisory; RELU should not become primary navigation |
+| taxonomy readiness | PASS | NACE, ESCO, and Uniclass selectors exist, with NACE most mature and ESCO/Uniclass requiring feed/search display work later |
+| risk matrix | PASS | route churn, onboarding breakage, visibility leakage, search leakage, dashboard overload, feed/workspace confusion, RELU overexposure, taxonomy gaps, Institution/Procurement premature exposure, and mobile navigation complexity are documented |
+| F.1 scope | PASS | first pass should focus on authenticated shell foundation, route aliases/mapping, navigation grouping, visibility-aware badges, and deferred Search/Institution/Procurement release |
+
+### EXEC-78F.0 Files
+
+- Created: `EXEC78F0_CURRENT_ROUTE_SHELL_READINESS_AUDIT.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78F.0 Recommended Next Step
+
+EXEC-78F.1 should implement only the authenticated shell/navigation foundation around existing routes, preserving route behavior and deferring global search, full Institution, full Procurement, standalone Workspace submodules, and dashboard aggregation read models until their data and authorization contracts are scoped.
+
+## EXEC-78E.3 Shell, Navigation, Surface Ownership, Handoff & Search Index Architecture
+
+Verdict: `PASS - shell ownership, navigation ownership, surface boundaries, Feed-to-Workspace handoff mechanics, Dashboard aggregation, Search index authorization/redaction, route responsibility, and cross-surface state movement are frozen for EXEC-78F preparation. Dashboard remains operational control, Feed remains discovery, Workspace remains execution, Search remains authorized metadata only, RELU remains embedded advisory intelligence, and no UI, components, screens, routes, APIs, Prisma schema, permissions, moderation logic, compliance logic, RELU core logic, Cloud Run configuration, or EXEC-78F work were started.`
+
+### EXEC-78E.3 Architecture Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| shell architecture | PASS | global shell, navigation hierarchy, primary/secondary/contextual navigation, entity switching, Professional mode, Company mode, Institution mode, and Combined mode are defined with ownership, visibility, permissions, dependencies, and routing responsibility |
+| navigation architecture | PASS | Dashboard, Feed, Opportunities, Companies, Professionals, Institutions, Workspace, Compliance, Messages, Notifications, and Settings remain the canonical primary navigation surfaces |
+| surface ownership | PASS | Dashboard, Feed, Opportunities, Companies, Professionals, Institutions, Procurement, Workspace, Compliance, Messages, Notifications, Search, and Settings have purpose, allowed content, forbidden content, entry points, exit points, and handoff rules |
+| Feed-to-Workspace handoff | PASS | application, response, invitation, procurement, project participation, contract negotiation, document request, and compliance handoffs are defined with ownership, visibility, permission, notification, and audit transitions |
+| Dashboard aggregation | PASS | aggregation rules, widget priority, blocking alerts, compliance alerts, operational alerts, visibility inheritance, and personalization boundaries are defined |
+| Search index | PASS | indexable/non-indexable objects, metadata extraction, authorization filtering, redaction, visibility inheritance, and workspace/procurement/compliance/RELU indexing rules are defined with no-leak behavior |
+| routing architecture | PASS | future-safe route families are mapped to route owner, module owner, navigation owner, entity owner, and visibility inheritance without implementing route changes |
+| cross-surface state | PASS | state sources, consumers, transitions, audit boundaries, and safety rules across Dashboard, Feed, Search, Workspace, Compliance, Procurement, Notifications, and Messages are defined |
+
+### EXEC-78E.3 Files
+
+- Created: `EXEC78E3_SHELL_NAVIGATION_HANDOFF_SEARCH_ARCHITECTURE.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78E.3 Recommended Next Step
+
+EXEC-78F preparation should begin with an inventory of current authenticated routes and a mapping to the E.3 canonical route families before any shell, navigation, Dashboard, Feed, Workspace, Search, or handoff implementation begins.
+
+## EXEC-78E.2 Canonical Object, Workspace, Feed & RELU Operational Architecture
+
+Verdict: `PASS - canonical operational architecture is specified for objects, Institution, Feed, Workspace, Dashboard, RELU, Taxonomy, Search, Visibility vs Permission, and cross-system relationships. Institution is formalized as a first-class entity, Feed remains discovery, Workspace remains execution, Dashboard remains operational control, Compliance remains governance, Taxonomies remain classification infrastructure, RELU remains embedded advisory intelligence, and no UI, components, screens, routes, APIs, Prisma schema, permissions, moderation logic, compliance logic, RELU core logic, Cloud Run configuration, or EXEC-78F work were started.`
+
+### EXEC-78E.2 Architecture Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| market alignment | PASS | B2B, B2P, P2B, B2G, and G2P are preserved; B2C, freelancer clone, social clone, job board clone, and CRM clone positioning are excluded |
+| Institution architecture | PASS | Institution is first-class, not Company or Professional subtype, with own ownership, representative, publishing, visibility, compliance, and procurement models |
+| canonical objects | PASS | Professional, Company, Institution, Opportunity, Project, Service, Contract, Workspace, Compliance Record, Asset, Document, Message Thread, Notification, RELU Insight, and Taxonomy Mapping are defined |
+| Feed architecture | PASS | feed item types, cards, ranking inputs, visibility rules, actions, moderation boundaries, lifecycle, B2B/B2P/P2B/B2G/G2P patterns, and workspace transitions are defined |
+| Workspace architecture | PASS | Workspace Home, Projects, Contracts, Documents, Compliance, Procurement, Collaboration, Assets, Messages, and RELU Support are defined as execution modules |
+| Dashboard architecture | PASS | Professional, Company, Institution, Enterprise, Moderator, and Admin dashboard models are defined with RELU as contextual insight cards only |
+| RELU architecture | PASS | RELU insights, suggestions, explanations, recommendations, reviews, queues, human approval, visibility, and learning boundaries are defined |
+| taxonomy architecture | PASS | NACE, ESCO, and Uniclass relationships to companies, professionals, institutions, projects, services, opportunities, documents, assets, compliance, Feed, Workspace, and Search are defined |
+| search architecture | PASS | search scope, visibility rules, metadata rules, result types, filters, and authorization rules are defined with strict no-leak behavior |
+| visibility vs permissions | PASS | visibility/discoverability/searchability/viewability are separated from create/edit/publish/approve/review/moderate/archive/delete permissions |
+| cross-system relationships | PASS | identity, entities, Feed, Workspace, Projects, Contracts, Compliance, Assets, Documents, Messages, Notifications, Taxonomies, RELU, and Search relationships are mapped |
+
+### EXEC-78E.2 Files
+
+- Created: `EXEC78E2_CANONICAL_OPERATIONAL_ARCHITECTURE.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78E.2 Recommended Next Step
+
+Next implementation planning should begin with scoped authenticated shell/navigation work only after preserving the E.2 canonical object, visibility, permission, search, taxonomy, workspace, Feed, Institution, and RELU boundaries.
+
+## EXEC-78E.1 Authenticated Shell, Navigation, Visibility, Taxonomy & RELU Experience Blueprint
+
+Verdict: `PASS - authenticated shell, navigation, visibility-aware UX, RELU experience, taxonomy exposure, asset-aware UX, Feed vs Workspace boundaries, notifications, global search, and cross-surface user journeys are blueprinted for implementation planning. RELU is formalized as omnipresent, discreet, contextual, explainable, and user-controlled, not a persistent chatbot or decision replacement. No UI, routes, APIs, Prisma schema, permissions, RELU core logic, Cloud Run configuration, or EXEC-78E.2 work were started.`
+
+### EXEC-78E.1 Blueprint Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| shell architecture | PASS | header, search, notifications, messages, avatar, mega menu, footer status bar, and identity switcher are defined |
+| navigation | PASS | Dashboard, Feed, Opportunities, Companies, Professionals, Institutions, Workspace, Compliance, Messages, Notifications, and Settings purposes/boundaries are defined |
+| visibility-aware UX | PASS | Visitor, Registered, Verified, Paid, Enterprise, Moderator, and Admin behavior is mapped across major surfaces |
+| RELU experience | PASS | public, dashboard, feed, workspace, profile, company, and compliance RELU behavior is defined |
+| RELU visibility principle | PASS | RELU must be omnipresent, discreet, contextual, explainable, and user-controlled; it must not be a persistent chatbot, floating assistant, dominant screen element, or decision replacement |
+| taxonomy | PASS | NACE, ESCO, and Uniclass are formalized as independent classification frameworks, not AI systems |
+| assets | PASS | image, video, document, certificate, compliance evidence, project file, and portfolio interaction respects D.3C privacy/moderation rules |
+| Feed vs Workspace | PASS | Feed discovery, Workspace execution, transitions, and never-in-feed items are defined |
+| notifications | PASS | publishing, identity, compliance, messages, workspace, assets, RELU, security, billing, and system notifications are defined |
+| search | PASS | projects, opportunities, companies, professionals, institutions, services, taxonomies, document metadata, and asset metadata are scoped without exposing restricted content |
+| user journeys | PASS | Visitor -> Registered -> Identity -> Verified -> Publisher -> Feed -> Workspace -> Contract -> Delivery -> Reputation is documented |
+
+### EXEC-78E.1 Files
+
+- Created: `EXEC78E1_AUTHENTICATED_EXPERIENCE_BLUEPRINT.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78E.1 Recommended Next Step
+
+EXEC-78E.2 may begin only as a scoped implementation task after confirming the authenticated shell preserves the E.1 blueprint, the D.3B visibility/feed contracts, and the D.3C asset/media privacy boundaries.
+
+## EXEC-78D.3C Asset, Media & RELU Intelligence Architecture
+
+Verdict: `PASS - canonical asset, media, document, portfolio, project file, feed media, workspace media, RELU media intelligence, RELU document intelligence, privacy, lifecycle, and storage-planning architecture is complete. Uploads remain optional, richer identities are encouraged through RELU-assisted extraction/drafting, users remain final decision makers, and no UI, routes, APIs, Prisma schema, permissions, RELU core logic, components, screens, or EXEC-78E work were started.`
+
+### EXEC-78D.3C Specification Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| asset model | PASS | avatar, company logo, institution logo, banner/cover, image, gallery, video, PDF, DOCX, XLSX, PPTX, certificate, compliance document, portfolio item, project file, public attachment, and private attachment are defined |
+| media model | PASS | professional profile, company hub, institution hub, opportunity, project, procurement, feed, workspace, and message media usage is defined |
+| document model | PASS | CV, resume, portfolio, project documentation, technical documentation, compliance evidence, company documents, public documents, procurement documents, contract documents, and internal workspace documents are defined |
+| portfolio model | PASS | professional, company, and institution portfolio public/private boundaries are defined |
+| project media | PASS | images, galleries, videos, plans, drawings, specifications, reports, and attachments are defined across public, participant, owner, moderator, and compliance-restricted scopes |
+| feed media | PASS | image, gallery, video, project media, company media, institution media, and promoted media eligibility and restrictions are defined |
+| optional vs required fields | PASS | professional profile, company hub, and institution hub required/recommended/optional asset fields are classified |
+| RELU media intelligence | PASS | RELU may describe, classify, summarize, extract metadata, recommend taxonomy/visibility category, and suggest captions; it cannot approve, verify authenticity, certify, publish, or moderate |
+| RELU document intelligence | PASS | RELU may extract skills/experience, suggest NACE/ESCO/Uniclass/geography, detect certifications, summarize content, and build drafts; user approval is mandatory |
+| RELU learning boundaries | PASS | temporary context, reusable approved context, privacy boundaries, and consent requirements are defined |
+| privacy/compliance boundaries | PASS | Public, Registered, Verified, Paid, Enterprise, and Compliance Restricted asset rules are defined |
+| lifecycle | PASS | Draft, Uploaded, Processing, Classified, Pending Review, Approved, Published, Live, Archived, and Deleted states are defined |
+| storage considerations | PASS | versioning, audit trails, history, deletion, retention, compliance retention, scanning, previews, OCR/extraction, RELU history, consent, visibility, moderation, and sensitivity needs are documented |
+
+### EXEC-78D.3C Files
+
+- Created: `EXEC78D3C_ASSET_MEDIA_RELU_INTELLIGENCE_ARCHITECTURE.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78D.3C Recommended Next Step
+
+EXEC-78E.1 may proceed as Authenticated Shell & Navigation UX Blueprint only after preserving this asset/media contract in future navigation, dashboard, feed, workspace, hub, and RELU planning.
+
+## EXEC-78D.3B Entity Roles, Publishing Permissions, Hub Data & Feed Eligibility Specification
+
+Verdict: `PASS - implementation-ready non-visual specification is complete for entity roles, actor permissions, publishing permissions, visibility gates, Company Hub data, Institution Hub data, feed eligibility/ranking inputs, workspace handoff, moderation, and RELU advisory boundaries. No UI, routes, APIs, Prisma schema, permissions, RELU logic, components, screens, or EXEC-78E work were started.`
+
+### EXEC-78D.3B Specification Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| entity role matrix | PASS | Professional, Company, Contractor, General Contractor, Subcontractor, Supplier, Manufacturer, Developer, Investor, Service Provider, Public Institution, Ministry, Municipality, County Council, University, Hospital, Public Agency, and Utility Operator are specified |
+| actor permission matrix | PASS | Visitor, Registered User, Professional, Verified Professional, Company Representative, Verified Company Representative, Institution Representative, Moderator, Admin, and SuperAdmin capabilities are specified |
+| publishing permissions | PASS | workforce, staffing, project, procurement, RFQ, RFP, subcontracting, service, organization, strategic, and promoted content permissions are mapped |
+| visibility gates | PASS | Public, Registered User, Verified User, Paid Plan, Enterprise, and Compliance Restricted gates are specified |
+| Company Hub data | PASS | required, optional, public, authenticated, owner-only, moderator-only, and compliance-restricted fields are specified |
+| Institution Hub data | PASS | required, optional, public, authenticated, representative, moderator-only, and compliance-restricted fields are specified |
+| feed eligibility | PASS | eligibility rules cover opportunities, projects, workforce, procurement, subcontracting, service offers, company/institution updates, professionals, companies, public institutions, and promoted content |
+| feed ranking inputs | PASS | geography, country, region, locality, language, NACE, ESCO, Uniclass, industry, entity type, verification, compliance, entitlement, promotion, activity, relationship, RELU relevance, freshness, and moderation trust are classified |
+| workspace handoff | PASS | application, response, invitation, project participation, document request, contract negotiation, compliance task, and operational message triggers are specified |
+| moderation contract | PASS | moderated objects and Draft through Deleted states are specified |
+| RELU role | PASS | RELU can assist drafting, extraction, taxonomy, compliance readiness, feed explanations, and workspace summarization, but cannot approve, publish, certify, moderate, contract, message automatically, bypass review, or expose confidential data |
+
+### EXEC-78D.3B Files
+
+- Created: `EXEC78D3B_ENTITY_PUBLISHING_FEED_SPECIFICATION.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78D.3B Recommended Next Step
+
+EXEC-78E should begin with non-destructive UI planning for the authenticated shell and navigation, using the D.3B contract to avoid inventing entity, publishing, feed, or visibility rules during screen implementation.
+
+## EXEC-78D.3A Actor, Entity, Publishing & Visibility Architecture Finalization
+
+Verdict: `PASS - OpenStaff market, actor, entity, ownership, publishing, visibility, feed participation, Company Hub, Institution Hub, Workspace, and RELU boundaries are finalized for planning. This was architecture and planning only; no UI, routes, APIs, Prisma schema, permissions, RELU logic, Cloud Run configuration, components, screens, or approved navigation were changed.`
+
+### EXEC-78D.3A Architecture Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| market model | PASS | OpenStaff is primarily B2B, B2P, P2B, B2G, and G2P; B2C is not primary |
+| actor model | PASS | actors are people performing actions and do not define ownership |
+| entity model | PASS | professional, company, both, contractor, general contractor, subcontractor, supplier, manufacturer, developer, investor, service provider, and public institution entities are defined |
+| public institution model | PASS | ministry, municipality, county council, university, hospital, public agency, utility operator, and government organization subtypes are defined |
+| ownership model | PASS | owner, representatives, delegated administrators, publishing authority, approval authority, visibility authority, and audit trail are required per entity |
+| publishing model | PASS | verified entities may publish opportunities, projects, procurement, subcontracting, services, organization updates, strategic content, and promoted content subject to moderation, compliance, visibility, and entitlement rules |
+| visibility model | PASS | Public, Registered User, Verified User, Paid Plan, Enterprise, and Compliance Restricted tiers are defined |
+| feed participation | PASS | Feed remains discovery/recommendation/opportunity network with geography, language, industry, NACE, ESCO, Uniclass, entity type, verification, entitlement, compliance, moderation, activity, RELU score, and relationship-history inputs |
+| company hub | PASS | company profile, opportunities, projects, services, workforce, compliance, documents, visibility, and representatives are formally defined |
+| institution hub | PASS | public initiatives, procurement, projects, suppliers, contractors, compliance, transparency, visibility, and representatives are formally defined |
+| workspace boundary | PASS | Feed discovers; Workspace executes contracts, projects, documents, compliance, collaboration, operational messaging, and RELU assistance |
+| RELU boundary | PASS | RELU remains advisory and cannot approve, publish, certify, moderate, contract, or replace human review |
+
+### EXEC-78D.3A Files
+
+- Created: `EXEC78D3A_ACTOR_ENTITY_PUBLISHING_VISIBILITY_ARCHITECTURE.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78D.3A Recommended Next Step
+
+EXEC-78D.3B should convert the finalized business architecture into a non-visual implementation specification for entity roles, publishing permissions, hub data requirements, visibility gates, and feed eligibility/ranking contracts before UI implementation starts.
+
+## EXEC-78D.1 OpenStaff Operational Model Finalization
+
+Verdict: `PASS - OpenStaff's complete operational lifecycle is finalized for implementation planning: Account -> Identity -> Profile -> Verification -> Publishing -> Visibility -> Feed -> Interaction -> Contracting -> Compliance -> Workspace. This was documentation and workflow validation only; no UI, route, API, schema, permission, Cloud Run, or functionality changes were made.`
+
+### EXEC-78D.1 Operational Model Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| account | PASS | account is authentication-only and separate from identity/profile/company approval |
+| identity | PASS | Professional, Company, and Both are the approved identity choices |
+| profile | PASS | manual and RELU-assisted profile creation are defined with user review and explicit approval |
+| verification | PASS | professional and company verification states are separate from account activation |
+| publishing | PASS | Draft, Ready For Review, Submitted, Approved, Published, Live, Paused, Archived, and Deleted lifecycle is defined |
+| visibility | PASS | public, registered-only, verified-only, paid-plan, and enterprise visibility tiers are defined |
+| feed | PASS | feed is defined as the central operational discovery experience, not a job-board list or generic social timeline |
+| interaction | PASS | Visitor, Registered User, Verified Professional, Verified Company, Moderator, Admin, and SuperAdmin interaction boundaries are defined |
+| compliance | PASS | EU/UK/Ireland/Nordics evidence handling remains assistance/readiness only |
+| RELU AI | PASS | RELU can draft, extract, classify, match, recommend, and analyze documents, but cannot approve, publish, certify, contract, or bypass review |
+
+### EXEC-78D.1 Operational Model Files
+
+- Created: `EXEC78D1_OPERATIONAL_MODEL.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78D.1 Operational Model Open Decisions
+
+Future implementation passes must scope durable account preference storage, Both identity public-page strategy, email verification enforcement timing, paid-plan gates, country compliance wording, feed ranking weights, and enterprise representative ownership before code changes in those areas.
+
+## EXEC-78D.2 Information Architecture Finalization
+
+Verdict: `PASS - OpenStaff information architecture is frozen for implementation planning. Dashboard is the operational command center, Feed is the discovery layer, Workspace is where active work happens, and Navigation, Professional, Company, Both identity, RELU, Notifications, and Sitemap placement are defined. This was documentation and planning only; no UI, routes, APIs, Prisma schema, permissions, components, or visual redesign were changed.`
+
+### EXEC-78D.2 IA Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| global navigation | PASS | primary navigation defined as Dashboard, Feed, Opportunities, Companies, Professionals, Workspace, Compliance, Messages, Notifications, Settings |
+| dashboard | PASS | defined as operational command center, not social feed or discovery layer |
+| feed | PASS | defined as discovery and recommendation layer with opportunities, projects, companies, professionals, subcontractors, service providers, and promoted content |
+| workspace | PASS | defined as active work surface for opportunities, contracts, projects, documents, compliance, collaboration, and RELU assistance |
+| professional journey | PASS | Visitor -> Registered User -> Professional -> Verified Professional journey mapped |
+| company journey | PASS | Visitor -> Registered User -> Company -> Verified Company journey mapped |
+| both identity | PASS | Professional, Company, and Combined modes defined with identity-aware feed, workspace, and notifications |
+| RELU placement | PASS | contextual and persistent placement defined while preserving advisory-only boundary |
+| notifications | PASS | categories, priorities, and visibility rules defined |
+| sitemap | PASS | public, authenticated, professional, company, workspace, admin, and moderation areas defined |
+
+### EXEC-78D.2 Files
+
+- Created: `EXEC78D2_INFORMATION_ARCHITECTURE.md`
+- Updated: `docs/proof/exec78/README.md`
+- Updated: `STATUS.md`
+
+### EXEC-78D.2 Open Decisions
+
+Future UI implementation passes must decide exact route names for Feed/Opportunities, Workspace route/module shape, Settings versus Security placement, Company Hub route strategy, mobile bottom-nav labels, persistent RELU entry format, and enterprise multi-company switching.
 
 ## EXEC-78D.1 Account & Identity Separation Implementation
 

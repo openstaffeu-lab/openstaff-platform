@@ -1,0 +1,356 @@
+{
+  "generatedAt": "2026-06-06T16:55:00.903Z",
+  "baseUrl": "http://127.0.0.1:3011",
+  "passed": true,
+  "tabletPortrait": [
+    {
+      "viewport": "768x1024",
+      "className": "tablet-portrait-768x1024",
+      "headerHeight": 64,
+      "overflow": false,
+      "activeState": true,
+      "compactLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "moreLabels": [
+        "Companies",
+        "Professionals"
+      ],
+      "badgeAligned": true,
+      "avatarAligned": true,
+      "escapeDismissal": true,
+      "focusRestoration": true,
+      "stickyHeader": true,
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "viewport": "820x1180",
+      "className": "tablet-portrait-820x1180",
+      "headerHeight": 64,
+      "overflow": false,
+      "activeState": true,
+      "compactLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "moreLabels": [
+        "Companies",
+        "Professionals"
+      ],
+      "badgeAligned": true,
+      "avatarAligned": true,
+      "escapeDismissal": true,
+      "focusRestoration": true,
+      "stickyHeader": true,
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "viewport": "834x1194",
+      "className": "tablet-portrait-834x1194",
+      "headerHeight": 64,
+      "overflow": false,
+      "activeState": true,
+      "compactLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "moreLabels": [
+        "Companies",
+        "Professionals"
+      ],
+      "badgeAligned": true,
+      "avatarAligned": true,
+      "escapeDismissal": true,
+      "focusRestoration": true,
+      "stickyHeader": true,
+      "consoleErrors": [],
+      "pageErrors": []
+    }
+  ],
+  "tabletLandscape": [
+    {
+      "viewport": "1024x768",
+      "className": "tablet-landscape-1024x768",
+      "headerHeight": 64,
+      "overflow": false,
+      "activeState": true,
+      "compactLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "moreLabels": [
+        "Companies",
+        "Professionals"
+      ],
+      "badgeAligned": true,
+      "avatarAligned": true,
+      "escapeDismissal": true,
+      "focusRestoration": true,
+      "stickyHeader": true,
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "viewport": "1180x820",
+      "className": "tablet-landscape-1180x820",
+      "headerHeight": 64,
+      "overflow": false,
+      "activeState": true,
+      "compactLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "moreLabels": [
+        "Companies",
+        "Professionals"
+      ],
+      "badgeAligned": true,
+      "avatarAligned": true,
+      "escapeDismissal": true,
+      "focusRestoration": true,
+      "stickyHeader": true,
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "viewport": "1194x834",
+      "className": "tablet-landscape-1194x834",
+      "headerHeight": 64,
+      "overflow": false,
+      "activeState": true,
+      "compactLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "moreLabels": [
+        "Companies",
+        "Professionals"
+      ],
+      "badgeAligned": true,
+      "avatarAligned": true,
+      "escapeDismissal": true,
+      "focusRestoration": true,
+      "stickyHeader": true,
+      "consoleErrors": [],
+      "pageErrors": []
+    }
+  ],
+  "mobile": [
+    {
+      "viewport": "390x844",
+      "className": "mobile-portrait-390x844",
+      "headerHeight": 64,
+      "bottomNavigationFixed": true,
+      "overflow": false,
+      "labels": [
+        "Home",
+        "Explore",
+        "Projects",
+        "Messages",
+        "More"
+      ],
+      "topControlsAligned": true,
+      "messagingDockCoexists": true,
+      "safeAreaPadding": "0px",
+      "focusTrap": true,
+      "escapeDismissal": true,
+      "focusRestoration": true
+    },
+    {
+      "viewport": "320x720",
+      "className": "mobile-narrow-320x720",
+      "headerHeight": 64,
+      "bottomNavigationFixed": true,
+      "overflow": false,
+      "labels": [
+        "Home",
+        "Explore",
+        "Projects",
+        "Messages",
+        "More"
+      ],
+      "topControlsAligned": true,
+      "messagingDockCoexists": true,
+      "safeAreaPadding": "0px",
+      "focusTrap": true,
+      "escapeDismissal": true,
+      "focusRestoration": true
+    }
+  ],
+  "breakpoints": [
+    {
+      "width": 767,
+      "expected": "mobile",
+      "fullVisible": false,
+      "compactVisible": false,
+      "mobileVisible": true
+    },
+    {
+      "width": 768,
+      "expected": "compact",
+      "fullVisible": false,
+      "compactVisible": true,
+      "mobileVisible": false
+    },
+    {
+      "width": 1199,
+      "expected": "compact",
+      "fullVisible": false,
+      "compactVisible": true,
+      "mobileVisible": false
+    },
+    {
+      "width": 1200,
+      "expected": "full",
+      "fullVisible": true,
+      "compactVisible": false,
+      "mobileVisible": false
+    }
+  ],
+  "accessibility": {
+    "keyboardOrder": {
+      "forward": [
+        "OpenStaff Dashboard",
+        "Dashboard",
+        "Opportunities",
+        "Projects",
+        "Messages",
+        "Notifications",
+        "More",
+        "Open account menu"
+      ],
+      "backward": [
+        "More",
+        "Notifications",
+        "Messages",
+        "Projects",
+        "Opportunities",
+        "Dashboard",
+        "OpenStaff Dashboard"
+      ]
+    },
+    "screenReaderLabels": true,
+    "focusVisibility": true,
+    "modalFocusTrap": true,
+    "modalFocusRestoration": true,
+    "ariaExpanded": true,
+    "ariaCurrent": true
+  },
+  "stickyBehavior": {
+    "desktopHeader": true,
+    "tabletHeader": true,
+    "mobileHeader": true,
+    "mobileBottomNavigation": true,
+    "modalOverlay": true,
+    "safeAreaHandling": true
+  },
+  "presentationBoundary": [
+    {
+      "route": "/",
+      "authenticated": true,
+      "mode": "public",
+      "passed": true
+    },
+    {
+      "route": "/jobs",
+      "authenticated": false,
+      "mode": "public",
+      "passed": true
+    },
+    {
+      "route": "/jobs",
+      "authenticated": true,
+      "mode": "authenticated",
+      "passed": true
+    },
+    {
+      "route": "/onboarding/identity-type",
+      "authenticated": true,
+      "mode": "onboarding",
+      "passed": true
+    }
+  ],
+  "screenshots": [
+    {
+      "className": "desktop",
+      "route": "/dashboard",
+      "file": "exec78f1d/screenshots/desktop-dashboard.png"
+    },
+    {
+      "className": "desktop",
+      "route": "/jobs",
+      "file": "exec78f1d/screenshots/desktop-opportunities.png"
+    },
+    {
+      "className": "desktop",
+      "route": "/projects",
+      "file": "exec78f1d/screenshots/desktop-projects.png"
+    },
+    {
+      "className": "tablet-portrait",
+      "route": "/dashboard",
+      "file": "exec78f1d/screenshots/tablet-portrait-dashboard.png"
+    },
+    {
+      "className": "tablet-portrait",
+      "route": "/projects",
+      "file": "exec78f1d/screenshots/tablet-portrait-projects.png"
+    },
+    {
+      "className": "tablet-landscape",
+      "route": "/dashboard",
+      "file": "exec78f1d/screenshots/tablet-landscape-dashboard.png"
+    },
+    {
+      "className": "tablet-landscape",
+      "route": "/projects",
+      "file": "exec78f1d/screenshots/tablet-landscape-projects.png"
+    },
+    {
+      "className": "mobile",
+      "route": "/dashboard",
+      "file": "exec78f1d/screenshots/mobile-dashboard.png"
+    },
+    {
+      "className": "mobile",
+      "route": "/projects",
+      "file": "exec78f1d/screenshots/mobile-projects.png"
+    },
+    {
+      "className": "tablet-portrait",
+      "route": "/dashboard#more",
+      "file": "exec78f1d/screenshots/tablet-portrait-more-open.png"
+    },
+    {
+      "className": "tablet-landscape",
+      "route": "/dashboard#more",
+      "file": "exec78f1d/screenshots/tablet-landscape-more-open.png"
+    },
+    {
+      "className": "mobile",
+      "route": "/dashboard#more",
+      "file": "exec78f1d/screenshots/mobile-more-open.png"
+    }
+  ]
+}

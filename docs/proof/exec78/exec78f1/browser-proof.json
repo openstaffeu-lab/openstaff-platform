@@ -1,0 +1,350 @@
+{
+  "generatedAt": "2026-06-06T16:54:52.127Z",
+  "baseUrl": "http://127.0.0.1:3011",
+  "passed": true,
+  "routes": [
+    {
+      "route": "/dashboard",
+      "viewport": "desktop",
+      "screenshot": "exec78f1/screenshots/desktop-dashboard.png",
+      "activeHref": "/dashboard",
+      "shellMode": "authenticated",
+      "searchCount": 0,
+      "forbiddenText": null,
+      "overflow": false,
+      "headerHeight": 64,
+      "noLayoutShift": true,
+      "desktopLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Companies",
+        "Professionals",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "mobileLabels": [
+        "Home",
+        "Explore",
+        "Projects",
+        "Messages",
+        "More"
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/jobs",
+      "viewport": "desktop",
+      "screenshot": "exec78f1/screenshots/desktop-opportunities.png",
+      "activeHref": "/jobs",
+      "shellMode": "authenticated",
+      "searchCount": 0,
+      "forbiddenText": null,
+      "overflow": false,
+      "headerHeight": 64,
+      "noLayoutShift": true,
+      "desktopLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Companies",
+        "Professionals",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "mobileLabels": [
+        "Home",
+        "Explore",
+        "Projects",
+        "Messages",
+        "More"
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/projects",
+      "viewport": "desktop",
+      "screenshot": "exec78f1/screenshots/desktop-projects.png",
+      "activeHref": "/projects",
+      "shellMode": "authenticated",
+      "searchCount": 0,
+      "forbiddenText": null,
+      "overflow": false,
+      "headerHeight": 64,
+      "noLayoutShift": true,
+      "desktopLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Companies",
+        "Professionals",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "mobileLabels": [
+        "Home",
+        "Explore",
+        "Projects",
+        "Messages",
+        "More"
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/messages",
+      "viewport": "desktop",
+      "screenshot": "exec78f1/screenshots/desktop-messages.png",
+      "activeHref": "/messages",
+      "shellMode": "authenticated",
+      "searchCount": 0,
+      "forbiddenText": null,
+      "overflow": false,
+      "headerHeight": 64,
+      "noLayoutShift": true,
+      "desktopLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Companies",
+        "Professionals",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "mobileLabels": [
+        "Home",
+        "Explore",
+        "Projects",
+        "Messages",
+        "More"
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/notifications",
+      "viewport": "desktop",
+      "screenshot": "exec78f1/screenshots/desktop-notifications.png",
+      "activeHref": "/notifications",
+      "shellMode": "authenticated",
+      "searchCount": 0,
+      "forbiddenText": null,
+      "overflow": false,
+      "headerHeight": 64,
+      "noLayoutShift": true,
+      "desktopLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Companies",
+        "Professionals",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "mobileLabels": [
+        "Home",
+        "Explore",
+        "Projects",
+        "Messages",
+        "More"
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/dashboard",
+      "viewport": "mobile",
+      "screenshot": "exec78f1/screenshots/mobile-dashboard.png",
+      "activeHref": "/dashboard",
+      "shellMode": "authenticated",
+      "searchCount": 0,
+      "forbiddenText": null,
+      "overflow": false,
+      "headerHeight": 64,
+      "noLayoutShift": true,
+      "desktopLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Companies",
+        "Professionals",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "mobileLabels": [
+        "Home",
+        "Explore",
+        "Projects",
+        "Messages",
+        "More"
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/jobs",
+      "viewport": "mobile",
+      "screenshot": "exec78f1/screenshots/mobile-opportunities.png",
+      "activeHref": "/jobs",
+      "shellMode": "authenticated",
+      "searchCount": 0,
+      "forbiddenText": null,
+      "overflow": false,
+      "headerHeight": 64,
+      "noLayoutShift": true,
+      "desktopLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Companies",
+        "Professionals",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "mobileLabels": [
+        "Home",
+        "Explore",
+        "Projects",
+        "Messages",
+        "More"
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/projects",
+      "viewport": "mobile",
+      "screenshot": "exec78f1/screenshots/mobile-projects.png",
+      "activeHref": "/projects",
+      "shellMode": "authenticated",
+      "searchCount": 0,
+      "forbiddenText": null,
+      "overflow": false,
+      "headerHeight": 64,
+      "noLayoutShift": true,
+      "desktopLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Companies",
+        "Professionals",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "mobileLabels": [
+        "Home",
+        "Explore",
+        "Projects",
+        "Messages",
+        "More"
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/messages",
+      "viewport": "mobile",
+      "screenshot": "exec78f1/screenshots/mobile-messages.png",
+      "activeHref": "/messages",
+      "shellMode": "authenticated",
+      "searchCount": 0,
+      "forbiddenText": null,
+      "overflow": false,
+      "headerHeight": 64,
+      "noLayoutShift": true,
+      "desktopLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Companies",
+        "Professionals",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "mobileLabels": [
+        "Home",
+        "Explore",
+        "Projects",
+        "Messages",
+        "More"
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/notifications",
+      "viewport": "mobile",
+      "screenshot": "exec78f1/screenshots/mobile-notifications.png",
+      "activeHref": "/notifications",
+      "shellMode": "authenticated",
+      "searchCount": 0,
+      "forbiddenText": null,
+      "overflow": false,
+      "headerHeight": 64,
+      "noLayoutShift": true,
+      "desktopLabels": [
+        "Dashboard",
+        "Opportunities",
+        "Companies",
+        "Professionals",
+        "Projects",
+        "Messages",
+        "Notifications"
+      ],
+      "mobileLabels": [
+        "Home",
+        "Explore",
+        "Projects",
+        "Messages",
+        "More"
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    }
+  ],
+  "supplemental": {
+    "compactDesktop": {
+      "viewport": "desktop-compact",
+      "menuText": "Companies Professionals",
+      "screenshot": "exec78f1/screenshots/desktop-1024-more.png"
+    },
+    "mobileMore": {
+      "viewport": "mobile-narrow",
+      "dialogText": "More destinations × Companies Professionals",
+      "overflow": false,
+      "screenshot": "exec78f1/screenshots/mobile-320-more.png"
+    },
+    "accountMenu": {
+      "safeIdentityPresentation": true,
+      "screenshot": "exec78f1/screenshots/mobile-account-menu.png"
+    },
+    "modes": [
+      {
+        "route": "/",
+        "expectedMode": "public",
+        "authenticated": true,
+        "passed": true
+      },
+      {
+        "route": "/jobs",
+        "expectedMode": "public",
+        "authenticated": false,
+        "passed": true
+      },
+      {
+        "route": "/jobs",
+        "expectedMode": "authenticated",
+        "authenticated": true,
+        "passed": true
+      },
+      {
+        "route": "/onboarding/identity-type",
+        "expectedMode": "onboarding",
+        "authenticated": true,
+        "passed": true
+      }
+    ]
+  }
+}
