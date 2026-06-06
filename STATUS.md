@@ -2,6 +2,42 @@
 
 Last updated: 2026-06-06
 
+## EXEC-78F.2 Authenticated Shell Production Rollout
+
+Verdict: `PASS - the certified authenticated Shell is live on openstaff.eu at Cloud Run revision openstaff-web-00033-8dg with 100% traffic. Real openstaff.eu@gmail.com SUPERADMIN proof passed across 75 signed-out/signed-in route and viewport checks with 34 screenshots, zero overflow, zero console/page errors, zero failed requests, and zero unexpected 4xx/5xx responses.`
+
+### EXEC-78F.2 Rollout Summary
+
+| Area | Status | Evidence |
+|---|---|---|
+| source commits | PASS | `0c528e3` Shell certification and `c1ed71c` rollout hardening pushed |
+| Cloud Build | PASS | `7d0cbedc-8b8d-4d72-a2f1-eb3bd73f332e` |
+| Cloud Run | PASS | `openstaff-web-00033-8dg` READY, 100% traffic |
+| signed-out matrix | PASS | six routes across five viewports |
+| owner/superadmin matrix | PASS | nine routes across five viewports |
+| browser quality | PASS | 75 route checks, 34 screenshots, no overflow/errors/failures |
+| forbidden Shell UX | PASS | no Search, unfinished modules, aggregates, RELU destination/assistant, placeholders, entity switcher, or commercial panel |
+| Notification truth | PASS | live `/notifications/unread-count` value 4 matched rendered badge |
+| Messages | PASS | one visible destination-only link, no previews |
+| onboarding focus | PASS | no authenticated header, nav, mobile bar, or footer |
+| palette | PASS | live authenticated header `#0F172A`; approved accents preserved |
+| typecheck/build | PASS | TypeScript and production build passed |
+| lint | PASS WITH WARNINGS | 0 errors and 21 existing warnings |
+| health/status | PASS | API ok, database healthy, no readiness warnings/errors |
+
+### EXEC-78F.2 Evidence
+
+- `EXEC78F2_PRODUCTION_AUTHENTICATED_SHELL_ROLLOUT.md`
+- `docs/proof/exec78/exec78f2/production-browser-proof.json`
+- `docs/proof/exec78/exec78f2/live-contract-proof.json`
+- 34 production screenshots under `docs/proof/exec78/exec78f2/screenshots/`
+
+### EXEC-78F.2 Remaining Risks
+
+- Notification badge refresh remains eventually consistent rather than push-driven.
+- Existing platform moderation/upgrade backlog keeps broader rollout intelligence at `pause_rollout`.
+- Existing local-storage token persistence remains a separate security-hardening item.
+
 ## EXEC-78F.1D Responsive Device Certification & Shell Hardening
 
 Verdict: `PASS WITH RISKS - the authenticated Shell is certified across desktop, all six required tablet viewports, mobile portrait, mobile narrow, and exact 767/768/1199/1200 breakpoint boundaries. Header, overflow, active state, More contents, badge/avatar alignment, keyboard order, Escape dismissal, focus restoration, focus trapping, sticky positioning, safe-area rules, MessagingDock coexistence, and shell-mode separation passed. Desktop More and account Escape focus restoration were hardened. Notification real-time invalidation remains future work.`

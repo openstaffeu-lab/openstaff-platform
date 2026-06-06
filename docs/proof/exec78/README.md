@@ -2,7 +2,35 @@
 
 Last updated: 2026-06-06
 
-Verdict: `EXEC-78F.1D PASS WITH RISKS; the authenticated Shell is certified across desktop, tablet portrait/landscape, mobile portrait/narrow, exact breakpoint edges, keyboard and screen-reader interactions, sticky behavior, and visual regression, with Notification real-time invalidation remaining future work`
+Verdict: `EXEC-78F.2 PASS; the certified authenticated Shell is live on openstaff.eu at revision openstaff-web-00033-8dg with 100% traffic, and real owner/superadmin proof passed across all required routes and viewports`
+
+## EXEC-78F.2 Authenticated Shell Production Rollout
+
+The authenticated Shell was deployed through the normal Cloud Build and Cloud Run path.
+
+Production result:
+
+- build `7d0cbedc-8b8d-4d72-a2f1-eb3bd73f332e`: SUCCESS
+- revision `openstaff-web-00033-8dg`: READY
+- traffic: 100%
+- authenticated identity: existing `openstaff.eu@gmail.com` `SUPERADMIN`
+- route/viewport checks: 75
+- screenshots: 34
+- overflows, console errors, page errors, failed requests, unexpected 4xx/5xx: 0
+
+The production proof confirmed public/authenticated/onboarding separation, no authenticated global Search, no RELU Shell destination or floating assistant, no unfinished or aggregate modules, Companies and Professionals in More where required, Notification-domain unread truth, destination-only Messages, approved palette, and no right-hand commercial panel.
+
+See `EXEC78F2_PRODUCTION_AUTHENTICATED_SHELL_ROLLOUT.md` for the complete rollout report.
+
+## EXEC-78F.2 Evidence
+
+- `docs/proof/exec78/exec78f2/production-browser-proof.json`
+- `docs/proof/exec78/exec78f2/live-contract-proof.json`
+- 34 screenshots under `docs/proof/exec78/exec78f2/screenshots/`
+
+## EXEC-78F.2 Verdict
+
+Verdict: `PASS`.
 
 ## EXEC-78F.1D Responsive Device Certification
 

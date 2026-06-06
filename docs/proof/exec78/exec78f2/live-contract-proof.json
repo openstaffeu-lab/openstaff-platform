@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-06-06T17:47:58.172Z",
+  "revision": "openstaff-web-00033-8dg",
+  "authenticatedIdentity": {
+    "email": "openstaff.eu@gmail.com",
+    "role": "SUPERADMIN"
+  },
+  "notificationTruth": {
+    "endpoint": "/notifications/unread-count",
+    "unreadCount": 4,
+    "expectedBadgeLabel": "4 unread notifications",
+    "renderedBadgeLabel": "4 unread notifications",
+    "passed": true
+  },
+  "messages": {
+    "visibleDestinationCount": 1,
+    "labels": [
+      "Messages"
+    ],
+    "destinationOnly": true
+  },
+  "authenticatedReluBoundary": {
+    "chatbotCount": 0,
+    "passed": true
+  },
+  "onboarding": {
+    "shellMode": "onboarding",
+    "authenticatedHeader": false,
+    "authenticatedNavigation": false,
+    "mobileNavigation": false,
+    "footer": false
+  },
+  "passed": true
+}
