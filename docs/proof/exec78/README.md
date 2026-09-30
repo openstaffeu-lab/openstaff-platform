@@ -1,8 +1,25 @@
 # EXEC-78 Proof
 
-Last updated: 2026-08-20
+Last updated: 2026-09-30
 
-Verdict: `EXEC-78G.10BW PASS WITH RISKS; OpenStaff FIU-1 Project Write Evidence Boundary backend implementation is completed for FIU1-PRJ-CREATE and FIU1-PRJ-UPDATE using existing AuditLog/AuditService infrastructure, with a Project-specific evidence adapter, safe allowlisted snapshots, request correlation, best-effort failure visibility, focused tests, targeted validation, regression/diff/security/privacy/collision audits, and commit-readiness assessment; schema/API/UI/permission behavior, Response, Participation, acting entity, governance authority, BN, B4, G.11, staging, commit, push, and deployment remain unchanged or not performed`
+Verdict: `EXEC-78G.10BX PASS WITH RISKS; governance/proof consolidation and the validated FIU-1 Project write evidence implementation are pushed and synchronized to origin/feature/work-in-progress; deployment entry is FIU1_DEPLOY_READY_WITH_RISKS but deployment is not authorized or performed; unrelated work remains local and older governance artifacts remain deferred`
+
+## EXEC-78G.10BX Controlled Repository Consolidation, Push & Deployment Entry Gate
+
+EXEC-78G.10BX verifies and pushes the governance/proof consolidation and FIU-1 commits, confirms remote synchronization, and assesses the API deployment entry surface without deploying.
+
+Canonical findings:
+
+- governance/proof commit `1b61b4ef7a4b2c7c0de7ae889df1f549e0620a22` is documentation-only and pushed
+- FIU-1 commit `8fda1b5bd9a859c4af4e1ecf4a72f52f67623456` contains exactly the seven validated implementation/test paths and is pushed
+- primary remote synchronization passed; branch `feature/work-in-progress` matched `origin/feature/work-in-progress` at `8fda1b5bd9a859c4af4e1ecf4a72f52f67623456`
+- Jest passed (3 suites / 13 tests), API build passed, targeted ESLint exited 0 with 10 warnings, and cached diff check passed
+- deployment surface is the API service `openstaff-api`; no schema change, migration, new environment variable, frontend deployment, or worker deployment is required by FIU-1
+- deployment-entry classification is `FIU1_DEPLOY_READY_WITH_RISKS`; this is not deployment authorization
+- unrelated frontend modifications remain local; older governance documents and other untracked files remain deferred under `DEFERRED_GOVERNANCE_REPOSITORY_HYGIENE`
+- candidate remains `NOT_READY`; B4 and G.11 remain `BLOCKED - NOT AUTHORIZED`; BN remains `NEVER_MATERIALIZED`
+
+See `EXEC78G10BX_OPENSTAFF_CONTROLLED_REPOSITORY_CONSOLIDATION_COMMIT_PUSH_REMOTE_VERIFICATION_AND_DEPLOYMENT_ENTRY_GATE.md`.
 
 ## EXEC-78G.10BW OpenStaff FIU-1 Project Write Evidence Boundary Controlled Implementation
 
