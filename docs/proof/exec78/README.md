@@ -2,7 +2,23 @@
 
 Last updated: 2026-09-30
 
-Verdict: `EXEC-78G.10BX PASS WITH RISKS; governance/proof consolidation and the validated FIU-1 Project write evidence implementation are pushed and synchronized to origin/feature/work-in-progress; deployment entry is FIU1_DEPLOY_READY_WITH_RISKS but deployment is not authorized or performed; unrelated work remains local and older governance artifacts remain deferred`
+Verdict: `EXEC-78G.10BY PASS WITH DEFERRALS; FIU-1 deployment risks have actionable proposed operational mitigations and the authorization request is ready to formulate, subject to confirming production observability access and accepting stated deferrals; no deployment authorization or deployment occurred`
+
+## EXEC-78G.10BY FIU-1 Deployment Risk Mitigation & Authorization Readiness
+
+EXEC-78G.10BY converts BX deployment risks into proposed operator controls and defines the contents of a later deployment authorization request. It is planning/readiness evidence only.
+
+Canonical findings:
+
+- BX result remains `EXEC-78G.10BX PASS WITH RISKS`; BX deployment entry remains `FIU1_DEPLOY_READY_WITH_RISKS`
+- deployment scope remains backend/API only: Cloud Run service `openstaff-api`; no migration, new environment variable, frontend deployment, or worker deployment is required
+- all five BX MEDIUM risks retain their severities and have proposed non-code operational mitigations; no proposed threshold is represented as an existing alert or production policy
+- runtime log/database operator access remains an unverified dependency to confirm in a later authorization package; automatic AuditLog volume alerting may require configuration; durable automatic evidence reconciliation is deferred code work and not part of FIU-1
+- authorization-readiness classification is `FIU1_AUTHORIZATION_REQUEST_READY_WITH_MITIGATIONS`; this is not deployment authorization
+- candidate remains `NOT_READY`; B4 and G.11 remain `BLOCKED - NOT AUTHORIZED`; BN remains `NEVER_MATERIALIZED`
+- deployment is not authorized or performed
+
+See `EXEC78G10BY_FIU1_DEPLOYMENT_RISK_MITIGATION_AND_AUTHORIZATION_READINESS.md`.
 
 ## EXEC-78G.10BX Controlled Repository Consolidation, Push & Deployment Entry Gate
 
