@@ -2,7 +2,27 @@
 
 Last updated: 2026-09-30
 
-Verdict: `EXEC-78G.10BZ PASS; a complete FIU-1 deployment authorization request is formulated for human repository-owner decision; execution prerequisites remain unverified; no deployment authorization or deployment occurred`
+Verdict: `EXEC-78G.10CA PASS WITH GAPS; read-only operational verification established 9 of 13 deployment prerequisites; four remain unverified, including committed-source build isolation; human decision remains open and no deployment authorization or deployment occurred`
+
+## EXEC-78G.10CA FIU-1 Deployment Prerequisites Verification
+
+EXEC-78G.10CA performed read-only operational checks and committed-evidence review for the 13 BZ execution prerequisites. It does not authorize deployment or record the human decision.
+
+Canonical findings:
+
+- preflight passed at local/remote HEAD `76a98a9cc9377e312347c6a16c64337912151a5d`; staging was empty and the known 8 tracked / 55 untracked worktree state was preserved
+- live `openstaff-api` was observed in project `openstaff-platform`, region `europe-west1`, mapped to `api.openstaff.eu`; configured gcloud region is `europe-west3`, so any later execution must explicitly confirm/override the target
+- current serving revision was `openstaff-api-00036-gx2`, Ready with 100% traffic; current active principal had direct Owner role including `run.services.update`
+- existing Cloud Run P95 latency and 5xx policies are enabled; latency evidence is service-wide, not Project-write-specific
+- verification counts: 9 `VERIFIED`, 4 `UNVERIFIED_NO_EVIDENCE`, 0 blocked for access, 0 blocked for command safety; total 13
+- deployment operator ownership, AuditLog table inspection, committed-source build isolation, and safe live smoke-test capability remain unverified; build isolation is a critical execution blocker
+- decision readiness is `FIU1_DECISION_READY_WITH_GAPS`; this is evidence completeness only, not `FIU1_DEPLOYMENT_EXECUTION_READY_WITH_LIMITATIONS`
+- human deployment decision remains open; deployment is not authorized or performed
+- candidate remains `NOT_READY`; B4 and G.11 remain `BLOCKED - NOT AUTHORIZED`; BN remains `NEVER_MATERIALIZED`
+
+See `EXEC78G10CA_FIU1_DEPLOYMENT_PREREQUISITES_VERIFICATION.md`.
+
+## EXEC-78G.10BZ FIU-1 Deployment Authorization Request
 
 ## EXEC-78G.10BZ FIU-1 Deployment Authorization Request
 
