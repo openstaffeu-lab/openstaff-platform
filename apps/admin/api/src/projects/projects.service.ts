@@ -21,6 +21,7 @@ import { ListProjectsQueryDto } from './dto/list-projects-query.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { ProjectAccessPolicy } from './project-access.policy';
 import { ProjectResponseMapper } from './project-response.mapper';
+import { ProjectWriteEvidenceAdapter } from './project-write-evidence.adapter';
 
 type AuthenticatedUser = {
   sub: string;
@@ -34,6 +35,7 @@ export class ProjectsService {
     private readonly prisma: PrismaService,
     private readonly accessPolicy: ProjectAccessPolicy,
     private readonly projectResponseMapper: ProjectResponseMapper,
+    private readonly projectWriteEvidence: ProjectWriteEvidenceAdapter,
   ) {}
 
   async findAll(query: ListProjectsQueryDto, user: AuthenticatedUser) {
@@ -80,7 +82,7 @@ export class ProjectsService {
     return this.projectResponseMapper.toProjectDetail(project);
   }
 
-  async create(body: CreateProjectDto, user: AuthenticatedUser) {
+  async create(body: CreateProjectDto, user: AuthenticatedUser, request?: any) {
     await this.ensureUserExists(user.sub);
 
     if (!body.name?.trim()) {
@@ -95,6 +97,12 @@ export class ProjectsService {
       include: this.projectDetailInclude,
     });
 
+    await this.projectWriteEvidence.recordProjectCreated({
+      project,
+      actor: user,
+      request,
+    });
+
     return this.projectResponseMapper.toProjectDetail(project);
   }
 
@@ -102,6 +110,7 @@ export class ProjectsService {
     projectId: string,
     body: UpdateProjectDto,
     user: AuthenticatedUser,
+    request?: any,
   ) {
     const existingProject = await this.prisma.project.findUnique({
       where: { id: projectId },
@@ -118,6 +127,13 @@ export class ProjectsService {
       where: { id: projectId },
       data,
       include: this.projectDetailInclude,
+    });
+
+    await this.projectWriteEvidence.recordProjectUpdated({
+      beforeProject: existingProject,
+      afterProject: project,
+      actor: user,
+      request,
     });
 
     return this.projectResponseMapper.toProjectDetail(project);

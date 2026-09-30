@@ -68,7 +68,7 @@ export class ProjectsController {
       );
     }
 
-    return this.projectsService.create(body, user);
+    return this.projectsService.create(body, user, req);
   }
 
   @RequirePermissions(Permission.WRITE)
@@ -91,6 +91,6 @@ export class ProjectsController {
       );
     }
 
-    return this.projectsService.update(projectId, body, user);
+    return this.projectsService.update(projectId, body, user, req);
   }
 }

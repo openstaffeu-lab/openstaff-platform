@@ -29,4 +29,41 @@ describe('ProjectsController', () => {
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
+
+  it('passes request context through Project creation without changing response', async () => {
+    const req = {
+      user: { sub: 'user-1', role: 'EMPLOYER' },
+      headers: { 'x-request-id': 'req-1' },
+    };
+
+    const result = await controller.create({ name: 'Project' } as any, req);
+
+    expect(result).toEqual({ id: 'project-1' });
+    expect(projectsServiceMock.create).toHaveBeenCalledWith(
+      { name: 'Project' },
+      req.user,
+      req,
+    );
+  });
+
+  it('passes request context through Project update without changing response', async () => {
+    const req = {
+      user: { sub: 'user-1', role: 'EMPLOYER' },
+      headers: { 'x-request-id': 'req-1' },
+    };
+
+    const result = await controller.update(
+      'project-1',
+      { status: 'PUBLISHED' } as any,
+      req,
+    );
+
+    expect(result).toEqual({ id: 'project-1' });
+    expect(projectsServiceMock.update).toHaveBeenCalledWith(
+      'project-1',
+      { status: 'PUBLISHED' },
+      req.user,
+      req,
+    );
+  });
 });

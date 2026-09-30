@@ -38,6 +38,7 @@ import { ProjectTimesheetsController } from './project-timesheets.controller';
 import { ProjectTimesheetsService } from './project-timesheets.service';
 import { ProjectWorkerAssignmentsController } from './project-worker-assignments.controller';
 import { ProjectWorkerAssignmentsService } from './project-worker-assignments.service';
+import { ProjectWriteEvidenceAdapter } from './project-write-evidence.adapter';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
 
@@ -87,6 +88,7 @@ import { ProjectsService } from './projects.service';
     ProjectWorkerAssignmentsService,
     ProjectAccessPolicy,
     ProjectResponseMapper,
+    ProjectWriteEvidenceAdapter,
     JwtGuard,
   ],
 })
