@@ -2,7 +2,23 @@
 
 Last updated: 2026-09-30
 
-Verdict: `EXEC-78G.10BY PASS WITH DEFERRALS; FIU-1 deployment risks have actionable proposed operational mitigations and the authorization request is ready to formulate, subject to confirming production observability access and accepting stated deferrals; no deployment authorization or deployment occurred`
+Verdict: `EXEC-78G.10BZ PASS; a complete FIU-1 deployment authorization request is formulated for human repository-owner decision; execution prerequisites remain unverified; no deployment authorization or deployment occurred`
+
+## EXEC-78G.10BZ FIU-1 Deployment Authorization Request
+
+EXEC-78G.10BZ formulates a complete deployment authorization request for the human repository owner. It is a request only; execution prerequisites remain unverified and no deployment authorization is granted.
+
+Canonical findings:
+
+- BY remains `EXEC-78G.10BY PASS WITH DEFERRALS`; authorization-readiness remains `FIU1_AUTHORIZATION_REQUEST_READY_WITH_MITIGATIONS`
+- request scope is backend/API only for `openstaff-api`; all ten BX risk severities and all five BY medium-risk mitigation classifications are preserved
+- 13 execution prerequisites remain to be verified, including live target identity, rollback revision/access, operational ownership/observability, committed-source build isolation, and safe smoke-test capability
+- request completeness is `FIU1_DEPLOYMENT_AUTHORIZATION_REQUEST_COMPLETE`; this means `DEPLOYMENT_AUTHORIZATION_REQUEST_FORMULATED`, not `DEPLOYMENT_AUTHORIZED`
+- the human repository owner is requested to return exactly one of `FIU1_DEPLOYMENT_AUTHORIZED`, `FIU1_DEPLOYMENT_DENIED`, or `FIU1_DEPLOYMENT_DEFERRED`; no decision is recorded by BZ
+- candidate remains `NOT_READY`; B4 and G.11 remain `BLOCKED - NOT AUTHORIZED`; BN remains `NEVER_MATERIALIZED`
+- deployment is not authorized or performed
+
+See `EXEC78G10BZ_FIU1_DEPLOYMENT_AUTHORIZATION_REQUEST.md`.
 
 ## EXEC-78G.10BY FIU-1 Deployment Risk Mitigation & Authorization Readiness
 
