@@ -1,9 +1,24 @@
 ﻿# EXEC-78 Proof
 
-Last updated: 2026-09-30
 Last updated: 2026-10-01
 
-Verdict: `EXEC-78G.10CB PASS; the human repository owner authorized continuation of the FIU-1 deployment sequence; execution readiness remains NO because PREREQ-12 is a CRITICAL EXECUTION BLOCKER; deployment was not performed`
+Verdict: `EXEC-78G.10CC BLOCKED; committed-source trigger creation was blocked because the committed API build config invokes gcloud run deploy and no Cloud Build repository connection was established; local gcloud region was corrected; PREREQ-12 remains unverified and no build or deployment occurred`
+
+## EXEC-78G.10CC FIU-1 Execution Blocker Resolution
+
+EXEC-78G.10CC revalidated the API runtime, inspected Cloud Build state and committed build configuration, and applied the authorized workstation-local gcloud region correction. Trigger creation was blocked; this gate does not deploy or execute a build.
+
+Canonical findings:
+
+- current API observation remained `openstaff-api-00036-gx2` Ready with 100% traffic and the CA-observed image digest; runtime facts require revalidation before any future execution
+- local `run/region` changed from `europe-west3` to `europe-west1`; Cloud Run itself was not modified
+- no suitable Cloud Build trigger or repository connection was established in the inspected region
+- committed `apps/admin/api/cloudbuild.api.yaml` invokes `gcloud run deploy`; trigger creation was blocked as unsafe and no repository config was changed
+- PREREQ-12 remains `UNVERIFIED_NO_EVIDENCE` and a `CRITICAL EXECUTION BLOCKER`; PREREQ-07, PREREQ-09, and PREREQ-13 remain unverified
+- execution preparation is `FIU1_EXECUTION_PREPARATION_BLOCKED`; no trigger, build, Cloud Run revision, traffic change, database mutation, or live write smoke test occurred
+- human FIU-1 authorization remains `GRANTED`; candidate remains `NOT_READY`; B4 and G.11 remain `BLOCKED - NOT AUTHORIZED`; BN remains `NEVER_MATERIALIZED`
+
+See `EXEC78G10CC_FIU1_EXECUTION_BLOCKER_RESOLUTION.md`.
 
 ## EXEC-78G.10CB FIU-1 Deployment Decision Record
 
