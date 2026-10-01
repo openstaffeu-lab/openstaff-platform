@@ -2,7 +2,9 @@
 
 Date: 2026-10-01
 
-Status: `IN_PROGRESS - STAGE A BUILD/DEPLOY SEPARATION`
+Verdict: `EXEC-78G.10CD BLOCKED`
+
+Execution readiness: `FIU1_EXECUTION_STILL_BLOCKED`
 
 ## A. Entry State
 
@@ -43,47 +45,93 @@ Repository baseline at entry:
 - `DEPLOY_STEP_REMOVED = YES`.
 - `CLOUD_RUN_MUTATION_PRESENT = NO`; `TRAFFIC_MUTATION_PRESENT = NO`; `DATABASE_MUTATION_PRESENT = NO`; `IAM_MUTATION_PRESENT = NO`; `NESTED_LOCAL_SOURCE_BUILD_PRESENT = NO`.
 - Static/configuration checks only; the build config was not executed.
-- Stage A build-only config commit/push: pending.
+- Build-only config committed and pushed: YES; Stage A commit `21ad9be3371df6f45a6e29908d78c002b6160a95`.
 
-## D. Cloud Integration State
+## D. Repository Integration Discovery
 
 - Repository provider from local Git remote: GitHub (`openstaffeu-lab/openstaff-platform`). This does not establish a Cloud Build repository connection.
 - Cloud Build triggers: zero listed in `openstaff-platform`.
-- Cloud Build connections: zero listed in the queried `europe-west1` and `us-central1` regions.
-- Repository connection: `NOT YET ESTABLISHED`.
-- Manual trigger: `NOT YET ESTABLISHED`.
-- Existing connection/trigger state is not sufficient to create a committed-source trigger.
+- Cloud Build connections: zero listed in the queried `europe-west1`, `europe-west3`, and `us-central1` regions.
+- Cloud Build repository inventory: could not be listed without a connection; no connection exists to supply.
+- Repository connection: NONE ESTABLISHED.
+- Registered repository: NONE ESTABLISHED.
+- Manual trigger: NONE.
+- Installed CLI supports a manual trigger command with a GitHub repository reference, but no project repository integration/authorization was established by read-only inspection.
+- Trigger creation classification: `EXEC78G10CD_REPOSITORY_CONNECTION_REQUIRED` and `EXEC78G10CD_TRIGGER_CREATION_BLOCKED`.
+- Required human/provider action: establish or authorize a Cloud Build GitHub repository integration for `openstaffeu-lab/openstaff-platform`. The provider-specific approval/installation step and accountable administrator were not established; no connection was attempted or created.
 
-## E. Mutation Log
+## E. Trigger Safety Design
 
-No mutation records have yet been entered. Actual repository commit/push events and any authorized local/cloud mutations will be added after they occur; no timestamps are fabricated.
+No trigger design is safe to instantiate until an existing authorized repository integration is established and its source/ref semantics are verified. The CLI documents a manual GitHub trigger form, but no usable project connection or registered repository was observed. Therefore no exact trigger configuration was created or inferred.
+
+- `REPOSITORY_CONNECTION_VERIFIED = NO`.
+- `REGISTERED_REPOSITORY_VERIFIED = NO`.
+- `BUILD_ONLY_CONFIG_COMMITTED_REMOTE = YES` after Stage A.
+- `BUILD_ONLY_CONFIG_CONTAINS_DEPLOY = NO`.
+- `TRIGGER_AUTOMATIC_EVENT = NOT APPLICABLE`; no trigger exists.
+- `LOCAL_WORKTREE_SOURCE = NOT ESTABLISHED` for a repository trigger because no integration exists.
+- `TRIGGER_CREATION_EXECUTES_BUILD = NOT TESTED`; no trigger was created or executed.
+
+Trigger creation remains blocked by `EXEC78G10CD_REPOSITORY_CONNECTION_REQUIRED`. No source upload, build, or trigger action was attempted.
+
+## F. Mutation Log
+
+Only the authorized Stage A repository commit/push occurred. The push command output did not include a timestamp; none is inferred.
 
 | Timestamp (UTC) | Operation | Resource | Result |
 |---|---|---|---|
+| `2026-10-01T16:42:05+03:00` (commit metadata) | Stage A commit `21ad9be3371df6f45a6e29908d78c002b6160a95` | `feature/work-in-progress` | Committed the exact four authorized paths. |
+| Not captured by command output (`2026-10-01`) | `git push origin feature/work-in-progress` | `origin/feature/work-in-progress` | PASS; remote advanced `e7e6d11..21ad9be`. |
+| No timestamp recorded | Cloud Build connection/repository/trigger creation | None | Not attempted; blocked by missing established repository integration and authorization. |
 
-## F. Cloud Connection Result
+## G. Cloud Connection Result
 
-Pending source-integration discovery. No connection, repository registration, or trigger has been created. Trigger creation requires a verified integration and safe manual-only semantics; provider authorization requirements are not yet established.
+`RESOLUTION_BLOCKED_MISSING_REPO_CONNECTION`
 
-## G. Manual Trigger Result
+No connection or repository registration exists in the queried locations. The local Git remote identifies GitHub, and the installed gcloud documents a manual GitHub trigger form, but this does not establish a usable Cloud Build repository connection or provider authorization. Human/provider integration approval is required before a trigger can be considered.
 
-No trigger exists or has been created. No build was executed.
+## H. Manual Trigger Result
 
-## H. PREREQ-12 Initial Result
+`EXEC78G10CD_TRIGGER_CREATION_BLOCKED`
+
+Trigger name: NONE. Trigger ID: NONE. Repository/config/event binding: NONE. No trigger was created or executed; no build was run.
+
+## I. PREREQ-12 Final Result
 
 `PREREQ-12 = UNVERIFIED_NO_EVIDENCE`
 
-The Stage A build-only config is being separated from the legacy deploy config. PREREQ-12 will remain unverified until both the repository-config face and committed-source cloud-integration face are proven.
+Repository-config face: PASS. The build-only config is committed and pushed; build/push and image declarations are preserved; the legacy build+deploy config is unchanged; the build-only config contains no deployment or other prohibited mutation.
 
-## I. Remaining Prerequisites
+Cloud-integration face: BLOCKED. There is no established repository connection, registered repository, manual-only trigger, or trigger read-back.
+
+Isolation conditions:
+
+1. Existing repository integration: NO.
+2. Trigger consumes a committed Git revision: NO TRIGGER / NOT PROVEN.
+3. Trigger references committed `apps/admin/api/cloudbuild.api.build.yaml`: NO TRIGGER.
+4. Local working-tree content excluded as source: NOT ESTABLISHED.
+5. Eight unrelated tracked frontend modifications excluded from trigger source: NOT ESTABLISHED.
+6. Fifty-five pre-existing untracked files excluded from trigger source: NOT ESTABLISHED.
+7. Trigger inspection confirms intended configuration: NO TRIGGER.
+8. No build was executed in CD: YES.
+
+`PREREQ12_RESOLUTION = RESOLUTION_BLOCKED_MISSING_REPO_CONNECTION`
+
+## J. Remaining Prerequisites
 
 - PREREQ-07: `UNVERIFIED_NO_EVIDENCE` - accountable human operator not established.
 - PREREQ-09: `UNVERIFIED_NO_EVIDENCE` - safe AuditLog/database observation not established.
 - PREREQ-13: `UNVERIFIED_NO_EVIDENCE` - safe live smoke-test strategy not established.
 
-## J. No-Build / No-Deploy Attestation
+## K. Execution Preparation Classification
 
-At the start of CD Stage A:
+`FIU1_EXECUTION_STILL_BLOCKED`
+
+PREREQ-12 remains unverified. Human FIU-1 authorization does not resolve this technical blocker.
+
+## L. No-Build / No-Deploy Attestation
+
+Final CD attestation:
 
 - Cloud Build executed: `NO`.
 - Cloud Build trigger executed: `NO`.
@@ -93,7 +141,7 @@ At the start of CD Stage A:
 - Production database accessed by CD: `NO`.
 - Live write smoke tests performed: `NO`.
 
-## K. Governance Non-Effect
+## M. Governance Non-Effect
 
 | Governance item | Preserved state |
 |---|---|
