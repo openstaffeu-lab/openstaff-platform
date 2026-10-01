@@ -15,18 +15,18 @@ Execution readiness: `FIU1_EXECUTION_STILL_BLOCKED`
 - `FIU1_DEPLOYMENT_AUTHORIZATION = GRANTED`.
 - Build executed: NO.
 - Deployment executed: NO.
-- CE established operator ownership from explicit human input, but GitHub App installation/authorization is `UNKNOWN`; no connection or trigger was created.
+- CE verified the manually materialized GitHub connection, linked repository, and manual-only trigger by read-only Cloud Build resource inspection. No connection/trigger was created by CE.
 
 ## B. Human Inputs
 
 | Input | Supplied value | CE handling |
 |---|---|---|
-| `REPOSITORY_INTEGRATION_AUTHORIZED` | YES | Authorization to attempt a connection/repository/manual trigger only when external provider authorization and all safety predicates are met. It does not authorize browser OAuth, app installation by Copilot, secrets, IAM, API enablement, builds, or deployment. |
+| `REPOSITORY_INTEGRATION_AUTHORIZED` | YES | Human authorized a connection/repository/manual trigger if safe; CE verified that the operator had already materialized the integration. CE did not create or modify it. |
 | `OPERATOR_OF_RECORD_NAME` | Cristian Popa | Explicit human-supplied operator. |
-| `OPERATOR_OF_RECORD_ROLE` | Superadmin / Owner / Deployment Manager | Explicit human-supplied role. This record does not grant or infer any permissions. |
+| `OPERATOR_OF_RECORD_ROLE` | superadmin / owner / deployment manager | Exact human-supplied role. This record does not grant or infer any permissions. |
 | `OPERATOR_OF_RECORD_ESCALATION_CONTACT` | cristianpopaban@gmail.com | Explicit human-supplied escalation contact. |
-| `GITHUB_APP_INSTALLATION_CONFIRMED` | UNKNOWN | Provider installation/approval not established. |
-| `APP_INSTALLATION_ID` | NOT PROVIDED | No ID was guessed or requested through shell. |
+| `GITHUB_APP_INSTALLATION_CONFIRMED` | UNKNOWN | Human-provided state remains UNKNOWN; CE independently observed the GitHub connection installation state as COMPLETE. |
+| `APP_INSTALLATION_ID` | NOT PROVIDED by human | CE read-only connection metadata exposes installation ID `129160141`; no ID was guessed. |
 | `SMOKE_TEST_STRATEGY_APPROVED` | YES | Approval applies only to the documented strategy; no smoke test was run. |
 | Designation date | 2026-10-01 | Date of this CE record. |
 
@@ -43,8 +43,8 @@ Execution readiness: `FIU1_EXECUTION_STILL_BLOCKED`
 | Traffic | 100% to `openstaff-api-00036-gx2` |
 | Readiness | Ready, ConfigurationsReady, RoutesReady all True |
 | Image/digest | `europe-west1-docker.pkg.dev/openstaff-platform/openstaff-repo/openstaff-api@sha256:5e902870ca0644d9a6543c9078e2081ff2e48ab8607db2244987ae7e1bb44169` |
-| Cloud Build triggers | 0 listed |
-| Cloud Build connections | 0 listed in `europe-west1` |
+| Cloud Build triggers | Dedicated manual trigger and two legacy automatic `^main$` triggers listed in `europe-west1` |
+| Cloud Build connections | `openstaff-github-openstaffeu`, installation COMPLETE, app installation ID `129160141` |
 
 Runtime observation matches CA/CD. These values are snapshots and must be revalidated before any future execution.
 
@@ -52,34 +52,87 @@ Runtime observation matches CA/CD. These values are snapshots and must be revali
 
 - Provider: GitHub.
 - Repository identity: `openstaffeu-lab/openstaff-platform` (`https://github.com/openstaffeu-lab/openstaff-platform.git`).
-- Installed gcloud: supports `gcloud builds connections create github`; its help states the connection requires either manual browser installation/authorization or an already-installed app plus installation ID and authorizer token secret.
-- Cloud Build connections/triggers: none observed in `europe-west1`; no trigger rows exist in the project.
-- Registered repository: none established; the repository-list command requires an existing connection.
-- External authorization required: YES. The installation state is UNKNOWN, no installation ID was provided, and the documented new-connection route requires manual browser authorization. CE does not perform that human/provider action, install the GitHub App, create a token/secret, or change IAM/API state.
-- Result: `EXEC78G10CE_REPOSITORY_INTEGRATION_AUTHORIZATION_REQUIRED`.
+- Connection: `projects/openstaff-platform/locations/europe-west1/connections/openstaff-github-openstaffeu`; provider GitHub; `installationState.stage=COMPLETE`; app installation ID `129160141`.
+- Linked repository: resource `projects/openstaff-platform/locations/europe-west1/connections/openstaff-github-openstaffeu/repositories/openstaffeu-lab-openstaff-platform`; URI `https://github.com/openstaffeu-lab/openstaff-platform.git`; associated connection is `openstaff-github-openstaffeu`.
+- Provider authorization account: Cloud Build connection metadata exposes the installation ID/state but no separate owner/account field. The linked repository owner is directly verified as `openstaffeu-lab`; account context is established through the complete connection’s canonical linked repository, not a separate user-identity field.
+- `CONNECTION_PROVIDER = GitHub`.
+- `CONNECTION_NAME = openstaff-github-openstaffeu`.
+- `CONNECTION_AUTH_ACCOUNT = openstaffeu-lab` as linked repository owner context; a distinct installer/account property is not exposed by the connection resource.
+- `CONNECTION_STATE = COMPLETE`; `APP_INSTALLATION_ID = 129160141` observed read-only. Human-supplied installation confirmation remains `UNKNOWN`.
+- `LINKED_REPOSITORY = openstaffeu-lab/openstaff-platform`; linked resource URI is the canonical GitHub remote.
+- `TRIGGER_NAME = openstaff-api-committed-source`; `TRIGGER_ID = 69ca6e82-e11b-4243-b0fe-9524c56949e8`; `TRIGGER_REGION = europe-west1`.
+- `TRIGGER_EVENT = Manual invocation`; `TRIGGER_BRANCH = feature/work-in-progress`; `TRIGGER_CONFIG_PATH = apps/admin/api/cloudbuild.api.build.yaml`; `TRIGGER_SERVICE_ACCOUNT = openstaff-build@openstaff-platform.iam.gserviceaccount.com`.
+- `TRIGGER_DISABLED_STATE = disabled field absent from readback; no disabled=true state observed`.
+- Trigger inventory: `openstaff-api-committed-source` is present. Legacy automatic triggers `api-open-staff` and `web-open-staff` are also present and were not modified or executed.
+- Result: repository integration and canonical linked repository are VERIFIED by direct read-only resource inspection. CE did not create or repair the connection/repository.
+
+Read-back fields:
+
+- `PROVIDER = GitHub`.
+- `INTEGRATION_TYPE = Cloud Build 2nd-gen GitHub connection/repository` (resource path includes project/location/connection/repositories).
+- `CONNECTION_REGION = europe-west1`.
+- `CONNECTION_AUTH_ACCOUNT = openstaffeu-lab` as linked repository owner context; a distinct installing-user/account property is not exposed in the Cloud Build connection response.
+- `REQUIRES_GITHUB_APP = YES`; app installation ID `129160141`, installation state COMPLETE.
+- `REQUIRES_INSTALLATION_ID = NO` for an already materialized/complete connection; its ID is available in resource metadata.
+- `REQUIRES_BROWSER_AUTH = NO` for CE; connection already exists and CE performed no auth flow.
+- `REQUIRES_SECRET = NO` for CE; no secret creation or token use occurred.
+- `REQUIRES_IAM_CHANGE = NO` for CE; no IAM change occurred.
+- `REQUIRES_API_ENABLEMENT = NO` for CE; no API enablement occurred.
+
+### Build Service Account
+
+- Account: `openstaff-build@openstaff-platform.iam.gserviceaccount.com`.
+- Exists: YES; read-only IAM service-account describe succeeded and the trigger references this account.
+- Enabled: `UNVERIFIED`; the describe response did not return an explicit `disabled` field. No disabled state was observed, but CE does not infer enabled status from omission.
+- Relevant project roles observed: `roles/artifactregistry.writer`, `roles/logging.logWriter`, `roles/run.admin`, `roles/secretmanager.secretAccessor`.
+- Build/push capability: Artifact Registry writer and logging writer roles are present. No build was executed to test them.
+- Execution-readiness assessment: `BUILD_AND_PUSH_PERMISSIONS_PRESENT_WITH_EXCESS_PRIVILEGE`; `roles/run.admin` and `roles/secretmanager.secretAccessor` are broader than the build-only steps require. CE made no IAM change. The selected build-only YAML has no deploy step, but the service-account privilege remains a deployment-control risk to review at a later authorization gate.
+
+Explicit fields: `BUILD_SERVICE_ACCOUNT_EXISTS = YES`; `BUILD_SERVICE_ACCOUNT_ENABLED = UNVERIFIED`; `BUILD_SERVICE_ACCOUNT_RELEVANT_ROLES = artifactregistry.writer, logging.logWriter, run.admin, secretmanager.secretAccessor`; `BUILD_SERVICE_ACCOUNT_EXECUTION_READINESS = BUILD_AND_PUSH_PERMISSIONS_PRESENT_WITH_EXCESS_PRIVILEGE`.
 
 ## E. Mutation Log
 
-No cloud mutations were executed. No connection, repository registration, or trigger was created. No database query, build, trigger execution, deploy, or traffic change occurred.
+No CE cloud mutations were executed. The connection, linked repository, and trigger existed when CE inspected them. No database query, build, trigger execution, deploy, or traffic change occurred.
 
 | Timestamp | Operation | Resource | Result |
 |---|---|---|---|
-| None | Cloud Build connection/repository/trigger creation | None | Not attempted; external GitHub App authorization is unresolved. |
+| None during CE | Cloud Build connection `openstaff-github-openstaffeu` | Existing resource; createTime `2026-10-01T16:47:07.549708866Z` | Read-only observed COMPLETE with app installation ID `129160141`; not created by CE. |
+| None during CE | Linked repository `openstaffeu-lab-openstaff-platform` | Existing resource; createTime `2026-10-01T16:49:50.501340862Z` | Read-only observed with canonical URI; not created by CE. |
+| None during CE | Manual trigger `openstaff-api-committed-source` | Existing resource; createTime `2026-10-01T17:16:04.543426831Z` | Read-only observed; not created or executed by CE. |
 | None | Database read query | None | Not attempted; no safe SQL client/authenticated read path was established. |
 | None | Build/trigger/deployment | None | Not executed. |
 
 ## F. PREREQ-12 Completion
 
 - Repository/config face: VERIFIED. Build-only `apps/admin/api/cloudbuild.api.build.yaml` is committed and pushed at Stage A; static comparison preserved the Docker build/push/image declarations, removed deploy, and left legacy `apps/admin/api/cloudbuild.api.yaml` unchanged.
-- Cloud/source face: NOT VERIFIED. GitHub App installation is UNKNOWN; no Cloud Build connection, registered repository, or manual-only trigger exists.
-- External blocker: `PREREQ12_CLOUD_FACE_BLOCKED_EXTERNAL_AUTHORIZATION`.
-- Connection creation was not attempted because the necessary provider authorization is not established and the documented flow requires human browser authorization or an installed-app/token path not supplied here.
-- Trigger name/ID: NONE.
-- Trigger executed: NO.
+- Cloud/source face: VERIFIED. The COMPLETE GitHub connection links the canonical repository, and the manual trigger reads back the committed build-only config and intended feature branch.
+- Connection resource: `projects/openstaff-platform/locations/europe-west1/connections/openstaff-github-openstaffeu`; provider GitHub; app installation ID `129160141`; installation COMPLETE.
+- Linked repository: `https://github.com/openstaffeu-lab/openstaff-platform.git`; resource is under the expected connection.
+- Trigger: `openstaff-api-committed-source`; ID `69ca6e82-e11b-4243-b0fe-9524c56949e8`; region `europe-west1`; config `apps/admin/api/cloudbuild.api.build.yaml`; source ref `refs/heads/feature/work-in-progress`; service account `openstaff-build@openstaff-platform.iam.gserviceaccount.com`.
+- Trigger uses GitFileSource/sourceToBuild and has no repository-event, GitHub push/PR, Pub/Sub, webhook, or trigger-template event fields. This is the manual-invocation-only trigger; it was not executed.
+- `TRIGGER_EVENT = Manual invocation`, evidenced by GitFileSource/sourceToBuild and absence of automatic event configuration fields; trigger was not executed.
+- `TRIGGER_REPOSITORY_GENERATION = 2nd gen`, evidenced by its connection-backed repository resource path.
+- `TRIGGER_DISABLED_STATE = disabled field absent from readback; no disabled=true state observed`.
+- Source is the linked remote Git repository/ref, not the local working directory; the 8 dirty frontend files and 55 untracked local files are not trigger source inputs.
+- The connection API does not expose a separate GitHub authorization-account field. The linked repository owner is verified as `openstaffeu-lab`; no separate installer identity is inferred.
+- No connection, repository, or trigger creation occurred in CE. No build or trigger execution occurred.
 
-`PREREQ-12 = UNVERIFIED_NO_EVIDENCE`
+Committed-source isolation conditions at CE observation:
 
-`PREREQ12_RESOLUTION = RESOLUTION_BLOCKED_EXTERNAL_REPOSITORY_AUTHORIZATION`
+1. Existing repository integration is used: YES; COMPLETE GitHub connection and registered canonical repository were read back.
+2. Trigger consumes committed Git source: YES; `gitFileSource` and `sourceToBuild` identify the connection-backed repository and branch ref.
+3. Trigger references committed `apps/admin/api/cloudbuild.api.build.yaml`: YES; path read back from the trigger and config is committed/pushed.
+4. Local working-tree contents are source input: NO; the trigger source is the remote repository/ref, not the workstation directory.
+5. The 8 unrelated tracked frontend modifications can enter trigger source before commit: NO; they are local uncommitted changes, outside remote committed source.
+6. The 55 pre-existing untracked files can enter trigger source: NO; they are local and untracked, not part of the remote repository source.
+7. Trigger read-back confirms the intended source/ref/config and absence of automatic event fields: YES.
+8. No build was executed in CE: YES.
+
+Future invocation uses the branch ref, not a permanently pinned SHA. A later execution gate must record and revalidate the intended governed branch HEAD SHA immediately before any invocation; this does not permit using the current dirty local worktree.
+
+`PREREQ-12 = VERIFIED`
+
+`PREREQ12_RESOLUTION = RESOLVED_TRIGGER_CREATED_VERIFIED`
 
 ## G. PREREQ-07 Completion
 
@@ -121,7 +174,7 @@ Proposed future controlled smoke strategy:
 - Cleanup: operator of record owns cleanup; after evidence capture, archive the isolated synthetic Project only if that update is separately confirmed safe and authorized. Preserve generated AuditLog rows as historical evidence; do not delete them.
 - Stop conditions: unexpected permission result, failed write/read, missing/unexpected evidence, sensitive data in evidence, abnormal latency, or service instability; stop and escalate without further writes.
 
-Strategy is documented and approved, but the required existing test identity/account and safe AuditLog inspection path have not been verified. No smoke test was executed.
+Strategy is documented and explicitly approved, but the required pre-existing test identity/account and safe AuditLog inspection path have not been verified. No smoke test was executed.
 
 `PREREQ-13 = PARTIALLY_VERIFIED`
 
@@ -142,10 +195,10 @@ Strategy is documented and approved, but the required existing test identity/acc
 | PREREQ-09 | AuditLog/database observation | UNVERIFIED_NO_EVIDENCE | PostgreSQL 16, AuditLog table mapping, Cloud SQL metadata and connect/login IAM permission observed; no matching SQL user, psql, proxy, or safe SELECT path. | UNVERIFIED_NO_EVIDENCE | Do not query until existing safe read access is available and verified. |
 | PREREQ-10 | AuditService failure observability | VERIFIED | Committed adapter emits server error; Cloud Logging query capability rechecked. | VERIFIED | No failure induced. |
 | PREREQ-11 | Latency observability | VERIFIED | Existing enabled Cloud Run P95 policy covers API/web/admin; service-wide only. | VERIFIED | Not Project-write-specific. |
-| PREREQ-12 | Committed-source build isolation | UNVERIFIED_NO_EVIDENCE | Build-only config is committed/pushed, but GitHub App installation is UNKNOWN, no connection/repository/trigger exists, and external GitHub authorization is required. | UNVERIFIED_NO_EVIDENCE | `RESOLUTION_BLOCKED_EXTERNAL_REPOSITORY_AUTHORIZATION`; critical blocker. |
+| PREREQ-12 | Committed-source build isolation | UNVERIFIED_NO_EVIDENCE | Direct read-only inspection verified the COMPLETE GitHub connection, canonical linked 2nd-gen repository, and manual trigger `openstaff-api-committed-source` on `refs/heads/feature/work-in-progress`, referencing committed `apps/admin/api/cloudbuild.api.build.yaml`; no automatic event fields are present; no build executed. | VERIFIED | Remote committed source, not local workspace. Before any execution, verify the intended branch HEAD SHA and revalidate trigger/source/config. Connection metadata does not expose a separate installer account field; linked canonical repository owner is `openstaffeu-lab`. |
 | PREREQ-13 | Safe smoke-test strategy | UNVERIFIED_NO_EVIDENCE | Human approved a synthetic, private, dedicated-account strategy; actual test account and AuditLog read path are not established. | PARTIALLY_VERIFIED | Strategy approved; account and observation path are pre-execution requirements. |
 
-Counts: VERIFIED = 10; PARTIALLY_VERIFIED = 1; UNVERIFIED_NO_EVIDENCE = 2; total = 13.
+Counts: VERIFIED = 11; PARTIALLY_VERIFIED = 1; UNVERIFIED_NO_EVIDENCE = 1; total = 13.
 
 ## K. No-Build / No-Deploy Attestation
 
@@ -181,7 +234,7 @@ CE does not authorize deployment execution, close governance blockers, change ca
 
 `FIU1_EXECUTION_STILL_BLOCKED`
 
-PREREQ-12 remains blocked by unresolved external GitHub App/repository authorization. PREREQ-09 has no safe SQL SELECT path. PREREQ-13 has an approved strategy but an unverified live test identity and AuditLog observation path. Deployment may not begin automatically.
+PREREQ-12 is verified from the existing committed-source manual trigger. PREREQ-09 still has no safe SQL SELECT path, and PREREQ-13 is only partially verified because no live test identity is identified. Deployment may not begin automatically.
 
 ## O. Final CE Verdict
 

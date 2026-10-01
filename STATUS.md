@@ -2,20 +2,20 @@
 
 Last updated: 2026-10-01
 
-Verdict: `EXEC-78G.10CE BLOCKED; operator of record is documented and the smoke strategy is approved, but GitHub repository integration remains externally blocked and safe AuditLog read access is unverified; no build, trigger, or deployment occurred`
+Verdict: `EXEC-78G.10CE BLOCKED; the committed-source manual trigger and operator designation are verified, but safe AuditLog read access remains unverified and the smoke strategy is only partially verified; no build, trigger, or deployment occurred`
 
 ## EXEC-78G.10CE Repository Integration & Execution Readiness
 
-EXEC-78G.10CE revalidated the production API/runtime and documented the supplied operator and approved smoke-test strategy. Cloud Build repository integration was not established because GitHub App installation remains UNKNOWN and requires external authorization; no connection, repository, or trigger was created.
+EXEC-78G.10CE revalidated the production API/runtime and verified the manually materialized Cloud Build GitHub connection, linked repository, and manual-only trigger. No connection or trigger was created or executed by CE.
 
 Canonical findings:
 
-- operator of record: Cristian Popa, Superadmin / Owner / Deployment Manager; escalation contact was supplied and recorded in the CE proof
+- operator of record: Cristian Popa, superadmin / owner / deployment manager; escalation contact was supplied and recorded in the CE proof
 - PREREQ-07 is `VERIFIED` from explicit human designation
 - PREREQ-09 remains `UNVERIFIED_NO_EVIDENCE`; Cloud SQL/model metadata and connect permissions do not establish a safe AuditLog SELECT path
-- PREREQ-12 remains `UNVERIFIED_NO_EVIDENCE`; external GitHub App/repository authorization is unresolved, so no connection or manual trigger exists
+- PREREQ-12 is `VERIFIED`; connection installation is COMPLETE, the canonical repository is linked, and the manual trigger references the committed build-only config/feature branch
 - PREREQ-13 is `PARTIALLY_VERIFIED`; strategy was explicitly approved and documented, but test identity and AuditLog read path remain unverified
-- counts: 10 VERIFIED, 1 PARTIALLY_VERIFIED, 2 UNVERIFIED_NO_EVIDENCE; execution readiness remains `FIU1_EXECUTION_STILL_BLOCKED`
+- counts: 11 VERIFIED, 1 PARTIALLY_VERIFIED, 1 UNVERIFIED_NO_EVIDENCE; execution readiness remains `FIU1_EXECUTION_STILL_BLOCKED`
 - no build, trigger, deployment, database query/write, or live smoke test was performed
 - candidate remains `NOT_READY`; B4 and G.11 remain `BLOCKED - NOT AUTHORIZED`; BN remains `NEVER_MATERIALIZED`; FIU-1 human authorization remains `GRANTED`
 
