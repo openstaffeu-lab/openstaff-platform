@@ -1,8 +1,24 @@
 ﻿# EXEC-78 Proof
 
 Last updated: 2026-09-30
+Last updated: 2026-10-01
 
-Verdict: `EXEC-78G.10CA PASS WITH GAPS; read-only operational verification established 9 of 13 deployment prerequisites; four remain unverified, including committed-source build isolation; human decision remains open and no deployment authorization or deployment occurred`
+Verdict: `EXEC-78G.10CB PASS; the human repository owner authorized continuation of the FIU-1 deployment sequence; execution readiness remains NO because PREREQ-12 is a CRITICAL EXECUTION BLOCKER; deployment was not performed`
+
+## EXEC-78G.10CB FIU-1 Deployment Decision Record
+
+EXEC-78G.10CB records the human repository owner's explicit `FIU1_DEPLOYMENT_AUTHORIZED` decision to continue toward execution preparation. It does not authorize immediate deployment or resolve technical prerequisites.
+
+Canonical findings:
+
+- human decision is `FIU1_DEPLOYMENT_AUTHORIZED`; decision recorded is YES; FIU-1 deployment authorization is GRANTED
+- FIU-1 deployment execution readiness remains NO because `PREREQ-12 — Committed-source build isolation` remains a `CRITICAL EXECUTION BLOCKER`
+- the CA-time observed API context is `openstaff-platform` / `europe-west1` / production / `openstaff-api`; mutable revision, traffic, image, access, and region facts require immediate revalidation before any future execution
+- current dirty-worktree deployment is not proven safe; `gcloud builds submit .` from that dirty worktree is not permitted by this gate
+- next required activity is `EXECUTION_BLOCKER_RESOLUTION_GATE_REQUIRED`; CB does not start that gate
+- deployment performed is NO; candidate remains `NOT_READY`; B4 and G.11 remain `BLOCKED - NOT AUTHORIZED`; BN remains `NEVER_MATERIALIZED`
+
+See `EXEC78G10CB_FIU1_DEPLOYMENT_DECISION_RECORD.md`.
 
 ## EXEC-78G.10CA FIU-1 Deployment Prerequisites Verification
 
@@ -21,8 +37,6 @@ Canonical findings:
 - candidate remains `NOT_READY`; B4 and G.11 remain `BLOCKED - NOT AUTHORIZED`; BN remains `NEVER_MATERIALIZED`
 
 See `EXEC78G10CA_FIU1_DEPLOYMENT_PREREQUISITES_VERIFICATION.md`.
-
-## EXEC-78G.10BZ FIU-1 Deployment Authorization Request
 
 ## EXEC-78G.10BZ FIU-1 Deployment Authorization Request
 
