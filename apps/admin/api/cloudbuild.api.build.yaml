@@ -1,0 +1,35 @@
+# Committed-source BUILD-ONLY path for openstaff-api.
+# MUST NOT contain deployment steps.
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_API_SERVICE}:$BUILD_ID'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_API_SERVICE}:latest'
+      - '-f'
+      - 'apps/admin/api/Dockerfile'
+      - 'apps/admin/api'
+    id: 'build-api'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_API_SERVICE}'
+    id: 'push-api'
+    waitFor: ['build-api']
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_API_SERVICE}:$BUILD_ID'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_API_SERVICE}:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_MEDIUM
+
+substitutions:
+  _REGION: europe-west1
+  _REPOSITORY: openstaff-repo
+  _API_SERVICE: openstaff-api

@@ -2,7 +2,23 @@
 
 Last updated: 2026-10-01
 
-Verdict: `EXEC-78G.10CC BLOCKED; committed-source trigger creation was blocked because the committed API build config invokes gcloud run deploy and no Cloud Build repository connection was established; local gcloud region was corrected; PREREQ-12 remains unverified and no build or deployment occurred`
+Verdict: `EXEC-78G.10CD IN PROGRESS; a build-only API config has passed static separation checks, while Cloud Build repository integration and a manual-only committed-source trigger remain unestablished; no build or deployment occurred`
+
+## EXEC-78G.10CD FIU-1 Build/Deploy Separation & Committed-Source Integration
+
+EXEC-78G.10CD is separating the API image build/push path from the legacy build-and-deploy config and investigating a committed-source integration. No build or trigger is executed.
+
+Stage A findings:
+
+- new `apps/admin/api/cloudbuild.api.build.yaml` preserves the committed Docker build/push steps and image declarations, with no Cloud Run deploy or other runtime mutation
+- legacy `apps/admin/api/cloudbuild.api.yaml` remains unchanged
+- static separation checks passed; no Cloud Build was run
+- no Cloud Build triggers or repository connections were found in the inspected project/regions; source integration and manual-only trigger are not established
+- local gcloud `run/region` is already `europe-west1`; no local configuration change was needed in CD
+- PREREQ-12 remains `UNVERIFIED_NO_EVIDENCE`; candidate remains `NOT_READY`; B4 and G.11 remain `BLOCKED - NOT AUTHORIZED`; BN remains `NEVER_MATERIALIZED`
+- no deployment, Cloud Run revision/traffic change, database access, or live write smoke test occurred
+
+See `EXEC78G10CD_BUILD_DEPLOY_SEPARATION_AND_SOURCE_INTEGRATION.md`.
 
 ## EXEC-78G.10CC FIU-1 Execution Blocker Resolution
 
