@@ -2,7 +2,24 @@
 
 Last updated: 2026-10-01
 
-Verdict: `EXEC-78G.10CD BLOCKED; Stage A build/deploy separation is committed and pushed, but no Cloud Build repository connection was established and no manual-only trigger was created; PREREQ-12 remains unverified; no build or deployment occurred`
+Verdict: `EXEC-78G.10CE BLOCKED; operator of record is documented and the smoke strategy is approved, but GitHub repository integration remains externally blocked and safe AuditLog read access is unverified; no build, trigger, or deployment occurred`
+
+## EXEC-78G.10CE Repository Integration & Execution Readiness
+
+EXEC-78G.10CE revalidated the production API/runtime and documented the supplied operator and approved smoke-test strategy. Cloud Build repository integration was not established because GitHub App installation remains UNKNOWN and requires external authorization; no connection, repository, or trigger was created.
+
+Canonical findings:
+
+- operator of record: Cristian Popa, Superadmin / Owner / Deployment Manager; escalation contact was supplied and recorded in the CE proof
+- PREREQ-07 is `VERIFIED` from explicit human designation
+- PREREQ-09 remains `UNVERIFIED_NO_EVIDENCE`; Cloud SQL/model metadata and connect permissions do not establish a safe AuditLog SELECT path
+- PREREQ-12 remains `UNVERIFIED_NO_EVIDENCE`; external GitHub App/repository authorization is unresolved, so no connection or manual trigger exists
+- PREREQ-13 is `PARTIALLY_VERIFIED`; strategy was explicitly approved and documented, but test identity and AuditLog read path remain unverified
+- counts: 10 VERIFIED, 1 PARTIALLY_VERIFIED, 2 UNVERIFIED_NO_EVIDENCE; execution readiness remains `FIU1_EXECUTION_STILL_BLOCKED`
+- no build, trigger, deployment, database query/write, or live smoke test was performed
+- candidate remains `NOT_READY`; B4 and G.11 remain `BLOCKED - NOT AUTHORIZED`; BN remains `NEVER_MATERIALIZED`; FIU-1 human authorization remains `GRANTED`
+
+See `EXEC78G10CE_REPOSITORY_INTEGRATION_AND_EXECUTION_READINESS.md`.
 
 ## EXEC-78G.10CD FIU-1 Build/Deploy Separation & Committed-Source Integration
 
