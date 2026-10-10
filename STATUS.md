@@ -1,8 +1,29 @@
 ﻿# EXEC-78 Proof
 
-Last updated: 2026-10-01
+Last updated: 2026-10-10
 
 Verdict: `EXEC-78G.10CE BLOCKED; the committed-source manual trigger and operator designation are verified, but safe AuditLog read access remains unverified and the smoke strategy is only partially verified; no build, trigger, or deployment occurred`
+
+Latest reconciliation: `EXEC-78G.10CF-R1 PASS; current CE publication is RECOVERED_AND_VERIFIED at remote branch HEAD, historical CF execution remains NOT_DOCUMENTED, and FIU-1 execution remains blocked`
+
+## EXEC-78G.10CF-R1 CE Publication Recovery Evidence Reconciliation
+
+EXEC-78G.10CF-R1 reconciles the missing formal CF evidence without rewriting CE history. It verifies that the CE publication commit is now present at both local and remote `feature/work-in-progress`, while preserving the historical CE verdict as `EXEC-78G.10CE BLOCKED`.
+
+Canonical findings:
+
+- local HEAD and `origin/feature/work-in-progress` were freshly verified at `dac05be502c04a27bf35cb6e85a85d8c8af0801a`
+- ahead/behind was `0 / 0`, and the CE commit is reachable from `origin/feature/work-in-progress`
+- CE commit scope remains exactly `EXEC78G10CE_REPOSITORY_INTEGRATION_AND_EXECUTION_READINESS.md`, `STATUS.md`, and `docs/proof/exec78/README.md`
+- historical CF execution is `NOT_DOCUMENTED`; no committed or untracked `EXEC78G10CF*` proof was found
+- current CE publication status is `RECOVERED_AND_VERIFIED`; this is not historical CF execution, deployment readiness, AuditLog read-path verification, or smoke-test readiness
+- untracked `EXEC78G10CG_AUDITLOG_READ_PATH_VERIFICATION.md` exists and was not modified, staged, committed, or completed
+- PREREQ-07 remains `VERIFIED`; PREREQ-09 remains `UNVERIFIED_NO_EVIDENCE`; PREREQ-12 remains `VERIFIED`; PREREQ-13 remains `PARTIALLY_VERIFIED`
+- counts remain 11 VERIFIED, 1 PARTIALLY_VERIFIED, 1 UNVERIFIED_NO_EVIDENCE; execution readiness remains `FIU1_EXECUTION_STILL_BLOCKED`
+- human FIU-1 deployment authorization remains `GRANTED`; execution readiness remains NO; candidate remains `NOT_READY`; B4 and G.11 remain `BLOCKED - NOT AUTHORIZED`; BN remains `NEVER_MATERIALIZED`
+- no build, trigger invocation, deployment, Cloud Run mutation, database access, smoke test, IAM/secret change, application/schema/frontend change, reset, clean, stash, rebase, force push, or unrelated-work deletion occurred
+
+See `EXEC78G10CF_R1_CE_PUBLICATION_RECOVERY_EVIDENCE_RECONCILIATION.md`.
 
 ## EXEC-78G.10CE Repository Integration & Execution Readiness
 
