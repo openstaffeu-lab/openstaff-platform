@@ -1,10 +1,36 @@
 ﻿# EXEC-78 Proof
 
-Last updated: 2026-10-10
+Last updated: 2026-10-11
 
-Verdict: `EXEC-78G.10CE BLOCKED; the committed-source manual trigger and operator designation are verified, but safe AuditLog read access remains unverified and the smoke strategy is only partially verified; no build, trigger, or deployment occurred`
+Verdict: `EXEC-78G.10CG BLOCKED - SAFE_AUDITLOG_READ_PATH_NOT_VERIFIED; AuditLog model/table/runtime bindings and Cloud SQL metadata are verified, but safe SQL SELECT read access remains unverified; no query, secret value read, build, trigger, deployment, smoke test, or mutation occurred`
 
 Latest reconciliation: `EXEC-78G.10CF-R1 PASS; current CE publication is RECOVERED_AND_VERIFIED at remote branch HEAD, historical CF execution remains NOT_DOCUMENTED, and FIU-1 execution remains blocked`
+
+Latest verification: `EXEC-78G.10CG BLOCKED - SAFE_AUDITLOG_READ_PATH_NOT_VERIFIED; PREREQ-09 remains UNVERIFIED_NO_EVIDENCE, PREREQ-13 remains PARTIALLY_VERIFIED, and FIU-1 execution remains blocked`
+
+Latest publication status: `EXEC-78G.10CG evidence publication is PENDING until CG-P1 commit, push, and live remote verification are complete`
+
+## EXEC-78G.10CG FIU-1 AuditLog Read-Path Verification
+
+EXEC-78G.10CG verifies whether FIU-1 has a safe, existing, read-only AuditLog observation path suitable for future smoke-test evidence inspection.
+
+CG verification work is complete with a technical verdict of `BLOCKED`; CG evidence publication remains pending until this documentation is committed, pushed, and verified on `origin/feature/work-in-progress`.
+
+Canonical findings:
+
+- local HEAD and `origin/feature/work-in-progress` were observed at `f66e9a2e52108899d11ffc23fa21985f3522c1b8`
+- `AuditLog` is defined in committed Prisma schema and maps to physical table `"AuditLog"`; the production baseline migration creates that table and related indexes
+- live `openstaff-api` remains bound to Cloud SQL instance `openstaff-platform:europe-west1:openstaff-db` and obtains `DATABASE_URL` from Secret Manager
+- Cloud SQL metadata verifies PostgreSQL 16, instance state `RUNNABLE`, connector enforcement `REQUIRED`, SSL mode `ENCRYPTED_ONLY`, and database users `openstaff_app` and `postgres`
+- active gcloud account `openstaff.eu@gmail.com` has project `roles/owner`, but IAM ownership and metadata do not prove a safe SQL SELECT session
+- local `psql` and Cloud SQL Proxy were not found; no database credential, secret value, or connection string was read; no database session was opened
+- application AuditLog read endpoints exist, but no authenticated test/admin identity, token, or project context was verified or used
+- `PREREQ-09` remains `UNVERIFIED_NO_EVIDENCE`; `PREREQ-13` remains `PARTIALLY_VERIFIED`; counts remain 11 VERIFIED, 1 PARTIALLY_VERIFIED, 1 UNVERIFIED_NO_EVIDENCE; FIU-1 remains `EXECUTION_STILL_BLOCKED`
+- no build, trigger invocation, deployment, Cloud Run mutation, database connection/query/write, secret value access, smoke test, IAM/secret change, application/schema/frontend change, reset, clean, stash, rebase, force push, or unrelated-work deletion occurred
+
+CG is not a PASS, does not verify PREREQ-09, does not upgrade PREREQ-13, does not declare FIU-1 ready, and does not authorize deployment or smoke testing.
+
+See `EXEC78G10CG_AUDITLOG_READ_PATH_VERIFICATION.md`.
 
 ## EXEC-78G.10CF-R1 CE Publication Recovery Evidence Reconciliation
 
